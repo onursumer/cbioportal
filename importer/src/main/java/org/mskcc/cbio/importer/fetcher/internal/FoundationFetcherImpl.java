@@ -53,7 +53,7 @@ import java.util.regex.Pattern;
 /**
  * Class which implements the fetcher interface.
  */
-final class FoundationFetcherImpl implements Fetcher {
+class FoundationFetcherImpl implements Fetcher {
 
 	// our logger
 	private static final Log LOG = LogFactory.getLog(FoundationFetcherImpl.class);
@@ -91,8 +91,8 @@ final class FoundationFetcherImpl implements Fetcher {
 	 * @param databaseUtils DatabaseUtils
 	 * @param importDataRecordDAO ImportDataRecordDAO;
 	 */
-	public FoundationFetcherImpl(final Config config, final FileUtils fileUtils,
-								 final DatabaseUtils databaseUtils, final ImportDataRecordDAO importDataRecordDAO) {
+	public FoundationFetcherImpl(Config config, FileUtils fileUtils,
+								 DatabaseUtils databaseUtils, ImportDataRecordDAO importDataRecordDAO) {
 
 		// set members
 		this.config = config;
@@ -110,7 +110,7 @@ final class FoundationFetcherImpl implements Fetcher {
 	 * @throws Exception
 	 */
 	@Override
-	public void fetch(final String dataSource, final String desiredRunDate) throws Exception {
+	public void fetch(String dataSource, String desiredRunDate) throws Exception {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("fetch(), dateSource:runDate: " + dataSource + ":" + desiredRunDate);
@@ -142,7 +142,8 @@ final class FoundationFetcherImpl implements Fetcher {
 				}
 				try {
 					String caseRecord = foundationService.getCase(caseID);
-					File caseFile = fileUtils.createFileWithContents(dataSourceMetadata.getDownloadDirectory(),
+					File caseFile = fileUtils.createFileWithContents(dataSourceMetadata.getDownloadDirectory() +
+																	 File.pathSeparator + 
 																	 caseID + FOUNDATION_FILE_EXTENSION, caseRecord);
 					if (LOG.isInfoEnabled()) {
 						LOG.info("fetch(), successfully fetched data for case: " + caseID + ", persisting...");
@@ -170,7 +171,7 @@ final class FoundationFetcherImpl implements Fetcher {
 	 * @throws Exception
 	 */
 	@Override
-	public void fetchReferenceData(final ReferenceMetadata referenceMetadata) throws Exception {
+	public void fetchReferenceData(ReferenceMetadata referenceMetadata) throws Exception {
 		throw new UnsupportedOperationException();
 	}
 }

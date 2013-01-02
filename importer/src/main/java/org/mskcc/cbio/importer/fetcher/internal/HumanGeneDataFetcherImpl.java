@@ -26,72 +26,71 @@
 **/
 
 // package
-package org.mskcc.cbio.importer.util;
+package org.mskcc.cbio.importer.fetcher.internal;
 
 // imports
+import org.mskcc.cbio.importer.Fetcher;
+import org.mskcc.cbio.importer.FileUtils;
+import org.mskcc.cbio.importer.model.ReferenceMetadata;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.io.LineIterator;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.net.URL;
 
 /**
- * Class which provides commandline execution.
+ * Class which implements the fetcher interface.
  */
-public class StreamSink extends Thread {
+class HumanGeneDataFetcherImpl extends ReferenceDataFetcherImpl implements Fetcher {
 
 	// our logger
-	private static Log LOG = LogFactory.getLog(StreamSink.class);
+	private static final Log LOG = LogFactory.getLog(HumanGeneDataFetcherImpl.class);
 
-	// private members
-	private InputStream in;
-    private OutputStream out = null;
-    private int buffersize = 60 * 1024;
-    private byte[] bytebuffer = null;
+	// human taxid
+	private static final String HUMAN_TAXID = "9606";
 
 	/**
 	 * Constructor.
+     *
+	 * Takes a FileUtils reference.
+     *
+	 * @param fileUtils FileUtils
+	 */
+	public HumanGeneDataFetcherImpl(FileUtils fileUtils) {
+		super(fileUtils);
+	}
+
+	/**
+	 * Fetchers reference data from an external datasource.
 	 *
-	 * @param inStream InputStream
+     * @param referenceMetadata ReferenceMetadata
+	 * @throws Exception
 	 */
-	public StreamSink(InputStream inStream) {
+	@Override
+	public void fetchReferenceData(ReferenceMetadata referenceMetadata) throws Exception {
 
-		// init members
-        in = inStream;
-    }
+		super.fetchReferenceData(referenceMetadata);
 
-	/**
-	 * Reads given stream.
-	 */
-    public void transfer() throws IOException {
-       
-		bytebuffer = new byte[buffersize];
-        if (out == null) {
-            while (true) {
-                int bytes_read = in.read(bytebuffer,0,buffersize);
-                if (bytes_read == -1) return;
-            }
-        }
-        while (true) {
-            int bytes_read = in.read(bytebuffer,0,buffersize);
-            if (bytes_read == -1) return;
-            out.write(bytebuffer,0,bytes_read);
-        }
-    }
+		if (LOG.isInfoEnabled()) {
+			LOG.info("fetchReferenceData(), filtering all gene data but human");
+		}
 
-	/**
-	 * Our implementation of run.
-	 */
-    public void run() {
-
-        try {
-            transfer();
-        }
-		catch (IOException e) {
-			if (LOG.isInfoEnabled()) {
-				LOG.info(e.toString() + ", error during stream copy in class StreamSink");
+		StringBuilder builder = new StringBuilder();
+		LineIterator it = fileUtils.getFileContents(referenceMetadata.getReferenceFile());
+		try {
+			while (it.hasNext()) {
+				String nextLine = it.nextLine();
+				if (nextLine.startsWith(HUMAN_TAXID)) {
+					builder.append(nextLine + "\n");
+				}
 			}
-        }
-    }
+		}
+		finally {
+			it.close();
+		}
+
+		URL url = new URL(referenceMetadata.getReferenceFile());
+		fileUtils.createFileWithContents(url.getFile(), builder.toString());
+	}
 }

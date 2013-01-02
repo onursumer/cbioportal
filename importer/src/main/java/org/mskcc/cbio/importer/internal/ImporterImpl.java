@@ -57,10 +57,10 @@ import java.lang.reflect.Method;
 /**
  * Class which implements the Importer interface.
  */
-final class ImporterImpl implements Importer {
+class ImporterImpl implements Importer {
 
 	// our logger
-	private static final Log LOG = LogFactory.getLog(ImporterImpl.class);
+	private static Log LOG = LogFactory.getLog(ImporterImpl.class);
 
 	// ref to configuration
 	private Config config;
@@ -78,7 +78,7 @@ final class ImporterImpl implements Importer {
 	 * @param fileUtils FileUtils
 	 * @param databaseUtils DatabaseUtils
 	 */
-	public ImporterImpl(final Config config, final FileUtils fileUtils, final DatabaseUtils databaseUtils) {
+	public ImporterImpl(Config config, FileUtils fileUtils, DatabaseUtils databaseUtils) {
 
 		// set members
 		this.config = config;
@@ -93,7 +93,7 @@ final class ImporterImpl implements Importer {
 	 * @throws Exception
 	 */
     @Override
-	public void importData(final String portal) throws Exception {
+	public void importData(String portal) throws Exception {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("importData()");
@@ -105,7 +105,7 @@ final class ImporterImpl implements Importer {
 		}
 
         // get portal metadata
-        PortalMetadata portalMetadata = config.getPortalMetadata(portal);
+        PortalMetadata portalMetadata = config.getPortalMetadata(portal).iterator().next();
         if (portalMetadata == null) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("importData(), cannot find PortalMetadata, returning");
@@ -159,7 +159,7 @@ final class ImporterImpl implements Importer {
 	 * @throws Exception
 	 */
 	@Override
-	public void importReferenceData(final ReferenceMetadata referenceMetadata) throws Exception {
+	public void importReferenceData(ReferenceMetadata referenceMetadata) throws Exception {
 
 		// we are either going to use a cgds package importer which has a main method
 		// or one of our own classes which implements the Importer interface.
@@ -185,7 +185,7 @@ final class ImporterImpl implements Importer {
 
 		// tumor types
 		StringBuilder cancerFileContents = new StringBuilder();
-		for (TumorTypeMetadata tumorType : config.getTumorTypeMetadata()) {
+		for (TumorTypeMetadata tumorType : config.getTumorTypeMetadata(Config.ALL)) {
 			cancerFileContents.append(tumorType.getType());
 			cancerFileContents.append(TumorTypeMetadata.TUMOR_TYPE_META_FILE_DELIMITER);
 			cancerFileContents.append(tumorType.getName());
@@ -210,9 +210,9 @@ final class ImporterImpl implements Importer {
 	 *
 	 * @param portalMetadata PortalMetadata
 	 */
-	private void loadStagingFiles(final PortalMetadata portalMetadata) throws Exception {
+	private void loadStagingFiles(PortalMetadata portalMetadata) throws Exception {
 
-		Collection<DatatypeMetadata> datatypeMetadatas = config.getDatatypeMetadata();
+		Collection<DatatypeMetadata> datatypeMetadatas = config.getDatatypeMetadata(Config.ALL);
 		Collection<DataSourcesMetadata> dataSourcesMetadata = config.getDataSourcesMetadata(Config.ALL);
 
 		// iterate over all cancer studies

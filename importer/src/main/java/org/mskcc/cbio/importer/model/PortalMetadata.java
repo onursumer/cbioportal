@@ -36,32 +36,26 @@ import java.util.Collection;
 /**
  * Class which contains portal metadata.
  */
-public final class PortalMetadata {
+public class PortalMetadata {
 
 	// bean properties
     private String name;
     private String stagingDirectory;
 
     /**
-     * Create a PortalMetadata instance with specified properties.
+     * Create a PortalMetadata instance with properties in given array.
+	 * Its assumed order of properties is that from google worksheet.
      *
-     * @param name String
-     * @param stagingDirectory String
-
+	 * @param properties String[]
      */
-    public PortalMetadata(final String name, final String stagingDirectory) {
+    public PortalMetadata(String[] properties) {
 
-        // name
-		if (name == null) {
-            throw new IllegalArgumentException("name must not be null");
+		if (properties.length != 2) {
+            throw new IllegalArgumentException("corrupt properties array passed to contructor");
 		}
-        this.name = name.trim();
 
-        // staging directory
-		if (stagingDirectory == null) {
-            throw new IllegalArgumentException("stagingDirectory must not be null");
-		}
-		this.stagingDirectory = stagingDirectory.trim();
+        this.name = properties[0].trim();
+		this.stagingDirectory = properties[1].trim();
 	}
 
 	public String getName() { return name; }

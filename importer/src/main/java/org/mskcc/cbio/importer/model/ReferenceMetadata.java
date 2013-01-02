@@ -33,7 +33,7 @@ package org.mskcc.cbio.importer.model;
 /**
  * Class which contains reference metadata.
  */
-public final class ReferenceMetadata {
+public class ReferenceMetadata {
 
 	public static final String REFERENCE_FILE_DELIMITER = ":";
 
@@ -42,48 +42,33 @@ public final class ReferenceMetadata {
 	private Boolean importIntoPortal;
 	private String referenceFileSource;
 	private String referenceFile;
+	private String fetcherBeanID;
 	private String importerClassName;
 
     /**
-     * Create a ReferenceMetadata instance with specified properties.
+     * Create a ReferenceMetadata instance with properties in given array.
+	 * Its assumed order of properties is that from google worksheet.
      *
-	 * @param referenceType String
-	 * @param importIntoPortal Boolean
-	 * @param referenceFileSource String
-	 * @param referenceFile String
-	 * @param importerClassname String
+	 * @param properties String[]
      */
-    public ReferenceMetadata(final String referenceType, final Boolean importIntoPortal,
-							 final String referenceFileSource, final String referenceFile,
-							 final String importerClassName) {
+    public ReferenceMetadata(String[] properties) {
 
-		if (referenceType == null) {
-            throw new IllegalArgumentException("referenceType must not be null");
+		if (properties.length != 6) {
+            throw new IllegalArgumentException("corrupt properties array passed to contructor");
 		}
-		this.referenceType = referenceType.trim();
 
-		if (importIntoPortal == null) {
-            throw new IllegalArgumentException("importIntoPortal must not be null");
-		}
-		this.importIntoPortal = importIntoPortal;
-
-		// reference file source can be null
-		this.referenceFileSource = (referenceFileSource == null) ? "" : referenceFileSource.trim();
-
-		if (referenceFile == null) {
-            throw new IllegalArgumentException("referenceFile must not be null");
-		}
-		this.referenceFile = referenceFile.trim();
-
-		if (importerClassName == null) {
-            throw new IllegalArgumentException("importerClassName must not be null");
-		}
-		this.importerClassName = importerClassName.trim();
+		this.referenceType = properties[0].trim();
+		this.importIntoPortal = new Boolean(properties[1].trim());
+		this.referenceFileSource = properties[2].trim();
+		this.referenceFile = properties[3].trim();
+		this.fetcherBeanID = properties[4].trim();
+		this.importerClassName = properties[5].trim();
 	}
 
 	public String getReferenceType() { return referenceType; }
 	public Boolean importIntoPortal() { return importIntoPortal; }
 	public String getReferenceFileSource() { return referenceFileSource; }
 	public String getReferenceFile() { return referenceFile; }
+	public String getFetcherBeanID() { return fetcherBeanID; }
 	public String getImporterClassName() { return importerClassName; }
 }

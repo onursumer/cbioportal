@@ -56,7 +56,10 @@ import java.util.LinkedHashSet;
 /**
  * Class which implements the Converter interface.
  */
-final class ConverterImpl implements Converter {
+class ConverterImpl implements Converter {
+
+	// all cases indicator
+	private static final String ALL_CASES_FILENAME = "cases_all.txt";
 
 	// our logger
 	private static final Log LOG = LogFactory.getLog(ConverterImpl.class);
@@ -66,9 +69,6 @@ final class ConverterImpl implements Converter {
 
 	// ref to file utils
 	private FileUtils fileUtils;
-
-	// ref to database utils
-	private DatabaseUtils databaseUtils;
 
 	// ref to import data
 	private ImportDataRecordDAO importDataRecordDAO;
@@ -84,24 +84,19 @@ final class ConverterImpl implements Converter {
      *
      * @param config Config
 	 * @param fileUtils FileUtils
-	 * @param databaseUtils DatabaseUtils
 	 * @param importDataRecordDAO ImportDataRecordDAO;
 	 * @param caseIDs CaseIDs;
 	 * @param idMapper IDMapper
 	 */
-	public ConverterImpl(final Config config, final FileUtils fileUtils, final DatabaseUtils databaseUtils,
-						 final ImportDataRecordDAO importDataRecordDAO, final CaseIDs caseIDs, final IDMapper idMapper) throws Exception {
+	public ConverterImpl(Config config, FileUtils fileUtils, ImportDataRecordDAO importDataRecordDAO,
+						 CaseIDs caseIDs, IDMapper idMapper) throws Exception {
 
 		// set members
 		this.config = config;
         this.fileUtils = fileUtils;
-		this.databaseUtils = databaseUtils;
 		this.importDataRecordDAO = importDataRecordDAO;
 		this.caseIDs = caseIDs;
 		this.idMapper = idMapper;
-
-		// initialize mapper
-		initializeMapper();
 	}
 
 	/**
@@ -111,7 +106,7 @@ final class ConverterImpl implements Converter {
 	 * @throws Exception
 	 */
     @Override
-	public void convertData(final String portal) throws Exception {
+	public void convertData(String portal) throws Exception {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("convertData(), portal: " + portal);
@@ -123,7 +118,7 @@ final class ConverterImpl implements Converter {
 		}
 
         // get portal metadata
-        PortalMetadata portalMetadata = config.getPortalMetadata(portal);
+        PortalMetadata portalMetadata = config.getPortalMetadata(portal).iterator().next();
         if (portalMetadata == null) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("convertData(), cannot find PortalMetadata, returning");
@@ -167,7 +162,7 @@ final class ConverterImpl implements Converter {
 	 * @throws Exception
 	 */
     @Override
-	public void generateCaseLists(final String portal) throws Exception {
+	public void generateCaseLists(String portal) throws Exception {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("generateCaseLists()");
@@ -179,7 +174,7 @@ final class ConverterImpl implements Converter {
 		}
 
         // get portal metadata
-        PortalMetadata portalMetadata = config.getPortalMetadata(portal);
+        PortalMetadata portalMetadata = config.getPortalMetadata(portal).iterator().next();
         if (portalMetadata == null) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("convertData(), cannot find PortalMetadata, returning");
@@ -188,7 +183,7 @@ final class ConverterImpl implements Converter {
         }
 
 		// get CaseListMetadata
-		Collection<CaseListMetadata> caseListMetadatas = config.getCaseListMetadata();
+		Collection<CaseListMetadata> caseListMetadatas = config.getCaseListMetadata(Config.ALL);
 
 		// iterate over all cancer studies
 		for (CancerStudyMetadata cancerStudyMetadata : config.getCancerStudyMetadata(portalMetadata.getName())) {
@@ -260,7 +255,10 @@ final class ConverterImpl implements Converter {
 					LOG.info("generateCaseLists(), caseSet.size() <= 0, skipping call to writeCaseListFile()...");
 				}
 				// if union, write out the cancer study metadata file
-				if (caseListMetadata.getStagingFilenames().contains(CaseListMetadata.CASE_LIST_UNION_DELIMITER)) {
+				if (caseSet.size() > 0 && caseListMetadata.getCaseListFilename().equals(ALL_CASES_FILENAME)) {
+					if (LOG.isInfoEnabled()) {
+						LOG.info("generateCaseLists(), processed all cases list, we can now update cancerStudyMetadata file()...");
+					}
 					fileUtils.writeCancerStudyMetadataFile(portalMetadata, cancerStudyMetadata, caseSet.size());
 				}
 			}
@@ -276,7 +274,7 @@ final class ConverterImpl implements Converter {
 	 * @throws Exception
 	 */
     @Override
-	public void applyOverrides(final String portal, final String dataSource) throws Exception {
+	public void applyOverrides(String portal, String dataSource) throws Exception {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("applyOverrides(), portal:dataSource: " + portal + ":" + dataSource);
@@ -291,7 +289,7 @@ final class ConverterImpl implements Converter {
 		}
 
         // get portal metadata
-        PortalMetadata portalMetadata = config.getPortalMetadata(portal);
+        PortalMetadata portalMetadata = config.getPortalMetadata(portal).iterator().next();
         if (portalMetadata == null) {
             if (LOG.isInfoEnabled()) {
                 LOG.info("applyOverrides(), cannot find PortalMetadata, returning");
@@ -330,24 +328,9 @@ final class ConverterImpl implements Converter {
 	 * @throws Exception
 	 */
 	@Override
-	public void createStagingFile(final PortalMetadata portalMetadata, final CancerStudyMetadata cancerStudyMetadata,
-								  final DatatypeMetadata datatypeMetadata, final DataMatrix[] dataMatrices) throws Exception {
+	public void createStagingFile(PortalMetadata portalMetadata, CancerStudyMetadata cancerStudyMetadata,
+								  DatatypeMetadata datatypeMetadata, DataMatrix[] dataMatrices) throws Exception {
 		throw new UnsupportedOperationException();
-	}
-
-	/**
-	 * Helper function to initialize IDMapper.
-	 *
-	 * @throws Exception
-	 */
-	private void initializeMapper() throws Exception {
-
-		// parse out locat
-		String connectionString = (databaseUtils.getDatabaseConnectionString() +
-								   databaseUtils.getGeneInformationDatabaseName() +
-								   "?user=" + databaseUtils.getDatabaseUser() +
-								   "&password=" + databaseUtils.getDatabasePassword());
-		idMapper.initMapper(connectionString);
 	}
 
 	/**
@@ -360,9 +343,9 @@ final class ConverterImpl implements Converter {
 	 * @return DataMatrix[]
 	 * @throws Exception
 	 */
-	private DataMatrix[] getDataMatrices(final PortalMetadata portalMetadata,
-										 final CancerStudyMetadata cancerStudyMetadata,
-										 final DatatypeMetadata datatypeMetadata) throws Exception {
+	private DataMatrix[] getDataMatrices(PortalMetadata portalMetadata,
+										 CancerStudyMetadata cancerStudyMetadata,
+										 DatatypeMetadata datatypeMetadata) throws Exception {
 
 
 		// this is what we are returing

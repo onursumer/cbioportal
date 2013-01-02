@@ -26,14 +26,47 @@
 **/
 
 // package
-package org.mskcc.cbio.importer;
+package org.mskcc.cbio.importer.mapper.internal;
 
 // imports
+import org.mskcc.cbio.importer.IDMapper;
+import org.mskcc.cbio.cgds.dao.DaoGeneOptimized;
+import org.mskcc.cbio.cgds.model.CanonicalGene;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.util.List;
 
 /**
- * Interface used to map IDS.
+ * Class which provides bridgedb services.
  */
-public interface IDMapper {
+public class DAOGeneOptimizedIDMapper implements IDMapper {
+
+	// our logger
+	private static Log LOG = LogFactory.getLog(DAOGeneOptimizedIDMapper.class);
+
+	// ref to DAOGeneOptimized
+	DaoGeneOptimized daoGeneOptimized;
+
+	/**
+	 * Constructor.
+	 *
+	 */
+	public DAOGeneOptimizedIDMapper() {
+
+		if (LOG.isInfoEnabled()) {
+			LOG.info("DAOGeneOptimizedIDMapper(), getting reference to DaoGeneOptimized");
+		}
+
+		// used when we init mapper (must come after construction)
+		try {
+			this.daoGeneOptimized = DaoGeneOptimized.getInstance();
+		}
+		catch (Exception e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
 
 	/**
 	 * For the given symbol, return id.
@@ -42,7 +75,11 @@ public interface IDMapper {
 	 * @return String
 	 * @throws Exception
 	 */
-	String symbolToEntrezID(String geneSymbol) throws Exception;
+	@Override
+	public String symbolToEntrezID(String geneSymbol) throws Exception {
+		CanonicalGene gene = guessGene(geneSymbol);
+		return (gene != null) ? Long.toString(gene.getEntrezGeneId()) : "";
+	}
 
 	/**
 	 * For the entrezID, return symbol.
@@ -51,5 +88,21 @@ public interface IDMapper {
 	 * @return String
 	 * @throws Exception
 	 */
-	String entrezIDToSymbol(String entrezID) throws Exception;
+	@Override
+	public String entrezIDToSymbol(String entrezID) throws Exception {
+		CanonicalGene gene = guessGene(entrezID);
+		return (gene != null) ? gene.getHugoGeneSymbolAllCaps() : "";
+	}
+
+	/**
+	 * Helper function to process DaoGeneOptimized list.
+	 *
+	 * @param IDOrSymbol
+	 * @return CanonicalGene
+	 */
+	private CanonicalGene guessGene(String IDOrSymbol) {
+
+		List<CanonicalGene> geneList = daoGeneOptimized.guessGene(IDOrSymbol);
+		return (geneList != null) ? geneList.get(0) : null;
+	}
 }
