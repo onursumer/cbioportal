@@ -29,6 +29,10 @@ public class MutationsJSON extends HttpServlet {
     public static final String KEYWORD_CONTEXT = "keyword_context";
     public static final String MUTATION_CONTEXT = "mutation_context";
     
+    public static final String GET_STATISTICS_CMD = "statistics";
+    public static final String MUTATION_TYPE = "type";
+    public static final String THRESHOLD_SAMPLES = "threshold_samples";
+    
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
      * @param request servlet request
@@ -54,9 +58,39 @@ public class MutationsJSON extends HttpServlet {
                 processCountMutationsRequest(request, response);
                 return;
             }
+            
+            if (cmd.equalsIgnoreCase(GET_STATISTICS_CMD)) {
+                processStatisticsRequest(request, response);
+                return;
+            }
         }
             
         processGetMutationsRequest(request, response);
+    }
+    
+    private void processStatisticsRequest(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
+        String studyIds = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
+        String type = request.getParameter(MUTATION_TYPE);
+        int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
+        
+        Map<String,Map<Integer, Integer>> mapKeywordStudyCount = Collections.emptyMap();
+        
+        try {
+            mapKeywordStudyCount = DaoMutationEvent.getMutatationStatistics(studyIds, type, threshold);
+        } catch (DaoException ex) {
+            throw new ServletException(ex);
+        }
+
+        response.setContentType("application/json");
+        
+        PrintWriter out = response.getWriter();
+        try {
+            JSONValue.writeJSONString(mapKeywordStudyCount, out);
+        } finally {            
+            out.close();
+        }
     }
     
     private void processGetMutationsRequest(HttpServletRequest request,

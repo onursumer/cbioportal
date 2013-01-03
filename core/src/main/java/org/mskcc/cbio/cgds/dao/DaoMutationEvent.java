@@ -791,4 +791,54 @@ public final class DaoMutationEvent {
             JdbcUtil.closeAll(con, pstmt, rs);
         }
     }
+    
+    /**
+     * @param concatCancerStudyIds cancerStudyIds concatenated by comma (,)
+     * @param type missense, truncating
+     * @param thresholdSamples threshold of number of samples
+     * @return Map<keyword, Map<CancerStudyId, NumberOfSamples>>
+     */
+    public static Map<String,Map<Integer, Integer>> getMutatationStatistics(String concatCancerStudyIds,
+            String type, int thresholdSamples) throws DaoException {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection();
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, COUNT( * ) "
+                    + "FROM  `mutation_event` me, `case_mutation_event` cme, `genetic_profile` gp "
+                    + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
+                    + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
+                    + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
+                    + "AND `KEYWORD` LIKE  '%" + type + "%' "
+                    + "GROUP BY gp.`GENETIC_PROFILE_ID`, `KEYWORD`";
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            Map<String,Map<Integer, Integer>> map = new HashMap<String,Map<Integer, Integer>>();
+            while (rs.next()) {
+                int count = rs.getInt(3);
+                if (count < thresholdSamples) {
+                    continue;
+                }
+                
+                int cancerStudyId = rs.getInt(1);
+                String keyword = rs.getString(2);
+                
+                Map<Integer, Integer> mapStudyCount = map.get(keyword);
+                if (mapStudyCount==null) {
+                    mapStudyCount = new HashMap<Integer, Integer>();
+                    map.put(keyword, mapStudyCount);
+                }
+                mapStudyCount.put(cancerStudyId, count);
+            }
+            
+            return map;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(con, pstmt, rs);
+        }
+        
+    }
 }
