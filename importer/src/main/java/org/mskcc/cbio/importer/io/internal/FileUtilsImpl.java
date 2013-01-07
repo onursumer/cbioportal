@@ -36,7 +36,7 @@ import org.mskcc.cbio.importer.model.PortalMetadata;
 import org.mskcc.cbio.importer.model.DataMatrix;
 import org.mskcc.cbio.importer.model.DatatypeMetadata;
 import org.mskcc.cbio.importer.model.CaseListMetadata;
-import org.mskcc.cbio.importer.util.NormalizeExpressionLevels;
+import org.mskcc.cbio.cgds.scripts.NormalizeExpressionLevels;
 import org.mskcc.cbio.importer.model.CancerStudyMetadata;
 import org.mskcc.cbio.importer.model.DataSourcesMetadata;
 
@@ -146,6 +146,7 @@ class FileUtilsImpl implements org.mskcc.cbio.importer.FileUtils {
      * Makes a directory, including parent directories if necessary.
      *
      * @param directory File
+	 * @throws Exception
      */
     @Override
     public void makeDirectory(File directory) throws Exception {
@@ -157,6 +158,7 @@ class FileUtilsImpl implements org.mskcc.cbio.importer.FileUtils {
      * Deletes a directory recursively.
      *
      * @param directory File
+	 * @throws Exception
      */
     @Override
     public void deleteDirectory(File directory) throws Exception {
@@ -171,6 +173,7 @@ class FileUtilsImpl implements org.mskcc.cbio.importer.FileUtils {
      * @param extensions String[]
      * @param recursize boolean
      * @return Collection<File>
+	 * @throws Exception
      */
     @Override
     public Collection<File> listFiles(File directory, String[] extensions, boolean recursive) throws Exception {
@@ -264,6 +267,7 @@ class FileUtilsImpl implements org.mskcc.cbio.importer.FileUtils {
 	 * @param filename String
 	 * @param fileContent String
 	 * @return File
+	 * @throws Exception
 	 */
 	@Override
 	public File createTmpFileWithContents(String filename, String fileContent) throws Exception {
@@ -280,6 +284,7 @@ class FileUtilsImpl implements org.mskcc.cbio.importer.FileUtils {
 	 * @param filename String
 	 * @param fileContent String
 	 * @return File
+	 * @throws Exception
 	 */
 	@Override
 	public File createFileWithContents(String filename, String fileContent) throws Exception {
@@ -369,19 +374,29 @@ class FileUtilsImpl implements org.mskcc.cbio.importer.FileUtils {
 	public void writeCancerStudyMetadataFile(PortalMetadata portalMetadata, CancerStudyMetadata cancerStudyMetadata, int numCases) throws Exception {
 
 			File metaFile = org.apache.commons.io.FileUtils.getFile(portalMetadata.getStagingDirectory(),
-																	cancerStudyMetadata.getStudyPath(),
-																	cancerStudyMetadata.toString() +
-																	CancerStudyMetadata.CANCER_STUDY_METADATA_FILE_EXT);
+																	cancerStudyMetadata.getCancerStudyMetadataFilename());
 			if (LOG.isInfoEnabled()) {
 				LOG.info("writeMetadataFile(), meta file: " + metaFile);
 			}
 			PrintWriter writer = new PrintWriter(org.apache.commons.io.FileUtils.openOutputStream(metaFile, false));
 			writer.print("type_of_cancer: " + cancerStudyMetadata.getTumorType() + "\n");
 			writer.print("cancer_study_identifier: " + cancerStudyMetadata + "\n");
-			writer.print("name: " + cancerStudyMetadata.getTumorTypeMetadata().getName() + "\n");
+			String name = (cancerStudyMetadata.getName().length() > 0) ?
+				cancerStudyMetadata.getName() : cancerStudyMetadata.getTumorTypeMetadata().getName();
+			writer.print("name: " + name + "\n");
 			String description = cancerStudyMetadata.getDescription();
 			description = description.replaceAll(CancerStudyMetadata.NUM_CASES_TAG, Integer.toString(numCases));
+			description = description.replaceAll(CancerStudyMetadata.TUMOR_TYPE_TAG,
+												 cancerStudyMetadata.getTumorTypeMetadata().getType());
+			description = description.replaceAll(CancerStudyMetadata.TUMOR_TYPE_NAME_TAG,
+												 cancerStudyMetadata.getTumorTypeMetadata().getName());
 			writer.print("description: " + description + "\n");
+			if (cancerStudyMetadata.getCitation().length() > 0) {
+				writer.print("citation: " + cancerStudyMetadata.getCitation() + "\n");
+			}
+			if (cancerStudyMetadata.getPMID().length() > 0) {
+				writer.print("pmid: " + cancerStudyMetadata.getPMID() + "\n");
+			}
 
 			writer.flush();
 			writer.close();
@@ -535,40 +550,59 @@ class FileUtilsImpl implements org.mskcc.cbio.importer.FileUtils {
 	}
 
 	/**
+	 * Returns an override file (if it exists) for the given portal & cancer study.  The override in this case
+	 * is the override file that a DataMatrix is created from.
+	 *
+	 * Null is returned if an override file is not found.
+	 *
+	 * @param portalMetadata PortalMetadata
+	 * @param cancerStudyMetadata CancerStudyMetadata
+	 * @param filename String
+	 * @return File
+	 * @throws Exception
+	 */
+	@Override
+	public File getOverrideFile(PortalMetadata portalMetadata, CancerStudyMetadata cancerStudyMetadata, String filename) throws Exception {
+
+		File overrideFile = org.apache.commons.io.FileUtils.getFile(portalMetadata.getOverrideDirectory(),
+																	cancerStudyMetadata.getStudyPath(),
+																	filename);
+		return (overrideFile.exists()) ? overrideFile : null;
+	}
+
+	/**
 	 * If it exists, moves an override file into the proper
 	 * location in the given portals staging area
 	 *
 	 * @param portalMetadata PortalMetadata
-	 * @param dataSourcesMetadata DataSourcesMetadata
 	 * @param cancerStudyMetadata CancerStudyMetadata
-	 * @param datatypeMetadata DatatypeMetadata
+	 * @param filename String
+	 * @throws Exception
 	 */
 	@Override
-	public void applyOverride(PortalMetadata portalMetadata, DataSourcesMetadata dataSourcesMetadata,
-							  CancerStudyMetadata cancerStudyMetadata, DatatypeMetadata datatypeMetadata) throws Exception {
-
-		// construct staging file (same in portal staging area or override directory)
-		String stagingFilename = datatypeMetadata.getStagingFilename();
-		stagingFilename = stagingFilename.replaceAll(DatatypeMetadata.CANCER_STUDY_TAG, cancerStudyMetadata.toString());
+	public void applyOverride(PortalMetadata portalMetadata, CancerStudyMetadata cancerStudyMetadata, String filename) throws Exception {
 
 		// check for override file
-		File overrideFile = org.apache.commons.io.FileUtils.getFile(dataSourcesMetadata.getOverrideDirectory(),
+		File overrideFile = org.apache.commons.io.FileUtils.getFile(portalMetadata.getOverrideDirectory(),
 																	cancerStudyMetadata.getStudyPath(),
-																	stagingFilename);
+																	filename);
 		if (overrideFile.exists()) {
 			File stagingFile = org.apache.commons.io.FileUtils.getFile(portalMetadata.getStagingDirectory(),
 																	   cancerStudyMetadata.getStudyPath(),
-																	   stagingFilename);
-			// sanity check
-			if (!stagingFile.exists()) {
-				if (LOG.isInfoEnabled()) {
-					LOG.info("applyOverride(), overrideFile exists, but stagingFile is missing: " + stagingFile.getCanonicalPath());
-				}
-				return;
+																	   filename);
+
+			if (LOG.isInfoEnabled()) {
+				LOG.info("applyOverride(), override file exists for " + stagingFile.getCanonicalPath() + ": " + 
+						 overrideFile.getCanonicalPath());
 			}
 
 			// copy override file to staging area
-			org.apache.commons.io.FileUtils.copyFile(overrideFile, stagingFile);
+			if (overrideFile.isFile()) {
+				org.apache.commons.io.FileUtils.copyFile(overrideFile, stagingFile);
+			}
+			else {
+				org.apache.commons.io.FileUtils.copyDirectory(overrideFile, stagingFile);
+			}
 		}
 	}
 

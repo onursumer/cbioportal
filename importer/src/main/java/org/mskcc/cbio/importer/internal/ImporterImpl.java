@@ -230,24 +230,17 @@ class ImporterImpl implements Importer {
 
 			// import cancer name / metadata
 			String[] args = { cancerStudyMetadata.toString(),
-							  (rootDirectory +
-							   cancerStudyMetadata.getStudyPath() +
-							   File.separator + cancerStudyMetadata.toString() +
-							   CancerStudyMetadata.CANCER_STUDY_METADATA_FILE_EXT) };
+							  rootDirectory + cancerStudyMetadata.getCancerStudyMetadataFilename() };
 			ImportCancerStudy.main(args);
 
 			// iterate over all datatypes
 			for (DatatypeMetadata datatypeMetadata : config.getDatatypeMetadata(portalMetadata, cancerStudyMetadata)) {
 
 				// get the metafile/staging file for this cancer_study / datatype
-				String stagingFilename =  (rootDirectory +
-										   cancerStudyMetadata.getStudyPath() +
-										   File.separator + datatypeMetadata.getStagingFilename());
+				String stagingFilename = getImportFilename(rootDirectory, cancerStudyMetadata, datatypeMetadata.getStagingFilename());
 				stagingFilename = stagingFilename.replaceAll(DatatypeMetadata.CANCER_STUDY_TAG, cancerStudyMetadata.toString());
 				if (datatypeMetadata.requiresMetafile()) {
-					String metaFilename = (rootDirectory +
-										   cancerStudyMetadata.getStudyPath() +
-										   File.separator + datatypeMetadata.getMetaFilename());
+					String metaFilename = getImportFilename(rootDirectory, cancerStudyMetadata, datatypeMetadata.getMetaFilename());
 					args = new String[] { "--data", stagingFilename, "--meta", metaFilename, "--loadMode", "bulkLoad" };
 				}
 				else {
@@ -294,5 +287,18 @@ class ImporterImpl implements Importer {
 
 		// outta here
 		return null;
+	}
+
+	/**
+	 * Helper function to determine the proper staging or meta file to import.
+	 *
+	 * @param rootDirectory String
+	 * @param cancerStudyMetadata CancerStudyMetadata
+	 * @param filename String
+	 * @return String
+	 * @throws Exception
+	 */
+	private String getImportFilename(String rootDirectory, CancerStudyMetadata cancerStudyMetadata, String filename) throws Exception {
+		return (rootDirectory + cancerStudyMetadata.getStudyPath() + File.separator + filename);
 	}
 }

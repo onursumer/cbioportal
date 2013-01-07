@@ -42,19 +42,25 @@ public class CancerStudyMetadata {
 	// this is value in worsheet-matrix cell if cancer study is in a desired portal
 	public static final String CANCER_STUDY_IN_PORTAL_INDICATOR = "x";
 
-	// file extension of metadata file
-	public static final String CANCER_STUDY_METADATA_FILE_EXT = ".txt";
+	// file/file extension of metadata file
+	private static final String CANCER_STUDY_METADATA_FILE_EXT = ".txt";
+	private static final String CANCER_STUDY_METADATA_FILE = "meta_study" + CANCER_STUDY_METADATA_FILE_EXT;
 
 	// cancer study identifier delimiter (used in metadata files)
 	private static final String CANCER_STUDY_IDENTIFIER_DELIMITER = "_";
 
-	// this is tag to replace in description
+	// these are the tags to replace in description
 	public static final String NUM_CASES_TAG = "<NUM_CASES>";
+	public static final String TUMOR_TYPE_TAG = "<TUMOR_TYPE>";
+	public static final String TUMOR_TYPE_NAME_TAG = "<TUMOR_TYPE_NAME>";
 
 	// bean properties
+	private String name;
 	private String tumorType;
 	private TumorTypeMetadata tumorTypeMetadata;
 	private String description;
+	private String citation;
+	private String pmid;
 	private String center;
 	private String lab;
 
@@ -70,7 +76,7 @@ public class CancerStudyMetadata {
      */
     public CancerStudyMetadata(String[] properties) {
 
-		if (properties.length != 4) {
+		if (properties.length < 5) {
             throw new IllegalArgumentException("corrupt properties array passed to contructor");
 		}
 
@@ -90,9 +96,13 @@ public class CancerStudyMetadata {
 		}
 		// knock off trailing file separator
 		this.lab = (this.lab.length() > 0) ? this.lab.substring(0, this.lab.length()-1) : this.lab;
-		this.description = properties[1].trim();
+		this.name = properties[1].trim();
+		this.description = properties[2].trim();
+		this.citation = properties[3].trim();
+		this.pmid = properties[4].trim();
 	}
 
+	public String getName() { return name; }
 	public String getTumorType() { return tumorType; }
 	public TumorTypeMetadata getTumorTypeMetadata() { return tumorTypeMetadata; }
 	public void setTumorTypeMetadata(TumorTypeMetadata tumorTypeMetadata) { this.tumorTypeMetadata = tumorTypeMetadata; }
@@ -104,6 +114,13 @@ public class CancerStudyMetadata {
 		return (tumorType + File.separator + center + suffix);
 	}
 	public String getDescription() { return description; }
+	public String getCitation() { return citation; }
+	public String getPMID() { return pmid; }
+
+	public String getCancerStudyMetadataFilename() {
+		//return getStudyPath() + File.separator + toString() + CANCER_STUDY_METADATA_FILE_EXT;
+		return CANCER_STUDY_METADATA_FILE;
+	}
 
 	public String toString() {
 		return (tumorType + CANCER_STUDY_IDENTIFIER_DELIMITER +
