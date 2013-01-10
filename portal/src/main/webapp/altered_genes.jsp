@@ -35,7 +35,7 @@
     <br/>
     <div>
         <label><b>Threshold of number samples:</b></label>
-        <input type='text' id='threshold-number-samples'>
+        <input type='text' id='threshold-number-samples' value="10">
     </div>
     <br/>
     <div>
@@ -81,7 +81,7 @@ var template = function(name) {
 };
 
 $(document).ready(function(){
-    AlteredGene.CancerStudies.boot($('#main'));
+    AlteredGene.boot($('#main'));
 });
 
 //    $('#data-set-table').dataTable({
@@ -131,7 +131,14 @@ AlteredGene.Form = Backbone.View.extend({
     },
     submit: function(event) {
         event.preventDefault();
-        alert("hello");
+        var studies = [];
+        var studyCheckBoxes = this.$('#cancer-study-selection input:checkbox:checked');
+        for (var i=0, len=studyCheckBoxes.length; i<len; i++) {
+            studies.push(studyCheckBoxes[i].value);
+        }
+        var type = this.$('#data-type').val();
+        var threshold = this.$('#threshold-number-samples').val();
+        router.navigate("submit/"+studies.join(",")+"/"+type+"/"+threshold, {trigger: true});
     }
 });
 
@@ -167,24 +174,30 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
     }
 });
 
-AlteredGene.CancerStudies.Router = Backbone.Router.extend({
+AlteredGene.Router = Backbone.Router.extend({
     initialize: function(options) {
         this.el = options.el
     },
     routes: {
-        "": "form"
+        "": "form",
+        "submit/:studies/:type/:threshold": "submit"
     },
     form: function() {
         var view = new AlteredGene.Form();
         view.render();
         this.el.empty();
         this.el.append(view.el);
+    },
+    submit: function(studies, type, threshold) {
+        alert("submit/"+studies+"/"+type+"/"+threshold);
+        this.el.empty();
     }
 });
 
-AlteredGene.CancerStudies.boot = function(container) {
+var router;
+AlteredGene.boot = function(container) {
     container = $(container);
-    var router = new AlteredGene.CancerStudies.Router({el: container});
+    router = new AlteredGene.Router({el: container});
     Backbone.history.start();
 }
 
