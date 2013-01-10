@@ -799,7 +799,7 @@ public final class DaoMutationEvent {
      * @return Map<keyword, Map<CancerStudyId, NumberOfSamples>>
      */
     public static Map<String,Map<Integer, Integer>> getMutatationStatistics(String concatCancerStudyIds,
-            String type) throws DaoException {
+            String type, int thresholdSamples) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -811,22 +811,35 @@ public final class DaoMutationEvent {
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
                     + "AND `KEYWORD` LIKE  '%" + type + "%' "
-                    + "GROUP BY gp.`GENETIC_PROFILE_ID`, `KEYWORD`";
+                    + "GROUP BY gp.`GENETIC_PROFILE_ID`, `KEYWORD` "
+                    + "ORDER BY `KEYWORD` ASC";
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
             Map<String,Map<Integer, Integer>> map = new HashMap<String,Map<Integer, Integer>>();
-            while (rs.next()) {               
+            String currentKeyword = null;
+            Map<Integer, Integer> mapStudyCount = null;
+            int totalCountPerKeyword = 0;
+            while (rs.next()) {
                 int cancerStudyId = rs.getInt(1);
                 String keyword = rs.getString(2);
-                int count = rs.getInt(3); 
+                int count = rs.getInt(3);
                 
-                Map<Integer, Integer> mapStudyCount = map.get(keyword);
-                if (mapStudyCount==null) {
+                if (!keyword.equals(currentKeyword)) {
+                    if (totalCountPerKeyword>=thresholdSamples) {
+                        map.put(currentKeyword, mapStudyCount);
+                    }
+                    currentKeyword = keyword;
                     mapStudyCount = new HashMap<Integer, Integer>();
-                    map.put(keyword, mapStudyCount);
+                    totalCountPerKeyword = 0;
                 }
+                
                 mapStudyCount.put(cancerStudyId, count);
+                totalCountPerKeyword += count;
+            }
+            
+            if (totalCountPerKeyword>=thresholdSamples) {
+                map.put(currentKeyword, mapStudyCount);
             }
             
             return map;
