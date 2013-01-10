@@ -71,23 +71,47 @@ public class MutationsJSON extends HttpServlet {
     private void processStatisticsRequest(HttpServletRequest request,
             HttpServletResponse response)
             throws ServletException, IOException {
-        String studyIds = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
+        String studyStableIds = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
         String type = request.getParameter(MUTATION_TYPE);
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
         
         Map<String,Map<Integer, Integer>> mapKeywordStudyCount = Collections.emptyMap();
+        Map<Integer,String> cancerStudyIdMapping = new HashMap<Integer,String>();
         
         try {
-            mapKeywordStudyCount = DaoMutationEvent.getMutatationStatistics(studyIds, type, threshold);
+            StringBuilder studyIds = new StringBuilder();
+            for (String stableId : studyStableIds.split("[, ]")) {
+                CancerStudy study = DaoCancerStudy.getCancerStudyByStableId(stableId);
+                if (study!=null) {
+                    studyIds.append(study.getInternalId()).append(",");
+                    cancerStudyIdMapping.put(study.getInternalId(), stableId);
+                }
+            }
+            if (studyIds.length()>0) {
+                studyIds.deleteCharAt(studyIds.length()-1);
+            }
+            
+            mapKeywordStudyCount = DaoMutationEvent.getMutatationStatistics(
+                    studyIds.toString(), type, threshold);
         } catch (DaoException ex) {
             throw new ServletException(ex);
+        }
+        
+        Map<String,Map<String, Integer>> map = new HashMap<String,Map<String, Integer>>(mapKeywordStudyCount.size());
+        for (Map.Entry<String,Map<Integer, Integer>> entry1 : mapKeywordStudyCount.entrySet()) {
+            String keyword = entry1.getKey();
+            Map<String, Integer> map1 = new HashMap<String, Integer>(entry1.getValue().size());
+            for (Map.Entry<Integer, Integer> entry2 : entry1.getValue().entrySet()) {
+                map1.put(cancerStudyIdMapping.get(entry2.getKey()), entry2.getValue());
+            }
+            map.put(keyword, map1);
         }
 
         response.setContentType("application/json");
         
         PrintWriter out = response.getWriter();
         try {
-            JSONValue.writeJSONString(mapKeywordStudyCount, out);
+            JSONValue.writeJSONString(map, out);
         } finally {            
             out.close();
         }
