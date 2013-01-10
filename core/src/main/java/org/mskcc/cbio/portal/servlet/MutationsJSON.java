@@ -92,7 +92,7 @@ public class MutationsJSON extends HttpServlet {
             }
             
             mapKeywordStudyCount = DaoMutationEvent.getMutatationStatistics(
-                    studyIds.toString(), type, threshold);
+                    studyIds.toString(), type);
         } catch (DaoException ex) {
             throw new ServletException(ex);
         }
@@ -101,10 +101,14 @@ public class MutationsJSON extends HttpServlet {
         for (Map.Entry<String,Map<Integer, Integer>> entry1 : mapKeywordStudyCount.entrySet()) {
             String keyword = entry1.getKey();
             Map<String, Integer> map1 = new HashMap<String, Integer>(entry1.getValue().size());
+            int numSamples = 0;
             for (Map.Entry<Integer, Integer> entry2 : entry1.getValue().entrySet()) {
                 map1.put(cancerStudyIdMapping.get(entry2.getKey()), entry2.getValue());
+                numSamples += entry2.getValue();
             }
-            map.put(keyword, map1);
+            if (numSamples>threshold) {
+                map.put(keyword, map1);
+            }
         }
 
         response.setContentType("application/json");

@@ -799,7 +799,7 @@ public final class DaoMutationEvent {
      * @return Map<keyword, Map<CancerStudyId, NumberOfSamples>>
      */
     public static Map<String,Map<Integer, Integer>> getMutatationStatistics(String concatCancerStudyIds,
-            String type, int thresholdSamples) throws DaoException {
+            String type) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -816,14 +816,10 @@ public final class DaoMutationEvent {
             rs = pstmt.executeQuery();
             
             Map<String,Map<Integer, Integer>> map = new HashMap<String,Map<Integer, Integer>>();
-            while (rs.next()) {
-                int count = rs.getInt(3);
-                if (count < thresholdSamples) {
-                    continue;
-                }
-                
+            while (rs.next()) {               
                 int cancerStudyId = rs.getInt(1);
                 String keyword = rs.getString(2);
+                int count = rs.getInt(3); 
                 
                 Map<Integer, Integer> mapStudyCount = map.get(keyword);
                 if (mapStudyCount==null) {
