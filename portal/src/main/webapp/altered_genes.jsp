@@ -174,6 +174,54 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
     }
 });
 
+AlteredGene.Alteration = Backbone.Model.extend({
+});
+
+AlteredGene.Alterations = Backbone.Collection.extend({
+    initialize: function(models, options) {
+        this.studies = options.studies;
+        this.type = options.type;
+        this.threshold = options.threshold;
+    },
+    model: AlteredGene.Alteration,
+    url: 'mutations.json',
+    parse: function(statistics) {
+        var ret = [];
+        for (var alteration in statistics) {
+            var studyStatistics = statistics[alteration];
+            var row = {};
+            row['alteration'] = alteration;
+            row['statistics'] = studyStatistics;
+            
+            var totalSamples = 0;
+            for (var study in studyStatistics)
+                totalSamples += studyStatistics[study];
+            
+            row['samples'] = totalSamples;
+            
+            ret.push(row);
+        }
+        return ret;
+    }
+});
+
+AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
+    initialize: function(options) {
+      this.alterations = new AlteredGene.Alterations([],options);
+      this.alterations.on('sync', this.render, this);
+      this.alterations.fetch({data:options});
+    },
+    render: function() {
+        if (this.alterations.length==0) {
+            this.$el.html("<img src=\"images/ajax-loader.gif\"/> Calculating ...");
+            return;
+        }
+        
+        this.$el.html("");
+        this.$el.html("there are "+this.alterations.length+" alterations.");
+    }
+});
+
 AlteredGene.Router = Backbone.Router.extend({
     initialize: function(options) {
         this.el = options.el
@@ -191,6 +239,19 @@ AlteredGene.Router = Backbone.Router.extend({
     submit: function(studies, type, threshold) {
         alert("submit/"+studies+"/"+type+"/"+threshold);
         this.el.empty();
+        if (type=="missense") {
+            var view = new AlteredGene.Alterations.MissenseTable(
+                {
+                    'cmd': 'statistics',
+                    'cancer_study_id': studies,
+                    'type': type,
+                    'threshold_samples': threshold
+                });
+            view.render();
+            this.el.append(view.el);
+        } else {
+            this.el.append("under development");
+        }
     }
 });
 
