@@ -18,7 +18,7 @@
 </form>
 <jsp:include page="WEB-INF/jsp/global/xdebug.jsp" flush="true" />
 
-<script type="text/x-mustache-template" id="form-template">
+<script type="text/template" id="form-template">
     <div>
         <label><b>Cancer studies:</b></label></br>
         <div id="cancer-study-selection"></div>
@@ -43,8 +43,13 @@
     </div>
 </script>
     
-<script type="text/x-mustache-template" id="cancer-study-template">
+<script type="text/template" id="cancer-study-template">
     &nbsp;&nbsp;<input type="checkbox" name="{{ id }}" value="{{ id }}">{{ name }}
+</script>
+
+<script type="text/template" id="datatables-template">
+    <table cellpadding="0" cellspacing="0" border="0" class="display" id="{{ table_id }}">
+    </table>
 </script>
 
 <style type="text/css" title="currentStyle"> 
@@ -205,11 +210,57 @@ AlteredGene.Alterations = Backbone.Collection.extend({
     }
 });
 
+$.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
+{
+    if ( typeof sNewSource != 'undefined' && sNewSource != null )
+    {
+        oSettings.sAjaxSource = sNewSource;
+    }
+    this.oApi._fnProcessingDisplay( oSettings, true );
+    var that = this;
+    var iStart = oSettings._iDisplayStart;
+    var aData = [];
+ 
+    this.oApi._fnServerParams( oSettings, aData );
+     
+    oSettings.fnServerData( oSettings.sAjaxSource, aData, function(json) {
+        /* Clear the old information from the table */
+        that.oApi._fnClearTable( oSettings );
+         
+        /* Got the data - add it to the table */
+        var aData =  (oSettings.sAjaxDataProp !== "") ?
+            that.oApi._fnGetObjectDataFn( oSettings.sAjaxDataProp )( json ) : json;
+         
+        for ( var i=0 ; i<aData.length ; i++ )
+        {
+            that.oApi._fnAddData( oSettings, aData[i] );
+        }
+         
+        oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
+        that.fnDraw();
+         
+        if ( typeof bStandingRedraw != 'undefined' && bStandingRedraw === true )
+        {
+            oSettings._iDisplayStart = iStart;
+            that.fnDraw( false );
+        }
+         
+        that.oApi._fnProcessingDisplay( oSettings, false );
+         
+        /* Callback user function - for event handlers etc */
+        if ( typeof fnCallback == 'function' && fnCallback != null )
+        {
+            fnCallback( oSettings );
+        }
+    }, oSettings );
+}
+
 AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
+    template: template("datatables"),
     initialize: function(options) {
-      this.alterations = new AlteredGene.Alterations([],options);
-      this.alterations.on('sync', this.render, this);
-      this.alterations.fetch({data:options});
+        this.alterations = new AlteredGene.Alterations([],options);
+        this.alterations.on('sync', this.render, this);
+        this.alterations.fetch({data:options});
     },
     render: function() {
         if (this.alterations.length==0) {
@@ -217,8 +268,23 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
             return;
         }
         
-        this.$el.html("");
-        this.$el.html("there are "+this.alterations.length+" alterations.");
+        var alterations = this.alterations;
+        var tableId = "alteration-table";
+        this.$el.html(this.template({table_id:tableId}));
+        var oTable = this.$('#'+tableId).dataTable({
+            "aoColumns": [
+                {"sTitle": "Alteration", "mDataProp":"alteration"},
+                {"sTitle":"Samples", "mDataProp":"samples"},
+                {"sTitle":"Studies", "mDataProp":"statistics"},
+            ],
+            sAjaxSource: "",
+            sAjaxDataProp: "",
+            fnServerData: function( sSource, aoData, fnCallback ){
+                console.log(alterations.toJSON());
+                fnCallback(alterations.toJSON());
+            }
+        });
+        oTable.fnReloadAjax();
     }
 });
 
