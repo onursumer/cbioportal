@@ -196,7 +196,7 @@ AlteredGene.Alterations = Backbone.Collection.extend({
             var studyStatistics = statistics[alteration];
             var row = {};
             row['alteration'] = alteration;
-            row['statistics'] = studyStatistics;
+            row['frequency'] = studyStatistics;
             
             var totalSamples = 0;
             for (var study in studyStatistics)
@@ -209,51 +209,6 @@ AlteredGene.Alterations = Backbone.Collection.extend({
         return ret;
     }
 });
-
-$.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
-{
-    if ( typeof sNewSource != 'undefined' && sNewSource != null )
-    {
-        oSettings.sAjaxSource = sNewSource;
-    }
-    this.oApi._fnProcessingDisplay( oSettings, true );
-    var that = this;
-    var iStart = oSettings._iDisplayStart;
-    var aData = [];
- 
-    this.oApi._fnServerParams( oSettings, aData );
-     
-    oSettings.fnServerData( oSettings.sAjaxSource, aData, function(json) {
-        /* Clear the old information from the table */
-        that.oApi._fnClearTable( oSettings );
-         
-        /* Got the data - add it to the table */
-        var aData =  (oSettings.sAjaxDataProp !== "") ?
-            that.oApi._fnGetObjectDataFn( oSettings.sAjaxDataProp )( json ) : json;
-         
-        for ( var i=0 ; i<aData.length ; i++ )
-        {
-            that.oApi._fnAddData( oSettings, aData[i] );
-        }
-         
-        oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
-        that.fnDraw();
-         
-        if ( typeof bStandingRedraw != 'undefined' && bStandingRedraw === true )
-        {
-            oSettings._iDisplayStart = iStart;
-            that.fnDraw( false );
-        }
-         
-        that.oApi._fnProcessingDisplay( oSettings, false );
-         
-        /* Callback user function - for event handlers etc */
-        if ( typeof fnCallback == 'function' && fnCallback != null )
-        {
-            fnCallback( oSettings );
-        }
-    }, oSettings );
-}
 
 AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
     template: template("datatables"),
@@ -269,22 +224,67 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
         }
         
         var alterations = this.alterations;
+        var indices = [];
+        for (var i=0, nEvents=alterations.length; i<nEvents; i++) {
+                indices.push([i]);
+        }
+        
         var tableId = "alteration-table";
         this.$el.html(this.template({table_id:tableId}));
         var oTable = this.$('#'+tableId).dataTable({
+            "sDom": '<"H"fr>t<"F"<"datatable-paging"pl>>', // selectable columns
+            "bJQueryUI": true,
+            "bDestroy": true,
+            "aaData": indices,
             "aoColumns": [
-                {"sTitle": "Alteration", "mDataProp":"alteration"},
-                {"sTitle":"Samples", "mDataProp":"samples"},
-                {"sTitle":"Studies", "mDataProp":"statistics"},
+                {"sTitle":"Index"},
+                {"sTitle": "Alteration"},
+                {"sTitle":"Samples"}
             ],
-            sAjaxSource: "",
-            sAjaxDataProp: "",
-            fnServerData: function( sSource, aoData, fnCallback ){
-                console.log(alterations.toJSON());
-                fnCallback(alterations.toJSON());
-            }
+            "aoColumnDefs":[
+                {
+                    "aTargets": [ 0 ],
+                    "bVisible": false,
+                    "mData" : 0
+                },
+                {
+                    "aTargets": [ 1 ],
+                    "mDataProp": function(source,type,value) {
+                        if (type==='set') {
+                            return;
+                        } else {
+                            return alterations.at(source[0]).get('alteration');
+                        }
+                    }
+                },
+                {
+                    "aTargets": [ 2 ],
+                    "mDataProp": function(source,type,value) {
+                        if (type==='set') {
+                            return;
+                        } else if (type==='display') {
+                            var samples = alterations.at(source[0]).get('samples');
+                            return samples;
+                        } else if (type==='sort') {
+                            return alterations.at(source[0]).get('samples');
+                        } else if (type==='type') {
+                            return 0.0;
+                        } else {
+                            return alterations.at(source[0]).get('samples');
+                        }
+                    }
+                }
+            ],
+            "aaSorting": [[2,'desc']],
+            "oLanguage": {
+                "sInfo": "&nbsp;&nbsp;(_START_ to _END_ of _TOTAL_)&nbsp;&nbsp;",
+                "sInfoFiltered": "",
+                "sLengthMenu": "Show _MENU_ per page"
+            },
+            "iDisplayLength": -1,
+            "aLengthMenu": [[5,10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]]
         });
-        oTable.fnReloadAjax();
+        oTable.css("width","100%");
     }
 });
 
@@ -303,7 +303,7 @@ AlteredGene.Router = Backbone.Router.extend({
         this.el.append(view.el);
     },
     submit: function(studies, type, threshold) {
-        alert("submit/"+studies+"/"+type+"/"+threshold);
+        //alert("submit/"+studies+"/"+type+"/"+threshold);
         this.el.empty();
         if (type=="missense") {
             var view = new AlteredGene.Alterations.MissenseTable(
