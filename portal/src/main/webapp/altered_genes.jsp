@@ -195,7 +195,10 @@ AlteredGene.Alterations = Backbone.Collection.extend({
         for (var alteration in statistics) {
             var studyStatistics = statistics[alteration];
             var row = {};
-            row['alteration'] = alteration;
+            
+            var ix = alteration.indexOf(" ");
+            row['gene'] = alteration.substring(0,ix);
+            row['alteration'] = alteration.substring(ix);
             row['frequency'] = studyStatistics;
             
             var totalSamples = 0;
@@ -238,6 +241,7 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
             "aaData": indices,
             "aoColumns": [
                 {"sTitle":"Index"},
+                {"sTitle": "Gene"},
                 {"sTitle": "Alteration"},
                 {"sTitle":"Samples"}
             ],
@@ -253,12 +257,22 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
                         if (type==='set') {
                             return;
                         } else {
-                            return alterations.at(source[0]).get('alteration');
+                            return alterations.at(source[0]).get('gene');
                         }
                     }
                 },
                 {
                     "aTargets": [ 2 ],
+                    "mDataProp": function(source,type,value) {
+                        if (type==='set') {
+                            return;
+                        } else {
+                            return alterations.at(source[0]).get('alteration');
+                        }
+                    }
+                },
+                {
+                    "aTargets": [ 3 ],
                     "mDataProp": function(source,type,value) {
                         if (type==='set') {
                             return;
@@ -275,7 +289,7 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
                     }
                 }
             ],
-            "aaSorting": [[2,'desc']],
+            "aaSorting": [[3,'desc']],
             "oLanguage": {
                 "sInfo": "&nbsp;&nbsp;(_START_ to _END_ of _TOTAL_)&nbsp;&nbsp;",
                 "sInfoFiltered": "",
