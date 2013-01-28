@@ -87,33 +87,68 @@ jQuery.fn.dataTableExt.oSort['predicted-impact-col-desc']  = function(a,b) {
 };
 
 /**
- * Ascending sort function for COSMIC column.
+ * Ascending sort function for columns having int within label tag.
  */
-jQuery.fn.dataTableExt.oSort['cosmic-col-asc'] = function(a,b) {
-    var av = _getCosmicTextValue(a);
-    var bv = _getCosmicTextValue(b);
+jQuery.fn.dataTableExt.oSort['label-int-col-asc'] = function(a,b) {
+    var av = _getLabelTextIntValue(a);
+    var bv = _getLabelTextIntValue(b);
 
     return _compareSortAsc(a, b, av, bv);
 };
 
 /**
- * Descending sort function for COSMIC column.
+ * Descending sort function for columns having int within label tag.
  */
-jQuery.fn.dataTableExt.oSort['cosmic-col-desc'] = function(a,b) {
-    var av = _getCosmicTextValue(a);
-    var bv = _getCosmicTextValue(b);
+jQuery.fn.dataTableExt.oSort['label-int-col-desc'] = function(a,b) {
+    var av = _getLabelTextIntValue(a);
+    var bv = _getLabelTextIntValue(b);
 
     return _compareSortDesc(a, b, av, bv);
 };
 
 /**
- * Helper function for COSMIC sorting.
+ * Ascending sort function for columns having float within label tag.
  */
-function _getCosmicTextValue(a)
+jQuery.fn.dataTableExt.oSort['label-float-col-asc'] = function(a,b) {
+    var av = _getLabelTextFloatValue(a);
+    var bv = _getLabelTextFloatValue(b);
+
+    return _compareSortAsc(a, b, av, bv);
+};
+
+/**
+ * Descending sort function for columns having float within label tag.
+ */
+jQuery.fn.dataTableExt.oSort['label-float-col-desc'] = function(a,b) {
+    var av = _getLabelTextFloatValue(a);
+    var bv = _getLabelTextFloatValue(b);
+
+    return _compareSortDesc(a, b, av, bv);
+};
+
+/**
+ * Helper function for sorting int values within label tag.
+ */
+function _getLabelTextIntValue(a)
 {
     if (a.indexOf("label") != -1)
     {
         return parseInt($(a).text());
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+/**
+ * Helper function for sorting float values within label tag.
+ */
+function _getLabelTextFloatValue(a)
+{
+    if (a.indexOf("label") != -1)
+    {
+        return parseFloat($(a).text());
     }
     else
     {
@@ -214,9 +249,12 @@ function drawMutationTable(data)
         "aoColumnDefs":[
             {"sType": 'aa-change-col',
                 "aTargets": [ 1 ]},
-            {"sType": 'cosmic-col',
+            {"sType": 'label-int-col',
                 "sClass": "right-align-td",
-                "aTargets": [ 3 ]},
+                "aTargets": [3,15,16,18,19]},
+            {"sType": 'label-float-col',
+                "sClass": "right-align-td",
+                "aTargets": [14,17]},
             {"sType": 'predicted-impact-col',
                 "aTargets": [ 4 ]},
             {"asSorting": ["desc", "asc"],
@@ -230,11 +268,15 @@ function drawMutationTable(data)
 
     var cols = oTable.fnSettings().aoColumns.length;
 
-    // hide special gene columns by default
+    // hide special gene columns and less important columns by default
     for (var col=9; col<cols; col++)
     {
         oTable.fnSetColumnVis( col, false );
     }
+
+	// show frequency columns by default
+	oTable.fnSetColumnVis(14, true);
+	oTable.fnSetColumnVis(17, true);
 
     oTable.css("width", "100%");
 }
@@ -320,9 +362,17 @@ function _getMutationTableHeaders(data)
     headers.push(data.header.mutationStatus);
     headers.push(data.header.validationStatus);
     headers.push(data.header.sequencingCenter);
-    headers.push(data.header.position);
+    headers.push(data.header.chr);
+    headers.push(data.header.startPos);
+    headers.push(data.header.endPos);
     headers.push(data.header.referenceAllele);
     headers.push(data.header.variantAllele);
+    headers.push(data.header.tumorFreq);
+    headers.push(data.header.tumorAltCount);
+    headers.push(data.header.tumorRefCount);
+    headers.push(data.header.normalFreq);
+    headers.push(data.header.normalAltCount);
+    headers.push(data.header.normalRefCount);
 
     // special gene headers
     for (var i=0; i < data.header.specialGeneHeaders.length; i++)
@@ -351,9 +401,17 @@ function _getMutationTableHeaderTip(header)
         "vs": "Validation Status",
         "center": "Sequencing Center",
         "build": "NCBI Build Number",
-        "position": "Position",
+        "chr": "Chromosome",
+        "start pos": "Start Position",
+        "end pos": "End Position",
         "ref": "Reference Allele",
-        "var": "Variant Allele"};
+        "var": "Variant Allele",
+        "allele freq (t)": "Variant allele frequency in the tumor sample",
+        "allele freq (n)": "Variant allele frequency in the normal sample",
+        "var ref": "Variant Ref Count",
+        "var alt": "Variant Alt Count",
+        "norm ref": "Normal Ref Count",
+        "norm alt": "Normal Alt Count"};
 
     return tooltipMap[header.toLowerCase()];
 }
@@ -530,6 +588,39 @@ function _getMutationTableRows(data)
         return html;
     };
 
+    var getAlleleFreqHtml = function(frequency, alt, ref) {
+		var html;
+        var tip = "<b>" + alt + "</b> variant reads out of <b>" + (alt + ref) + "</b> total";
+
+        if (frequency == null)
+        {
+            html = "<label>NA</label>";
+        }
+        else
+        {
+            html = '<label class="mutation_table_allele_freq simple-tip" alt="' + tip + '">' +
+                   frequency.toFixed(2) + '</label>';
+        }
+
+        return html;
+    };
+
+	var getAlleleCountHtml = function(count) {
+        var html;
+
+        if (count == null)
+        {
+            html = "<label>NA</label>";
+        }
+        else
+        {
+            html = '<label class="mutation_table_allele_count">' +
+                   + count + '</label>';
+        }
+
+        return html;
+    };
+
     // generate rows as HTML
 
     var row;
@@ -551,11 +642,23 @@ function _getMutationTableRows(data)
                             data.mutations[i].msaLink));
         row.push(getPdbLinkHtml(data.mutations[i].pdbLink));
         row.push(getMutationStatusHtml(data.mutations[i].mutationStatus.toLowerCase()));
-        row.push(getValidationStatusHtml(data.mutations[i].validationStatus.toLowerCase()));// TODO "not tested"
+        row.push(getValidationStatusHtml(data.mutations[i].validationStatus.toLowerCase()));
         row.push(data.mutations[i].sequencingCenter);
-        row.push(data.mutations[i].position);
+        row.push(data.mutations[i].chr);
+        row.push(data.mutations[i].startPos);
+        row.push(data.mutations[i].endPos);
         row.push(data.mutations[i].referenceAllele);
         row.push(data.mutations[i].variantAllele);
+        row.push(getAlleleFreqHtml(data.mutations[i].tumorFreq,
+                data.mutations[i].tumorAltCount,
+                data.mutations[i].tumorRefCount));
+        row.push(getAlleleCountHtml(data.mutations[i].tumorAltCount));
+        row.push(getAlleleCountHtml(data.mutations[i].tumorRefCount));
+        row.push(getAlleleFreqHtml(data.mutations[i].normalFreq,
+                data.mutations[i].normalAltCount,
+                data.mutations[i].normalRefCount));
+        row.push(getAlleleCountHtml(data.mutations[i].normalAltCount));
+        row.push(getAlleleCountHtml(data.mutations[i].normalRefCount));
 
         //special gene data
         for (var j=0; j < data.mutations[i].specialGeneData.length; j++)

@@ -41,6 +41,7 @@ import org.mskcc.cbio.importer.model.ReferenceMetadata;
 import org.mskcc.cbio.importer.model.CancerStudyMetadata;
 import org.mskcc.cbio.importer.model.DataSourcesMetadata;
 import org.mskcc.cbio.importer.util.Shell;
+import org.mskcc.cbio.importer.util.MetadataUtils;
 
 import org.mskcc.cbio.cgds.scripts.ImportCaseList;
 import org.mskcc.cbio.cgds.scripts.ImportCancerStudy;
@@ -51,6 +52,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.lang.reflect.Method;
 
@@ -60,7 +62,7 @@ import java.lang.reflect.Method;
 class ImporterImpl implements Importer {
 
 	// our logger
-	private static Log LOG = LogFactory.getLog(ImporterImpl.class);
+	private static final Log LOG = LogFactory.getLog(ImporterImpl.class);
 
 	// ref to configuration
 	private Config config;
@@ -90,10 +92,13 @@ class ImporterImpl implements Importer {
 	 * Imports data for use in the given portal.
 	 *
      * @param portal String
+	 * @param initPortalDatabase Boolean
+	 * @param initTumorTypes Boolean
+	 * @param importReferenceData Boolean
 	 * @throws Exception
 	 */
     @Override
-	public void importData(String portal) throws Exception {
+	public void importData(String portal, Boolean initPortalDatabase, Boolean initTumorTypes, Boolean importReferenceData) throws Exception {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("importData()");
@@ -113,33 +118,41 @@ class ImporterImpl implements Importer {
             return;
         }
 
-		// clobber db
-		if (LOG.isInfoEnabled()) {
-			LOG.info("importData(), clobbering existing database...");
-		}
-		databaseUtils.createDatabase(databaseUtils.getPortalDatabaseName(), true);
-
-		// use mysql to create new schema
-		String[] command = new String[] {"mysql",
-										 "--user=" + databaseUtils.getDatabaseUser(),
-										 "--password=" + databaseUtils.getDatabasePassword(),
-										 databaseUtils.getPortalDatabaseName(),
-										 "-e",
-										 "source " + databaseUtils.getDatabaseSchemaCanonicalPath()};
-		if (LOG.isInfoEnabled()) {
-			LOG.info("executing: " + Arrays.asList(command));
-		}
-		if (Shell.exec(Arrays.asList(command), ".")) {
+		// init portal db if desired
+		if (initPortalDatabase) {
 			if (LOG.isInfoEnabled()) {
-				LOG.info("create schema is complete.");
+				LOG.info("importData(), clobbering existing database...");
+			}
+			databaseUtils.createDatabase(databaseUtils.getPortalDatabaseName(), false);
+			if (databaseUtils.executeScript(databaseUtils.getPortalDatabaseName(),
+											databaseUtils.getPortalDatabaseSchema(),
+											databaseUtils.getDatabaseUser(),
+											databaseUtils.getDatabasePassword())) {
+				if (LOG.isInfoEnabled()) {
+					LOG.info("create schema is complete.");
+				}
+			}
+			else if (LOG.isInfoEnabled()) {
+				LOG.info("error creating schema, aborting...");
+				return;
 			}
 		}
 
-		// import reference data
-		if (LOG.isInfoEnabled()) {
-			LOG.info("importData(), importing reference data...");
+		// import tumor types
+		if (initTumorTypes) {
+			if (LOG.isInfoEnabled()) {
+				LOG.info("importData(), importing tumor types...");
+			}
+			importTumorTypes();
 		}
-		importAllReferenceData();
+
+		// import reference data if desired
+		if (importReferenceData) {
+			if (LOG.isInfoEnabled()) {
+				LOG.info("importData(), importing reference data...");
+			}
+			importAllReferenceData();
+		}
 
 		// load staging files
 		if (LOG.isInfoEnabled()) {
@@ -161,28 +174,27 @@ class ImporterImpl implements Importer {
 	@Override
 	public void importReferenceData(ReferenceMetadata referenceMetadata) throws Exception {
 
-		// we are either going to use a cgds package importer which has a main method
-		// or one of our own classes which implements the Importer interface.
-		// Check for a main method, if found, use it, otherwise assume we have a class
-		// that implements the Importer interface.
+		String importerName = referenceMetadata.getImporterName();
 
-		Method mainMethod = ClassLoader.getMethod(referenceMetadata.getImporterClassName(), "main");
-		if (mainMethod != null) {
-			String [] args = referenceMetadata.getReferenceFile().split(ReferenceMetadata.REFERENCE_FILE_DELIMITER);
-			mainMethod.invoke(null, (Object)args);
+		if (LOG.isInfoEnabled()) {
+			LOG.info("importReferenceData(), importerName: " + importerName);
 		}
-		else {
-			Object[] args = { config, fileUtils, databaseUtils };
-			Importer importer = (Importer)ClassLoader.getInstance(referenceMetadata.getImporterClassName(), args);
-			importer.importReferenceData(referenceMetadata);
+
+		Object[] args = { config, fileUtils, databaseUtils };
+		if (Shell.exec(referenceMetadata, this, args, ".")) {
+			if (LOG.isInfoEnabled()) {
+				LOG.info("importReferenceData(), successfully executed importer.");
+			}
+		}
+		else if (LOG.isInfoEnabled()) {
+			LOG.info("importReferenceData(), failure executing importer.");
 		}
 	}
 
 	/**
-	 * Helper function to import all reference data.
+	 * Helper function to import tumor type metadata.
 	 */
-	private void importAllReferenceData() throws Exception {
-
+	private void importTumorTypes() throws Exception {
 		// tumor types
 		StringBuilder cancerFileContents = new StringBuilder();
 		for (TumorTypeMetadata tumorType : config.getTumorTypeMetadata(Config.ALL)) {
@@ -196,12 +208,15 @@ class ImporterImpl implements Importer {
 		String[] importCancerTypesArgs = { cancerFile.getCanonicalPath() };
 		ImportTypesOfCancers.main(importCancerTypesArgs);
 		cancerFile.delete();
-		
+	}
+
+	/**
+	 * Helper function to import all reference data.
+	 */
+	private void importAllReferenceData() throws Exception {
 		// iterate over all other reference data types
 		for (ReferenceMetadata referenceData : config.getReferenceMetadata(Config.ALL)) {
-			if (referenceData.importIntoPortal()) {
-				importReferenceData(referenceData);
-			}
+			importReferenceData(referenceData);
 		}
 	}
 
@@ -219,7 +234,7 @@ class ImporterImpl implements Importer {
 		for (CancerStudyMetadata cancerStudyMetadata : config.getCancerStudyMetadata(portalMetadata.getName())) {
 
 			// lets determine if cancer study is in staging directory or studies directory
-			String rootDirectory = getCancerStudyRootDirectory(portalMetadata, dataSourcesMetadata, cancerStudyMetadata);
+			String rootDirectory = MetadataUtils.getCancerStudyRootDirectory(portalMetadata, dataSourcesMetadata, cancerStudyMetadata);
 
 			if (rootDirectory == null) {
 				if (LOG.isInfoEnabled()) {
@@ -229,8 +244,13 @@ class ImporterImpl implements Importer {
 			}
 
 			// import cancer name / metadata
-			String[] args = { cancerStudyMetadata.toString(),
-							  rootDirectory + cancerStudyMetadata.getCancerStudyMetadataFilename() };
+			String cancerStudyMetadataFile = (rootDirectory + File.separator +
+											  cancerStudyMetadata.getStudyPath() + File.separator +
+											  cancerStudyMetadata.getCancerStudyMetadataFilename());
+			String[] args = { cancerStudyMetadataFile };
+			if (LOG.isInfoEnabled()) {
+				LOG.info("loadStagingFiles(), Importing cancer study metafile: " + cancerStudyMetadataFile);
+			}
 			ImportCancerStudy.main(args);
 
 			// iterate over all datatypes
@@ -239,6 +259,13 @@ class ImporterImpl implements Importer {
 				// get the metafile/staging file for this cancer_study / datatype
 				String stagingFilename = getImportFilename(rootDirectory, cancerStudyMetadata, datatypeMetadata.getStagingFilename());
 				stagingFilename = stagingFilename.replaceAll(DatatypeMetadata.CANCER_STUDY_TAG, cancerStudyMetadata.toString());
+				// datatype might not exists for cancer study
+				if (!(new File(stagingFilename)).exists()) {
+					if (LOG.isInfoEnabled()) {
+						LOG.info("loadStagingFile(), cannot find staging file: " + stagingFilename + ", skipping...");
+					}
+					continue;
+				}
 				if (datatypeMetadata.requiresMetafile()) {
 					String metaFilename = getImportFilename(rootDirectory, cancerStudyMetadata, datatypeMetadata.getMetaFilename());
 					args = new String[] { "--data", stagingFilename, "--meta", metaFilename, "--loadMode", "bulkLoad" };
@@ -246,47 +273,21 @@ class ImporterImpl implements Importer {
 				else {
 					args = new String[] { stagingFilename, cancerStudyMetadata.toString() };
 				}
+				if (LOG.isInfoEnabled()) {
+					LOG.info("loadStagingFile(), attempting to run: " + datatypeMetadata.getImporterClassName() +
+							 ":main(), with args: " + Arrays.asList(args));
+				}
 				Method mainMethod = ClassLoader.getMethod(datatypeMetadata.getImporterClassName(), "main");
 				mainMethod.invoke(null, (Object)args);
 			}
 
 			// process case lists
-			args = new String[] { (rootDirectory + File.separator +
-								   cancerStudyMetadata.getStudyPath() + File.separator + "case_lists") };
+			args = new String[] { (rootDirectory + File.separator + cancerStudyMetadata.getStudyPath() + File.separator + "case_lists") };
+			if (LOG.isInfoEnabled()) {
+				LOG.info("loadStagingFile(), ImportCaseList:main(), with args: " + Arrays.asList(args));
+			}
 			ImportCaseList.main(args);
 		}
-	}
-
-	/**
-	 * Helper function to determine root directory for cancer study to install.
-	 *
-	 * @param portalMetadata PortalMetadata
-	 * @param dataSourcesMetadata Collection<DataSourcesMetadata>
-	 * @param cancerStudyMetadata CancerStudyMetadata
-	 * @return String
-	 */
-	private String getCancerStudyRootDirectory(PortalMetadata portalMetadata,
-											   Collection<DataSourcesMetadata> dataSourcesMetadata,
-											   CancerStudyMetadata cancerStudyMetadata) {
-
-		// check portal staging area - should work for all tcga
-		File cancerStudyDirectory =
-			new File(portalMetadata.getStagingDirectory() + File.separator + cancerStudyMetadata.getStudyPath());
-		if (cancerStudyDirectory.exists()) {
-			return portalMetadata.getStagingDirectory();
-		}
-
-		// made it here, check other datasources 
-		for (DataSourcesMetadata dataSourceMetadata : dataSourcesMetadata) {
-			cancerStudyDirectory =
-				new File(dataSourceMetadata.getDownloadDirectory() + File.separator + cancerStudyMetadata.getStudyPath());
-			if (cancerStudyDirectory.exists()) {
-				return dataSourceMetadata.getDownloadDirectory();
-			}
-		}
-
-		// outta here
-		return null;
 	}
 
 	/**
@@ -299,6 +300,6 @@ class ImporterImpl implements Importer {
 	 * @throws Exception
 	 */
 	private String getImportFilename(String rootDirectory, CancerStudyMetadata cancerStudyMetadata, String filename) throws Exception {
-		return (rootDirectory + cancerStudyMetadata.getStudyPath() + File.separator + filename);
+		return (rootDirectory + File.separator + cancerStudyMetadata.getStudyPath() + File.separator + filename);
 	}
 }
