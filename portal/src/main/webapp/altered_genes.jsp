@@ -74,6 +74,8 @@
         }
 </style>
 
+<script type="text/javascript" src="js/d3.v2.min.js"></script>
+
 <script type="text/javascript">
 // This is for the moustache-like templates
 // prevents collisions with JSP tags
@@ -88,19 +90,6 @@ var template = function(name) {
 $(document).ready(function(){
     AlteredGene.boot($('#main'));
 });
-
-//    $('#data-set-table').dataTable({
-//                    "sDom": '<"H"fr>t<"F"<"datatable-paging"pil>>', // selectable columns
-//                    "bJQueryUI": true,
-//                    "bDestroy": true,
-//                    "oLanguage": {
-//                        "sInfo": "&nbsp;&nbsp;(_START_ to _END_ of _TOTAL_)&nbsp;&nbsp;",
-//                        "sInfoFiltered": "",
-//                        "sLengthMenu": "Show _MENU_ per page"
-//                    },
-//                    "iDisplayLength": -1,
-//                    "aLengthMenu": [[5,10, 25, 50, 100, -1], [5, 10, 25, 50, 100, "All"]]
-//                }).show();
 
 var AlteredGene = {};
 
@@ -243,7 +232,7 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
                 {"sTitle":"Index"},
                 {"sTitle": "Gene"},
                 {"sTitle": "Alteration"},
-                {"sTitle":"Samples"}
+                {"sTitle":"Samples altered"}
             ],
             "aoColumnDefs":[
                 {
@@ -273,12 +262,21 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
                 },
                 {
                     "aTargets": [ 3 ],
+                    "sClass": "right-align-td",
                     "mDataProp": function(source,type,value) {
                         if (type==='set') {
                             return;
                         } else if (type==='display') {
                             var samples = alterations.at(source[0]).get('samples');
-                            return samples;
+                            var studyStatistics = alterations.at(source[0]).get('frequency');
+                            var strs = [];
+                            for (var study in studyStatistics) {
+                                strs.push("<td>"+study+"</td><td>"+studyStatistics[study]+"</td>");
+                            }
+                            
+                            var tip = '<table class="frequency-table"><thead><th>Cancer Study</th><th>Samples altered</th></thead><tbody><tr>'
+                                +strs.join('</tr><tr>')+'</tr></tbody></table>';
+                            return  "<span class='frequency-tip' alt='"+tip+"'>"+samples+"</span>";
                         } else if (type==='sort') {
                             return alterations.at(source[0]).get('samples');
                         } else if (type==='type') {
@@ -289,6 +287,9 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
                     }
                 }
             ],
+            "fnDrawCallback": function( oSettings ) {
+                addCancerStudyFrequencyTooltip();
+            },
             "aaSorting": [[3,'desc']],
             "oLanguage": {
                 "sInfo": "&nbsp;&nbsp;(_START_ to _END_ of _TOTAL_)&nbsp;&nbsp;",
@@ -340,6 +341,33 @@ AlteredGene.boot = function(container) {
     container = $(container);
     router = new AlteredGene.Router({el: container});
     Backbone.history.start();
+}
+
+function addCancerStudyFrequencyTooltip() {
+    $(".frequency-tip").qtip({
+        content: {
+            attr: 'alt'
+        },
+        events: {
+            render: function(event, api) {
+                $(".frequency-table").dataTable( {
+                    "sDom": 't',
+                    "bJQueryUI": true,
+                    "bDestroy": true,
+                    "oLanguage": {
+                        "sInfo": "&nbsp;&nbsp;(_START_ to _END_ of _TOTAL_)&nbsp;&nbsp;",
+                        "sInfoFiltered": "",
+                        "sLengthMenu": "Show _MENU_ per page"
+                    },
+                    "aaSorting": [[1,'desc']],
+                    "iDisplayLength": -1
+                } );
+            }
+        },
+        hide: { fixed: true, delay: 100 },
+        style: { classes: 'ui-tooltip-light ui-tooltip-rounded' },
+        position: {my:'top right',at:'bottom left'}
+    });
 }
 
 </script>
