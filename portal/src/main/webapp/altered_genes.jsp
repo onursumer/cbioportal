@@ -72,9 +72,21 @@
                 width: auto;
                 float: right;
         }
+        
+        @import url(http://fonts.googleapis.com/css?family=PT+Serif|PT+Serif:b|PT+Serif:i|PT+Sans|PT+Sans:b);
+
+        svg {
+          font: 10px sans-serif;
+        }
+
+        text.highlight-text {
+          fill: red;
+        }
+
 </style>
 
 <script type="text/javascript" src="js/d3.v2.min.js"></script>
+<script type="text/javascript" src="js/heatmap.js"></script>
 
 <script type="text/javascript">
 // This is for the moustache-like templates
@@ -181,12 +193,15 @@ AlteredGene.Alterations = Backbone.Collection.extend({
     url: 'mutations.json',
     parse: function(statistics) {
         var ret = [];
+        var geneSampleMap = {};
         for (var alteration in statistics) {
             var studyStatistics = statistics[alteration];
             var row = {};
             
             var ix = alteration.indexOf(" ");
-            row['gene'] = alteration.substring(0,ix);
+            var gene = alteration.substring(0,ix);
+            
+            row['gene'] = gene;
             row['alteration'] = alteration.substring(ix);
             row['frequency'] = studyStatistics;
             
@@ -196,9 +211,85 @@ AlteredGene.Alterations = Backbone.Collection.extend({
             
             row['samples'] = totalSamples;
             
+            if (!(gene in geneSampleMap)) {
+                geneSampleMap[gene] = totalSamples;
+            } else {
+                geneSampleMap[gene] += totalSamples; // TODO: NOT CORRECT, ONE SAMPLE COULD HAVE MORE THAN ONE MUTATIONS ON A GENE
+            }
+            
             ret.push(row);
         }
+        
+        ret.forEach(function(row, i){
+            row['samplesPerGene'] = geneSampleMap[row['gene']];
+        });
         return ret;
+    }
+});
+
+AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
+    initialize: function(options) {
+        this.cancerStudies = options.cancer_study_id.split(',');
+        this.alterations = new AlteredGene.Alterations([],options);
+        this.alterations.on('sync', this.render, this);
+        this.alterations.fetch({data:options});
+    },
+    render: function() {
+        var alterations = this.alterations;
+        if (alterations.length==0) {
+            this.$el.html("<img src=\"images/ajax-loader.gif\"/> Calculating ...");
+            return;
+        }
+        this.$el.empty();
+        
+        var colNodes = [];
+        var colIxMap = {};
+        this.cancerStudies.forEach(function(study,i){
+            colNodes.push({'name':study});
+            colIxMap[study] = i;
+        });
+        
+        var rowNodes = [];
+        var links = [];
+        for (var i=0, nEvents=alterations.length; i<nEvents; i++) {
+            var alt = alterations.at(i);
+            var gene = alt.get('gene');
+            var alteration = alt.get('alteration');
+            var freq = alt.get('frequency');
+            var samples = alt.get('samples');
+            var samplesPerGene = alt.get('samplesPerGene');
+            rowNodes.push({'name':(gene+' '+alteration)+' ('+samples+'/'+samplesPerGene+')'});
+            for (study in freq) {
+                links.push({'row':i, 'col':colIxMap[study], 'value':freq[study]});
+            }
+        }
+        
+        var alterationSorting = function(a,b) {
+            var alta = alterations.at(a);
+            var altb = alterations.at(b);
+            // sort by total samples mutated in gene
+            var ret = d3.descending(alta.get('samplesPerGene'), altb.get('samplesPerGene'));
+            if (ret!=0) return ret;
+            
+            // then sort by gene name
+            ret = d3.descending(alta.get('gene'), altb.get('gene'));
+            if (ret!=0) return ret;
+            
+            // then sort by samples with specific mutations
+            ret = d3.descending(alta.get('samples'), altb.get('samples'));
+
+            return ret;
+        }
+
+        var heatmapData = {'rowNodes':rowNodes, 'colNodes':colNodes, 'links':links};
+        heatmap(
+            heatmapData,
+            this.el,
+            {
+                zDomain:[0,10],
+                rowSorting: alterationSorting
+            }
+        );
     }
 });
 
@@ -321,7 +412,7 @@ AlteredGene.Router = Backbone.Router.extend({
         //alert("submit/"+studies+"/"+type+"/"+threshold);
         this.el.empty();
         if (type=="missense") {
-            var view = new AlteredGene.Alterations.MissenseTable(
+            var view = new AlteredGene.Alterations.MissenseHeatmap(
                 {
                     'cmd': 'statistics',
                     'cancer_study_id': studies,
