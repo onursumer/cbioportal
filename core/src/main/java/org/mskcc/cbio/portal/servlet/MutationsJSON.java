@@ -70,7 +70,7 @@ public class MutationsJSON extends HttpServlet {
         String type = request.getParameter(MUTATION_TYPE);
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
         
-        Map<String,Map<Integer, Integer>> mapKeywordStudyCount = Collections.emptyMap();
+        Map<String,Map<Integer, Map<String,Long>>> mapKeywordStudyCaseMut = Collections.emptyMap();
         Map<Integer,String> cancerStudyIdMapping = new HashMap<Integer,String>();
         
         try {
@@ -86,18 +86,19 @@ public class MutationsJSON extends HttpServlet {
                 studyIds.deleteCharAt(studyIds.length()-1);
             }
             
-            mapKeywordStudyCount = DaoMutationEvent.getMutatationStatistics(
+            mapKeywordStudyCaseMut = DaoMutationEvent.getMutatationStatistics(
                     studyIds.toString(), type, threshold);
         } catch (DaoException ex) {
             throw new ServletException(ex);
         }
         
         // transform the data to use stable cancer study id
-        Map<String,Map<String, Integer>> map = new HashMap<String,Map<String, Integer>>(mapKeywordStudyCount.size());
-        for (Map.Entry<String,Map<Integer, Integer>> entry1 : mapKeywordStudyCount.entrySet()) {
+        Map<String,Map<String, Map<String,Long>>> map =
+                new HashMap<String,Map<String, Map<String,Long>>>(mapKeywordStudyCaseMut.size());
+        for (Map.Entry<String,Map<Integer, Map<String,Long>>> entry1 : mapKeywordStudyCaseMut.entrySet()) {
             String keyword = entry1.getKey();
-            Map<String, Integer> map1 = new HashMap<String, Integer>(entry1.getValue().size());
-            for (Map.Entry<Integer, Integer> entry2 : entry1.getValue().entrySet()) {
+            Map<String, Map<String,Long>> map1 = new HashMap<String, Map<String,Long>>(entry1.getValue().size());
+            for (Map.Entry<Integer, Map<String,Long>> entry2 : entry1.getValue().entrySet()) {
                 map1.put(cancerStudyIdMapping.get(entry2.getKey()), entry2.getValue());
             }
             map.put(keyword, map1);

@@ -205,23 +205,24 @@ AlteredGene.Alterations = Backbone.Collection.extend({
             row['alteration'] = alteration.substring(ix);
             row['frequency'] = studyStatistics;
             
-            var totalSamples = 0;
-            for (var study in studyStatistics)
-                totalSamples += studyStatistics[study];
-            
-            row['samples'] = totalSamples;
-            
-            if (!(gene in geneSampleMap)) {
-                geneSampleMap[gene] = totalSamples;
-            } else {
-                geneSampleMap[gene] += totalSamples; // TODO: NOT CORRECT, ONE SAMPLE COULD HAVE MORE THAN ONE MUTATIONS ON A GENE
+            var mapCaseMut = {};
+            for (var study in studyStatistics) {
+                mapCaseMut = $.extend(mapCaseMut,studyStatistics[study]);
             }
+            
+            row['samples'] = cbio.util.size(mapCaseMut);
+            
+            // count samples for each gene
+            if (!(gene in geneSampleMap)) {
+                geneSampleMap[gene] = {};
+            }
+            geneSampleMap[gene] = $.extend(geneSampleMap[gene], mapCaseMut);
             
             ret.push(row);
         }
         
         ret.forEach(function(row, i){
-            row['samplesPerGene'] = geneSampleMap[row['gene']];
+            row['samplesPerGene'] = cbio.util.size(geneSampleMap[row['gene']]);
         });
         return ret;
     }
@@ -260,7 +261,7 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             var samplesPerGene = alt.get('samplesPerGene');
             rowNodes.push({'name':(gene+' '+alteration)+' ('+samples+'/'+samplesPerGene+')'});
             for (study in freq) {
-                links.push({'row':i, 'col':colIxMap[study], 'value':freq[study]});
+                links.push({'row':i, 'col':colIxMap[study], 'value':cbio.util.size(freq[study])});
             }
         }
         
