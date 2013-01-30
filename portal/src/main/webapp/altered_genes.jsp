@@ -231,9 +231,8 @@ AlteredGene.Alterations = Backbone.Collection.extend({
 AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
     initialize: function(options) {
         this.cancerStudies = options.cancer_study_id.split(',');
-        this.alterations = new AlteredGene.Alterations([],options);
+        this.alterations = options.alterations;
         this.alterations.on('sync', this.render, this);
-        this.alterations.fetch({data:options});
     },
     render: function() {
         var alterations = this.alterations;
@@ -258,8 +257,7 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             var alteration = alt.get('alteration');
             var freq = alt.get('frequency');
             var samples = alt.get('samples');
-            var samplesPerGene = alt.get('samplesPerGene');
-            rowNodes.push({'name':(gene+' '+alteration)+' ('+samples+'/'+samplesPerGene+')'});
+            rowNodes.push({'name':(gene+' '+alteration)+' ('+samples+')'});
             for (study in freq) {
                 links.push({'row':i, 'col':colIxMap[study], 'value':cbio.util.size(freq[study])});
             }
@@ -297,9 +295,8 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
 AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
     template: template("datatables"),
     initialize: function(options) {
-        this.alterations = new AlteredGene.Alterations([],options);
+        this.alterations = options.alterations;
         this.alterations.on('sync', this.render, this);
-        this.alterations.fetch({data:options});
     },
     render: function() {
         if (this.alterations.length==0) {
@@ -413,12 +410,18 @@ AlteredGene.Router = Backbone.Router.extend({
         //alert("submit/"+studies+"/"+type+"/"+threshold);
         this.el.empty();
         if (type=="missense") {
-            var view = new AlteredGene.Alterations.MissenseHeatmap(
-                {
+            var options = {
                     'cmd': 'statistics',
                     'cancer_study_id': studies,
                     'type': type,
                     'threshold_samples': threshold
+                };
+            var alterations = new AlteredGene.Alterations([],options);
+            alterations.fetch({data:options});
+            var view = new AlteredGene.Alterations.MissenseHeatmap(
+                {
+                    'cancer_study_id': studies,
+                    'alterations': alterations
                 });
             view.render();
             this.el.append(view.el);

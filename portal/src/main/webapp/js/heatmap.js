@@ -136,7 +136,7 @@ function heatmap(data, container, options) {
         .attr("height", y.rangeBand())
         .attr("alt", function(d) { return "Row: "+rowNodes[d.y].name+"<br/>Column: "+colNodes[d.x].name+"<br>Value: "+d.z; })
         .style("fill-opacity", function(d) { return z(d.z); })
-        .style("fill", "blue")
+        .style("fill", "red")
         .on("mouseover", mouseover)
         .on("mouseout", mouseout);
   }
