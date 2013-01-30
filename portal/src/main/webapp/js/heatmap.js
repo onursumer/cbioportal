@@ -134,7 +134,7 @@ function heatmap(data, container, options) {
         .attr("x", function(d) { return x(d.x); })
         .attr("width", x.rangeBand())
         .attr("height", y.rangeBand())
-        .attr("alt", function(d) { return d.z; })
+        .attr("alt", function(d) { return "Row: "+rowNodes[d.y].name+"<br/>Column: "+colNodes[d.x].name+"<br>Value: "+d.z; })
         .style("fill-opacity", function(d) { return z(d.z); })
         .style("fill", "blue")
         .on("mouseover", mouseover)
@@ -156,7 +156,7 @@ function heatmap(data, container, options) {
             attr: 'alt'
         },
         hide: { fixed: true, delay: 100 },
-        style: { classes: 'ui-tooltip-light ui-tooltip-rounded' },
+        style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
         position: {my:'top left',at:'bottom right'}
       });
   }
