@@ -28,8 +28,8 @@
         <label><b>Data type:</b></label>
         <select id="data-type">
             <option selected="selected" value="missense">Missense Mutations</option>
-            <option value="truncating">Truncating Mutations</option>
-            <option value="cna">Copy Number Alteration</option>
+            <option value="truncating">Truncating Mutations (under development)</option>
+            <option value="cna">Copy Number Alterations (under development)</option>
         </select>
     </div>
     <br/>
@@ -193,7 +193,7 @@ AlteredGene.Alterations = Backbone.Collection.extend({
     url: 'mutations.json',
     parse: function(statistics) {
         var ret = [];
-        var geneSampleMap = {};
+        var geneSampleMap = {}; //map<gene,map<study,map<sample,array<mut>>>>
         for (var alteration in statistics) {
             var studyStatistics = statistics[alteration];
             var row = {};
@@ -205,24 +205,33 @@ AlteredGene.Alterations = Backbone.Collection.extend({
             row['alteration'] = alteration.substring(ix);
             row['frequency'] = studyStatistics;
             
-            var mapCaseMut = {};
+            var samples = 0;
             for (var study in studyStatistics) {
-                mapCaseMut = $.extend(mapCaseMut,studyStatistics[study]);
+                samples += cbio.util.size(studyStatistics[study]);
             }
-            
-            row['samples'] = cbio.util.size(mapCaseMut);
+            row['samples'] = samples;
             
             // count samples for each gene
-            if (!(gene in geneSampleMap)) {
-                geneSampleMap[gene] = {};
+            if (!(gene in geneSampleMap)) geneSampleMap[gene] = {};
+            for (var study in studyStatistics) {
+                if (!(study in geneSampleMap[gene])) geneSampleMap[gene][study] = {};
+                for (var sample in studyStatistics[study]) {
+                    if (!(sample in geneSampleMap[gene][study])) geneSampleMap[gene][study][sample] = [];
+                    geneSampleMap[gene][study][sample].push(studyStatistics[study][sample]);
+                }
             }
-            geneSampleMap[gene] = $.extend(geneSampleMap[gene], mapCaseMut);
             
             ret.push(row);
         }
         
         ret.forEach(function(row, i){
-            row['samplesPerGene'] = cbio.util.size(geneSampleMap[row['gene']]);
+            var frequency_gene = geneSampleMap[row['gene']];
+            row['frequency_gene'] = frequency_gene;
+            var samples = 0;
+            for (var study in row['frequency_gene']) {
+                samples += cbio.util.size(frequency_gene[study]);
+            }
+            row['samples_gene'] = samples;
         });
         return ret;
     }
@@ -267,7 +276,7 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             var alta = alterations.at(a);
             var altb = alterations.at(b);
             // sort by total samples mutated in gene
-            var ret = d3.descending(alta.get('samplesPerGene'), altb.get('samplesPerGene'));
+            var ret = d3.descending(alta.get('samples_gene'), altb.get('samples_gene'));
             if (ret!=0) return ret;
             
             // then sort by gene name
