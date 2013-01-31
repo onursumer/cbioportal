@@ -500,6 +500,16 @@ AlteredGene.Router = Backbone.Router.extend({
                 } else {
                     this_el.html(altView.el);
                 }
+                
+                // hacky
+                $(".cell").qtip({
+                    content: {
+                        attr: 'alt'
+                    },
+                    hide: { fixed: true, delay: 100 },
+                    style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
+                    position: {my:'top left',at:'bottom right'}
+                  });
             });
         } else {
             this.el.append("under development");
