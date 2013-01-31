@@ -879,18 +879,19 @@ public final class DaoMutationEvent {
      * @return Map<keyword, Map<CancerStudyId, Map<CaseId,MutationId>>>
      */
     public static Map<String,Map<Integer, Map<String,Long>>> getMutatationStatistics(String concatCancerStudyIds,
-            String type, int thresholdSamples) throws DaoException {
+            String[] types, int thresholdSamples) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection();
+            String keywords = "(`KEYWORD` LIKE '%"+StringUtils.join(types,"' OR `KEYWORD` LIKE '%") +"') ";
             String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `CASE_ID`, cme.`MUTATION_EVENT_ID` "
                     + "FROM  `mutation_event` me, `case_mutation_event` cme, `genetic_profile` gp "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
-                    + "AND `KEYWORD` LIKE  '%" + type + "%' "
+                    + "AND " + keywords
                     + "ORDER BY `KEYWORD` ASC"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();

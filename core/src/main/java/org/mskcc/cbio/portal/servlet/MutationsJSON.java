@@ -75,7 +75,7 @@ public class MutationsJSON extends HttpServlet {
         
         try {
             StringBuilder studyIds = new StringBuilder();
-            for (String stableId : studyStableIds.split("[, ]")) {
+            for (String stableId : studyStableIds.split("[, ]+")) {
                 CancerStudy study = DaoCancerStudy.getCancerStudyByStableId(stableId);
                 if (study!=null) {
                     studyIds.append(study.getInternalId()).append(",");
@@ -87,7 +87,7 @@ public class MutationsJSON extends HttpServlet {
             }
             
             mapKeywordStudyCaseMut = DaoMutationEvent.getMutatationStatistics(
-                    studyIds.toString(), type, threshold);
+                    studyIds.toString(), type.split("[, ]+"), threshold);
         } catch (DaoException ex) {
             throw new ServletException(ex);
         }

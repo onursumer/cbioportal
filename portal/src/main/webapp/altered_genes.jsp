@@ -46,7 +46,7 @@
     <div>
         <label><b>Data type:</b></label>
         <select id="data-type">
-            <option selected="selected" value="missense">Missense Mutations</option>
+            <option selected="selected" value="missense">Missense and In-frame Mutations</option>
             <option value="truncating">Truncating Mutations (under development)</option>
             <option value="cna">Copy Number Alterations (under development)</option>
         </select>
@@ -463,7 +463,7 @@ AlteredGene.Router = Backbone.Router.extend({
             var options = {
                     'cmd': 'statistics',
                     'cancer_study_id': studies,
-                    'type': type,
+                    'type': 'missense,ins,del',
                     'threshold_samples': threshold
                 };
                 
