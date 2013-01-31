@@ -185,15 +185,12 @@ AlteredGene.Alteration = Backbone.Model.extend({
 
 AlteredGene.Alterations = Backbone.Collection.extend({
     initialize: function(models, options) {
-        this.studies = options.studies;
-        this.type = options.type;
-        this.threshold = options.threshold;
     },
     model: AlteredGene.Alteration,
     url: 'mutations.json',
     parse: function(statistics) {
         var ret = [];
-        var geneSampleMap = {}; //map<gene,map<study,map<sample,array<mut>>>>
+        var geneSampleMap = {}; //map<gene,samples>
         for (var alteration in statistics) {
             var studyStatistics = statistics[alteration];
             var row = {};
@@ -211,31 +208,58 @@ AlteredGene.Alterations = Backbone.Collection.extend({
             }
             row['samples'] = samples;
             
-            // count samples for each gene
-            if (!(gene in geneSampleMap)) geneSampleMap[gene] = {};
-            for (var study in studyStatistics) {
-                if (!(study in geneSampleMap[gene])) geneSampleMap[gene][study] = {};
-                for (var sample in studyStatistics[study]) {
-                    if (!(sample in geneSampleMap[gene][study])) geneSampleMap[gene][study][sample] = [];
-                    geneSampleMap[gene][study][sample].push(studyStatistics[study][sample]);
-                }
-            }
-            
             ret.push(row);
+            
+            if (gene in geneSampleMap) {
+                geneSampleMap[gene] += samples;
+            } else {
+                geneSampleMap[gene] = samples;
+            }
         }
         
-        ret.forEach(function(row, i){
-            var frequency_gene = geneSampleMap[row['gene']];
-            row['frequency_gene'] = frequency_gene;
-            var samples = 0;
-            for (var study in row['frequency_gene']) {
-                samples += cbio.util.size(frequency_gene[study]);
-            }
-            row['samples_gene'] = samples;
+        ret.forEach(function(row, i) {
+            row['samples_gene'] = geneSampleMap[row['gene']];
         });
+        
         return ret;
     }
 });
+
+function mergeAlterationsByGene(alterations,alterationsByGene) {
+    var geneSampleMap = {}; //map<gene,map<study,map<sample,array<mut>>>>
+    for (var i=0, nEvents=alterations.length; i<nEvents; i++) {
+        var alt = alterations.at(i);
+        var gene = alt.get('gene');
+        var studyStatistics = alt.get('frequency');
+        
+        // count samples for each gene
+        if (!(gene in geneSampleMap)) geneSampleMap[gene] = {};
+        for (var study in studyStatistics) {
+            if (!(study in geneSampleMap[gene])) geneSampleMap[gene][study] = {};
+            for (var sample in studyStatistics[study]) {
+                if (!(sample in geneSampleMap[gene][study])) geneSampleMap[gene][study][sample] = [];
+                geneSampleMap[gene][study][sample].push(studyStatistics[study][sample]);
+            }
+        }
+    }
+    
+    for (var gene in geneSampleMap) {
+        var row = {};
+        row['gene'] = gene;
+        row['alteration'] = ''; //hacky
+        var studyStatistics = geneSampleMap[gene];
+        row['frequency'] = studyStatistics;
+        
+        var samples = 0;
+        for (var study in studyStatistics) {
+            samples += cbio.util.size(studyStatistics[study]);
+        }
+        row['samples'] = samples;
+        row['samples_gene'] = samples;
+        alterationsByGene.push(new AlteredGene.Alteration(row));
+    }
+    return alterationsByGene;
+}
 
 AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
     initialize: function(options) {
@@ -416,7 +440,6 @@ AlteredGene.Router = Backbone.Router.extend({
         this.el.append(view.el);
     },
     submit: function(studies, type, threshold) {
-        //alert("submit/"+studies+"/"+type+"/"+threshold);
         this.el.empty();
         if (type=="missense") {
             var options = {
@@ -434,6 +457,19 @@ AlteredGene.Router = Backbone.Router.extend({
                 });
             view.render();
             this.el.append(view.el);
+            
+            var alterationsByGene = new AlteredGene.Alterations();
+            var gene_view = new AlteredGene.Alterations.MissenseHeatmap(
+                {
+                    'cancer_study_id': studies,
+                    'alterations': alterationsByGene
+                });
+            alterations.on('sync', function(){
+                mergeAlterationsByGene(alterations,alterationsByGene);
+                gene_view.render();
+            });
+            gene_view.render();
+            this.el.append(gene_view.el);
         } else {
             this.el.append("under development");
         }
