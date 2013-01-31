@@ -3,8 +3,27 @@
 
 <% request.setAttribute(QueryBuilder.HTML_TITLE, "Genomic alterations across cancersåå"); %>
 <jsp:include page="WEB-INF/jsp/global/header.jsp" flush="true" />
-<div id="main">
-</div>
+<table border="0px">
+    <tr valign="top">
+        <td>
+            <div id="main">
+            </div>
+        </td>
+        <td>&nbsp;&nbsp;&nbsp;&nbsp;
+        </td>
+        <td>
+            &nbsp;<br/>
+            &nbsp;<br/>
+            &nbsp;<br/>
+            &nbsp;<br/>
+            &nbsp;<br/>
+            <div id="side-menu" style="display: none">
+                <input type="checkbox" id="merge-alterations">&nbsp;Merge alterations for each gene
+            </div>
+        </td>
+    </tr>
+</table>
+
     </td>
   </tr>
   <tr>
@@ -440,7 +459,6 @@ AlteredGene.Router = Backbone.Router.extend({
         this.el.append(view.el);
     },
     submit: function(studies, type, threshold) {
-        this.el.empty();
         if (type=="missense") {
             var options = {
                     'cmd': 'statistics',
@@ -448,28 +466,41 @@ AlteredGene.Router = Backbone.Router.extend({
                     'type': type,
                     'threshold_samples': threshold
                 };
+                
+            // alteration view
             var alterations = new AlteredGene.Alterations([],options);
-            alterations.fetch({data:options});
-            var view = new AlteredGene.Alterations.MissenseHeatmap(
+            var altView = new AlteredGene.Alterations.MissenseHeatmap(
                 {
                     'cancer_study_id': studies,
                     'alterations': alterations
                 });
-            view.render();
-            this.el.append(view.el);
+            altView.render();
+            this.el.html(altView.el); // by default
             
+            // gene view
             var alterationsByGene = new AlteredGene.Alterations();
-            var gene_view = new AlteredGene.Alterations.MissenseHeatmap(
+            var geneView = new AlteredGene.Alterations.MissenseHeatmap(
                 {
                     'cancer_study_id': studies,
                     'alterations': alterationsByGene
                 });
             alterations.on('sync', function(){
                 mergeAlterationsByGene(alterations,alterationsByGene);
-                gene_view.render();
+                geneView.render();
+                $('#side-menu').show();
             });
-            gene_view.render();
-            this.el.append(gene_view.el);
+            
+            alterations.fetch({data:options});
+            
+            // handling merge alterations
+            var this_el = this.el;
+            $('#merge-alterations').change(function() {
+                if($(this).prop('checked')) {
+                    this_el.html(geneView.el);
+                } else {
+                    this_el.html(altView.el);
+                }
+            });
         } else {
             this.el.append("under development");
         }
