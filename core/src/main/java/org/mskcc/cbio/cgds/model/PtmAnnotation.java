@@ -26,16 +26,19 @@
 **/
 package org.mskcc.cbio.cgds.model;
 
+import java.util.Set;
+
 /**
  *
  * @author jgao
  */
 public class PtmAnnotation {
     private String uniprotId;
+    private String symbol;
     private int residue;
     private String type;
-    private String enzyme;
-    private String note;
+    private Set<String> enzymes;
+    private Set<String> notes;
 
     public PtmAnnotation(String uniprotId, int residue, String type) {
         this.uniprotId = uniprotId;
@@ -49,6 +52,14 @@ public class PtmAnnotation {
 
     public void setUniprotId(String uniprotId) {
         this.uniprotId = uniprotId;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
     }
 
     public int getResidue() {
@@ -67,19 +78,19 @@ public class PtmAnnotation {
         this.type = type;
     }
 
-    public String getEnzyme() {
-        return enzyme;
+    public Set<String> getEnzymes() {
+        return enzymes;
     }
 
-    public void setEnzyme(String enzyme) {
-        this.enzyme = enzyme;
+    public void setEnzyme(Set<String> enzymes) {
+        this.enzymes = enzymes;
     }
 
-    public String getNote() {
-        return note;
+    public Set<String> getNotes() {
+        return notes;
     }
 
-    public void setNote(String note) {
-        this.note = note;
+    public void setNotes(Set<String> notes) {
+        this.notes = notes;
     }
 }

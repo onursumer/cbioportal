@@ -31,7 +31,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.mskcc.cbio.cgds.model.PtmAnnotation;
 
 /**
@@ -44,7 +49,7 @@ public final class DaoPtmAnnotation {
     public static int addPtmAnnotation(PtmAnnotation ptm) throws DaoException {
         PtmAnnotation exist = getPtmAnnotation(ptm.getUniprotId(), ptm.getResidue(), ptm.getType());
         if (exist!=null) {
-            return addEnzyme(exist, ptm.getEnzyme()) + addNote(exist, ptm.getNote());
+            return addEnzymes(exist, ptm.getEnzymes()) + addNotes(exist, ptm.getNotes());
         }
         
         Connection con = null;
@@ -53,10 +58,21 @@ public final class DaoPtmAnnotation {
         try {
             
             con = JdbcUtil.getDbConnection(DaoUser.class);
-            pstmt = con.prepareStatement("INSERT INTO ptm_annotation( `UNIPROT_ID`, `RESIDUE`, `TYPE` ) VALUES (?,?,?)");
+            pstmt = con.prepareStatement("INSERT INTO ptm_annotation( `UNIPROT_ID`, `SYMBOL`, `RESIDUE`, `TYPE`, `ENZYME`, `NOTE`) VALUES (?,?,?,?,?,?)");
             pstmt.setString(1, ptm.getUniprotId());
-            pstmt.setInt(2, ptm.getResidue());
-            pstmt.setString(3, ptm.getType());
+            pstmt.setString(2, ptm.getSymbol());
+            pstmt.setInt(3, ptm.getResidue());
+            pstmt.setString(4, ptm.getType());
+            if (ptm.getEnzymes()!=null) {
+                pstmt.setString(5, StringUtils.join(ptm.getEnzymes(), "; "));
+            } else {
+                pstmt.setString(5,null);
+            }
+            if (ptm.getNotes()!=null) {
+                pstmt.setString(6, StringUtils.join(ptm.getNotes(), "; "));
+            } else {
+                pstmt.setString(6,null);
+            }
            int rows = pstmt.executeUpdate();
            return rows;
         } catch (SQLException e) {
@@ -66,13 +82,13 @@ public final class DaoPtmAnnotation {
         }
     }
     
-    private static int addEnzyme(PtmAnnotation ptm, String enzyme) throws DaoException {
-        if (enzyme==null) {
+    private static int addEnzymes(PtmAnnotation ptm, Set<String> enzymes) throws DaoException {
+        if (enzymes==null) {
             return 0;
         }
         
-        if (ptm.getEnzyme()!=null) {
-            enzyme = ptm.getEnzyme() + ";" + enzyme;
+        if (ptm.getEnzymes()!=null) {
+            enzymes.addAll(ptm.getEnzymes());
         }
         
         Connection con = null;
@@ -81,7 +97,7 @@ public final class DaoPtmAnnotation {
         try {
            con = JdbcUtil.getDbConnection(DaoUser.class);
            pstmt = con.prepareStatement("UPDATE ptm_annotation SET `ENZYME`='"
-                   + enzyme + "' "
+                   + StringUtils.join(enzymes, "; ") + "' "
                    + "WHERE `UNIPROT_ID`='"
                    + ptm.getUniprotId() + "' AND `RESIDUE`="
                    + ptm.getResidue() + " AND `TYPE`='"
@@ -95,13 +111,13 @@ public final class DaoPtmAnnotation {
         }
     }
     
-    private static int addNote(PtmAnnotation ptm, String note) throws DaoException {
-        if (note==null) {
+    private static int addNotes(PtmAnnotation ptm, Set<String> notes) throws DaoException {
+        if (notes==null) {
             return 0;
         }
         
-        if (ptm.getEnzyme()!=null) {
-            note = ptm.getNote() + ";" + note;
+        if (ptm.getNotes()!=null) {
+            notes.addAll(ptm.getNotes());
         }
         
         Connection con = null;
@@ -109,12 +125,12 @@ public final class DaoPtmAnnotation {
         ResultSet rs = null;
         try {
            con = JdbcUtil.getDbConnection(DaoUser.class);
-           pstmt = con.prepareStatement("UPDATE ptm_annotation SET `NOTE`=?` "
-                   + "WHERE UNIPROT_ID`=? AND `RESIDUE`=? AND `TYPE`=?");
-           pstmt.setString(1, note);
-           pstmt.setString(2, ptm.getUniprotId());
-           pstmt.setInt(3, ptm.getResidue());
-           pstmt.setString(4, ptm.getType());
+           pstmt = con.prepareStatement("UPDATE ptm_annotation SET `NOTE`='"
+                   + StringEscapeUtils.escapeSql(StringUtils.join(notes, "; ")) + "' "
+                   + "WHERE `UNIPROT_ID`='"
+                   + ptm.getUniprotId() + "' AND `RESIDUE`="
+                   + ptm.getResidue() + " AND `TYPE`='"
+                   + ptm.getType() + "'");
            int rows = pstmt.executeUpdate();
            return rows;
         } catch (SQLException e) {
@@ -198,13 +214,19 @@ public final class DaoPtmAnnotation {
         List<PtmAnnotation> list = new ArrayList<PtmAnnotation>();
         while (rs.next()) {
             String uniprotId = rs.getString("UNIPROT_ID");
+            String symbol = rs.getString("SYMBOL");
             int residue = rs.getInt("RESIDUE");
             String type = rs.getString("TYPE");
             String enzyme = rs.getString("ENZYME");
             String note = rs.getString("NOTE");
             PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
-            ptm.setEnzyme(enzyme);
-            ptm.setNote(note);
+            ptm.setSymbol(symbol);
+            if (enzyme!=null) {
+                ptm.setEnzyme(new HashSet<String>(Arrays.asList(enzyme.split("; "))));
+            }
+            if (note!=null) {
+                ptm.setNotes(new HashSet<String>(Arrays.asList(note.split("; "))));
+            }
             list.add(ptm);
         }
         return list;

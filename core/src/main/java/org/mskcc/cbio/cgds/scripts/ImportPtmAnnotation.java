@@ -31,6 +31,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
 import org.mskcc.cbio.cgds.dao.DaoException;
 import org.mskcc.cbio.cgds.dao.DaoPtmAnnotation;
 import org.mskcc.cbio.cgds.dao.MySQLbulkLoader;
@@ -70,9 +72,108 @@ public class ImportPtmAnnotation {
             }
             
             String uniprotId = parts[1];
+            String symbol = parts[2];
             String type = parts[3];
             int residue = Integer.parseInt(parts[4].replaceAll("[^0-9]", ""));
             PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
+            ptm.setSymbol(symbol);
+            DaoPtmAnnotation.addPtmAnnotation(ptm);
+        }       
+    }
+
+    public void importPhosphoSitePlusRegulotarySitesReport(File ptmFile) throws IOException, DaoException {
+        MySQLbulkLoader.bulkLoadOn();
+        FileReader reader = new FileReader(ptmFile);
+        BufferedReader buf = new BufferedReader(reader);
+        String line;
+        
+        while ((line = buf.readLine()) !=null && !line.startsWith("NAME\t")) {
+        }
+        
+        while ((line = buf.readLine()) !=null) {
+            if (pMonitor != null) {
+                pMonitor.incrementCurValue();
+                ConsoleUtil.showProgress(pMonitor);
+            }
+            
+            String parts[] = line.split("\t");
+            if (parts.length<8 || !parts[5].equalsIgnoreCase("human")) {
+                continue;
+            }
+            
+            String uniprotId = parts[2];
+            String symbol = parts[4];
+            String type = parts[7];
+            int residue = Integer.parseInt(parts[6].replaceAll("[^0-9]", ""));
+            PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
+            ptm.setSymbol(symbol);
+            
+            HashSet<String> notes = new HashSet<String>();
+            int[] ixNotes = new int[]{11,12,13,14,19};
+            for (int ix : ixNotes) {
+                if (parts.length<=ix) {
+                    break;
+                }
+                
+                if (!parts[ix].isEmpty()) {
+                    notes.addAll(Arrays.asList(parts[ix].split("; ")));
+                }
+            }
+            
+            if (!notes.isEmpty()) {
+                notes.remove("");
+                ptm.setNotes(notes);
+            }
+            DaoPtmAnnotation.addPtmAnnotation(ptm);
+        }       
+    }
+
+    public void importPhosphoSitePlusDiseaseReport(File ptmFile) throws IOException, DaoException {
+        MySQLbulkLoader.bulkLoadOn();
+        FileReader reader = new FileReader(ptmFile);
+        BufferedReader buf = new BufferedReader(reader);
+        String line;
+        
+        while ((line = buf.readLine()) !=null && !line.startsWith("DISEASE\t")) {
+        }
+        
+        while ((line = buf.readLine()) !=null) {
+            if (pMonitor != null) {
+                pMonitor.incrementCurValue();
+                ConsoleUtil.showProgress(pMonitor);
+            }
+            
+            String parts[] = line.split("\t");
+            if (parts.length<11 || !parts[7].equalsIgnoreCase("human")) {
+                continue;
+            }
+            
+            String uniprotId = parts[3];
+            String symbol = parts[5];
+            String type = parts[8];
+            int residue = Integer.parseInt(parts[10].replaceAll("[^0-9]", ""));
+            PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
+            ptm.setSymbol(symbol);
+            
+            HashSet<String> notes = new HashSet<String>();
+            
+            StringBuilder note = new StringBuilder();
+            note.append(parts[0]);
+            if (!parts[1].isEmpty()) {
+                note.append(" (").append(parts[1]).append(")");
+            }
+            if (note.length()>0) {
+                notes.add(note.toString());
+            }
+            
+            if (parts.length>=19 && !parts[18].isEmpty()) {
+                notes.add(parts[18]);
+            }
+            
+            if (!notes.isEmpty()) {
+                notes.remove("");
+                ptm.setNotes(notes);
+            }
             DaoPtmAnnotation.addPtmAnnotation(ptm);
         }       
     }
@@ -98,20 +199,27 @@ public class ImportPtmAnnotation {
             }
             
             String enzyme = parts[0];
+            String symbol = parts[7];
             String uniprotId = parts[6];
             String type = "PHOSPHORYLATION";
             int residue = Integer.parseInt(parts[9].replaceAll("[^0-9]", ""));
             PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
-            ptm.setEnzyme(enzyme);
+            ptm.setSymbol(symbol);
+            ptm.setEnzyme(new HashSet<String>(Arrays.asList(enzyme)));
             DaoPtmAnnotation.addPtmAnnotation(ptm);
         }       
     }
 
     public static void main(String[] args) throws Exception {
-//        args = new String[]{"/Users/jj/Downloads/Phosphorylation_site_dataset","phosphositeplus"};
+//        args = new String[]{"/Users/jj/Downloads/Regulatory_sites","phosphositeplus-regsite"};
+//        args = new String[]{"/Users/jj/Downloads/Disease-associated_sites","phosphositeplus-disease"};
 //        args = new String[]{"/Users/jj/Downloads/Kinase_Substrate_Dataset","phosphositeplus-kinase"};
+//        args = new String[]{"/Users/jj/Downloads/Phosphorylation_site_dataset","phosphositeplus"};
 //        args = new String[]{"/Users/jj/Downloads/Acetylation_site_dataset","phosphositeplus"};
 //        args = new String[]{"/Users/jj/Downloads/Ubiquitination_site_dataset","phosphositeplus"};
+//        args = new String[]{"/Users/jj/Downloads/Sumoylation_site_dataset","phosphositeplus"};
+//        args = new String[]{"/Users/jj/Downloads/O-GlcNAc_site_dataset","phosphositeplus"};
+//        args = new String[]{"/Users/jj/Downloads/Methylation_site_dataset","phosphositeplus"};
         if (args.length < 2) {
             System.out.println("command line usage:  importPtmAnnotation.pl <ptm_file> <type>");
             System.exit(1);
@@ -130,6 +238,10 @@ public class ImportPtmAnnotation {
             parser.importPhosphoSitePlusReport(ptmFile);
         } else if (args[1].equalsIgnoreCase("phosphositeplus-kinase")) {
             parser.importPhosphoSitePlusKinaseReport(ptmFile);
+        } else if (args[1].equalsIgnoreCase("phosphositeplus-regsite")) {
+            parser.importPhosphoSitePlusRegulotarySitesReport(ptmFile);
+        } else if (args[1].equalsIgnoreCase("phosphositeplus-disease")) {
+            parser.importPhosphoSitePlusDiseaseReport(ptmFile);
         }
         
         ConsoleUtil.showWarnings(pMonitor);
