@@ -589,3 +589,13 @@ CREATE TABLE `clinical_trial_keywords` (
   FOREIGN KEY (`PROTOCOLID`) REFERENCES `clinical_trials` (`PROTOCOLID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
+drop table IF EXISTS ptm_annotation;
+CREATE TABLE `ptm_annotation` (
+  `UNIPROT_ID` varchar(255) NOT NULL,
+  `RESIDUE` int(5) NOT NULL,
+  `TYPE` varchar(20) NOT NULL COMMENT 'e.g. phosphorylation, acelytation, ubiquitination',
+  `ENZYME` varchar(512) DEFAULT NULL,
+  `NOTE` varchar(512) DEFAULT NULL,
+  PRIMARY KEY (`UNIPROT_ID`,`RESIDUE`,`TYPE`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COMMENT='PTM annotations from public domain such as PhosphoSitePlus and UniProt';
+
