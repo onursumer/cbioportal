@@ -47,11 +47,6 @@
 	font-style: italic;
 }
 
-#mutation_details .best_effect_transcript
-{
-	color: red;
-}
-
 #mutation_details .mutation_details_table
 {
 	font-size: 90%;
@@ -69,6 +64,7 @@ th.mutation-details-qtip-style
 	color: #1974B8;
 }
 
+
 #mutation_details .dataTables_filter
 {
 	width: 200px;
@@ -81,13 +77,19 @@ th.mutation-details-qtip-style
 
 #mutation_details .dataTables_info
 {
-	width: 300px;
+	width: 400px;
 }
 
 #mutation_details .msa-img, #mutation_details .pdb-img
 {
 	vertical-align: bottom;
 	margin-left: 3px;
+}
+
+#mutation_details .non_canonical_table_info
+{
+	color: red;
+	font-weight: bold;
 }
 
 .mutation-details-tooltip

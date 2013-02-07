@@ -226,10 +226,50 @@ function drawMutationTable(data)
 {
     var divId = "mutation_table_" + data.hugoGeneSymbol.toUpperCase();
     var tableId = "mutation_details_table_" + data.hugoGeneSymbol.toUpperCase();
+    var bestEffectTableId = "mutation_details_table_be_" + data.hugoGeneSymbol.toUpperCase();
+
+    var canonicalMutations = [];
+    var bestEffectMutations = [];
+
+    for (var i=0; i < data.mutations.length; i++)
+    {
+        if (data.mutations[i].canonicalTranscript)
+        {
+            canonicalMutations.push(data.mutations[i]);
+        }
+        else
+        {
+            bestEffectMutations.push(data.mutations[i]);
+        }
+    }
+
+    var canonicalData = {};
+    var bestEffectData = {};
+
+    jQuery.extend(canonicalData, data);
+    canonicalData.mutations = canonicalMutations;
+
+    if (bestEffectMutations.length > 0)
+    {
+        jQuery.extend(bestEffectData, data);
+        bestEffectData.mutations = bestEffectMutations;
+    }
+
+    var divSelector = $("#" + divId);
 
     // generate mutation table HTML for the provided data
-    $("#" + divId).empty();
-    $("#" + divId).append(_generateMutationTable(tableId, data));
+    divSelector.empty();
+    divSelector.append(_generateMutationTable(tableId,
+        canonicalData,
+        bestEffectMutations.length == 0));
+
+    if (bestEffectMutations.length > 0)
+    {
+        divSelector.append(_generateMutationTable(bestEffectTableId, bestEffectData, true));
+    }
+
+    // append footer message for special genes
+    divSelector.append('<p><br>' + data.footerMsg + '<br>');
 
 //    $("#" + divId).append("<table cellpadding='0' cellspacing='0' border='0' " +
 //                          "class='display mutation_details_table' " +
@@ -260,8 +300,7 @@ function drawMutationTable(data)
         }
     }
 
-    // format the table with the dataTable plugin
-    var oTable = $("#mutation_details #" + tableId).dataTable({
+    var dataTableOpts = {
         "sDom": '<"H"<"mutation_datatables_filter"f>C<"mutation_datatables_info"i>>t',
         "bJQueryUI": true,
         "bPaginate": false,
@@ -288,9 +327,31 @@ function drawMutationTable(data)
             // add tooltips to the table
             addMutationTableTooltips(tableId);
         }
-    });
+    };
+
+    var beDataTableOpts = {};
+    jQuery.extend(true, beDataTableOpts, dataTableOpts);
+    beDataTableOpts["fnDrawCallback"] = function(oSettings) {
+        // add tooltips to the table
+        addMutationTableTooltips(bestEffectTableId);
+
+        // add aditional information into the toolbar
+        $("#" + bestEffectTableId + "_info").append(
+            '<br><span class="non_canonical_table_info">' +
+            'Mutations listed here are for the best effect transcript</span>');
+    };
+
+    // format the table with the dataTable plugin
+    var oTable = $("#mutation_details #" + tableId).dataTable(dataTableOpts);
 
     oTable.css("width", "100%");
+
+    var drawBestEffectTable = function(){
+        var oTable = $("#mutation_details #" + bestEffectTableId).dataTable(beDataTableOpts);
+        oTable.css("width", "100%");
+    };
+
+    setTimeout(drawBestEffectTable, 0);
 }
 
 /**
@@ -298,9 +359,10 @@ function drawMutationTable(data)
  *
  * @param tableId   HTML id for the table
  * @param data      mutation data for a single gene
+ * @param hasFoot   indicates whether to generate table footer or not
  * @return          HTML representation of the table
  */
-function _generateMutationTable(tableId, data)
+function _generateMutationTable(tableId, data, hasFoot)
 {
     var i, j;
     var headers = _getMutationTableHeaders(data);
@@ -338,18 +400,20 @@ function _generateMutationTable(tableId, data)
 
     // column headers in table foot
 
-    table += '<tfoot>';
-
-    for (i = 0; i < headers.length; i++)
+    if (hasFoot)
     {
-        table += '<th alt="' + _getMutationTableHeaderTip(headers[i]) + '"><b>' +
-                 headers[i] + '</b></th>';
+        table += '<tfoot>';
+
+        for (i = 0; i < headers.length; i++)
+        {
+            table += '<th alt="' + _getMutationTableHeaderTip(headers[i]) + '"><b>' +
+                     headers[i] + '</b></th>';
+        }
+
+        table += '</tfoot>';
     }
 
-    table += '</tfoot></table>';
-
-    // footer message for special genes
-    table += '<p><br>' + data.footerMsg + '<br>';
+    table += '</table>';
 
     return table;
 }
@@ -362,7 +426,7 @@ function _generateMutationTable(tableId, data)
  */
 function _getMutationTableHeaders(data)
 {
-    var headers = new Array();
+    var headers = [];
 
     // default headers
     headers.push(data.header.caseId);
@@ -637,17 +701,14 @@ function _getMutationTableRows(data)
         var style = "protein_change";
         var tip = "";
 
-        // TODO disabled temporarily, enable when isoform support completely ready
-//        if (!mutation.canonicalTranscript)
-//        {
-//            style = "best_effect_transcript " + style;
-//            // TODO find a better way to display isoform information
-//            tip = "Specified protein change is for the best effect transcript " +
-//                "instead of the canonical transcript.<br>" +
-//                "<br>RefSeq mRNA id: " + "<b>" + mutation.refseqMrnaId + "</b>" +
-//                "<br>Codon change: " + "<b>" + mutation.codonChange + "</b>" +
-//                "<br>Uniprot id: " + "<b>" + mutation.uniprotId + "</b>";
-//        }
+        if (!mutation.canonicalTranscript)
+        {
+            style = "best_effect_transcript " + style;
+            // TODO find a better way to display isoform information
+            tip = "RefSeq mRNA id: " + "<b>" + mutation.refseqMrnaId + "</b>" +
+                "<br>Codon change: " + "<b>" + mutation.codonChange + "</b>" +
+                "<br>Uniprot id: " + "<b>" + mutation.uniprotId + "</b>";
+        }
 
         return '<span class="' + style + '" alt="' + tip + '">' +
             mutation.proteinChange +
@@ -657,11 +718,11 @@ function _getMutationTableRows(data)
     // generate rows as HTML
 
     var row;
-    var rows = new Array();
+    var rows = [];
 
     for (var i=0; i<data.mutations.length; i++)
     {
-        row = new Array();
+        row = [];
 
         row.push('<a href="' + data.mutations[i].linkToPatientView + '">' +
                  '<b>' + data.mutations[i].caseId + "</b></a>");
@@ -743,8 +804,8 @@ function addMutationTableTooltips(tableId)
         style: { classes: 'mutation-details-tooltip ui-tooltip-shadow ui-tooltip-light ui-tooltip-rounded' },
         position: {my:'top left', at:'bottom right'}};
 
-    var qTipOptionsHeader = new Object();
-    var qTipOptionsLeft = new Object();
+    var qTipOptionsHeader = {};
+    var qTipOptionsLeft = {};
     jQuery.extend(true, qTipOptionsHeader, qTipOptions);
     jQuery.extend(true, qTipOptionsLeft, qTipOptions);
     qTipOptionsHeader.position = {my:'top center', at:'bottom center'};
@@ -818,7 +879,7 @@ function addMutationTableTooltips(tableId)
 
     // copy default qTip options and modify "content"
     // to customize for predicted impact score
-    var qTipOptsOma = new Object();
+    var qTipOptsOma = {};
     jQuery.extend(true, qTipOptsOma, qTipOptions);
 
     qTipOptsOma.content = { text: function(api) {
