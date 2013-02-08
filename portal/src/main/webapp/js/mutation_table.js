@@ -231,6 +231,7 @@ function drawMutationTable(data)
     var canonicalMutations = [];
     var bestEffectMutations = [];
 
+    // create separate data sets for canonical and best effect transcripts
     for (var i=0; i < data.mutations.length; i++)
     {
         if (data.mutations[i].canonicalTranscript)
@@ -263,8 +264,15 @@ function drawMutationTable(data)
         canonicalData,
         bestEffectMutations.length == 0));
 
+    // add another table for best effect transcript
     if (bestEffectMutations.length > 0)
     {
+        // TODO add header info for the best effect table
+        divSelector.append(
+            '<div class="ui-widget-header"><span class="non_canonical_table_info">' +
+            '*This additional table shows mutations for the best effect ' +
+            'transcript instead of the best canonical transcript</span></div>');
+
         divSelector.append(_generateMutationTable(bestEffectTableId, bestEffectData, true));
     }
 
@@ -326,32 +334,50 @@ function drawMutationTable(data)
         "fnDrawCallback": function(oSettings) {
             // add tooltips to the table
             addMutationTableTooltips(tableId);
+        },
+        "oColVis": {
+            "fnStateChange": function (iColumn, bVisible) {
+                // also show/hide columns of the best effect table
+                if (bestEffectMutations.length > 0)
+                {
+                    $("#" + bestEffectTableId).dataTable().fnSetColumnVis(
+                        iColumn, bVisible);
+                }
+            }
         }
     };
 
+    // modified options for best effect transcript
     var beDataTableOpts = {};
     jQuery.extend(true, beDataTableOpts, dataTableOpts);
+    beDataTableOpts["sDom"] = 't';
     beDataTableOpts["fnDrawCallback"] = function(oSettings) {
         // add tooltips to the table
         addMutationTableTooltips(bestEffectTableId);
-
-        // add aditional information into the toolbar
-        $("#" + bestEffectTableId + "_info").append(
-            '<br><span class="non_canonical_table_info">' +
-            'Mutations listed here are for the best effect transcript</span>');
     };
 
     // format the table with the dataTable plugin
-    var oTable = $("#mutation_details #" + tableId).dataTable(dataTableOpts);
+    var oTable = $("#" + tableId).dataTable(dataTableOpts);
 
     oTable.css("width", "100%");
 
     var drawBestEffectTable = function(){
-        var oTable = $("#mutation_details #" + bestEffectTableId).dataTable(beDataTableOpts);
+        var tableSelector = $("#" + bestEffectTableId);
+        var oTable = tableSelector.dataTable(beDataTableOpts);
         oTable.css("width", "100%");
+
+        oTable = tableSelector.dataTable();
+
+        // add listener to enable shared filtering for both tables
+        $("#" + tableId + "_filter input").keyup(function() {
+            oTable.fnFilter(this.value);
+        });
     };
 
-    setTimeout(drawBestEffectTable, 0);
+    if (bestEffectMutations.length > 0)
+    {
+        setTimeout(drawBestEffectTable, 0);
+    }
 }
 
 /**
