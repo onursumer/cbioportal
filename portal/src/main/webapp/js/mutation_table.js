@@ -262,16 +262,19 @@ function drawMutationTable(data)
     divSelector.empty();
     divSelector.append(_generateMutationTable(tableId,
         canonicalData,
-        bestEffectMutations.length == 0));
+        true));
+        //bestEffectMutations.length == 0));
 
     // add another table for best effect transcript
     if (bestEffectMutations.length > 0)
     {
         // TODO add header info for the best effect table
         divSelector.append(
-            '<div class="ui-widget-header"><span class="non_canonical_table_info">' +
-            '*This additional table shows mutations for the best effect ' +
-            'transcript instead of the best canonical transcript</span></div>');
+            '<div class="non_canonical_table_info_div">' +
+                '<span class="non_canonical_table_info">' +
+                '* This additional table below shows mutations for the best effect ' +
+                'transcript instead of the best canonical transcript</span>' +
+            '</div>');
 
         divSelector.append(_generateMutationTable(bestEffectTableId, bestEffectData, true));
     }

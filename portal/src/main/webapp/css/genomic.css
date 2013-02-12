@@ -92,6 +92,11 @@ th.mutation-details-qtip-style
 	font-weight: bold;
 }
 
+#mutation_details .non_canonical_table_info_div
+{
+	margin-top: 10px;
+}
+
 .mutation-details-tooltip
 {
 	font-size: 12px !important;
