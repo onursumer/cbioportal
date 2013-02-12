@@ -158,7 +158,7 @@ function calcMutationPercent(mutationArray, targetNode)
 }
 
 // extends node fields by adding new fields according to genomic data
-function addGenomicFields()
+NetworkSbgnVis.prototype.addGenomicFields = function()
 {
 	var cna_amplified 	= {name:"PERCENT_CNA_AMPLIFIED", type:"number"};
 	var cna_gained		= {name:"PERCENT_CNA_GAINED", type:"number"};
