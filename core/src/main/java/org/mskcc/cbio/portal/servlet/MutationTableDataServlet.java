@@ -503,6 +503,8 @@ public class MutationTableDataServlet extends HttpServlet
 
 		headerList.put("caseId", "Case ID");
 		headerList.put("proteinChange", "AA Change");
+		headerList.put("refseqMrnaId", "RefSeq mRNA ID");
+		headerList.put("codonChange", "Codon Change");
 		headerList.put("mutationType", "Type");
 		headerList.put("cosmic", "COSMIC");
 		headerList.put("functionalImpactScore", "FIS");

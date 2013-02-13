@@ -302,14 +302,17 @@ function drawMutationTable(data)
     count += data.header.specialGeneHeaders.length - 2;
 
     // hide special gene columns and less important columns by default
-    for (var col=9; col<count; col++)
+    for (var col=11; col<count; col++)
     {
         // do not hide frequency columns
-        if (!(col == 14 || col == 17))
+        if (!(col == 16 || col == 19))
         {
             hiddenCols.push(col);
         }
     }
+
+    hiddenCols.push(2);
+    hiddenCols.push(3);
 
     var dataTableOpts = {
         "sDom": '<"H"<"mutation_datatables_filter"f>C<"mutation_datatables_info"i>>t',
@@ -320,17 +323,17 @@ function drawMutationTable(data)
 //      "aoColumns" : columns,
         "aoColumnDefs":[
             {"sType": 'aa-change-col',
-                "aTargets": [ 1 ]},
+                "aTargets": [1]},
             {"sType": 'label-int-col',
                 "sClass": "right-align-td",
-                "aTargets": [3,15,16,18,19]},
+                "aTargets": [5,17,18,19,20]},
             {"sType": 'label-float-col',
                 "sClass": "right-align-td",
-                "aTargets": [14,17]},
+                "aTargets": [16,19]},
             {"sType": 'predicted-impact-col',
-                "aTargets": [ 4 ]},
+                "aTargets": [6]},
             {"asSorting": ["desc", "asc"],
-                "aTargets": [3,4,5]},
+                "aTargets": [5,6,7]},
             {"bVisible": false,
                 "aTargets": hiddenCols}
         ],
@@ -460,6 +463,8 @@ function _getMutationTableHeaders(data)
     // default headers
     headers.push(data.header.caseId);
     headers.push(data.header.proteinChange);
+    headers.push(data.header.refseqMrnaId);
+    headers.push(data.header.codonChange);
     headers.push(data.header.mutationType);
     headers.push(data.header.cosmic);
     headers.push(data.header.functionalImpactScore);
@@ -498,6 +503,8 @@ function _getMutationTableHeaderTip(header)
 {
     var tooltipMap = {"case id" : "Case ID",
         "aa change": "Protein Change",
+        "refseq mrna id": "RefSeq mRNA ID",
+        "codon change": "Codon Change",
         "type": "Mutation Type",
         "cosmic": "Overlapping mutations in COSMIC",
         "fis": "Predicted Functional Impact Score (via Mutation Assessor) for missense mutations",
@@ -756,6 +763,8 @@ function _getMutationTableRows(data)
         row.push('<a href="' + data.mutations[i].linkToPatientView + '">' +
                  '<b>' + data.mutations[i].caseId + "</b></a>");
         row.push(getProteinChangeHtml(data.mutations[i]));
+        row.push(data.mutations[i].refseqMrnaId);
+        row.push(data.mutations[i].codonChange);
         row.push(getMutationTypeHtml(data.mutations[i].mutationType.toLowerCase()));
         row.push(getCosmicHtml(data.mutations[i].cosmic, data.mutations[i].cosmicCount));
         row.push(getFisHtml(data.mutations[i].functionalImpactScore.toLowerCase(),
