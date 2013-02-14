@@ -260,6 +260,17 @@ function drawMutationTable(data)
 
     // generate mutation table HTML for the provided data
     divSelector.empty();
+
+    if (bestEffectMutations.length > 0)
+    {
+        divSelector.append(
+            '<div class="canonical_table_info_div">' +
+                '<span class="canonical_table_info">' +
+                    'Mutations that affect the canonical isoform:' +
+                '</span>' +
+            '</div>');
+    }
+
     divSelector.append(_generateMutationTable(tableId,
         canonicalData,
         true));
@@ -268,15 +279,44 @@ function drawMutationTable(data)
     // add another table for best effect transcript
     if (bestEffectMutations.length > 0)
     {
-        // TODO add header info for the best effect table
+        var infoText;
+
+        if (bestEffectMutations.length == 1)
+        {
+            infoText = 'There is 1 mutation that only affects non-canonical transcript:';
+        }
+        else
+        {
+            infoText = 'There are ' + bestEffectMutations.length +
+                       ' mutations that only affect non-canonical transcripts:';
+        }
+
         divSelector.append(
             '<div class="non_canonical_table_info_div">' +
-                '<span class="non_canonical_table_info">' +
-                '* This additional table below shows mutations for the best effect ' +
-                'transcript instead of the best canonical transcript</span>' +
+                //'<span class="triangle ui-icon ui-icon-triangle-1-e" style="float:left;"></span>' +
+                //'<span class="triangle ui-icon ui-icon-triangle-1-s" style="float:left; display:none;"></span>' +
+                '<span class="non_canonical_table_info">' + infoText + '</span>' +
             '</div>');
 
         divSelector.append(_generateMutationTable(bestEffectTableId, bestEffectData, true));
+
+        // TODO showing/hiding datatables causes problems
+//        $("#" + divId + " .triangle").click(function(evt){
+//            $("#" + divId + " .triangle").toggle();
+//            var wrapperSelector = $("#" + bestEffectTableId + "_wrapper");
+//
+//            if (wrapperSelector.is(':hidden'))
+//            {
+//                console.log("showing be table...");
+//                wrapperSelector.show();
+//                //$("#" + bestEffectTableId).dataTable().fnAdjustColumnSizing();
+//            }
+//            else
+//            {
+//                console.log("hiding be table...");
+//                wrapperSelector.hide();
+//            }
+//        });
     }
 
     // append footer message for special genes
@@ -360,6 +400,10 @@ function drawMutationTable(data)
     beDataTableOpts["fnDrawCallback"] = function(oSettings) {
         // add tooltips to the table
         addMutationTableTooltips(bestEffectTableId);
+
+        // TODO hiding a datatable causes problems
+        // initially hide non-canonical table
+        //$("#" + bestEffectTableId + "_wrapper").hide();
     };
 
     // format the table with the dataTable plugin
