@@ -52,6 +52,7 @@ package org.cytoscapeweb.view {
     import org.cytoscapeweb.model.methods.error;
     import org.cytoscapeweb.util.ExternalFunctions;
     import org.cytoscapeweb.util.Groups;
+    import org.cytoscapeweb.view.render.CBioSBGNNodeRenderer;
     import org.cytoscapeweb.vis.data.CompoundNodeSprite;
     import org.puremvc.as3.interfaces.INotification;
         
@@ -617,6 +618,16 @@ package org.cytoscapeweb.view {
         private function exportNetwork(format:String, url:String, options:Object=null):void {
             sendNotification(ApplicationFacade.EXPORT_NETWORK, { format: format, url: url, options: options });
         }
+		
+		// CBio Modification
+		private function alwaysShowProfileData(value:Boolean):void {
+			sendNotification(ApplicationFacade.SHOW_PROFILE_DATA, value);
+		}
+		
+		// CBio Modification
+		private function isAlwaysShowProfileData():Boolean {
+			return CBioSBGNNodeRenderer.instance.detailFlag;
+		}
 
         // ------------------------------------------------------------
         
