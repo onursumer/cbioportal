@@ -54,7 +54,7 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData)
 			this.calcCNAPercents(cnaArray, targetNodes[i]);
 			this.calcMutationPercent(mutationsArray, targetNodes[i]);
 			this.calcRPPAorMRNAPercent(mrnaArray, mrna, targetNodes[i]);
-			this.calcRPPAorMRNAPercent(mrnaArray, rppaArray, targetNodes[i]);
+			this.calcRPPAorMRNAPercent(rppaArray, rppaArray, targetNodes[i]);
 			targetNodes[i].data['PERCENT_ALTERED'] = parseInt(percentAltered.split('%'),10)/100;
 		}	
 
