@@ -8,6 +8,7 @@ function NetworkSbgnVis(divId)
 {
 	// call the parent constructor
 	NetworkVis.call(this, divId);
+    this.networkTabsSelector = "#" + this.divId + " #network_tabs_sbgn";
 }
 
 //this simulates NetworkSbgnVis extends NetworkVis (inheritance)

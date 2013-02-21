@@ -14,7 +14,7 @@
 			</td>
 			<td>
 				<div>
-					<jsp:include page="network_tabs.jsp"/>
+					<jsp:include page="network_tabs_sbgn.jsp"/>
 				</div>
 			</td>
 		</tr>
