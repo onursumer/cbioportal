@@ -871,4 +871,69 @@ public final class DaoMutationEvent {
             JdbcUtil.closeAll(DaoMutationEvent.class, con, pstmt, rs);
         }
     }
+    
+    /**
+     * @param concatCancerStudyIds cancerStudyIds concatenated by comma (,)
+     * @param type missense, truncating
+     * @param thresholdSamples threshold of number of samples
+     * @return Map<keyword, Map<CancerStudyId, Map<CaseId,MutationId>>>
+     */
+    public static Map<String,Map<Integer, Map<String,Long>>> getMutatationStatistics(String concatCancerStudyIds,
+            String[] types, int thresholdSamples) throws DaoException {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection();
+            String keywords = "(`KEYWORD` LIKE '%"+StringUtils.join(types,"' OR `KEYWORD` LIKE '%") +"') ";
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `CASE_ID`, cme.`MUTATION_EVENT_ID` "
+                    + "FROM  `mutation_event` me, `case_mutation_event` cme, `genetic_profile` gp "
+                    + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
+                    + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
+                    + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
+                    + "AND " + keywords
+                    + "ORDER BY `KEYWORD` ASC"; // to filter and save memories
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            Map<String,Map<Integer, Map<String,Long>>> map = new HashMap<String,Map<Integer, Map<String,Long>>>();
+            String currentKeyword = null;
+            Map<Integer, Map<String,Long>> mapStudyCaseMut = null;
+            int totalCountPerKeyword = 0;
+            while (rs.next()) {
+                int cancerStudyId = rs.getInt(1);
+                String keyword = rs.getString(2);
+                String caseId = rs.getString(3);
+                long mutEventId = rs.getInt(4);
+                
+                if (!keyword.equals(currentKeyword)) {
+                    if (totalCountPerKeyword>=thresholdSamples) {
+                        map.put(currentKeyword, mapStudyCaseMut);
+                    }
+                    currentKeyword = keyword;
+                    mapStudyCaseMut = new HashMap<Integer, Map<String,Long>>();
+                    totalCountPerKeyword = 0;
+                }
+                
+                Map<String,Long> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
+                if (mapCaseMut==null) {
+                    mapCaseMut = new HashMap<String,Long>();
+                    mapStudyCaseMut.put(cancerStudyId, mapCaseMut);
+                }
+                mapCaseMut.put(caseId, mutEventId);
+                totalCountPerKeyword ++;
+            }
+            
+            if (totalCountPerKeyword>=thresholdSamples) {
+                map.put(currentKeyword, mapStudyCaseMut);
+            }
+            
+            return map;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(con, pstmt, rs);
+        }
+        
+    }
 }

@@ -29,6 +29,10 @@ public class MutationsJSON extends HttpServlet {
     public static final String KEYWORD_CONTEXT = "keyword_context";
     public static final String MUTATION_CONTEXT = "mutation_context";
     
+    public static final String GET_STATISTICS_CMD = "statistics";
+    public static final String MUTATION_TYPE = "type";
+    public static final String THRESHOLD_SAMPLES = "threshold_samples";
+    
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
      * @param request servlet request
@@ -49,9 +53,65 @@ public class MutationsJSON extends HttpServlet {
                 processCountMutationsRequest(request, response);
                 return;
             }
+            
+            if (cmd.equalsIgnoreCase(GET_STATISTICS_CMD)) {
+                processStatisticsRequest(request, response);
+                return;
+            }
         }
             
         processGetMutationsRequest(request, response);
+    }
+    
+    private void processStatisticsRequest(HttpServletRequest request,
+            HttpServletResponse response)
+            throws ServletException, IOException {
+        String studyStableIds = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
+        String type = request.getParameter(MUTATION_TYPE);
+        int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
+        
+        Map<String,Map<Integer, Map<String,Long>>> mapKeywordStudyCaseMut = Collections.emptyMap();
+        Map<Integer,String> cancerStudyIdMapping = new HashMap<Integer,String>();
+        
+        try {
+            StringBuilder studyIds = new StringBuilder();
+            for (String stableId : studyStableIds.split("[, ]+")) {
+                CancerStudy study = DaoCancerStudy.getCancerStudyByStableId(stableId);
+                if (study!=null) {
+                    studyIds.append(study.getInternalId()).append(",");
+                    cancerStudyIdMapping.put(study.getInternalId(), stableId);
+                }
+            }
+            if (studyIds.length()>0) {
+                studyIds.deleteCharAt(studyIds.length()-1);
+            }
+            
+            mapKeywordStudyCaseMut = DaoMutationEvent.getMutatationStatistics(
+                    studyIds.toString(), type.split("[, ]+"), threshold);
+        } catch (DaoException ex) {
+            throw new ServletException(ex);
+        }
+        
+        // transform the data to use stable cancer study id
+        Map<String,Map<String, Map<String,Long>>> map =
+                new HashMap<String,Map<String, Map<String,Long>>>(mapKeywordStudyCaseMut.size());
+        for (Map.Entry<String,Map<Integer, Map<String,Long>>> entry1 : mapKeywordStudyCaseMut.entrySet()) {
+            String keyword = entry1.getKey();
+            Map<String, Map<String,Long>> map1 = new HashMap<String, Map<String,Long>>(entry1.getValue().size());
+            for (Map.Entry<Integer, Map<String,Long>> entry2 : entry1.getValue().entrySet()) {
+                map1.put(cancerStudyIdMapping.get(entry2.getKey()), entry2.getValue());
+            }
+            map.put(keyword, map1);
+        }
+
+        response.setContentType("application/json");
+        
+        PrintWriter out = response.getWriter();
+        try {
+            JSONValue.writeJSONString(map, out);
+        } finally {            
+            out.close();
+        }
     }
     
     private void processGetMutationsRequest(HttpServletRequest request,
