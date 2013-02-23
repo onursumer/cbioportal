@@ -318,11 +318,11 @@ package org.cytoscapeweb.view.render
 			}
 			
 			// Bottom genomic rectangle
-			if (cns.data.PERCENT_RPPA_WAY_UP != null ||
-				cns.data.PERCENT_RPPA_WAY_DOWN != null)
+			if (cns.data.PERCENT_RPPA_UP != null ||
+				cns.data.PERCENT_RPPA_DOWN != null)
 			{
-				var rppaUpRegulation:Number = Number(cns.data.PERCENT_MRNA_UP);
-				var rppaDownRegulation:Number = Number(cns.data.PERCENT_MRNA_DOWN);
+				var rppaUpRegulation:Number = Number(cns.data.PERCENT_RPPA_UP);
+				var rppaDownRegulation:Number = Number(cns.data.PERCENT_RPPA_DOWN);
 				bottomFlag = true;
 			}
 			
@@ -373,7 +373,10 @@ package org.cytoscapeweb.view.render
 			}
 			else
 			{
+				xOffset = -3*w/8;
+				yOffset = -h/2-genomicBoxLength;
 				g.beginGradientFill(fillType, colors, alphas, ratios, matrix, spreadMethod);
+				g.lineStyle(borderThickness, 0xDCDCDC, 1);
 				g.drawRect(xOffset,yOffset,3*w/4,genomicBoxLength);
 			}
 			
@@ -419,8 +422,11 @@ package org.cytoscapeweb.view.render
 			}
 			else
 			{
+				xOffset = -3*w/8;
+				yOffset = h/2;
 				g.beginGradientFill(fillType, colors, alphas, ratios, matrix, spreadMethod);
-				g.drawRect(xOffset+multimerOffset,yOffset,3*w/4,genomicBoxLength);
+				g.lineStyle(borderThickness, 0xDCDCDC, 1);
+				g.drawRect(xOffset+multimerOffset-borderThickness/2,yOffset,3*w/4,genomicBoxLength+borderThickness/2);
 			}
 			
 			if (rightFlag) 
@@ -444,7 +450,10 @@ package org.cytoscapeweb.view.render
 			}
 			else
 			{
+				xOffset = w/2;
+				yOffset = -3*h/8;
 				g.beginGradientFill(fillType, colors, alphas, ratios, matrix, spreadMethod);
+				g.lineStyle(borderThickness, 0xDCDCDC, 1);
 				g.drawRect(xOffset,yOffset+multimerOffset,genomicBoxLength+multimerOffset,3*h/4);
 				g.endFill();
 			}
@@ -474,8 +483,11 @@ package org.cytoscapeweb.view.render
 			}
 			else
 			{
+				xOffset = -w/2-genomicBoxLength;
+			    yOffset = -3*h/8;
 				g.beginGradientFill(fillType, colors, alphas, ratios, matrix, spreadMethod);
-				g.drawRect(-5*w/8,-3*h/8,w/4,3*h/4);
+				g.lineStyle(borderThickness, 0xDCDCDC, 1);
+				g.drawRect(xOffset-borderThickness/2,yOffset-borderThickness/2,genomicBoxLength+borderThickness/2,3*h/4);
 				g.endFill();
 			}
 		}
