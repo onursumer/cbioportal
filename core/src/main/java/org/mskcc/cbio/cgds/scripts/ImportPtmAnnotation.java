@@ -211,15 +211,6 @@ public class ImportPtmAnnotation {
     }
 
     public static void main(String[] args) throws Exception {
-//        args = new String[]{"/Users/jj/Downloads/Regulatory_sites","phosphositeplus-regsite"};
-//        args = new String[]{"/Users/jj/Downloads/Disease-associated_sites","phosphositeplus-disease"};
-//        args = new String[]{"/Users/jj/Downloads/Kinase_Substrate_Dataset","phosphositeplus-kinase"};
-//        args = new String[]{"/Users/jj/Downloads/Phosphorylation_site_dataset","phosphositeplus"};
-//        args = new String[]{"/Users/jj/Downloads/Acetylation_site_dataset","phosphositeplus"};
-//        args = new String[]{"/Users/jj/Downloads/Ubiquitination_site_dataset","phosphositeplus"};
-//        args = new String[]{"/Users/jj/Downloads/Sumoylation_site_dataset","phosphositeplus"};
-//        args = new String[]{"/Users/jj/Downloads/O-GlcNAc_site_dataset","phosphositeplus"};
-//        args = new String[]{"/Users/jj/Downloads/Methylation_site_dataset","phosphositeplus"};
         if (args.length < 2) {
             System.out.println("command line usage:  importPtmAnnotation.pl <ptm_file> <type>");
             System.exit(1);
