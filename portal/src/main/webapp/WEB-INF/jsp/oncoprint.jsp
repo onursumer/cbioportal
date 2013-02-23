@@ -11,7 +11,7 @@
             <input type="hidden" name="xml">
             <input type="hidden" name="longest_label_length">
             <input type="hidden" name="format" value="svg">
-            <p>Get OncoPrint:&nbsp;&nbsp;&nbsp;<input type="submit" value="SVG"></p>
+            <p>Download OncoPrint:&nbsp;&nbsp;&nbsp;<input type="submit" value="SVG"></p>
         </form>
 
         <div id="oncoprint_controls">
@@ -40,7 +40,7 @@
             </table>
         </div>
         <div id="oncoprint_body">
-            <script type="text/javascript" src="js/oncoprint.js"></script>
+            <script type="text/javascript" src="js/oncoprint.js?b38533a455c5"></script>
             <script type="text/javascript" src="js/d3.v2.min.js"></script>
             <%--todo: we may want to import d3 globally but for now, it's just here--%>
 
