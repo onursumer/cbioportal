@@ -884,7 +884,7 @@ public final class DaoMutationEvent {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            con = JdbcUtil.getDbConnection();
+            con = JdbcUtil.getDbConnection(DaoMutationEvent.class);
             String keywords = "(`KEYWORD` LIKE '%"+StringUtils.join(types,"' OR `KEYWORD` LIKE '%") +"') ";
             String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `CASE_ID`, cme.`MUTATION_EVENT_ID` "
                     + "FROM  `mutation_event` me, `case_mutation_event` cme, `genetic_profile` gp "
@@ -932,7 +932,7 @@ public final class DaoMutationEvent {
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoMutationEvent.class, con, pstmt, rs);
         }
         
     }
