@@ -93,4 +93,39 @@ public class PtmAnnotation {
     public void setNotes(Set<String> notes) {
         this.notes = notes;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 79 * hash + (this.uniprotId != null ? this.uniprotId.hashCode() : 0);
+        hash = 79 * hash + this.residue;
+        hash = 79 * hash + (this.type != null ? this.type.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final PtmAnnotation other = (PtmAnnotation) obj;
+        if (!uniprotId.equals(other.uniprotId)) {
+            return false;
+        }
+        if (residue != other.residue) {
+            return false;
+        }
+        if (!type.equals(type)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "PtmAnnotation{" + "uniprotId=" + uniprotId + ", symbol=" + symbol + ", residue=" + residue + ", type=" + type + '}';
+    }
 }
