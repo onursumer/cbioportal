@@ -17,6 +17,8 @@
             &nbsp;<br/>
             &nbsp;<br/>
             &nbsp;<br/>
+            &nbsp;<br/>
+            &nbsp;<br/>
             <div id="side-menu" style="display: none">
                 <div id="merge-alterations-div">
                     <input type="checkbox" id="merge-alterations">&nbsp;Merge alterations for each gene
