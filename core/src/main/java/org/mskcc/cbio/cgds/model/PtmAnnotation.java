@@ -40,6 +40,8 @@ public class PtmAnnotation {
     private String type;
     private Set<String> enzymes;
     private Set<String> notes;
+    
+    public PtmAnnotation() {}
 
     public PtmAnnotation(String uniprotId, int residue, String type) {
         this.uniprotId = uniprotId;
