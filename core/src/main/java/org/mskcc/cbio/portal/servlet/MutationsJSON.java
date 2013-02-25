@@ -86,8 +86,13 @@ public class MutationsJSON extends HttpServlet {
                 studyIds.deleteCharAt(studyIds.length()-1);
             }
             
-            mapKeywordStudyCaseMut = DaoMutationEvent.getMutatationStatistics(
-                    studyIds.toString(), type.split("[, ]+"), threshold);
+            if (type.equalsIgnoreCase("truncating-sep")) {
+                 mapKeywordStudyCaseMut = DaoMutationEvent.getTruncatingMutatationStatistics(
+                    studyIds.toString(), threshold);
+            } else {
+                mapKeywordStudyCaseMut = DaoMutationEvent.getMutatationStatistics(
+                        studyIds.toString(), type.split("[, ]+"), threshold);
+            }
         } catch (DaoException ex) {
             throw new ServletException(ex);
         }

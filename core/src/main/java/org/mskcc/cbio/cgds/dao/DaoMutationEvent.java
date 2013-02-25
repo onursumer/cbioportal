@@ -129,7 +129,7 @@ public final class DaoMutationEvent {
         
         if (type.equals("Missense_Mutation")) {
             String aa = mutation.getProteinChange();
-            if (aa.equals("M1*")) {
+            if (aa.startsWith("M1")&&!aa.equals("M1M")) { // how about indels on the first position?
                 // non-start
                 return mutation.getGeneSymbol() + " truncating";
             }
@@ -143,10 +143,14 @@ public final class DaoMutationEvent {
         
         if (type.equals("In_Frame_Ins")) {
             String aa = mutation.getProteinChange();
+            if (aa.contains("*")) { // insert *
+                return mutation.getGeneSymbol() + " truncating";
+            }
+            
             Pattern p = Pattern.compile("([0-9]+)");
             Matcher m = p.matcher(aa);
             if (m.find()) {
-               return mutation.getGeneSymbol() + " " + m.group(1) + "ins";
+               return mutation.getGeneSymbol() + " " + m.group(1) + " ins";
             }
         }
         
@@ -156,7 +160,16 @@ public final class DaoMutationEvent {
             Pattern p = Pattern.compile("([0-9]+)");
             Matcher m = p.matcher(aa);
             if (m.find()) {
-               return mutation.getGeneSymbol() + " " + m.group(1) + "del";
+               return mutation.getGeneSymbol() + " " + m.group(1) + " del";
+            }
+        }
+        
+        if (type.equals("Silent")) {
+            String aa = mutation.getProteinChange();
+            Pattern p = Pattern.compile("([0-9]+)");
+            Matcher m = p.matcher(aa);
+            if (m.find()) {
+               return mutation.getGeneSymbol() + " " + m.group(1) + " silent";
             }
         }
             
@@ -905,6 +918,64 @@ public final class DaoMutationEvent {
                 String keyword = rs.getString(2);
                 String caseId = rs.getString(3);
                 long mutEventId = rs.getInt(4);
+                
+                if (!keyword.equals(currentKeyword)) {
+                    if (totalCountPerKeyword>=thresholdSamples) {
+                        map.put(currentKeyword, mapStudyCaseMut);
+                    }
+                    currentKeyword = keyword;
+                    mapStudyCaseMut = new HashMap<Integer, Map<String,Long>>();
+                    totalCountPerKeyword = 0;
+                }
+                
+                Map<String,Long> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
+                if (mapCaseMut==null) {
+                    mapCaseMut = new HashMap<String,Long>();
+                    mapStudyCaseMut.put(cancerStudyId, mapCaseMut);
+                }
+                mapCaseMut.put(caseId, mutEventId);
+                totalCountPerKeyword ++;
+            }
+            
+            if (totalCountPerKeyword>=thresholdSamples) {
+                map.put(currentKeyword, mapStudyCaseMut);
+            }
+            
+            return map;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoMutationEvent.class, con, pstmt, rs);
+        }
+    }
+    
+    public static Map<String,Map<Integer, Map<String,Long>>> getTruncatingMutatationStatistics(String concatCancerStudyIds,
+            int thresholdSamples) throws DaoException {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoMutationEvent.class);
+            String keywords = "(`KEYWORD` LIKE '%truncating') ";
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `AMINO_ACID_CHANGE`, `CASE_ID`, cme.`MUTATION_EVENT_ID` "
+                    + "FROM  `mutation_event` me, `case_mutation_event` cme, `genetic_profile` gp "
+                    + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
+                    + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
+                    + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
+                    + "AND " + keywords
+                    + "ORDER BY `ENTREZ_GENE_ID` ASC, `AMINO_ACID_CHANGE`"; // to filter and save memories
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            Map<String,Map<Integer, Map<String,Long>>> map = new HashMap<String,Map<Integer, Map<String,Long>>>();
+            String currentKeyword = null;
+            Map<Integer, Map<String,Long>> mapStudyCaseMut = null;
+            int totalCountPerKeyword = 0;
+            while (rs.next()) {
+                int cancerStudyId = rs.getInt(1);
+                String keyword = rs.getString(2) + " (" + rs.getString(3) + ")";
+                String caseId = rs.getString(4);
+                long mutEventId = rs.getInt(5);
                 
                 if (!keyword.equals(currentKeyword)) {
                     if (totalCountPerKeyword>=thresholdSamples) {

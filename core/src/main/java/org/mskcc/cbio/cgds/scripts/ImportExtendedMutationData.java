@@ -533,7 +533,7 @@ public class ImportExtendedMutationData{
 		}
 
 		// check for the type
-		boolean silent = mutationType.toLowerCase().startsWith("silent");
+		//boolean silent = mutationType.toLowerCase().startsWith("silent");
 		boolean loh = mutationType.toLowerCase().startsWith("loh");
 		boolean wildtype = mutationType.toLowerCase().startsWith("wildtype");
 		boolean utr3 = mutationType.toLowerCase().startsWith("3'utr");
@@ -542,7 +542,7 @@ public class ImportExtendedMutationData{
 		boolean igr = mutationType.toLowerCase().startsWith("igr");
 		boolean rna = mutationType.equalsIgnoreCase("rna");
 
-		return !(silent || loh || wildtype || utr3 || utr5 || flank5 || igr || rna);
+		return !(loh || wildtype || utr3 || utr5 || flank5 || igr || rna);
 	}
 
 	private String getMutationType(MafRecord record)
