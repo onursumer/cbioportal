@@ -18,7 +18,9 @@
             &nbsp;<br/>
             &nbsp;<br/>
             <div id="side-menu" style="display: none">
-                <input type="checkbox" id="merge-alterations">&nbsp;Merge alterations for each gene
+                <div id="merge-alterations-div">
+                    <input type="checkbox" id="merge-alterations">&nbsp;Merge alterations for each gene
+                </div>
             </div>
         </td>
     </tr>
@@ -47,7 +49,8 @@
         <label><b>Data type:</b></label>
         <select id="data-type">
             <option selected="selected" value="missense">Missense and In-frame Mutations</option>
-            <option value="truncating">Truncating Mutations (under development)</option>
+            <option value="truncating-sep">Truncating Mutations</option>
+            <option value="truncating">Truncating Mutations (merge by gene)</option>
             <option value="cna">Copy Number Alterations (under development)</option>
         </select>
     </div>
@@ -163,7 +166,7 @@ AlteredGene.Form = Backbone.View.extend({
         }
         var type = this.$('#data-type').val();
         var threshold = this.$('#threshold-number-samples').val();
-        router.navigate("submit/"+studies.join(",")+"/"+type+"/"+threshold, {trigger: true});
+        router.navigate("submit/"+type+"/"+threshold+"/"+studies.join(","), {trigger: true});
     }
 });
 
@@ -446,11 +449,11 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
 
 AlteredGene.Router = Backbone.Router.extend({
     initialize: function(options) {
-        this.el = options.el
+        this.el = options.el;
     },
     routes: {
         "": "form",
-        "submit/:studies/:type/:threshold": "submit"
+        "submit/:type/:threshold/:studies": "submit"
     },
     form: function() {
         var view = new AlteredGene.Form();
@@ -458,15 +461,20 @@ AlteredGene.Router = Backbone.Router.extend({
         this.el.empty();
         this.el.append(view.el);
     },
-    submit: function(studies, type, threshold) {
-        if (type=="missense") {
+    submit: function(type, threshold, studies) {
+        if (type!=="missense" && type!=="truncating-sep") {
+            $('#merge-alterations-div').remove();
+        }
+    
+        if (type==="missense" || type==="truncating" || type==="truncating-sep") {
+    
             var options = {
                     'cmd': 'statistics',
                     'cancer_study_id': studies,
-                    'type': 'missense,ins,del',
+                    'type': type==="missense" ? 'missense,ins,del' : type,
                     'threshold_samples': threshold
                 };
-                
+            
             // alteration view
             var alterations = new AlteredGene.Alterations([],options);
             var altView = new AlteredGene.Alterations.MissenseHeatmap(
@@ -512,7 +520,7 @@ AlteredGene.Router = Backbone.Router.extend({
                   });
             });
         } else {
-            this.el.append("under development");
+            alert("This is underdevelopment and currently not supported.");
         }
     }
 });

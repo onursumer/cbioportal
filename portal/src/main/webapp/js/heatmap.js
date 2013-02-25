@@ -32,7 +32,7 @@ function heatmap(data, container, options) {
       colNodes = data.colNodes,
       nCols = colNodes.length;
 
-  var margin = {top: 80, right: 0, bottom: 10, left: 180},
+  var margin = {top: 100, right: 0, bottom: 10, left: 220},
       width = options.colWidth * nCols,
       height = options.rowHeight * nRows;
 
