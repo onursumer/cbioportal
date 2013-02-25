@@ -33,6 +33,7 @@ import java.util.Set;
  * @author jgao
  */
 public class PtmAnnotation {
+    private long ptmAnnotationId;
     private String uniprotId;
     private String symbol;
     private int residue;
@@ -44,6 +45,14 @@ public class PtmAnnotation {
         this.uniprotId = uniprotId;
         this.residue = residue;
         this.type = type;
+    }
+
+    public long getPtmAnnotationId() {
+        return ptmAnnotationId;
+    }
+
+    public void setPtmAnnotationId(long ptmAnnotationId) {
+        this.ptmAnnotationId = ptmAnnotationId;
     }
 
     public String getUniprotId() {

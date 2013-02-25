@@ -213,6 +213,7 @@ public final class DaoPtmAnnotation {
     public static List<PtmAnnotation> extractPtmAnnotations(ResultSet rs) throws SQLException {
         List<PtmAnnotation> list = new ArrayList<PtmAnnotation>();
         while (rs.next()) {
+            long id = rs.getLong("PTM_ANNOTATION_ID");
             String uniprotId = rs.getString("UNIPROT_ID");
             String symbol = rs.getString("SYMBOL");
             int residue = rs.getInt("RESIDUE");
@@ -220,6 +221,7 @@ public final class DaoPtmAnnotation {
             String enzyme = rs.getString("ENZYME");
             String note = rs.getString("NOTE");
             PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
+            ptm.setPtmAnnotationId(id);
             ptm.setSymbol(symbol);
             if (enzyme!=null) {
                 ptm.setEnzyme(new HashSet<String>(Arrays.asList(enzyme.split("; "))));
