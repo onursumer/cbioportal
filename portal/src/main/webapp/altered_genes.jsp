@@ -92,7 +92,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
 </script>
     
 <script type="text/template" id="cancer-study-template">
-    &nbsp;&nbsp;<input type="checkbox" name="{{ id }}" value="{{ id }}">{{ name }}
+    &nbsp;&nbsp;<input type="checkbox" name="{{ id }}" value="{{ id }}">{{ name }} (<b>{{ sequenced }}</b> sequenced cases)
 </script>
 
 <script type="text/template" id="datatables-template">
@@ -210,7 +210,8 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
         this.$el.html(this.template(this.model.attributes));
             
         var id = this.model.get('id');
-        if (id.search(/(merged)|(ccle)|(_pub)/)==-1)
+        var sequencedCases = this.model.get('sequenced');
+        if (sequencedCases>=50 && id.search(/(merged)|(ccle)|(_pub)/)==-1)
             this.$('input').prop('checked',true);
             
         return this;
