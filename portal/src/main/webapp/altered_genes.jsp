@@ -315,8 +315,21 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             var freq = alt.get('frequency');
             var samples = alt.get('samples');
             rowNodes.push({'name':(gene+' '+alteration)+' ('+samples+')'});
-            for (study in freq) {
-                links.push({'row':i, 'col':colIxMap[study], 'value':cbio.util.size(freq[study])});
+            for (var study in freq) {
+                var freqStudy = freq[study];
+                var freqStudyArr = [];
+                for (var caseId in freqStudy) {
+                    freqStudyArr.push("<a href='tumormap.do?case_id="+caseId
+                            +"&cancer_study_id="+study+"'>"+caseId+"</a>: " + freqStudy[caseId]);
+                }
+                var samplesStudy = freqStudyArr.length;
+                var tip = "<b>"+samplesStudy+" cases</b><br/>&nbsp;"+freqStudyArr.join("<br/>&nbsp;");
+                links.push({
+                    'row':i,
+                    'col':colIxMap[study],
+                    'value':samplesStudy,
+                    'tip':tip
+                });
             }
         }
         

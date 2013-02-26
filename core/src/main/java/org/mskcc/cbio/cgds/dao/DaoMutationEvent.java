@@ -889,9 +889,9 @@ public final class DaoMutationEvent {
      * @param concatCancerStudyIds cancerStudyIds concatenated by comma (,)
      * @param type missense, truncating
      * @param thresholdSamples threshold of number of samples
-     * @return Map<keyword, Map<CancerStudyId, Map<CaseId,MutationId>>>
+     * @return Map<keyword, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
-    public static Map<String,Map<Integer, Map<String,Long>>> getMutatationStatistics(String concatCancerStudyIds,
+    public static Map<String,Map<Integer, Map<String,String>>> getMutatationStatistics(String concatCancerStudyIds,
             String[] types, int thresholdSamples) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -899,7 +899,7 @@ public final class DaoMutationEvent {
         try {
             con = JdbcUtil.getDbConnection(DaoMutationEvent.class);
             String keywords = "(`KEYWORD` LIKE '%"+StringUtils.join(types,"' OR `KEYWORD` LIKE '%") +"') ";
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `CASE_ID`, cme.`MUTATION_EVENT_ID` "
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `CASE_ID`, `AMINO_ACID_CHANGE` "
                     + "FROM  `mutation_event` me, `case_mutation_event` cme, `genetic_profile` gp "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
@@ -909,31 +909,31 @@ public final class DaoMutationEvent {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Map<String,Map<Integer, Map<String,Long>>> map = new HashMap<String,Map<Integer, Map<String,Long>>>();
+            Map<String,Map<Integer, Map<String,String>>> map = new HashMap<String,Map<Integer, Map<String,String>>>();
             String currentKeyword = null;
-            Map<Integer, Map<String,Long>> mapStudyCaseMut = null;
+            Map<Integer, Map<String,String>> mapStudyCaseMut = null;
             int totalCountPerKeyword = 0;
             while (rs.next()) {
                 int cancerStudyId = rs.getInt(1);
                 String keyword = rs.getString(2);
                 String caseId = rs.getString(3);
-                long mutEventId = rs.getInt(4);
+                String aaChange = rs.getString(4);
                 
                 if (!keyword.equals(currentKeyword)) {
                     if (totalCountPerKeyword>=thresholdSamples) {
                         map.put(currentKeyword, mapStudyCaseMut);
                     }
                     currentKeyword = keyword;
-                    mapStudyCaseMut = new HashMap<Integer, Map<String,Long>>();
+                    mapStudyCaseMut = new HashMap<Integer, Map<String,String>>();
                     totalCountPerKeyword = 0;
                 }
                 
-                Map<String,Long> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
+                Map<String,String> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
                 if (mapCaseMut==null) {
-                    mapCaseMut = new HashMap<String,Long>();
+                    mapCaseMut = new HashMap<String,String>();
                     mapStudyCaseMut.put(cancerStudyId, mapCaseMut);
                 }
-                mapCaseMut.put(caseId, mutEventId);
+                mapCaseMut.put(caseId, aaChange);
                 totalCountPerKeyword ++;
             }
             
@@ -949,7 +949,7 @@ public final class DaoMutationEvent {
         }
     }
     
-    public static Map<String,Map<Integer, Map<String,Long>>> getTruncatingMutatationStatistics(String concatCancerStudyIds,
+    public static Map<String,Map<Integer, Map<String,String>>> getTruncatingMutatationStatistics(String concatCancerStudyIds,
             int thresholdSamples) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -957,7 +957,7 @@ public final class DaoMutationEvent {
         try {
             con = JdbcUtil.getDbConnection(DaoMutationEvent.class);
             String keywords = "(`KEYWORD` LIKE '%truncating') ";
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `AMINO_ACID_CHANGE`, `CASE_ID`, cme.`MUTATION_EVENT_ID` "
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `AMINO_ACID_CHANGE`, `CASE_ID`, `AMINO_ACID_CHANGE` "
                     + "FROM  `mutation_event` me, `case_mutation_event` cme, `genetic_profile` gp "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
@@ -967,31 +967,31 @@ public final class DaoMutationEvent {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Map<String,Map<Integer, Map<String,Long>>> map = new HashMap<String,Map<Integer, Map<String,Long>>>();
+            Map<String,Map<Integer, Map<String,String>>> map = new HashMap<String,Map<Integer, Map<String,String>>>();
             String currentKeyword = null;
-            Map<Integer, Map<String,Long>> mapStudyCaseMut = null;
+            Map<Integer, Map<String,String>> mapStudyCaseMut = null;
             int totalCountPerKeyword = 0;
             while (rs.next()) {
                 int cancerStudyId = rs.getInt(1);
                 String keyword = rs.getString(2) + " (" + rs.getString(3) + ")";
                 String caseId = rs.getString(4);
-                long mutEventId = rs.getInt(5);
+                String aaChange = rs.getString(5);
                 
                 if (!keyword.equals(currentKeyword)) {
                     if (totalCountPerKeyword>=thresholdSamples) {
                         map.put(currentKeyword, mapStudyCaseMut);
                     }
                     currentKeyword = keyword;
-                    mapStudyCaseMut = new HashMap<Integer, Map<String,Long>>();
+                    mapStudyCaseMut = new HashMap<Integer, Map<String,String>>();
                     totalCountPerKeyword = 0;
                 }
                 
-                Map<String,Long> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
+                Map<String,String> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
                 if (mapCaseMut==null) {
-                    mapCaseMut = new HashMap<String,Long>();
+                    mapCaseMut = new HashMap<String,String>();
                     mapStudyCaseMut.put(cancerStudyId, mapCaseMut);
                 }
-                mapCaseMut.put(caseId, mutEventId);
+                mapCaseMut.put(caseId, aaChange);
                 totalCountPerKeyword ++;
             }
             

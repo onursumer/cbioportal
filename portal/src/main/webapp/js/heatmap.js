@@ -4,7 +4,7 @@
  * var data = {
  * "rowNodes":[{"name":"row1"},{"name":"row2"},{"name":"row3"}],
  * "colNodes":[{"name":"col1"},{"name":"col2"},{"name":"col3"},{"name":"col4"}],
- * "links":[{"row":0,"col":0,"value":1},{"row":0,"col":1,"value":3},{"row":0,"col":3,"value":7},
+ * "links":[{"row":0,"col":0,"value":1,"tip":"1 sample},{"row":0,"col":1,"value":3},{"row":0,"col":3,"value":7},
  *          {"row":1,"col":2,"value":5},{"row":1,"col":3,"value":6},{"row":1,"col":1,"value":1},
  *          {"row":2,"col":0,"value":8},{"row":2,"col":1,"value":3},{"row":2,"col":2,"value":6},{"row":2,"col":3,"value":11}]
  * };
@@ -59,8 +59,8 @@ function heatmap(data, container, options) {
   
   // Convert links to matrix
   data.links.forEach(function(link) {
-    var v = link.value;
-    matrix[link.row][link.col].z = v;
+    matrix[link.row][link.col].z = link.value;
+    matrix[link.row][link.col].tip = ("tip" in link) ? link.tip : ("Value: "+link.value);
   });
 
   var x = d3.scale.ordinal().rangeBands([0, width]),
@@ -134,7 +134,7 @@ function heatmap(data, container, options) {
         .attr("x", function(d) { return x(d.x); })
         .attr("width", x.rangeBand())
         .attr("height", y.rangeBand())
-        .attr("alt", function(d) { return "Row: "+rowNodes[d.y].name+"<br/>Column: "+colNodes[d.x].name+"<br>Value: "+d.z; })
+        .attr("alt", function(d) { return "Row: "+rowNodes[d.y].name+"<br/>Column: "+colNodes[d.x].name+"<br>"+d.tip; })
         .style("fill-opacity", function(d) { return z(d.z); })
         .style("fill", "red")
         .on("mouseover", mouseover)
@@ -142,8 +142,8 @@ function heatmap(data, container, options) {
   }
 
   function mouseover(p) {
-    d3.selectAll(".row text").classed("highlight-text", function(d, i) { return i == p.y; });
-    d3.selectAll(".column text").classed("highlight-text", function(d, i) { return i == p.x; });
+    d3.selectAll(".row text").classed("highlight-text", function(d, i) { return i === p.y; });
+    d3.selectAll(".column text").classed("highlight-text", function(d, i) { return i === p.x; });
   }
 
   function mouseout() {
