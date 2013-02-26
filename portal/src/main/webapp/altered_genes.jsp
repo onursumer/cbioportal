@@ -319,9 +319,9 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             
             var ret = [];
             for (var aaChange in mapAACases) {
-                ret.push(aaChange+": "+mapAACases[aaChange].join(", "));
+                ret.push("<b>"+aaChange+"</b>: "+mapAACases[aaChange].join(", "));
             }
-            return ret.join("<br>");
+            return "&nbsp;"+ret.join("<br>&nbsp;");
         }
         
         var rowNodes = [];
@@ -335,11 +335,13 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             rowNodes.push({'name':(gene+' '+alteration)+' ('+samples+')'});
             for (var study in freq) {
                 var freqStudy = freq[study];
+                var samplesStudy = cbio.util.size(freqStudy)
                 links.push({
                     'row':i,
                     'col':colIxMap[study],
-                    'value':cbio.util.size(freqStudy),
-                    'tip':formatCaseAA(freqStudy,study)
+                    'value':samplesStudy,
+                    'tip':"<b>"+samplesStudy+" case"+(samplesStudy>1?"s":"")+"</b><br/>"
+                        +formatCaseAA(freqStudy,study)
                 });
             }
         }
