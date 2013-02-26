@@ -18,7 +18,7 @@ for (CancerStudyStats stats : (new DataSetsUtil()).getCancerStudyStats()) {
 String jsonStudies = JSONValue.toJSONString(studies);
 %>
 
-<jsp:include page="WEB-INF/jsp/global/header.jsp" flush="true" />
+<jsp:include page="global/header.jsp" flush="true" />
 <table border="0px">
     <tr valign="top">
         <td>
@@ -51,14 +51,14 @@ String jsonStudies = JSONValue.toJSONString(studies);
   </tr>
   <tr>
     <td colspan="3">
-	<jsp:include page="WEB-INF/jsp/global/footer.jsp" flush="true" />
+	<jsp:include page="global/footer.jsp" flush="true" />
     </td>
   </tr>
 </table>
 </center>
 </div>
 </form>
-<jsp:include page="WEB-INF/jsp/global/xdebug.jsp" flush="true" />
+<jsp:include page="global/xdebug.jsp" flush="true" />
 
 <script type="text/template" id="form-template">
     <div>

@@ -360,6 +360,16 @@
         <servlet-name>GeneDataJSON</servlet-name>
         <url-pattern>/GeneData.json</url-pattern>
     </servlet-mapping>
+    
+    <servlet>
+        <servlet-name>PanCanAlterationsServlet</servlet-name>
+        <servlet-class>org.mskcc.cbio.portal.servlet.PanCanAlterationsServlet</servlet-class>
+    </servlet>
+    
+    <servlet-mapping>
+        <servlet-name>PanCanAlterationsServlet</servlet-name>
+        <url-pattern>/pancan_alterations</url-pattern>
+    </servlet-mapping>
      
      <!-- tumor map -->
     <servlet>
