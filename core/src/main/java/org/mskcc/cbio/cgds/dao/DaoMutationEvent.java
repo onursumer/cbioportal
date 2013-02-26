@@ -1007,4 +1007,77 @@ public final class DaoMutationEvent {
         }
         
     }
+    
+    
+    
+    /**
+     * 
+     * @param concatCancerStudyIds
+     * @param ptmTypes
+     * @param thresholdDistance
+     * @param thresholdSamples
+     * @return
+     * @throws DaoException 
+     */
+    public static Map<String,Map<Integer, Map<String,String>>> getPtmEffectStatistics(String concatCancerStudyIds,
+            String[] ptmTypes, int thresholdDistance, int thresholdSamples) throws DaoException {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoMutationEvent.class);
+            String type = "(`TYPE` ') ";
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, pa.`SYMBOL`, pa.`TYPE`, `RESIDUE`, `CASE_ID`, `AMINO_ACID_CHANGE` "
+                    + "FROM  `mutation_event` me, `case_mutation_event` cme, `genetic_profile` gp, mutation_effect_on_ptm meop, ptm_annotation pa "
+                    + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
+                    + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
+                    + "AND me.MUTATION_EVENT_ID=meop.MUTATION_EVENT_ID "
+                    + "AND meop.PTM_ANNOTATION_ID=pa.PTM_ANNOTATION_ID "
+                    + "AND ABS(meop.distance)<="+thresholdDistance+" "
+                    + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
+                    + "AND pa.`TYPE` IN ('" + StringUtils.join(ptmTypes,"','") + "') "
+                    + "ORDER BY pa.`TYPE` ASC, `RESIDUE`"; // to filter and save memories
+            System.out.println(sql);
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            Map<String,Map<Integer, Map<String,String>>> map = new HashMap<String,Map<Integer, Map<String,String>>>();
+            String currentKeyword = null;
+            Map<Integer, Map<String,String>> mapStudyCaseMut = null;
+            int totalCountPerKeyword = 0;
+            while (rs.next()) {
+                int cancerStudyId = rs.getInt(1);
+                String keyword = rs.getString(2)+" "+rs.getInt(4)+" "+rs.getString(3);
+                String caseId = rs.getString(5);
+                String aaChange = rs.getString(6);
+                
+                if (!keyword.equals(currentKeyword)) {
+                    if (totalCountPerKeyword>=thresholdSamples) {
+                        map.put(currentKeyword, mapStudyCaseMut);
+                    }
+                    currentKeyword = keyword;
+                    mapStudyCaseMut = new HashMap<Integer, Map<String,String>>();
+                    totalCountPerKeyword = 0;
+                }
+                
+                Map<String,String> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
+                if (mapCaseMut==null) {
+                    mapCaseMut = new HashMap<String,String>();
+                    mapStudyCaseMut.put(cancerStudyId, mapCaseMut);
+                }
+                mapCaseMut.put(caseId, aaChange);
+                totalCountPerKeyword ++;
+            }
+            
+            if (totalCountPerKeyword>=thresholdSamples) {
+                map.put(currentKeyword, mapStudyCaseMut);
+            }
+            
+            return map;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoMutationEvent.class, con, pstmt, rs);
+        }
+    }
 }
