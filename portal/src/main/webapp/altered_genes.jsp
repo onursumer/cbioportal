@@ -1,7 +1,23 @@
 
 <%@ page import="org.mskcc.cbio.portal.servlet.QueryBuilder" %>
+<%@ page import="org.mskcc.cbio.cgds.model.CancerStudyStats" %>
+<%@ page import="org.mskcc.cbio.portal.util.DataSetsUtil" %> 
+<%@ page import="java.util.HashMap" %>
+<%@ page import="org.json.simple.JSONValue" %>
 
-<% request.setAttribute(QueryBuilder.HTML_TITLE, "Genomic alterations across cancersåå"); %>
+<%
+request.setAttribute(QueryBuilder.HTML_TITLE, "Genomic alterations across cancers");
+HashMap<String,HashMap<String,Object>> studies = new HashMap<String,HashMap<String,Object>>();
+for (CancerStudyStats stats : (new DataSetsUtil()).getCancerStudyStats()) {
+    HashMap<String,Object> study = new HashMap<String,Object>();
+    study.put("id",stats.getStableID());
+    study.put("name",stats.getStudyName());
+    study.put("sequenced",stats.getSequenced());
+    studies.put(stats.getStableID(),study);
+}
+String jsonStudies = JSONValue.toJSONString(studies);
+%>
+
 <jsp:include page="WEB-INF/jsp/global/header.jsp" flush="true" />
 <table border="0px">
     <tr valign="top">
@@ -20,6 +36,9 @@
             &nbsp;<br/>
             &nbsp;<br/>
             <div id="side-menu" style="display: none">
+                <div id="use-fraction-div">
+                    <input type="checkbox" id="use-fraction" checked="checked">&nbsp;Use fraction of altered cases for coloring
+                </div>
                 <div id="merge-alterations-div">
                     <input type="checkbox" id="merge-alterations">&nbsp;Merge alterations for each gene
                 </div>
@@ -113,6 +132,8 @@
 <script type="text/javascript" src="js/heatmap.js"></script>
 
 <script type="text/javascript">
+var jsonStudies = <%=jsonStudies%>;
+    
 // This is for the moustache-like templates
 // prevents collisions with JSP tags
 _.templateSettings = {
@@ -133,21 +154,7 @@ AlteredGene.CancerStudy = Backbone.Model.extend({
 });
 
 AlteredGene.CancerStudies = Backbone.Collection.extend({
-    model: AlteredGene.CancerStudy,
-    url: 'portal_meta_data.json',
-    parse: function(metaData) {
-        var ret = [];
-        var map = metaData.cancer_studies;
-        for (var id in map) {
-            if (id==='all') continue;
-            var arr = map[id];
-            var cs = {};
-            cs['id'] = id;
-            cs['name'] = arr.name;
-            ret.push(cs);
-        }
-        return ret;
-    }
+    model: AlteredGene.CancerStudy
 });
 
 AlteredGene.Form = Backbone.View.extend({
@@ -174,12 +181,13 @@ AlteredGene.Form = Backbone.View.extend({
 
 AlteredGene.CancerStudies.View = Backbone.View.extend({
     initialize: function() {
-      this.cancerStudies = new AlteredGene.CancerStudies();
-      this.cancerStudies.on('sync', this.render, this);
-      this.cancerStudies.fetch();
+        this.cancerStudies = new AlteredGene.CancerStudies();
+        for (var study in jsonStudies) {
+            this.cancerStudies.add(jsonStudies[study]);
+        }
     },
     render: function() {
-        if (this.cancerStudies.length==0)
+        if (this.cancerStudies.length===0)
             this.$el.html("<img src=\"images/ajax-loader.gif\"/>");
         else
             this.$el.html("");
@@ -293,7 +301,7 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
     },
     render: function() {
         var alterations = this.alterations;
-        if (alterations.length==0) {
+        if (alterations.length===0) {
             this.$el.html("<img src=\"images/ajax-loader.gif\"/> Calculating ...");
             return;
         }
@@ -324,6 +332,10 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             return "&nbsp;"+ret.join("<br>&nbsp;");
         }
         
+        var useFraction = true;
+        if (!$('#use-fraction').prop('checked'))
+            useFraction = false;
+        
         var rowNodes = [];
         var links = [];
         for (var i=0, nEvents=alterations.length; i<nEvents; i++) {
@@ -335,13 +347,15 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             rowNodes.push({'name':(gene+' '+alteration)+' ('+samples+')'});
             for (var study in freq) {
                 var freqStudy = freq[study];
-                var samplesStudy = cbio.util.size(freqStudy)
+                var samplesStudy = cbio.util.size(freqStudy);
+                var fraction = samplesStudy/jsonStudies[study]['sequenced'];
                 links.push({
                     'row':i,
                     'col':colIxMap[study],
-                    'value':samplesStudy,
-                    'tip':"<b>"+samplesStudy+" case"+(samplesStudy>1?"s":"")+"</b><br/>"
-                        +formatCaseAA(freqStudy,study)
+                    'value':useFraction ? fraction : samplesStudy,
+                    'tip':"<b>"+samplesStudy+" case"+(samplesStudy>1?"s":"")+"</b> ("
+                            + (fraction*100).toFixed(2) + "%)"
+                            +"<br/>"+formatCaseAA(freqStudy,study)
                 });
             }
         }
@@ -368,7 +382,7 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             heatmapData,
             this.el,
             {
-                zDomain:[0,10],
+                zDomain:[0,useFraction ? 0.1 : 20],
                 rowSorting: alterationSorting
             }
         );
@@ -522,22 +536,13 @@ AlteredGene.Router = Backbone.Router.extend({
                 });
             alterations.on('sync', function(){
                 mergeAlterationsByGene(alterations,alterationsByGene);
-                geneView.render();
+                //geneView.render();
                 $('#side-menu').show();
             });
             
             alterations.fetch({data:options});
             
-            // handling merge alterations
-            var this_el = this.el;
-            $('#merge-alterations').change(function() {
-                if($(this).prop('checked')) {
-                    this_el.html(geneView.el);
-                } else {
-                    this_el.html(altView.el);
-                }
-                
-                // hacky
+            var updateQtips = function() {
                 $(".cell").qtip({
                     content: {
                         attr: 'alt'
@@ -546,6 +551,29 @@ AlteredGene.Router = Backbone.Router.extend({
                     style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
                     position: {my:'top left',at:'bottom right'}
                   });
+            };
+            
+            // handling merge alterations
+            var this_el = this.el;
+            var updateView = function() {
+                if($('#merge-alterations').prop('checked')) {
+                    geneView.render();
+                    this_el.html(geneView.el);
+                } else {
+                    altView.render();
+                    this_el.html(altView.el);
+                }
+                
+                // hacky
+                updateQtips();
+            };
+            
+            $('#merge-alterations').change(function() {
+                updateView();
+            });
+            
+            $('#use-fraction').change(function() {
+                updateView();
             });
         } else {
             alert("This is underdevelopment and currently not supported.");
