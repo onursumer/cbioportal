@@ -306,6 +306,24 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             colIxMap[study] = i;
         });
         
+        var formatCaseAA = function(freqStudy, study) {
+            var mapAACases = {};
+            for (var caseId in freqStudy) {
+                var aaChange = freqStudy[caseId];
+                if (!(aaChange in mapAACases)) {
+                    mapAACases[aaChange] = [];
+                }
+                mapAACases[aaChange].push("<a href='tumormap.do?case_id="+caseId
+                            +"&cancer_study_id="+study+"'>"+caseId+"</a>");
+            }
+            
+            var ret = [];
+            for (var aaChange in mapAACases) {
+                ret.push("<b>"+aaChange+"</b>: "+mapAACases[aaChange].join(", "));
+            }
+            return "&nbsp;"+ret.join("<br>&nbsp;");
+        }
+        
         var rowNodes = [];
         var links = [];
         for (var i=0, nEvents=alterations.length; i<nEvents; i++) {
@@ -315,8 +333,16 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             var freq = alt.get('frequency');
             var samples = alt.get('samples');
             rowNodes.push({'name':(gene+' '+alteration)+' ('+samples+')'});
-            for (study in freq) {
-                links.push({'row':i, 'col':colIxMap[study], 'value':cbio.util.size(freq[study])});
+            for (var study in freq) {
+                var freqStudy = freq[study];
+                var samplesStudy = cbio.util.size(freqStudy)
+                links.push({
+                    'row':i,
+                    'col':colIxMap[study],
+                    'value':samplesStudy,
+                    'tip':"<b>"+samplesStudy+" case"+(samplesStudy>1?"s":"")+"</b><br/>"
+                        +formatCaseAA(freqStudy,study)
+                });
             }
         }
         
