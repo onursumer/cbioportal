@@ -509,9 +509,8 @@ AlteredGene.Router = Backbone.Router.extend({
         this.el.append(view.el);
     },
     submit: function(type, threshold, studies) {
-        if (type!=="missense" && type!=="truncating-sep" || type.indexOf('ptm-effect-')===0) {
-            $('#merge-alterations-div').remove();
-        }
+        $('#merge-alterations').prop('checked',type==="truncating");
+        $('#merge-alterations').prop('disabled',type==="truncating");
     
         if (type==="missense" || type==="truncating" || type==="truncating-sep" || type.indexOf('ptm-effect-')===0) {
     
