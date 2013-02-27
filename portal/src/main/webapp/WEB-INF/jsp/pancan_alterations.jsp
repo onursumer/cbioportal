@@ -159,7 +159,10 @@ AlteredGene.CancerStudy = Backbone.Model.extend({
 });
 
 AlteredGene.CancerStudies = Backbone.Collection.extend({
-    model: AlteredGene.CancerStudy
+    model: AlteredGene.CancerStudy,
+    comparator: function(cancerStudy) {
+        return cancerStudy.get("name");
+    }
 });
 
 AlteredGene.Form = Backbone.View.extend({
