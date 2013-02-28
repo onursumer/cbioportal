@@ -209,7 +209,7 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
             
         var id = this.model.get('id');
         var sequencedCases = this.model.get('sequenced');
-        if (sequencedCases>=50 && id.search(/(merged)|(ccle)|(_pub)/)==-1)
+        if (sequencedCases>0 && id.search(/(merged)|(ccle)|(_pub)/)==-1)
             this.$('input').prop('checked',true);
             
         return this;
