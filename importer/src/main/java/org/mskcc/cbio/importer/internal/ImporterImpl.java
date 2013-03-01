@@ -41,6 +41,7 @@ import org.mskcc.cbio.importer.model.ReferenceMetadata;
 import org.mskcc.cbio.importer.model.CancerStudyMetadata;
 import org.mskcc.cbio.importer.model.DataSourcesMetadata;
 import org.mskcc.cbio.importer.util.Shell;
+import org.mskcc.cbio.importer.util.MetadataUtils;
 
 import org.mskcc.cbio.cgds.scripts.ImportCaseList;
 import org.mskcc.cbio.cgds.scripts.ImportCancerStudy;
@@ -92,11 +93,12 @@ class ImporterImpl implements Importer {
 	 *
      * @param portal String
 	 * @param initPortalDatabase Boolean
+	 * @param initTumorTypes Boolean
 	 * @param importReferenceData Boolean
 	 * @throws Exception
 	 */
     @Override
-	public void importData(String portal, Boolean initPortalDatabase, Boolean importReferenceData) throws Exception {
+	public void importData(String portal, Boolean initPortalDatabase, Boolean initTumorTypes, Boolean importReferenceData) throws Exception {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("importData()");
@@ -137,10 +139,12 @@ class ImporterImpl implements Importer {
 		}
 
 		// import tumor types
-		if (LOG.isInfoEnabled()) {
-			LOG.info("importData(), importing tumor types...");
+		if (initTumorTypes) {
+			if (LOG.isInfoEnabled()) {
+				LOG.info("importData(), importing tumor types...");
+			}
+			importTumorTypes();
 		}
-		importTumorTypes();
 
 		// import reference data if desired
 		if (importReferenceData) {
@@ -176,6 +180,11 @@ class ImporterImpl implements Importer {
 			LOG.info("importReferenceData(), importerName: " + importerName);
 		}
 
+		if (importByImporter(referenceMetadata)) {
+			// if imported by Importer
+			return;
+                }
+
 		Object[] args = { config, fileUtils, databaseUtils };
 		if (Shell.exec(referenceMetadata, this, args, ".")) {
 			if (LOG.isInfoEnabled()) {
@@ -184,6 +193,27 @@ class ImporterImpl implements Importer {
 		}
 		else if (LOG.isInfoEnabled()) {
 			LOG.info("importReferenceData(), failure executing importer.");
+		}
+	}
+        
+        private boolean importByImporter(ReferenceMetadata referenceMetadata) throws Exception {
+		// we may be dealing with a class that implements the importer interface
+		String importerName = referenceMetadata.getImporterName();
+		try {
+			Class<?> clazz = Class.forName(importerName);
+			if (Class.forName("org.mskcc.cbio.importer.Importer").isAssignableFrom(clazz)) {
+				Object[] importerArgs = { config, fileUtils, databaseUtils };
+				Importer importer = (Importer)ClassLoader.getInstance(importerName, importerArgs);
+				importer.importReferenceData(referenceMetadata);
+                                if (LOG.isInfoEnabled()) {
+					LOG.info("importReferenceData(), successfully executed " + clazz + ".");
+				}
+				return true;
+			}
+                
+			return false;
+		} catch (java.lang.ClassNotFoundException ex) {
+			return false;
 		}
 	}
 
@@ -212,7 +242,9 @@ class ImporterImpl implements Importer {
 	private void importAllReferenceData() throws Exception {
 		// iterate over all other reference data types
 		for (ReferenceMetadata referenceData : config.getReferenceMetadata(Config.ALL)) {
-			importReferenceData(referenceData);
+			if (referenceData.getImport()) {
+				importReferenceData(referenceData);
+			}
 		}
 	}
 
@@ -230,7 +262,7 @@ class ImporterImpl implements Importer {
 		for (CancerStudyMetadata cancerStudyMetadata : config.getCancerStudyMetadata(portalMetadata.getName())) {
 
 			// lets determine if cancer study is in staging directory or studies directory
-			String rootDirectory = getCancerStudyRootDirectory(portalMetadata, dataSourcesMetadata, cancerStudyMetadata);
+			String rootDirectory = MetadataUtils.getCancerStudyRootDirectory(portalMetadata, dataSourcesMetadata, cancerStudyMetadata);
 
 			if (rootDirectory == null) {
 				if (LOG.isInfoEnabled()) {
@@ -284,40 +316,6 @@ class ImporterImpl implements Importer {
 			}
 			ImportCaseList.main(args);
 		}
-	}
-
-	/**
-	 * Helper function to determine root directory for cancer study to install.
-	 *
-	 * @param portalMetadata PortalMetadata
-	 * @param dataSourcesMetadata Collection<DataSourcesMetadata>
-	 * @param cancerStudyMetadata CancerStudyMetadata
-	 * @return String
-	 */
-	private String getCancerStudyRootDirectory(PortalMetadata portalMetadata,
-											   Collection<DataSourcesMetadata> dataSourcesMetadata,
-											   CancerStudyMetadata cancerStudyMetadata) {
-
-		// check portal staging area - should work for all tcga
-		File cancerStudyDirectory =
-			new File(portalMetadata.getStagingDirectory() + File.separator + cancerStudyMetadata.getStudyPath());
-		if (cancerStudyDirectory.exists()) {
-			return portalMetadata.getStagingDirectory();
-		}
-
-		// made it here, check other datasources 
-		for (DataSourcesMetadata dataSourceMetadata : dataSourcesMetadata) {
-			if (dataSourceMetadata.isAdditionalStudiesSource()) {
-				cancerStudyDirectory =
-					new File(dataSourceMetadata.getDownloadDirectory() + File.separator + cancerStudyMetadata.getStudyPath());
-				if (cancerStudyDirectory.exists()) {
-					return dataSourceMetadata.getDownloadDirectory();
-				}
-			}
-		}
-
-		// outta here
-		return null;
 	}
 
 	/**

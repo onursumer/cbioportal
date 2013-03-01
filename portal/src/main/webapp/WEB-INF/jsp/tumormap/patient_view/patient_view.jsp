@@ -23,6 +23,8 @@ String otherStudy = (String)request.getAttribute(PatientView.OTHER_STUDIES_WITH_
 boolean showTissueImages = tissueImages!=null && !tissueImages.isEmpty();
 String pathReportUrl = (String)request.getAttribute(PatientView.PATH_REPORT_URL);
 
+String drugType = request.getParameter("drug_type");
+
 GeneticProfile mutationProfile = (GeneticProfile)request.getAttribute(PatientView.MUTATION_PROFILE);
 boolean showMutations = mutationProfile!=null;
 
@@ -40,9 +42,9 @@ if (isDemoMode!=null) {
 boolean showPathways = showPlaceHoder & (showMutations | showCNA);
 boolean showSimilarPatient = showPlaceHoder & (showMutations | showCNA);
 
-boolean hasCnaSegmentData = ((Boolean)request.getAttribute(PatientView.HAS_SEGMENT_DATA)) & showCNA;
+boolean hasCnaSegmentData = ((Boolean)request.getAttribute(PatientView.HAS_SEGMENT_DATA));
 boolean showGenomicOverview = showMutations | hasCnaSegmentData;
-boolean showClinicalTrials = true; // no restrictions yet
+boolean showClinicalTrials = true;
 boolean showDrugs = true;
 
 double[] genomicOverviewCopyNumberCnaCutoff = SkinUtil.getPatientViewGenomicOverviewCnaCutoff();
@@ -291,7 +293,7 @@ var caseId = '<%=patient%>';
 var cancerStudyName = '<%=cancerStudy.getName()%>';
 var cancerStudyId = '<%=cancerStudy.getCancerStudyStableId()%>';
 var genomicEventObs =  new GenomicEventObserver(<%=showMutations%>,<%=showCNA%>, hasCnaSegmentData);
-
+var drugType = drugType?'<%=drugType%>':null;
 
 $(document).ready(function(){
     if (print) $('#page_wrapper_table').css('width', '900px');

@@ -214,7 +214,7 @@ function delayedMutationTable(data)
 {
     //TODO temporary work-around for the missing columns in the filter (issue 429)
     setTimeout(function(){drawMutationTable(data);},
-               3500);
+               4000);
 }
 
 /**
@@ -589,8 +589,9 @@ function _getMutationTableRows(data)
     var mutationTypeMap = {
         missense_mutation: {label: "Missense", style: "missense_mutation"},
         nonsense_mutation: {label: "Nonsense", style: "trunc_mutation"},
-        frame_shift_del: {label: "Nonstop", style: "trunc_mutation"},
-        frame_shift_ins: {label: "FS del", style: "trunc_mutation"},
+	    nonstop_mutation: {label: "Nonstop", style: "trunc_mutation"},
+	    frame_shift_del: {label: "FS del", style: "trunc_mutation"},
+        frame_shift_ins: {label: "FS ins", style: "trunc_mutation"},
         in_frame_ins: {label: "IF ins", style: "inframe_mutation"},
         in_frame_del: {label: "IF del", style: "inframe_mutation"},
         splice_site: {label: "Splice", style: "trunc_mutation"},
@@ -714,7 +715,9 @@ function _getMutationTableRows(data)
     var getPdbLinkHtml = function(value) {
         var html;
 
-        if (value != null)
+        if (value != null &&
+            value.length > 0 &&
+            value != "NA")
         {
             html = '<a href="' + value + '">' +
                      '<span style="background-color:#88C;color:white;">&nbsp;3D&nbsp;</span>' +

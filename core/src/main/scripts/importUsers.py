@@ -61,6 +61,7 @@ CGDS_USERS_WORKSHEET = 'users.worksheet'
 GDAC_DATABASE_NAME = 'cgds_gdac'
 PRIVATE_DATABASE_NAME = 'cgds_private'
 SU2C_DATABASE_NAME = 'cgds_su2c'
+PROSTATE_DATABASE_NAME = 'cgds_prostate'
 
 # a ref to the google spreadsheet client - used for all i/o to google spreadsheet
 GOOGLE_SPREADSHEET_CLIENT = gdata.spreadsheet.service.SpreadsheetsService()
@@ -68,7 +69,7 @@ GOOGLE_SPREADSHEET_CLIENT = gdata.spreadsheet.service.SpreadsheetsService()
 # column constants on google spreadsheet
 FULLNAME_KEY = "fullname"
 INST_EMAIL_KEY = "institutionalemailaddress"
-OPENID_EMAIL_KEY = "gmailaddressorotheropenidaddresssuchasyahooemailaddress"
+OPENID_EMAIL_KEY = "googleoropenidaddress"
 STATUS_KEY = "statusapprovedorblank"
 AUTHORITIES_KEY = "authoritiesalloralltcgaandorsemicolondelimitedcancerstudylist"
 
@@ -81,6 +82,7 @@ MESSAGE_FROM = "cancergenomics@cbio.mskcc.org"
 MESSAGE_BCC = ["cerami@cbio.mskcc.org", "schultz@cbio.mskcc.org", "grossb@cbio.mskcc.org"]
 MESSAGE_SUBJECT = { GDAC_DATABASE_NAME : "cBio GDAC Cancer Genomics Portal Access",
                     PRIVATE_DATABASE_NAME : "cBio Private Cancer Genomics Portal Access",
+                    PROSTATE_DATABASE_NAME : "cBio Prostate Cancer Genomics Portal Access",
                     SU2C_DATABASE_NAME : "cBio SU2C Cancer Genomics Portal Access" }
 GDAC_MESSAGE_BODY = """Thank you for your interest in the cBio GDAC Cancer Genomics Portal. We have granted you access. You can login at http://cbio.mskcc.org/gdac-portal/. Please let us know if you have any problems logging in.
 
@@ -97,8 +99,14 @@ SU2C_MESSAGE_BODY = """Thank you for your interest in the cBio SU2C Cancer Genom
 Please keep in mind that the most of the data provided in this Portal are preliminary, unpublished and subject to change.
 """
 
+PROSTATE_MESSAGE_BODY = """Thank you for your interest in the cBio Prostate Cancer Genomics Portal. We have granted you access. You can login at http://cbio.mskcc.org/prostate-portal/. Please let us know if you have any problems logging in.
+
+Please keep in mind that the most of the data provided in this Portal are preliminary, unpublished and subject to change.
+"""
+
 MESSAGE_BODY = { GDAC_DATABASE_NAME : GDAC_MESSAGE_BODY,
                  PRIVATE_DATABASE_NAME : PRIVATE_MESSAGE_BODY,
+                 PROSTATE_DATABASE_NAME : PROSTATE_MESSAGE_BODY,
                  SU2C_DATABASE_NAME : SU2C_MESSAGE_BODY }
 
 
@@ -236,6 +244,26 @@ def get_current_user_map(cursor):
     return to_return
 
 # ------------------------------------------------------------------------------
+# get current user authorities
+
+def get_user_authorities(cursor, openid_email):
+
+        # list of authorities (cancer studies) we are returning -- as a set
+        to_return = []
+
+        # recall each tuple in authorities table is ['EMAIL', 'AUTHORITY']
+        # no tuple can contain nulls
+        try:
+                cursor.execute('select * from authorities where email = (%s)', openid_email)
+                for row in cursor.fetchall():
+                        to_return.append(row[1])
+        except MySQLdb.Error, msg:
+                print >> ERROR_FILE, msg
+                return None
+
+        return to_return
+
+# ------------------------------------------------------------------------------
 # get current users
 
 def get_new_user_map(worksheet_feed, current_user_map):
@@ -314,6 +342,7 @@ def get_portal_properties(portal_properties_filename):
 	# extra verification for database names
 	if (properties[CGDS_DATABASE_NAME] != GDAC_DATABASE_NAME and
 		properties[CGDS_DATABASE_NAME] != PRIVATE_DATABASE_NAME and
+        properties[CGDS_DATABASE_NAME] != PROSTATE_DATABASE_NAME and
 		properties[CGDS_DATABASE_NAME] != SU2C_DATABASE_NAME):
 		print >> ERROR_FILE, 'Unrecognized database name: %s' % CGDS_DATABASE_NAME
 		return None
@@ -358,6 +387,29 @@ def manage_users(cursor, worksheet_feed):
     else:
         print >> OUTPUT_FILE, 'No new users to insert, exiting'
         return None
+
+# ------------------------------------------------------------------------------
+# updates user study access
+def update_user_authorities(cursor, worksheet_feed):
+
+        # get map of current portal users
+        print >> OUTPUT_FILE, 'Getting list of current portal users'
+        current_user_map = get_new_user_map(worksheet_feed, {})
+        if current_user_map is None:
+                return None;
+        print >> OUTPUT_FILE, 'Updating authorities for each user in current portal user list'
+        for user in current_user_map.values():
+                if user.authorities[-1:] == ';':
+                        user.authorities = user.authorities[:-1]
+                worksheet_authorities = set(user.authorities.split(';'))
+                db_authorities = set(get_user_authorities(cursor, user.openid_email))
+                try:
+                        cursor.executemany("insert into authorities values(%s, %s)",
+                                           [(user.openid_email, authority) for authority in worksheet_authorities - db_authorities])
+                        cursor.executemany("delete from authorities where email = (%s) and authority = (%s)",
+                                           [(user.openid_email, authority) for authority in db_authorities - worksheet_authorities])
+                except MySQLdb.Error, msg:
+                        print >> ERROR_FILE, msg
 
 # ------------------------------------------------------------------------------
 # displays program usage (invalid args)
@@ -420,6 +472,9 @@ def main():
 
     # the 'guts' of the script
     new_user_map = manage_users(cursor, worksheet_feed)
+
+    # update user authorities
+    update_user_authorities(cursor, worksheet_feed)
 
     # clean up
     cursor.close()

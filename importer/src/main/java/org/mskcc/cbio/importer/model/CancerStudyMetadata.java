@@ -54,6 +54,9 @@ public class CancerStudyMetadata {
 	public static final String TUMOR_TYPE_TAG = "<TUMOR_TYPE>";
 	public static final String TUMOR_TYPE_NAME_TAG = "<TUMOR_TYPE_NAME>";
 
+	// these suffix identifies a published study
+	public static final String PUBLISHED_TCGA_STUDY_SUFFIX = "tcga_pub";
+
 	// bean properties
 	private String name;
 	private String tumorType;
@@ -123,7 +126,9 @@ public class CancerStudyMetadata {
 	}
 
 	public String toString() {
+		String centerLabDelimiter = (lab.length() > 0) ? CANCER_STUDY_IDENTIFIER_DELIMITER : "";
 		return (tumorType + CANCER_STUDY_IDENTIFIER_DELIMITER +
-				center + lab.replaceAll(CANCER_STUDY_DELIMITER, CANCER_STUDY_IDENTIFIER_DELIMITER));
+				center + centerLabDelimiter +
+				lab.replaceAll(CANCER_STUDY_DELIMITER, CANCER_STUDY_IDENTIFIER_DELIMITER));
 	}
 }
