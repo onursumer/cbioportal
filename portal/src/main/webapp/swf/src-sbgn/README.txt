@@ -3,7 +3,8 @@ cw-sbgn ( Cytoscape based SBGN viewer ) project was used to base sbgn network
 visualization component for cBio portal! To reproduce necessary executables
 	portal/web/swf/CytoscapeWeb.swf and
 	portal/web/js/cytoscape_web/cytoscapeweb.min.js
-you need to check this project apply its own modifications and further make the changes listed below.
+you need to check out this project apply its own modifications and further make the changes listed below.
+https://code.google.com/p/cw-sbgn/
 --------------------------------------------------------------------------------
 
 Modified classes
@@ -27,10 +28,8 @@ Modification is done between lines 55~60 & 76 gives support to show detail discs
 Modification is done between lines 55~60 & 76 gives support to hide detail discs of the deselected nodes.
 
 /src/org/cytoscapeweb/util/Nodes.as
-Line 39 - CBioNodeRenderer is imported. Line 90 - CBioNodeRenderer is set.
+Line 39 - CBioNodeRenderer is imported. Line 90 - CBioSBGNNodeRenderer is set.
 
-/src/org/cytoscapeweb/util/Edges.as
-Line 41 - CBioEdgeRenderer is imported. Line 78 - CBioEdgeRenderer is set.
 
 New classes
 -----------

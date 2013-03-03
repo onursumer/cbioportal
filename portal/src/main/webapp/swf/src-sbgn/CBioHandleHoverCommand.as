@@ -13,7 +13,6 @@ package org.cytoscapeweb.controller
 	import org.cytoscapeweb.util.Edges;
 	import org.cytoscapeweb.util.ExternalFunctions;
 	import org.cytoscapeweb.util.Groups;
-	import org.cytoscapeweb.view.render.CBioNodeRenderer;
 	import org.puremvc.as3.interfaces.INotification;
 
 	public class CBioHandleHoverCommand extends HandleHoverCommand
