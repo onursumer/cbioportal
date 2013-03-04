@@ -306,10 +306,10 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData)
         var netVis = new NetworkSbgnVis(networkDivId);
 
         // init UI of the network tab
-        netVis.initNetworkUI(vis);
+        netVis.initNetworkUI(vis, genomicData);
 
         // parse and add genomic data to cytoscape nodes
-        netVis.parseGenomicData(genomicData); 
+        // netVis.parseGenomicData(); 
         
         //to hide drugs initially
         netVis._changeListener();

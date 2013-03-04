@@ -3,8 +3,8 @@ app.name=public-portal
 app.version=0.1
 
 # Database Settings
-db.user=
-db.password=
+db.user=root
+db.password=Xantia206
 db.host=localhost
 db.portal_db_name=cgds_public
 # props used by importer
@@ -33,7 +33,8 @@ importer.reference_data_worksheet=
 importer.tumor_types_worksheet=
 
 # Location of log file
-log.file.path=/srv/www/sander-tomcat/tomcat6/logs/public-portal.log
+#log.file.path=/srv/www/sander-tomcat/tomcat6/logs/public-portal.log
+log.file.path=public-portal.log
 
 # Pathway Commons:  cPath2 URL
 pathway_commons.url=http://www.pathwaycommons.org/pc2

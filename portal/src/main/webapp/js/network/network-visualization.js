@@ -116,7 +116,7 @@ function NetworkVis(divId)
     this._geneWeightThreshold = null;
 
     // maximum alteration value among the non-seed genes in the network
-    this._maxAlterationPercent = null;
+    this._maxAlterationPercent = 0;
 
     // CytoscapeWeb.Visualization instance
     this._vis = null;
@@ -486,7 +486,7 @@ NetworkVis.prototype._updateNodeInspectorContent = function(data, node)
 {
     // set title
 
-    var title = data.label;
+    var title = this.geneLabel(data);
 
     if (title == null)
     {
@@ -523,7 +523,7 @@ NetworkVis.prototype._updateNodeInspectorContent = function(data, node)
 
     if (data.type == this.PROTEIN)
     {
-        this._addDataRow(this.edgeInspectorSelector, "node", "Gene Symbol", data.label);
+        this._addDataRow(this.edgeInspectorSelector, "node", "Gene Symbol", this.geneLabel(data));
         //_addDataRow(this.edgeInspectorSelector, "node", "User-Specified", data.IN_QUERY);
 
         // add percentage information
@@ -573,7 +573,13 @@ NetworkVis.prototype._updateNodeInspectorContent = function(data, node)
     }
 };
 
-
+NetworkVis.prototype.geneDetailsCheck = function (selected)
+{
+	if(selected.length == 1)
+		return 1;
+	return 0;
+	
+}
 NetworkVis.prototype.updateBioGeneContent = function(evt)
 {
     var selected = this._vis.selected("nodes");
@@ -586,16 +592,27 @@ NetworkVis.prototype.updateBioGeneContent = function(evt)
     $(self.nodeDetailsTabSelector).append(
         '<img src="images/ajax-loader.gif">');
 
-    if (selected.length == 1)
+    if (selected.length >= 1)
     {
-        data = selected[0].data
-    }
-    else if (selected.length > 1)
-    {
-        $(self.nodeDetailsTabSelector).empty();
-        $(self.nodeDetailsTabSelector).append(
-            "Currently more than one node is selected. Please, select only one node to see details.");
-        return;
+        check = this.geneDetailsCheck(selected);
+	if ( check > 0)
+	{
+		data = selected[0].data;
+	}
+	else if (check < 0)
+	{
+		$(self.nodeDetailsTabSelector).empty();
+		$(self.nodeDetailsTabSelector).append(
+		    "No details for this node.");
+		return;
+	}
+	else
+	{
+		$(self.nodeDetailsTabSelector).empty();
+		$(self.nodeDetailsTabSelector).append(
+		    "Currently more than one gene is selected. Please, select only one gene to see details.");
+		return;
+	}
     }
     else
     {
@@ -680,7 +697,7 @@ NetworkVis.prototype.updateBioGeneContent = function(evt)
         }
     };
 
-    var queryParams = {"query": data.label,
+    var queryParams = {"query": this.geneLabel(data),
         "org": "human",
         "format": "xml"};
 
@@ -848,8 +865,8 @@ NetworkVis.prototype.showEdgeInspector = function(evt)
     // TODO update the contents of the inspector by using the target edge
 
     var data = evt.target.data;
-    var title = this._vis.node(data.source).data.label + " - " +
-                this._vis.node(data.target).data.label;
+    var title = this.geneLabel(this._vis.node(data.source).data) + " - " +
+                this.geneLabel(this._vis.node(data.target).data);
 
     // clean xref & data rows
     $(this.edgeInspectorSelector + " .edge_inspector_content .data .data-row").remove();
@@ -1096,7 +1113,7 @@ NetworkVis.prototype.reRunQuery = function()
 
     for (var key in nodeMap)
     {
-        currentGenes += nodeMap[key].data.label + " ";
+        currentGenes += this.geneLabel(nodeMap[key].data) + " ";
     }
 
     if (currentGenes.length > 0)
@@ -1131,7 +1148,7 @@ NetworkVis.prototype.searchGene = function()
 
     for (i=0; i < genes.length; i++)
     {
-        if (genes[i].data.label.toLowerCase().indexOf(
+        if (this.geneLabel(genes[i].data).toLowerCase().indexOf(
             query.toLowerCase()) != -1)
         {
             matched.push(genes[i].data.id);
@@ -2226,7 +2243,7 @@ NetworkVis.prototype._maxAlterValNonSeed = function(map)
         }
     }
 
-    return max;
+    return max+1;
 };
 
 /**
@@ -2480,7 +2497,7 @@ NetworkVis.prototype._initTooltipStyle = function()
         else
         {
 
-            text = this._adjustToolTipText(data.label);
+            text = this._adjustToolTipText(this.geneLabel(data));
         }
 
         return "<b>" + text + "</b>";
@@ -2544,6 +2561,7 @@ NetworkVis.prototype._weightSliderStop = function(event, ui)
 
     // update filters
     this._filterBySlider();
+
 };
 
 /**
@@ -2622,15 +2640,14 @@ NetworkVis.prototype._filterBySlider = function()
     // filter with new slider value
     this._vis.filter("nodes", sliderVisibility);
 
-    // also, filter disconnected nodes if necessary
-    this._filterDisconnected();
-
     // refresh & update genes tab
     this._refreshGenesTab();
     this.updateGenesTab();
 
     // visualization changed, perform layout if necessary
     this._visChanged();
+
+
 };
 
 /**
@@ -2661,7 +2678,6 @@ NetworkVis.prototype._affinitySliderChange = function(event, ui)
     this._geneWeightMap = this._geneWeightArray(sliderVal / 100);
 
     // update filters
-    this._filterBySlider();
 };
 
 /**
@@ -2893,7 +2909,7 @@ NetworkVis.prototype._refreshGenesTab = function()
             '<option id="' + safeId + '" ' +
             classContent +
             'value="' + geneList[i].data.id + '" ' + '>' +
-            '<label>' + geneList[i].data.label + '</label>' +
+            '<label>' + this.geneLabel(geneList[i].data) + '</label>' +
             '</option>');
 
         // add double click listener for each gene
@@ -3975,7 +3991,7 @@ function _geneSort (node1, node2)
     {
         return 1;
     }
-    else if (node1.data.label < node2.data.label)
+    else if (node1.data.label < node1.data.label)
     {
         return -1;
     }
@@ -4341,3 +4357,10 @@ function _nodeDetails(node)
 
     return str;
 }
+// make a function to give the label so that we ca neasily over ride in the sbgn
+NetworkVis.prototype.geneLabel = function(data)
+{
+	return data.label;
+}
+
+
