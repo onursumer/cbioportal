@@ -36,6 +36,7 @@
 <script type="text/javascript" src="js/json2.js"></script>
 <script type="text/javascript" src="js/cytoscape_web/AC_OETags.min.js"></script>
 <script type="text/javascript" src="js/cytoscape_web/cytoscapeweb.min.js"></script>
+<script type="text/javascript" src="js/cytoscape_web/cytoscapewebSBGN.min.js"></script>
 
 <!-- <script type="text/javascript" src="js/network/network-ui.js"></script> -->
 <script type="text/javascript" src="js/network/network-visualization.js"></script>

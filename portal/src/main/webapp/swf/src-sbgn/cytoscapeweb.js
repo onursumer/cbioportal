@@ -55,7 +55,7 @@
     
     /**
      * <p>Initialise Cytoscape Web. It does not draw the network yet.</p>
-     * <p>The {@link org.cytoscapeweb.Visualization#draw} method must be called when 
+     * <p>The {@link org.cytoscapeweb.VisualizationSBGN#draw} method must be called when 
      * you want the network to be displayed.</p>
      * @example
      * &lt;html&gt;
@@ -70,7 +70,7 @@
      *                     flashInstallerPath: "path/to/swf/playerProductInstall",
      *                     flashAlternateContent: "Le Flash Player est n&eacute;cessaire." };
      *                     
-     *     var vis = new org.cytoscapeweb.Visualization("cytoWebContent", options);
+     *     var vis = new org.cytoscapeweb.VisualizationSBGN("cytoWebContent", options);
      *     
      *     vis.draw({ network: '&lt;graphml&gt;...&lt;/graphml&gt;' });
      * &lt;/script&gt;
@@ -128,11 +128,11 @@
      *                                                           If this parameter is set to <code>-1</code>, Cytoscape Web will never activate the grab-to-pan mode
      *                                                           automatically, but users can still use the grab-to-pan option from the pan-zoom control.</li>
      *                </ul>
-     * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-     * @see org.cytoscapeweb.Visualization#draw
-     * @see org.cytoscapeweb.Visualization#ready
+     * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+     * @see org.cytoscapeweb.VisualizationSBGN#draw
+     * @see org.cytoscapeweb.VisualizationSBGN#ready
      */
-    org.cytoscapeweb.Visualization = function (containerId, options) {
+    org.cytoscapeweb.VisualizationSBGN = function (containerId, options) {
         this.containerId = containerId;
 
         if (!options) { options = {}; }
@@ -153,7 +153,7 @@
         _cytoscapeWebInstances[this.id] = this;
     };
 
-    org.cytoscapeweb.Visualization.prototype = {
+    org.cytoscapeweb.VisualizationSBGN.prototype = {
 
         // PUBLIC METHODS:
         // -----------------------------------------------------------------------------------------
@@ -162,7 +162,7 @@
          * <p>Start Cytoscape Web by drawing the network.
          * At least the <code>network</code> option must be specified.</p>
          * @example
-         * var vis = new org.cytoscapeweb.Visualization("container-id");
+         * var vis = new org.cytoscapeweb.VisualizationSBGN("container-id");
          * vis.draw({ network: '&lt;graphml&gt;...&lt;/graphml&gt;',
          *            edgeLabelsVisible: false,
          *            layout: 'Circle',
@@ -182,11 +182,11 @@
          *         });
          *
          * @description
-         * <p>Just remember that you probably want to register a callback function with {@link org.cytoscapeweb.Visualization#ready}
+         * <p>Just remember that you probably want to register a callback function with {@link org.cytoscapeweb.VisualizationSBGN#ready}
          * before calling <code>draw()</code>.</p>
          * 
          * @example
-         * var vis = new org.cytoscapeweb.Visualization("container-id");
+         * var vis = new org.cytoscapeweb.VisualizationSBGN("container-id");
          * vis.ready(function () {
          *     // Start interaction with the network here...
          * });
@@ -213,24 +213,24 @@
          *                                             tags with defined <code>x</code> and <code>y</code> attributes. In that case, the "Preset" layout is applied by default.</li>
          *                    <li><code>nodeLabelsVisible</code>: Boolean that defines whether or not the node labels will be visible.
          *                                                        The default value is <code>true</code>.
-         *                                                        You can call {@link org.cytoscapeweb.Visualization#nodeLabelsVisible} 
+         *                                                        You can call {@link org.cytoscapeweb.VisualizationSBGN#nodeLabelsVisible} 
          *                                                        later (after the network is ready) to change it.</li>
          *                    <li><code>edgeLabelsVisible</code>: Boolean that defines whether or not the edge labels will be visible.
          *                                                        The default value is <code>false</code>.
-         *                                                        You can use {@link org.cytoscapeweb.Visualization#edgeLabelsVisible} later to change it.</li>
+         *                                                        You can use {@link org.cytoscapeweb.VisualizationSBGN#edgeLabelsVisible} later to change it.</li>
          *                    <li><code>nodeTooltipsEnabled</code>: Boolean value that enables or disables the node tooltips.
          *                                                          The default value is <code>true</code>.
-         *                                                          You can call {@link org.cytoscapeweb.Visualization#nodeTooltipsEnabled} later to change it.</li>
+         *                                                          You can call {@link org.cytoscapeweb.VisualizationSBGN#nodeTooltipsEnabled} later to change it.</li>
          *                    <li><code>edgeTooltipsEnabled</code>: Boolean that enables or disables the edge tooltips.
          *                                                          The default value is <code>true</code>.
-         *                                                          You can use {@link org.cytoscapeweb.Visualization#edgeTooltipsEnabled} later to change it.</li>
+         *                                                          You can use {@link org.cytoscapeweb.VisualizationSBGN#edgeTooltipsEnabled} later to change it.</li>
          *                    <li><code>edgesMerged</code>: Boolean that defines whether or not the network will be initially
          *                                                  rendered with merged edges. The default value is <code>false</code>.
-         *                                                  You can call {@link org.cytoscapeweb.Visualization#edgesMerged} after the network is ready to change it.</li>
+         *                                                  You can call {@link org.cytoscapeweb.VisualizationSBGN#edgesMerged} after the network is ready to change it.</li>
          *                    <li><code>panZoomControlVisible</code>: Boolean value that sets whether or not the built-in control
          *                                                            will be visible. The default value is <code>true</code>.
          *                                                            The visibility of the control can be changed later with
-         *                                                            {@link org.cytoscapeweb.Visualization#panZoomControlVisible}.</li>
+         *                                                            {@link org.cytoscapeweb.VisualizationSBGN#panZoomControlVisible}.</li>
          *                    <li><code>panZoomControlPosition</code>: String value that sets the initial position of the built-in control.
          *                                                             The allowed values are:
          *                                                             <ul><li><code>topLeft</code></li>
@@ -249,8 +249,8 @@
          *                                                    will be loaded before the network is drawn or before a visual style (or bypass) is applied.
          *                                                    The default value is <code>true</code>.</li>
          *                </ul>
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#ready
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#ready
          * @see org.cytoscapeweb.VisualStyle
          * @see org.cytoscapeweb.Layout
          */
@@ -263,14 +263,14 @@
         },
 
         /**
-         * <p>Register a function to be called after a {@link org.cytoscapeweb.Visualization#draw} method is executed and the visualization
+         * <p>Register a function to be called after a {@link org.cytoscapeweb.VisualizationSBGN#draw} method is executed and the visualization
          * is ready to receive requests, such as getting or selecting nodes, zooming, etc.</p>
          * <p>If the application wants to interact with the rendered network, this function must be used
          * before calling the <code>draw</code> method.</p>
          *
          * @example
          * // 1. Create the visualization instance:
-         * var vis = new org.cytoscapeweb.Visualization("container-id");
+         * var vis = new org.cytoscapeweb.VisualizationSBGN("container-id");
          *
          * // 2. Register a callback function for the ready event:
          * vis.ready(function () {
@@ -284,8 +284,8 @@
          *
          * @param {Function} fn The callback function that will be invoked after the network has been drawn
          *                      and the visualization is ready.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#draw
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#draw
          */
         ready: function (fn) {
             if (!fn) { this._onReady = function () {/*do nothing*/}; }
@@ -302,7 +302,7 @@
          *
          * @example
          * // 1. Initialise Cytoscape Web with a Circle layout (default layout options):
-         * var vis = new org.cytoscapeweb.Visualization("container-id");
+         * var vis = new org.cytoscapeweb.VisualizationSBGN("container-id");
          * vis.draw({ network: '&lt;graphml&gt;...&lt;/graphml&gt;', layout: 'Circle' });
          *
          * // 2. Get the current layout:
@@ -329,7 +329,7 @@
          *
          * @param {Object} [layout] The {@link org.cytoscapeweb.Layout} object or the layout name.
          * @return <ul><li>The current {@link org.cytoscapeweb.Layout} object for <code>layout()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>layout({Object})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>layout({Object})</code>.</li></ul>
          * @see org.cytoscapeweb.Layout
          */
         layout: function (/*layout*/) {
@@ -356,9 +356,9 @@
          * vis.visualStyle(style);
          * 
          * @return <ul><li>The {@link org.cytoscapeweb.VisualStyle} object for <code>visualStyle()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>visualStyle({Object})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>visualStyle({Object})</code>.</li></ul>
          * @see org.cytoscapeweb.VisualStyle
-         * @see org.cytoscapeweb.Visualization#visualStyleBypass
+         * @see org.cytoscapeweb.VisualizationSBGN#visualStyleBypass
          */
         visualStyle: function (/*style*/) {
             var swf = this.swf();
@@ -401,9 +401,9 @@
          *                                                    <code>global</code> properties cannot be bypassed and are just ignored. Another difference is that you
          *                                                    cannot set visual mappers, but only static values.
          * @return <ul><li>The {@link org.cytoscapeweb.VisualStyleBypass} object for <code>visualStyleBypass()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} instance for <code>visualStyleBypass({Object})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} instance for <code>visualStyleBypass({Object})</code>.</li></ul>
          * @see org.cytoscapeweb.VisualStyleBypass
-         * @see org.cytoscapeweb.Visualization#visualStyle
+         * @see org.cytoscapeweb.VisualizationSBGN#visualStyle
          */
         visualStyleBypass: function (/*bypass*/) {
             var swf = this.swf();
@@ -423,7 +423,7 @@
          * <p>If not, it just returns a boolean value indicating whether or not the control is visible.</p>
          * @param {Boolean} [visible] true to show it and false to hide it.
          * @return <ul><li>A boolean value for <code>panZoomControlVisible()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>panZoomControlVisible({Boolean})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>panZoomControlVisible({Boolean})</code>.</li></ul>
          */
         panZoomControlVisible: function (/*visible*/) {
             var swf = this.swf();
@@ -436,7 +436,7 @@
          * <p>If not, it returns a boolean value indicating whether or not the edges are merged.</p>
          * @param {Boolean} [merged] true to merge the edges or false to unmerge them.
          * @return <ul><li>A boolean value for <code>edgesMerged()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>edgesMerged({Boolean})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>edgesMerged({Boolean})</code>.</li></ul>
          */
         edgesMerged: function (/*merged*/) {
             var swf = this.swf();
@@ -449,7 +449,7 @@
          * <p>If not, it returns a boolean value indicating whether or not the node labels are visible.</p>
          * @param {Boolean} [visible] true to show the labels or false to hide them.
          * @return <ul><li>A boolean value for <code>nodeLabelsVisible()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>nodeLabelsVisible({Boolean})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>nodeLabelsVisible({Boolean})</code>.</li></ul>
          */
         nodeLabelsVisible: function (/*visible*/) {
             var swf = this.swf();
@@ -462,7 +462,7 @@
          * <p>If not, it returns a boolean value indicating whether or not the edge labels are visible.</p>
          * @param {Boolean} [visible] true to show the labels or false to hide them.
          * @return <ul><li>A boolean value for <code>edgeLabelsVisible()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>edgeLabelsVisible({Boolean})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>edgeLabelsVisible({Boolean})</code>.</li></ul>
          */
         edgeLabelsVisible: function (/*visible*/) {
             var swf = this.swf();
@@ -475,7 +475,7 @@
          * <p>If not, it returns a boolean value indicating whether or not the node tooltips are enabled.</p>
          * @param {Boolean} [enabled] true to enable the tooltips or false to disable them.
          * @return <ul><li>A boolean value for <code>nodeTooltipsEnabled()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>nodeTooltipsEnabled({Boolean})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>nodeTooltipsEnabled({Boolean})</code>.</li></ul>
          */
         nodeTooltipsEnabled: function (/*enabled*/) {
             var swf = this.swf();
@@ -488,7 +488,7 @@
          * <p>If not, it returns a boolean value indicating whether or not the edge tooltips are enabled.</p>
          * @param {Boolean} [enabled] true to enable the tooltips or false to disable them.
          * @return <ul><li>A boolean value for <code>edgeTooltipsEnabled()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>edgeTooltipsEnabled({Boolean})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>edgeTooltipsEnabled({Boolean})</code>.</li></ul>
          */
         edgeTooltipsEnabled: function (/*enabled*/) {
             var swf = this.swf();
@@ -502,7 +502,7 @@
          * @param {Boolean} [enabled] If <code>true</code>, custom (Flash) cursors can be used in some actions.
          *                            If <code>false</code>, Cytoscape Web will never replace the operating system's cursors.
          * @return <ul><li>A boolean value for <code>customCursorsEnabled()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>panEnabled({Boolean})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>panEnabled({Boolean})</code>.</li></ul>
          */
         customCursorsEnabled: function (/*enabled*/) {
         	if (arguments.length > 0) { this.swf().enableCustomCursors(arguments[0]); return this; }
@@ -517,9 +517,9 @@
          *                            If <code>false</code>, the pan mode is turned off - clicking and dragging the background
          *                            will start a drag-selection action.
          * @return <ul><li>A boolean value for <code>panEnabled()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>panEnabled({Boolean})</code>.</li></ul>
-         * @see org.cytoscapeweb.Visualization#panBy
-         * @see org.cytoscapeweb.Visualization#panToCenter
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>panEnabled({Boolean})</code>.</li></ul>
+         * @see org.cytoscapeweb.VisualizationSBGN#panBy
+         * @see org.cytoscapeweb.VisualizationSBGN#panToCenter
          */
         panEnabled: function (/*enabled*/) {
             if (arguments.length > 0) { this.swf().enableGrabToPan(arguments[0]); return this; }
@@ -530,9 +530,9 @@
          * <p>Pan the "camera" by the specified amount, in pixels.</p>
          * @param {Number} amountX If negative, pan left (the network moves to the right side).
          * @param {Number} amountY If negative, pan up (the network moves down).
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#panEnabled
-         * @see org.cytoscapeweb.Visualization#panToCenter
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#panEnabled
+         * @see org.cytoscapeweb.VisualizationSBGN#panToCenter
          */
         panBy: function (amountX, amountY) {
             this.swf().panBy(amountX, amountY);
@@ -541,9 +541,9 @@
 
         /**
          * <p>Center the network in the canvas area.</p>
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#panEnabled
-         * @see org.cytoscapeweb.Visualization#panBy
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#panEnabled
+         * @see org.cytoscapeweb.VisualizationSBGN#panBy
          */
         panToCenter: function () {
             this.swf().panToCenter();
@@ -555,8 +555,8 @@
          * Otherwise it gets the current zoom value.</p>
          * @param {Number} [scale] Value between 0 and 1.
          * @return <ul><li>A number for <code>zoom()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>zoom({Number})</code>.</li></ul>
-         * @see org.cytoscapeweb.Visualization#zoomToFit
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>zoom({Number})</code>.</li></ul>
+         * @see org.cytoscapeweb.VisualizationSBGN#zoomToFit
          */
         zoom: function (/*scale*/) {
             var swf = this.swf();
@@ -577,8 +577,8 @@
          * });
          * vis.zoomToFit();
          *
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#zoom
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#zoom
          */
         zoomToFit: function () {
             this.swf().zoomToFit();
@@ -592,8 +592,8 @@
          * 
          * @param {String} id The node id.
          * @return {org.cytoscapeweb.Node} The node object or <code>null</code>, if there is no node with the specified id.
-         * @see org.cytoscapeweb.Visualization#edge
-         * @see org.cytoscapeweb.Visualization#nodes
+         * @see org.cytoscapeweb.VisualizationSBGN#edge
+         * @see org.cytoscapeweb.VisualizationSBGN#nodes
          */
         node: function (id) {
             var str = this.swf().getNodeById(id);
@@ -608,10 +608,10 @@
                                            are returned as a flat list, no matter whether or not they are regular, child or parent ones.
                                            If <code>false</code>, nodes that are children of other nodes are not included in the list. 
          * @return {Array} List of {@link org.cytoscapeweb.Node} objects.
-         * @see org.cytoscapeweb.Visualization#edges
-         * @see org.cytoscapeweb.Visualization#node
-         * @see org.cytoscapeweb.Visualization#parentNodes
-         * @see org.cytoscapeweb.Visualization#childNodes
+         * @see org.cytoscapeweb.VisualizationSBGN#edges
+         * @see org.cytoscapeweb.VisualizationSBGN#node
+         * @see org.cytoscapeweb.VisualizationSBGN#parentNodes
+         * @see org.cytoscapeweb.VisualizationSBGN#childNodes
          */
         nodes: function (topLevelOnly) {
             var str = this.swf().getNodes(topLevelOnly);
@@ -622,10 +622,10 @@
          * <p>Get all nodes that belong to a compound node.</p>
          * @param {Object} parent The parent node object or the parent ID (String).
          * @return {Array} List of {@link org.cytoscapeweb.Node} objects.
-         * @see org.cytoscapeweb.Visualization#edges
-         * @see org.cytoscapeweb.Visualization#nodes
-         * @see org.cytoscapeweb.Visualization#parentNodes
-         * @see org.cytoscapeweb.Visualization#node
+         * @see org.cytoscapeweb.VisualizationSBGN#edges
+         * @see org.cytoscapeweb.VisualizationSBGN#nodes
+         * @see org.cytoscapeweb.VisualizationSBGN#parentNodes
+         * @see org.cytoscapeweb.VisualizationSBGN#node
          */
         childNodes: function (parent) {
         	if (parent == null) { throw("The 'parent' parameter is mandatory."); }
@@ -639,10 +639,10 @@
         /**
          * <p>Get only the compound nodes from the network, if there is any.</p>
          * @return {Array} List of {@link org.cytoscapeweb.Node} objects that contain one or more child nodes.
-         * @see org.cytoscapeweb.Visualization#edges
-         * @see org.cytoscapeweb.Visualization#nodes
-         * @see org.cytoscapeweb.Visualization#childNodes
-         * @see org.cytoscapeweb.Visualization#node
+         * @see org.cytoscapeweb.VisualizationSBGN#edges
+         * @see org.cytoscapeweb.VisualizationSBGN#nodes
+         * @see org.cytoscapeweb.VisualizationSBGN#childNodes
+         * @see org.cytoscapeweb.VisualizationSBGN#node
          */
         parentNodes: function () {
         	var str = this.swf().getParentNodes();
@@ -656,8 +656,8 @@
          * 
          * @param {String} id The edge id.
          * @return {org.cytoscapeweb.Edge} The edge object or <code>null</code>, if there is no edge with the specified id.
-         * @see org.cytoscapeweb.Visualization#node
-         * @see org.cytoscapeweb.Visualization#edges
+         * @see org.cytoscapeweb.VisualizationSBGN#node
+         * @see org.cytoscapeweb.VisualizationSBGN#edges
          */
         edge: function (id) {
             var str = this.swf().getEdgeById(id);
@@ -667,9 +667,9 @@
         /**
          * <p>Get all the regular edges from the network. Merged edges are not included.</p>
          * @return {Array} List of edges.
-         * @see org.cytoscapeweb.Visualization#mergedEdges
-         * @see org.cytoscapeweb.Visualization#nodes
-         * @see org.cytoscapeweb.Visualization#edge
+         * @see org.cytoscapeweb.VisualizationSBGN#mergedEdges
+         * @see org.cytoscapeweb.VisualizationSBGN#nodes
+         * @see org.cytoscapeweb.VisualizationSBGN#edge
          * @see org.cytoscapeweb.Edge
          */
         edges: function () {
@@ -680,7 +680,7 @@
         /**
          * <p>Get all merged edges from the network.</p>
          * @return {Array} List of merged edges.
-         * @see org.cytoscapeweb.Visualization#edges
+         * @see org.cytoscapeweb.VisualizationSBGN#edges
          * @see org.cytoscapeweb.Edge
          */
         mergedEdges: function () {
@@ -690,7 +690,7 @@
         
         /**
          * <p>Add new nodes and/or edges to the network.</p>
-         * <p>The rules described in {@link org.cytoscapeweb.Visualization#addNode} and {@link org.cytoscapeweb.Visualization#addEdge}
+         * <p>The rules described in {@link org.cytoscapeweb.VisualizationSBGN#addNode} and {@link org.cytoscapeweb.VisualizationSBGN#addEdge}
          * are still valid here.</p>
          * <p>You can add nodes and edges together and, when doing so, the order of the elements in
          * the array do not matter, because Cytoscape Web will first add all the nodes, and then
@@ -717,9 +717,9 @@
          * @param {Boolean} [updateVisualMappers] It tells Cytoscape Web to reapply the visual mappers
          *                                        to the network view after removing the elements.
          * @return {Array} The new created elements ({@link org.cytoscapeweb.Node} and {@link org.cytoscapeweb.Edge} objects).
-         * @see org.cytoscapeweb.Visualization#removeElements
-         * @see org.cytoscapeweb.Visualization#addNode
-         * @see org.cytoscapeweb.Visualization#addEdge
+         * @see org.cytoscapeweb.VisualizationSBGN#removeElements
+         * @see org.cytoscapeweb.VisualizationSBGN#addNode
+         * @see org.cytoscapeweb.VisualizationSBGN#addEdge
          */
         addElements: function(/*items, updateVisualMappers*/) {
             var items, updateVisualMappers = false;
@@ -740,8 +740,8 @@
          * <p>If the node <code>id</code> is not specified, Cytoscape Web creates a new one automatically.</p>
          * <p>If the data contains attributes that have not been previously defined in the {@link org.cytoscapeweb.DataSchema},
          * Cytoscape Web will throw an error. To prevent that, you simply add the new fields to the schema first, 
-         * by calling {@link org.cytoscapeweb.Visualization#addDataField}.</p>
-         * <p>Keep in mind that {@link org.cytoscapeweb.Visualization#addElements} is much faster if you have to
+         * by calling {@link org.cytoscapeweb.VisualizationSBGN#addDataField}.</p>
+         * <p>Keep in mind that {@link org.cytoscapeweb.VisualizationSBGN#addElements} is much faster if you have to
          * add more than one element at once.</p>
          * @example
          * // 1. Add a new node to the network (here we assume that the data fields for
@@ -761,9 +761,9 @@
          *                                        to the network view after adding the node.
          *                                        The default value is <code>false</code>.
          * @return {org.cytoscapeweb.Node} The new created node object.
-         * @see org.cytoscapeweb.Visualization#addEdge
-         * @see org.cytoscapeweb.Visualization#addElements
-         * @see org.cytoscapeweb.Visualization#removeElements
+         * @see org.cytoscapeweb.VisualizationSBGN#addEdge
+         * @see org.cytoscapeweb.VisualizationSBGN#addElements
+         * @see org.cytoscapeweb.VisualizationSBGN#removeElements
          */
         addNode: function (x, y/*, data, updateVisualMappers*/) {
             var data;
@@ -787,8 +787,8 @@
          * throws an error if any of them is missing.</p>
          * <p>If the data contains attributes that have not been previously defined in the {@link org.cytoscapeweb.DataSchema},
          * Cytoscape Web will throw an error. To prevent that, just add the new fields to the schema first, 
-         * by calling {@link org.cytoscapeweb.Visualization#addDataField}.</p>
-         * <p>You might also want to take a look at {@link org.cytoscapeweb.Visualization#addElements}, which is much faster
+         * by calling {@link org.cytoscapeweb.VisualizationSBGN#addDataField}.</p>
+         * <p>You might also want to take a look at {@link org.cytoscapeweb.VisualizationSBGN#addElements}, which is much faster
          * when adding more than one element at once.</p>
          * @example
          * var data = { id: "e10",
@@ -804,9 +804,9 @@
          * @param {Boolean} [updateVisualMappers] It tells Cytoscape Web to update and reapply the visual mappers
          *                                        to the network view after adding the edge.
          * @return {org.cytoscapeweb.Edge} The new created edge object.
-         * @see org.cytoscapeweb.Visualization#addNode
-         * @see org.cytoscapeweb.Visualization#addElements
-         * @see org.cytoscapeweb.Visualization#removeElements
+         * @see org.cytoscapeweb.VisualizationSBGN#addNode
+         * @see org.cytoscapeweb.VisualizationSBGN#addElements
+         * @see org.cytoscapeweb.VisualizationSBGN#removeElements
          */
         addEdge: function (data/*, updateVisualMappers*/) {
             var updateVisualMappers = false;
@@ -833,11 +833,11 @@
          *                      object or just its <code>id</code> (String).
          * @param {Boolean} [updateVisualMappers] It tells Cytoscape Web to reapply the visual mappers
          *                                        to the network view after removing the element.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#removeEdge
-         * @see org.cytoscapeweb.Visualization#removeElements
-         * @see org.cytoscapeweb.Visualization#addNode
-         * @see org.cytoscapeweb.Visualization#addEdge
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#removeEdge
+         * @see org.cytoscapeweb.VisualizationSBGN#removeElements
+         * @see org.cytoscapeweb.VisualizationSBGN#addNode
+         * @see org.cytoscapeweb.VisualizationSBGN#addEdge
          */
         removeNode: function(node, updateVisualMappers) {
             this.swf().removeElements("nodes", [node], updateVisualMappers);
@@ -859,11 +859,11 @@
          *                      object or just its <code>id</code> (String).
          * @param {Boolean} [updateVisualMappers] It tells Cytoscape Web to reapply the visual mappers
          *                                        to the network view after removing the element.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#removeNode
-         * @see org.cytoscapeweb.Visualization#removeElements
-         * @see org.cytoscapeweb.Visualization#addNode
-         * @see org.cytoscapeweb.Visualization#addEdge
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#removeNode
+         * @see org.cytoscapeweb.VisualizationSBGN#removeElements
+         * @see org.cytoscapeweb.VisualizationSBGN#addNode
+         * @see org.cytoscapeweb.VisualizationSBGN#addEdge
          */
         removeEdge: function(edge, updateVisualMappers) {
             this.swf().removeElements("edges", [edge], updateVisualMappers);
@@ -895,11 +895,11 @@
          *                        both will be removed.
          * @param {Boolean} [updateVisualMappers] It tells Cytoscape Web to reapply the visual mappers
          *                                        to the network view after removing the elements.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#removeNode
-         * @see org.cytoscapeweb.Visualization#removeEdge
-         * @see org.cytoscapeweb.Visualization#addNode
-         * @see org.cytoscapeweb.Visualization#addEdge
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#removeNode
+         * @see org.cytoscapeweb.VisualizationSBGN#removeEdge
+         * @see org.cytoscapeweb.VisualizationSBGN#addNode
+         * @see org.cytoscapeweb.VisualizationSBGN#addEdge
          */
         removeElements: function(/*gr, items, updateVisualMappers*/) {
             var gr, items, updateVisualMappers = false;
@@ -926,9 +926,9 @@
          * var edgeFields = schema.edges;
          * 
          * @return {org.cytoscapeweb.DataSchema} The data schema object.
-         * @see org.cytoscapeweb.Visualization#addDataField
-         * @see org.cytoscapeweb.Visualization#removeDataField
-         * @see org.cytoscapeweb.Visualization#updateData
+         * @see org.cytoscapeweb.VisualizationSBGN#addDataField
+         * @see org.cytoscapeweb.VisualizationSBGN#removeDataField
+         * @see org.cytoscapeweb.VisualizationSBGN#updateData
          */
         dataSchema: function () {
             return this._parseJSON(this.swf().getDataSchema());
@@ -950,10 +950,10 @@
          * @param {org.cytoscapeweb.Group} [gr] The group of network elements. If no group is passed,
          *                                      Cytoscape Web will try to add the new field to both nodes and edges data schema.
          * @param {org.cytoscapeweb.DataField} dataField An object that contains the attribute definitions.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#removeDataField
-         * @see org.cytoscapeweb.Visualization#updateData
-         * @see org.cytoscapeweb.Visualization#dataSchema
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#removeDataField
+         * @see org.cytoscapeweb.VisualizationSBGN#updateData
+         * @see org.cytoscapeweb.VisualizationSBGN#dataSchema
          */
         addDataField: function (/*gr, dataField*/) {
         	var gr, dataField, i = 0;
@@ -986,10 +986,10 @@
          * @param {org.cytoscapeweb.Group} [gr] The group of network elements. If no group is passed,
          *                                      Cytoscape Web will try to remove the field from both nodes and edges data schema.
          * @param {String} name The name of the custom data field that will be removed.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#addDataField
-         * @see org.cytoscapeweb.Visualization#updateData
-         * @see org.cytoscapeweb.Visualization#dataSchema
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#addDataField
+         * @see org.cytoscapeweb.VisualizationSBGN#updateData
+         * @see org.cytoscapeweb.VisualizationSBGN#dataSchema
          */
         removeDataField: function (/*gr, name*/) {
             var gr, name, i = 0;
@@ -1011,9 +1011,9 @@
          * </ul>
          * <p>You can only update <code>data</code> attributes. Visual properties such as <code>color</code>
          * and <code>width</code> cannot be updated with this method. In order to change visual properties,
-         * use {@link org.cytoscapeweb.Visualization#visualStyle} or {@link org.cytoscapeweb.Visualization#visualStyleBypass}.</p>
+         * use {@link org.cytoscapeweb.VisualizationSBGN#visualStyle} or {@link org.cytoscapeweb.VisualizationSBGN#visualStyleBypass}.</p>
          * <p>If you try to change an attribute that has not been previously defined, Cytoscape Web will throw an {@link org.cytoscapeweb.Error}.
-         * In this case, you have to add the attribute definition first, by calling {@link org.cytoscapeweb.Visualization#addDataField}.</p>
+         * In this case, you have to add the attribute definition first, by calling {@link org.cytoscapeweb.VisualizationSBGN#addDataField}.</p>
          * <p>Another important thing to remember is that you cannot update merged edges data, since they are derived attributes.</p>
          * <p>Finally, all the continuous and custom mappers - defined by the current visual style - will be automatically recomputed after
          * updating the data.</p>
@@ -1060,10 +1060,10 @@
          *                        both will be updated.
          * @param {Object} [data] The data object that contains the attributes with the new values to be applied
          *                        to all the elements of the specified group or to the passed <code>items</code> only.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#addDataField
-         * @see org.cytoscapeweb.Visualization#removeDataField
-         * @see org.cytoscapeweb.Visualization#dataSchema
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#addDataField
+         * @see org.cytoscapeweb.VisualizationSBGN#removeDataField
+         * @see org.cytoscapeweb.VisualizationSBGN#dataSchema
          */
         updateData: function (/*gr, items, data*/) {
             var gr, items, data;
@@ -1125,9 +1125,9 @@
          *                        their <code>id</code> values. Notice however that, if you specify only the id
          *                        and do not pass the group argument, if an edge and a node have the same id value,
          *                        both will be selected.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#deselect
-         * @see org.cytoscapeweb.Visualization#selected
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#deselect
+         * @see org.cytoscapeweb.VisualizationSBGN#selected
          */
         select: function (/*gr, items*/) {
             var gr, items;
@@ -1148,8 +1148,8 @@
          * @param {org.cytoscapeweb.Group} [gr] The group of network elements.
          * @return {Array} List of node or edge objects. If the group is not passed or is <code>null</code>,
          *                 the returned array may contain both nodes and edges.
-         * @see org.cytoscapeweb.Visualization#select
-         * @see org.cytoscapeweb.Visualization#deselect
+         * @see org.cytoscapeweb.VisualizationSBGN#select
+         * @see org.cytoscapeweb.VisualizationSBGN#deselect
          */
         selected: function (gr) {
             return this._nodesAndEdges(gr, "getSelectedNodes", "getSelectedEdges");
@@ -1195,9 +1195,9 @@
          *                        If this argument is <code>null</code>, <code>undefined</code> 
          *                        or omitted, it will deselect all selected items that belong to the indicated group.<br>
          *                        If you send an empty array, no action will be performed.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#select
-         * @see org.cytoscapeweb.Visualization#selected
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#select
+         * @see org.cytoscapeweb.VisualizationSBGN#selected
          */
         deselect: function (/*gr, items*/) {
             var gr, items;
@@ -1243,8 +1243,8 @@
          *                                        Remember that continuous mappers ignore filtered out elements
          *                                        when interpolating the results.
          *                                        The default value is <code>false</code>.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#removeFilter
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#removeFilter
          * @see org.cytoscapeweb.ContinuousMapper
          */
         filter: function (/*gr, filter, updateVisualMappers*/) {
@@ -1289,8 +1289,8 @@
          *                                        Remember that continuous mappers ignore filtered out elements
          *                                        when interpolating the results.
          *                                        The default value is <code>false</code>.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#filter
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#filter
          * @see org.cytoscapeweb.ContinuousMapper
          */
         removeFilter: function (gr, updateVisualMappers) {
@@ -1318,9 +1318,9 @@
         /**
          * <p>Return the network model as an object.</p>
          * @return {org.cytoscapeweb.NetworkModel} The network model as a JavaScript object.
-         * @see org.cytoscapeweb.Visualization#graphml
-         * @see org.cytoscapeweb.Visualization#xgmml
-         * @see org.cytoscapeweb.Visualization#sif
+         * @see org.cytoscapeweb.VisualizationSBGN#graphml
+         * @see org.cytoscapeweb.VisualizationSBGN#xgmml
+         * @see org.cytoscapeweb.VisualizationSBGN#sif
          */
         networkModel: function () {
         	var json = this.swf().getNetworkModel();
@@ -1330,9 +1330,9 @@
         /**
          * <p>Return the network data as <a href="http://graphml.graphdrawing.org/primer/graphml-primer.html" rel="external">GraphML</a>.</p>
          * @return {String} The XML text.
-         * @see org.cytoscapeweb.Visualization#xgmml
-         * @see org.cytoscapeweb.Visualization#sif
-         * @see org.cytoscapeweb.Visualization#networkModel
+         * @see org.cytoscapeweb.VisualizationSBGN#xgmml
+         * @see org.cytoscapeweb.VisualizationSBGN#sif
+         * @see org.cytoscapeweb.VisualizationSBGN#networkModel
          */
         graphml: function () {
         	return this.swf().getNetworkAsText("graphml");
@@ -1341,9 +1341,9 @@
         /**
          * <p>Return the network data as <a href="http://www.cs.rpi.edu/~puninj/XGMML/" rel="external">XGMML</a>.</p>
          * @return {String} The XML text.
-         * @see org.cytoscapeweb.Visualization#graphml
-         * @see org.cytoscapeweb.Visualization#sif
-         * @see org.cytoscapeweb.Visualization#networkModel
+         * @see org.cytoscapeweb.VisualizationSBGN#graphml
+         * @see org.cytoscapeweb.VisualizationSBGN#sif
+         * @see org.cytoscapeweb.VisualizationSBGN#networkModel
          */
         xgmml: function () {
             return this.swf().getNetworkAsText("xgmml");
@@ -1380,7 +1380,7 @@
          *               '&lt;/graph&gt;' +
          *           '&lt;/graphml&gt;';
          *           
-         * var vis = new org.cytoscapeweb.Visualization("container_id");
+         * var vis = new org.cytoscapeweb.VisualizationSBGN("container_id");
          * 
          * vis.ready(function() {
          *     // Export to SIF, using the "label" as node ID and edge "type" as edge interaction:
@@ -1398,9 +1398,9 @@
          *                               <li><code>interactionAttr</code>:</strong> Optional edge attribute name to be used as interaction name.</li>
          *                           </ul>
          * @return {String} The SIF text.
-         * @see org.cytoscapeweb.Visualization#graphml
-         * @see org.cytoscapeweb.Visualization#xgmml
-         * @see org.cytoscapeweb.Visualization#networkModel
+         * @see org.cytoscapeweb.VisualizationSBGN#graphml
+         * @see org.cytoscapeweb.VisualizationSBGN#xgmml
+         * @see org.cytoscapeweb.VisualizationSBGN#networkModel
          */
         sif: function (options) {
             return this.swf().getNetworkAsText("sif", options);
@@ -1493,13 +1493,13 @@
          *                                                      <li><code>_top</code>: the top-level frame in the current window.</li></ul>
          *                                                  The default is <code>_self</code>.</li>
          *                              </ul>
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#png
-         * @see org.cytoscapeweb.Visualization#pdf
-         * @see org.cytoscapeweb.Visualization#sif
-         * @see org.cytoscapeweb.Visualization#graphml
-         * @see org.cytoscapeweb.Visualization#svg
-         * @see org.cytoscapeweb.Visualization#xgmml
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#png
+         * @see org.cytoscapeweb.VisualizationSBGN#pdf
+         * @see org.cytoscapeweb.VisualizationSBGN#sif
+         * @see org.cytoscapeweb.VisualizationSBGN#graphml
+         * @see org.cytoscapeweb.VisualizationSBGN#svg
+         * @see org.cytoscapeweb.VisualizationSBGN#xgmml
          */
         exportNetwork: function (format, url, options) {
             format = format.toLowerCase().trim();
@@ -1513,7 +1513,7 @@
          * <p>If not, it returns a the current value of this flag.</p>
          * @param {Boolean} [shown] flag to indicate whether or not profile data should always be shown.
          * @return <ul><li>A boolean value for <code>profileDataAlwaysShown()</code>.</li>
-         *             <li>The {@link org.cytoscapeweb.Visualization} object for <code>profileDataAlwaysShown({Boolean})</code>.</li></ul>
+         *             <li>The {@link org.cytoscapeweb.VisualizationSBGN} object for <code>profileDataAlwaysShown({Boolean})</code>.</li></ul>
          */
         profileDataAlwaysShown: function (/*shown*/) {
             var swf = this.swf();
@@ -1524,11 +1524,11 @@
         /**
          * <p>Appends an event listener to the network.</p>
          * <p>Listeners can be added or removed at any time, even before the graph is rendered, which means that you do not
-         * need to wait for the {@link org.cytoscapeweb.Visualization#ready} function to be called.</p>
+         * need to wait for the {@link org.cytoscapeweb.VisualizationSBGN#ready} function to be called.</p>
          * 
          * @example
          * // 1. Create the visualization instance:
-         * var vis = new org.cytoscapeweb.Visualization("container-id");
+         * var vis = new org.cytoscapeweb.VisualizationSBGN("container-id");
          * 
          * // 2. Add listeners at any time:
          * vis.addListener("zoom", function(evt) {
@@ -1550,10 +1550,10 @@
          * @param {org.cytoscapeweb.EventType} evt The event type.
          * @param {org.cytoscapeweb.Group} [gr] The group of network elements to assign the listener to (optional for some events).
          * @param {Function} fn The callback function the event invokes.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
          * @see org.cytoscapeweb.Event
-         * @see org.cytoscapeweb.Visualization#hasListener
-         * @see org.cytoscapeweb.Visualization#removeListener
+         * @see org.cytoscapeweb.VisualizationSBGN#hasListener
+         * @see org.cytoscapeweb.VisualizationSBGN#removeListener
          */
         addListener: function (evt, /*gr, */fn) {
             var gr;
@@ -1589,10 +1589,10 @@
          * @param {org.cytoscapeweb.Group} [gr] The group of network elements to assign the listener to (optional for some events).
          * @param {Function} [fn] The function the event invokes. If undefined, all registered functions
          *                        for the specified event are removed.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
          * @see org.cytoscapeweb.Event
-         * @see org.cytoscapeweb.Visualization#addListener
-         * @see org.cytoscapeweb.Visualization#hasListener
+         * @see org.cytoscapeweb.VisualizationSBGN#addListener
+         * @see org.cytoscapeweb.VisualizationSBGN#hasListener
          */
         removeListener: function (evt/*, gr, fn*/) {
             var gr; var fn;
@@ -1636,8 +1636,8 @@
          * @param {org.cytoscapeweb.Group} [gr] The group of network elements the listener was assigned to (optional for some events).
          * @return {Boolean} True if there is at least one listener to the event, false otherwise.
          * @see org.cytoscapeweb.Event
-         * @see org.cytoscapeweb.Visualization#addListener
-         * @see org.cytoscapeweb.Visualization#removeListener
+         * @see org.cytoscapeweb.VisualizationSBGN#addListener
+         * @see org.cytoscapeweb.VisualizationSBGN#removeListener
          */
         hasListener: function (evt/*, gr*/) {
             var has = false;
@@ -1660,7 +1660,7 @@
         /**
          * <p>Adds a custom menu item to the right-click context menu.</p>
          * <p>This method can only be used after a network has been drawn, so it is better to use it after the
-         * <code>ready</code> callback function is called (see {@link org.cytoscapeweb.Visualization#ready}).</p>
+         * <code>ready</code> callback function is called (see {@link org.cytoscapeweb.VisualizationSBGN#ready}).</p>
          * <p>If an item with the same label has already been set to the same group, it will not add another
          * callback function to that menu item. In that case, the previous function will be replaced by
          * the new one and only one menu item will be displayed.</p>
@@ -1674,7 +1674,7 @@
          * // right-clicked node.
          * 
          * // 1. Assuming that you have created a visualization object:
-         * var vis = new org.cytoscapeweb.Visualization("container-id");
+         * var vis = new org.cytoscapeweb.VisualizationSBGN("container-id");
          * 
          * // 2. Add a context menu item any time after the network is ready:
          * vis.ready(function () {
@@ -1702,9 +1702,9 @@
          *                      That function always receives an event object as argument. The event type is always <code>"contextmenu"</code>.
          *                      If the context menu was added to the <code>nodes</code> or <code>edges</code> group, you might want to
          *                      get the right-clicked node or edge object by using the event's <code>target</code> property.
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#removeContextMenuItem
-         * @see org.cytoscapeweb.Visualization#removeAllContextMenuItems
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#removeContextMenuItem
+         * @see org.cytoscapeweb.VisualizationSBGN#removeAllContextMenuItems
          */
         addContextMenuItem: function (lbl, /*gr, */fn) {
             if (lbl && fn) {
@@ -1738,9 +1738,9 @@
          *                                        </p>For example, <code>removeContextMenuItem("Select")</code> does not remove the menu item
          *                                        added with <code>addContextMenuItem("Select", "edge")</code>, but only the the one added with
          *                                        <code>addContextMenuItem("Select")</code>.<p>
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#addContextMenuItem
-         * @see org.cytoscapeweb.Visualization#removeAllContextMenuItems
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#addContextMenuItem
+         * @see org.cytoscapeweb.VisualizationSBGN#removeAllContextMenuItems
          */
         removeContextMenuItem: function (lbl/*, gr*/) {
             if (lbl) {
@@ -1762,9 +1762,9 @@
 
         /**
          * <p>Removes all preset menu items from the right-click context menu.</p>
-         * @return {org.cytoscapeweb.Visualization} The Visualization instance.
-         * @see org.cytoscapeweb.Visualization#addContextMenuItem
-         * @see org.cytoscapeweb.Visualization#removeContextMenuItem
+         * @return {org.cytoscapeweb.VisualizationSBGN} The Visualization instance.
+         * @see org.cytoscapeweb.VisualizationSBGN#addContextMenuItem
+         * @see org.cytoscapeweb.VisualizationSBGN#removeContextMenuItem
          */
         removeAllContextMenuItems: function () {
             if (this._contextMenuItems) {
@@ -2101,7 +2101,7 @@
      * </Table>
      * <p><label><strong>select:</strong></label> Fired when an element that belongs to the <code>group</code> you registered is selected.
      * Nodes and edges can be selected by three possible ways:
-     * directly clicking it; using the drag-rectangle (the select event is dispatched only after the the mouse button is released); programmatically, with {@link org.cytoscapeweb.Visualization#select}. 
+     * directly clicking it; using the drag-rectangle (the select event is dispatched only after the the mouse button is released); programmatically, with {@link org.cytoscapeweb.VisualizationSBGN#select}. 
      * If you don't specify any group or if the group is <code>none</code>, the event will be fired after selecting any nodes or edges.</p>
      * <table>
      *     <tr><th>group</th><th>target</th><th>value</th></tr>
@@ -2110,7 +2110,7 @@
      *     <tr><td><code>none</code></td><td>Array of selected {@link org.cytoscapeweb.Node} and {@link org.cytoscapeweb.Edge} objects</td><td><code>undefined</code></td></tr>
      * </Table>
      * <p><label><strong>deselect:</strong></label> Fired when an element that belongs to the <code>group</code> you registered is deselected.
-     * Nodes and edges can be deselected by the user or programmatically, with {@link org.cytoscapeweb.Visualization#deselect}. 
+     * Nodes and edges can be deselected by the user or programmatically, with {@link org.cytoscapeweb.VisualizationSBGN#deselect}. 
      * If you don't specify any group or if the group is <code>none</code>, the event will be fired after deselecting any nodes or edges.</p>
      * <table>
      *     <tr><th>group</th><th>target</th><th>value</th></tr>
@@ -2119,7 +2119,7 @@
      *     <tr><td><code>none</code></td><td>Array of deselected {@link org.cytoscapeweb.Node} and {@link org.cytoscapeweb.Edge} objects</td><td><code>undefined</code></td></tr>
      * </Table>
      * <p><label><strong>filter:</strong></label> Fired when the <code>group</code> you registered is filtered.
-     * Nodes and edges can be filtered with {@link org.cytoscapeweb.Visualization#filter}.  
+     * Nodes and edges can be filtered with {@link org.cytoscapeweb.VisualizationSBGN#filter}.  
      * If you don't specify any group or if the group is <code>none</code>, the event will be fired after filtering nodes or edges elements.
      * It is important to be aware that if no element of the specified <code>group</code> is filtered (no filter applied), 
      * the event's <code>target</code> property will be <code>null</code>.
@@ -2130,12 +2130,12 @@
      *     <tr><td><code>edges</code></td><td>Array of filtered {@link org.cytoscapeweb.Edge} objects or <code>null</code></td><td><code>undefined</code></td></tr>
      *     <tr><td><code>none</code></td><td>Array of filtered {@link org.cytoscapeweb.Node} and {@link org.cytoscapeweb.Edge} objects or <code>null</code></td><td><code>undefined</code></td></tr>
      * </Table>
-     * <p><label><strong>layout:</strong></label> Fired after a layout is applied (see {@link org.cytoscapeweb.Visualization#layout}.</p>
+     * <p><label><strong>layout:</strong></label> Fired after a layout is applied (see {@link org.cytoscapeweb.VisualizationSBGN#layout}.</p>
      * <table>
      *     <tr><th>group</th><th>target</th><th>value</th></tr>
      *     <tr><td><code>none</code></td><td><code>undefined</code></td><td><code>The applied {@link org.cytoscapeweb.Layout} object</code></td></tr>
      * </Table>
-     * <p><label><strong>zoom:</strong></label> Fired after the network is rescaled, either by calling {@link org.cytoscapeweb.Visualization#zoom} or 
+     * <p><label><strong>zoom:</strong></label> Fired after the network is rescaled, either by calling {@link org.cytoscapeweb.VisualizationSBGN#zoom} or 
      * when the user interacts with the visualization's pan-zoom control.</p>
      * <table>
      *     <tr><th>group</th><th>target</th><th>value</th></tr>
@@ -2146,7 +2146,7 @@
      *     <tr><th>group</th><th>target</th><th>value</th></tr>
      *     <tr><td><code>none</code></td><td><code>undefined</code></td><td>The {@link org.cytoscapeweb.Error} object</td></tr>
      * </Table>
-     * <p><label><strong>contextmenu:</strong></label> Events of this type are only passed to the callback functions that are registered with {@link org.cytoscapeweb.Visualization#addContextMenuItem}.
+     * <p><label><strong>contextmenu:</strong></label> Events of this type are only passed to the callback functions that are registered with {@link org.cytoscapeweb.VisualizationSBGN#addContextMenuItem}.
      * You cannot add listeners to this event.</p>
      * <table>
      *     <tr><th>group</th><th>target</th><th>value</th></tr>
@@ -2157,9 +2157,9 @@
      * 
      * @class
      * @see org.cytoscapeweb.EventType
-     * @see org.cytoscapeweb.Visualization#addListener
-     * @see org.cytoscapeweb.Visualization#hasListener
-     * @see org.cytoscapeweb.Visualization#removeListener
+     * @see org.cytoscapeweb.VisualizationSBGN#addListener
+     * @see org.cytoscapeweb.VisualizationSBGN#hasListener
+     * @see org.cytoscapeweb.VisualizationSBGN#removeListener
      */
     org.cytoscapeweb.Event = function (options) {
         /**
@@ -2244,9 +2244,9 @@
      * @name NetworkModel
      * @type Object
      * @memberOf org.cytoscapeweb
-     * @see org.cytoscapeweb.Visualization#draw
-     * @see org.cytoscapeweb.Visualization#networkModel
-     * @see org.cytoscapeweb.Visualization#dataSchema
+     * @see org.cytoscapeweb.VisualizationSBGN#draw
+     * @see org.cytoscapeweb.VisualizationSBGN#networkModel
+     * @see org.cytoscapeweb.VisualizationSBGN#dataSchema
      * @see org.cytoscapeweb.DataSchema
      */
     
@@ -2328,7 +2328,7 @@
     /**
      * The absolute node size (in pixels), when the zoom level is 100%. It is the highest value of height and width.
      * Notice that this value is not scaled, so if you want the real visualized size, you need to multiply
-     * this value by the current network scale, which is provided by {@link org.cytoscapeweb.Visualization#zoom}.
+     * this value by the current network scale, which is provided by {@link org.cytoscapeweb.VisualizationSBGN#zoom}.
      * If you set the size to <code>"auto"</code>, the node will be automatically resized to enclose its label text.
      * @property
      * @name size
@@ -2338,7 +2338,7 @@
     /**
      * The absolute node width (in pixels), when the zoom level is 100%.
      * This value is not scaled, so if you want the real rendered width, you need to multiply
-     * this value by the current network scale, which is provided by {@link org.cytoscapeweb.Visualization#zoom}.
+     * this value by the current network scale, which is provided by {@link org.cytoscapeweb.VisualizationSBGN#zoom}.
      * @property
      * @name width
      * @type Number
@@ -2347,7 +2347,7 @@
     /**
      * The absolute node height (in pixels), when the zoom level is 100%.
      * This value is not scaled, so if you want the real rendered height, you need to multiply
-     * this value by the current network scale, which is provided by {@link org.cytoscapeweb.Visualization#zoom}.
+     * this value by the current network scale, which is provided by {@link org.cytoscapeweb.VisualizationSBGN#zoom}.
      * @property
      * @name height
      * @type Number
@@ -2452,7 +2452,7 @@
      * @name merged
      * @type Boolean
      * @memberOf org.cytoscapeweb.Edge#
-     * @see org.cytoscapeweb.Visualization#edgesMerged
+     * @see org.cytoscapeweb.VisualizationSBGN#edgesMerged
      */
     /**
      * If the edge is a merged one, this property provides the regular parallel edges that were merged together.
@@ -2551,7 +2551,7 @@
      * @name Layout
      * @type String
      * @memberOf org.cytoscapeweb
-     * @see org.cytoscapeweb.Visualization#layout
+     * @see org.cytoscapeweb.VisualizationSBGN#layout
      */
     /**
      * <p>The layout name. This field is mandatory and must be one of:</p>
@@ -2720,7 +2720,7 @@
      * @see org.cytoscapeweb.DiscreteMapper
      * @see org.cytoscapeweb.PassthroughMapper
      * @see org.cytoscapeweb.CustomMapper
-     * @see org.cytoscapeweb.Visualization#visualStyle
+     * @see org.cytoscapeweb.VisualizationSBGN#visualStyle
      * @see org.cytoscapeweb.VisualStyleBypass
      */
     /**
@@ -2950,7 +2950,7 @@
      * @type Object
      * @memberOf org.cytoscapeweb
      * @see org.cytoscapeweb.VisualStyle
-     * @see org.cytoscapeweb.Visualization#visualStyleBypass
+     * @see org.cytoscapeweb.VisualizationSBGN#visualStyleBypass
      */
     
     // ===[ Mappers ]===============================================================================
@@ -3163,7 +3163,7 @@
      * @type Object
      * @see org.cytoscapeweb.EventType
      * @see org.cytoscapeweb.Event
-     * @see org.cytoscapeweb.Visualization#addListener
+     * @see org.cytoscapeweb.VisualizationSBGN#addListener
      */
     /**
      * The error message.
@@ -3200,8 +3200,8 @@
      * <p>This is an untyped object that represents a Data Schema type.</p>
      * <p>A data schema is automatically created when a network is loaded into Cytoscape Web,
      *    and cannot be created programatically through the API.
-     *    However you can use the {@link org.cytoscapeweb.Visualization#addDataField} and
-     *    {@link org.cytoscapeweb.Visualization#removeDataField} methods to change the current schema.</p>
+     *    However you can use the {@link org.cytoscapeweb.VisualizationSBGN#addDataField} and
+     *    {@link org.cytoscapeweb.VisualizationSBGN#removeDataField} methods to change the current schema.</p>
      * <p>A data schema has two attributes:</p>
      * <ul class="options">
      *     <li><code>nodes</code> {Array}</li>
@@ -3223,7 +3223,7 @@
      * @name DataSchema
      * @type Object
      * @memberOf org.cytoscapeweb
-     * @see org.cytoscapeweb.Visualization#dataSchema
+     * @see org.cytoscapeweb.VisualizationSBGN#dataSchema
      * @see org.cytoscapeweb.DataField
      */
     
@@ -3240,9 +3240,9 @@
      * @name DataField
      * @type Object
      * @memberOf org.cytoscapeweb
-     * @see org.cytoscapeweb.Visualization#addDataField
-     * @see org.cytoscapeweb.Visualization#removeDataField
-     * @see org.cytoscapeweb.Visualization#dataSchema
+     * @see org.cytoscapeweb.VisualizationSBGN#addDataField
+     * @see org.cytoscapeweb.VisualizationSBGN#removeDataField
+     * @see org.cytoscapeweb.VisualizationSBGN#dataSchema
      * @see org.cytoscapeweb.DataSchema
      */
     
@@ -3260,8 +3260,8 @@
     /**
      * <p>This object represents an event type. In actuality, it is a string.</p>
      * <p>All of them, but <code>"contextmenu"</code> can be used with the listener methods 
-     * ({@link org.cytoscapeweb.Visualization#addListener}, {@link org.cytoscapeweb.Visualization#hasListener} and
-     * {@link org.cytoscapeweb.Visualization#removeListener}).</p>
+     * ({@link org.cytoscapeweb.VisualizationSBGN#addListener}, {@link org.cytoscapeweb.VisualizationSBGN#hasListener} and
+     * {@link org.cytoscapeweb.VisualizationSBGN#removeListener}).</p>
      * <p>Its value must be one of:</p>
      *     <ul class="options">
      *         <li><code>click</code>:</strong> For mouse click events on nodes, edges or the visualization background.</li>
@@ -3276,18 +3276,18 @@
      *         <li><code>zoom</code>:</strong> For events dispatched after the network is rescaled.</li>
      *         <li><code>layout</code>:</strong> For events dispatched after a new layout is applied or the current one is recomputed.</li>
      *         <li><code>contextmenu</code>:</strong> For events dispatched after a right-click context menu item is selected.
-     *                                                        You cannot use this type with the listener methods (e.g. {@link org.cytoscapeweb.Visualization#addListener}).
+     *                                                        You cannot use this type with the listener methods (e.g. {@link org.cytoscapeweb.VisualizationSBGN#addListener}).
      *                                                        Events of this type are only dispatched to the callback functions that are registered with
-     *                                                        {@link org.cytoscapeweb.Visualization#addContextMenuItem}.</li>
+     *                                                        {@link org.cytoscapeweb.VisualizationSBGN#addContextMenuItem}.</li>
      *         <li><code>error</code>:</strong> For events dispatched when an internal error or exception occurs.</li></ul>
      * @class
      * @name EventType
      * @type String
      * @memberOf org.cytoscapeweb
-     * @see org.cytoscapeweb.Visualization#addListener
-     * @see org.cytoscapeweb.Visualization#hasListener
-     * @see org.cytoscapeweb.Visualization#removeListener
-     * @see org.cytoscapeweb.Visualization#addContextMenuItem
+     * @see org.cytoscapeweb.VisualizationSBGN#addListener
+     * @see org.cytoscapeweb.VisualizationSBGN#hasListener
+     * @see org.cytoscapeweb.VisualizationSBGN#removeListener
+     * @see org.cytoscapeweb.VisualizationSBGN#addContextMenuItem
      */
     /**
      * <p>This object represents node shapes. In actuality, it is just a string.</p>

@@ -265,7 +265,10 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData)
         flashInstallerPath: "swf/playerProductInstall"
     };
 
-    var vis = new org.cytoscapeweb.Visualization(cwDivId, options);
+    // Visualization object refactored for SBGN tab. Cytoscape.js, javascript API is changed 
+    // to support latest version of cytoscape web and not to cause errors on simple view tab
+    // now we create visualization objects as follows.
+    var vis = new org.cytoscapeweb.VisualizationSBGN(cwDivId, options);
 
     vis["compoundShapeFunction"] = function (data)
     {
@@ -307,10 +310,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData)
 
         // init UI of the network tab
         netVis.initNetworkUI(vis, genomicData);
-
-        // parse and add genomic data to cytoscape nodes
-        // netVis.parseGenomicData(); 
-        
+      
         //to hide drugs initially
         netVis._changeListener();
 

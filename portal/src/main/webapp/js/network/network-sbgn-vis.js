@@ -576,9 +576,9 @@ NetworkSbgnVis.prototype.geneLabel = function(data)
 {
 	return data.glyph_label_text;
 }
+
 NetworkSbgnVis.prototype.geneDetailsCheck = function (selected)
 {
-
 	// if all the selected nodes have the same glyph label text show only one
 	// to be decided upon by Ugur Hoca
 	var check = 1;

@@ -1,10 +1,12 @@
 --------------------------------------------------------------------------------
 cw-sbgn ( Cytoscape based SBGN viewer ) project was used to base sbgn network
 visualization component for cBio portal! To reproduce necessary executables
-	portal/web/swf/CytoscapeWeb.swf and
-	portal/web/js/cytoscape_web/cytoscapeweb.min.js
-you need to check out this project apply its own modifications and further make the changes listed below.
-https://code.google.com/p/cw-sbgn/
+	portal/web/swf/CytoWebSbgn.swf and
+	portal/web/js/cytoscape_web/cytoscapewebSBGN.min.js
+You need to rename original CytoscapeWeb.swf and cytoscapeweb.min.js as above and copy them the 
+paths which are stated above. You need to check out following project apply its own modifications 
+and  further make the changes listed below.
+	https://code.google.com/p/cw-sbgn/.
 --------------------------------------------------------------------------------
 
 Modified classes
@@ -12,6 +14,11 @@ Modified classes
 
 /html-template/js/cytoscapeweb.js
 - method profileDataAlwaysShown added
+
+- all org.cytoscapeweb.Visualization strings replaced with org.cytoscapeweb.VisualizationSBGN
+in order to use two different API's in portal and create  visualization objects which supports
+31140 version of cytoscapeweb. In this way we use different API's for simple view tab and sbgn view
+tab of network view.
 
 /org/cytoscapeweb/view/ExternalMediator.as
 - wiring necessary to toggle whether or not profile data should always be shown.
