@@ -90,6 +90,12 @@ th.mutation-details-qtip-style
 {
 	color: red;
 	font-weight: bold;
+	cursor: pointer;
+}
+
+#mutation_details .triangle
+{
+	cursor: pointer;
 }
 
 #mutation_details .non_canonical_table_info_div
