@@ -266,7 +266,7 @@ function drawMutationTable(data)
         divSelector.append(
             '<div class="canonical_table_info_div">' +
                 '<span class="canonical_table_info">' +
-                    'Mutations that affect the canonical isoform:' +
+                    '<b>Mutations that affect the canonical isoform:</b>' +
                 '</span>' +
             '</div>');
     }
@@ -293,8 +293,8 @@ function drawMutationTable(data)
 
         divSelector.append(
             '<div class="non_canonical_table_info_div">' +
-                '<span class="triangle ui-icon ui-icon-triangle-1-e" style="float:left;"></span>' +
-                '<span class="triangle ui-icon ui-icon-triangle-1-s" style="float:left; display:none;"></span>' +
+                '<span class="triangle ui-icon ui-icon-triangle-1-e" style="float:left; display:none;"></span>' +
+                '<span class="triangle ui-icon ui-icon-triangle-1-s" style="float:left;"></span>' +
                 '<span class="non_canonical_table_info">' + infoText + '</span>' +
             '</div>');
 
@@ -397,7 +397,7 @@ function drawMutationTable(data)
         }
     };
 
-	var firstRendering = true;
+	//var firstRendering = true;
 
     // modified options for best effect transcript
     var beDataTableOpts = {};
@@ -408,11 +408,11 @@ function drawMutationTable(data)
         addMutationTableTooltips(bestEffectTableId);
 
         // initially hide non-canonical table
-	    if (firstRendering)
-	    {
-		    $("#" + bestEffectTableId + "_wrapper").hide();
-		    firstRendering = false;
-	    }
+//	    if (firstRendering)
+//	    {
+//		    $("#" + bestEffectTableId + "_wrapper").hide();
+//		    firstRendering = false;
+//	    }
     };
 
     // format the table with the dataTable plugin

@@ -32,10 +32,7 @@ import static com.google.common.collect.Maps.newHashMap;
 import static org.codehaus.jackson.map.DeserializationConfig.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -118,6 +115,18 @@ public final class MutationDiagramDataServlet extends HttpServlet {
  
         List<Markup> markups = newArrayList();
         List<ExtendedMutation> mutations = readMutations(request.getParameter("mutations"));
+
+	    // exclude non-canonical mutations
+	    Iterator<ExtendedMutation> iter = mutations.iterator();
+
+	    while (iter.hasNext())
+	    {
+		    if (!iter.next().isCanonicalTranscript())
+		    {
+			    iter.remove();
+		    }
+	    }
+
         for (Pileup pileup : Pileup.pileup(mutations)) {
             Markup markup = new Markup();
             markup.setDisplay("true");
