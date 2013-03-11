@@ -55,7 +55,6 @@ function NetworkVis(divId)
     this.UNKNOWN = "Unknown";
 
     // default values for sliders
-    this.WEIGHT_COEFF = 0;
     this.ALTERATION_PERCENT = 0;
 
     // class constants for css visualization
@@ -142,7 +141,7 @@ NetworkVis.prototype.initNetworkUI = function(vis)
     this._edgeTypeVisibility = this._edgeTypeArray();
     this._edgeSourceVisibility = this._edgeSourceArray();
 
-    this._geneWeightMap = this._geneWeightArray(this.WEIGHT_COEFF);
+    this._geneWeightMap = this._geneWeightArray();
     this._geneWeightThreshold = this.ALTERATION_PERCENT;
     this._maxAlterationPercent = this._maxAlterValNonSeed(this._geneWeightMap);
 
@@ -2144,18 +2143,9 @@ NetworkVis.prototype._edgeSourceArray = function()
  * @param coeff	coefficient value used in the weight function
  * @returns		a map (array) containing weight values for each gene
  */
-NetworkVis.prototype._geneWeightArray = function(coeff)
+NetworkVis.prototype._geneWeightArray = function()
 {
     var weightArray = new Array();
-
-    if (coeff > 1)
-    {
-        coeff = 1;
-    }
-    else if (coeff < 0)
-    {
-        coeff = 0;
-    }
 
     // calculate weight values for each gene
 
@@ -2173,37 +2163,6 @@ NetworkVis.prototype._geneWeightArray = function(coeff)
         else
         {
             weight = 0;
-        }
-
-        // get first neighbors of the current node
-
-        neighbors = this._vis.firstNeighbors([nodes[i]]).neighbors;
-        max = 0;
-
-        // find the max of the total alteration of its neighbors,
-        // if coeff is not 0
-        if (coeff > 0)
-        {
-            for (var j = 0; j < neighbors.length; j++)
-            {
-                if (neighbors[j].data["PERCENT_ALTERED"] != null)
-                {
-                    if (neighbors[j].data["PERCENT_ALTERED"] > max)
-                    {
-                        max = neighbors[j].data["PERCENT_ALTERED"];
-                    }
-                }
-            }
-
-            // calculate the weight of the max value by using the coeff
-            max = max * (coeff);
-
-            // if maximum weight due to the total alteration of its neighbors
-            // is greater than its own weight, then use max instead
-            if (max > weight)
-            {
-                weight = max;
-            }
         }
 
         // add the weight value to the map
@@ -2746,7 +2705,7 @@ NetworkVis.prototype._keyPressListener = function(event)
             if (isNaN(input))
             {
                 // not a numeric value, update with defaults
-                value = this.WEIGHT_COEFF;
+                value = 0;
             }
             else if (input < 0)
             {
