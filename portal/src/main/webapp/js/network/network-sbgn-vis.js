@@ -16,11 +16,6 @@ function NetworkSbgnVis(divId)
 	this.COMPARTMENT = "compartment";
 	this.COMPLEX = "complex";
 	this.HUGOGENES = new Array();
-	this.PARENTS = new Array();
-	this.PID = new Array();
-	this.PARENTS = new Array();
-	this.WEIGHTS = new Array();
-	this.maxAlterationPercent = 0;
 }
 
 //this simulates NetworkSbgnVis extends NetworkVis (inheritance)
@@ -74,69 +69,6 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData)
 };
 
 
-// parse all nodes bottom up and set the weight of each compound node as the maximum of  its children
-NetworkSbgnVis.prototype.bottomUpWeight = function(leaves)
-{
-	for (var i = 0; i < leaves.length; i++)
-	{
-		var node = leaves[i];
-		
-		while (true)
-		{
-			// see if we can go higher one level
-			if (this.PID[node.data.id] == -1)
-				break;
-			// get the parent
-			var parent = this._vis.node(this.PARENTS[this.PID[node.data.id]]) ;
-			// if the weight of the parent is less than the child, update its weight by the child
-			if (this.WEIGHTS[node.data.id] > this.WEIGHTS[parent.data.id] )
-			{
-				 this.WEIGHTS[parent.data.id]  = this.WEIGHTS[node.data.id];
-			}
-			else
-			{
-				// if the parent is higher than the child what should be done?
-				// by default it breaks
-				// in our case else will never happen
-				// kept for debugging or future changes
-				break;
-			}
-			// go up one level
-			node = parent;
-		}
-	}
-};
-// parse all nodes top bottom and enforce the children of complex nodes to have the same weight of their parent
-NetworkSbgnVis.prototype.topBottomWeight = function(elements)
-{
-	while (elements.length > 0)
-	{
-		var nextGeneration = new Array();
-		for (var i = 0; i < elements.length; i++)
-		{
-			
-			var weight = this.WEIGHTS[elements[i].data.id];
-			if (this._vis.childNodes(elements[i]).length == 0)
-			{
-				// the element was somehow not a parent node
-				// alert("Error: in topBottomWeight, element was not parent");
-				continue;
-			}
-			var children = this._vis.childNodes(elements[i]);
-			for(var j = 0; j < children.length; j++)
-			{
-				this.WEIGHTS[children[j].data.id] = weight;
-				// update the next generation
-				if (this._vis.childNodes(children[j]).length > 0)
-				{
-					nextGeneration.push(children[j]);
-				}
-			}
-		}
-		// update elements array
-		elements = nextGeneration;
-	}
-};
 //Searches an sbgn node whose label fits with parameter hugoSymbol
 function findNode(hugoSymbol, vis)
 {
@@ -359,6 +291,9 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData)
 
 NetworkSbgnVis.prototype._geneWeightArray = function()
 {
+	var parents = new Array();
+	var pId = new Array();
+	var weights = new Array();
 	var processes = new Array();
 	var leaveNodes = new Array();
 	var nodes = this._vis.nodes();
@@ -376,7 +311,7 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 			{
 				if (label == this.geneLabel(this.HUGOGENES[j].data))
 				{
-					check =1;
+					check = 1;
 					break;
 				}
 			}
@@ -390,17 +325,19 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 			// if available
 			if (nodes[i].data["PERCENT_ALTERED"] != null)
 			{
-				this.WEIGHTS[nodes[i].data.id] = nodes[i].data["PERCENT_ALTERED"] * 100;
+				weights[nodes[i].data.id] = nodes[i].data["PERCENT_ALTERED"] * 100;
 			}
 			else
 			{
-				this.WEIGHTS[nodes[i].data.id] = 0;
+				weights[nodes[i].data.id] = 0;
 			}
+			// update leaves array
+			leaveNodes.push(nodes[i]);
 		}
 		else
 		{ 
 			// set initial weight of other nodes as 0
-			this.WEIGHTS[nodes[i].data.id] = 0;
+			weights[nodes[i].data.id] = 0;
 			
 			// make a list of processes for latter update of weights
 			if (nodes[i].data.glyph_class == this.PROCESS)
@@ -409,16 +346,18 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 			}
 			
 		}
-		
-		// update leave nodes
-		if (this._vis.childNodes(nodes[i]).length == 0)
-		{
-			leaveNodes.push(nodes[i]);
-		}
 
 	}
 	
-	// update this.PARENTS array
+	// update parents array
+	
+	// 1. all first level nodes should have no parent
+	var parentNodes = this._vis.nodes(true);
+	for (var i = 0; i < parentNodes.length; i++)
+	{
+		pId[parentNodes[i].data.id] = -1;
+	}
+	//  2. the rest should point to their parents
 	var k = 0;
 	for (var i = 0; i < nodes.length; i++)
 	{
@@ -427,24 +366,42 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 			var children = this._vis.childNodes(nodes[i]);
 			for (var j = 0; j < children.length; j++)
 			{
-				this.PID[children[j].data.id] = k;
+				pId[children[j].data.id] = k;
 				
 			}
-			this.PARENTS[k] = nodes[i].data.id;
+			parents[k] = nodes[i].data.id;
 			k++;
 		}
 	}
 	
-	var parentNodes = this._vis.nodes(true);
-	for (var i = 0; i < parentNodes.length; i++)
-	{
-		this.PID[parentNodes[i].data.id] = -1;
-	}
-	
-	// HEREON WE SET THE INITIAL WEIGHTS
-	
 	// make the parent nodes hold the maximum weight of its children
-	this.bottomUpWeight(leaveNodes);
+	for (var i = 0; i < leaves.length; i++)
+	{
+		var node = leaves[i];
+		
+		while (true)
+		{
+			// see if we can go higher one level
+			if (pId[node.data.id] == -1)
+				break;
+			var parentID = parents[pId[node.data.id]];
+			// if the weight of the parent is less than the child, update its weight by the child
+			if (weights[node.data.id] > weights[parentID] )
+			{
+				 weights[parentID]  = weights[node.data.id];
+			}
+			else
+			{
+				// if the parent is higher than the child what should be done?
+				// by default it breaks
+				// in our case else will never happen
+				// kept for debugging or future changes
+				break;
+			}
+			// go up one level
+			node = this._vis.node(parents[pId[node.data.id]]);
+		}
+	}
 	
 	// for each process, set the initial weight the maximum of its neighbors
 	for (var i = 0; i < processes.length; i++)
@@ -453,25 +410,26 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 		var neighbors = this._vis.firstNeighbors([processes[i]]).neighbors;
 		for(var j = 0; j < neighbors.length; j++)
 		{
-			if (this.WEIGHTS[neighbors[j].data.id] > max)
+			var nID = neighbors[j].data.id;
+			if (weights[nID] > max)
 			{
-				max = this.WEIGHTS[neighbors[j].data.id];
+				max = weights[nID];
 			}
 		}
-		this.WEIGHTS[processes[i].data.id] = max;
+		weights[processes[i].data.id] = max;
 	}
 	
 	// update all neighbors of processes to have the weight of the process
 	for (var i = 0; i < processes.length; i++)
 	{
-		var weight = this.WEIGHTS[processes[i].data.id] ;
+		var w = weights[processes[i].data.id] ;
 		var neighbors = this._vis.firstNeighbors([processes[i]]).neighbors;
 		var complexNeighbors = new Array();
 		for(var j = 0; j < neighbors.length; j++)
 		{
-			if (this.WEIGHTS[neighbors[j].data.id]  < weight)
+			if (weights[neighbors[j].data.id]  < w)
 			{
-				this.WEIGHTS[neighbors[j].data.id] = weight;
+				weights[neighbors[j].data.id] = w;
 				// if the neighbor is a compound or compartment
 				// then the children should also be updated
 				if (neighbors[j].data.glyph_class == this.COMPLEX)
@@ -480,13 +438,30 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 				}
 			}
 		}
-		if (complexNeighbors.length > 0)
+		while (complexNeighbors.length > 0)
 		{
-			this.topBottomWeight(complexNeighbors );
+			var nextGeneration = new Array();
+			for (var i = 0; i < elements.length; i++)
+			{
+				
+				var weight = weights[elements[i].data.id];
+				var children = this._vis.childNodes(elements[i]);
+				for(var j = 0; j < children.length; j++)
+				{
+					weights[children[j].data.id] = weight;
+					// update the next generation
+					if (children[j].data.glyph_class == this.COMPLEX)
+					{
+						nextGeneration.push(children[j]);
+					}
+				}
+			}
+			// update elements array
+			complexNeighbors = nextGeneration;
 		}
 	}
 
-    return this.WEIGHTS;
+    return weights;
 };
 
 
@@ -546,6 +521,7 @@ NetworkSbgnVis.prototype.updateSelectedGenes = function(evt)
 			if (this.geneLabel(nodes[i].data) == this.geneLabel(this._vis.node(hugoIds[j]).data))
 			{
 				nodeIds.push(nodes[i].data.id);
+				break;
 			}
 		}
 	}
@@ -556,6 +532,46 @@ NetworkSbgnVis.prototype.updateSelectedGenes = function(evt)
 	// reset flag
 	this._selectFromTab = false;
 };
+// used for selecting genes
+/**
+ * returns all nodes from HUGOGENES array that have the same label as
+ * the nodes in the elements list.
+ */
+NetworkSbgnVis.prototype.hugoGenes = function(elements)
+{
+	var hugoElements = new Array();
+	
+	for (var i=0; i < elements.length; i++)
+	{
+		for(var j=0; j<this.HUGOGENES.length; j++)
+		{
+			if (this.geneLabel(this.HUGOGENES[j].data) == this.geneLabel(elements[i].data))
+			{
+				hugoElements.push(this.HUGOGENES[j]);
+				break;
+			}
+		}
+	}
+}
+/**
+ * returns all nodes in the graph that have the same label as
+ * the nodes in the elements list.
+ */
+NetworkSbgnVis.prototype.sameHugoGenes = function(elements)
+{
+	var sameElements = new Array();
+	var nodes = this._vis.nodes();
+	for (var i=0; i < elements.length; i++)
+	{
+		for(var j=0; j<nodes.length; j++)
+		{
+			if (this.geneLabel(nodes[j].data) == this.geneLabel(elements[i].data))
+			{
+				sameElements.push(nodes[j]);
+			}
+		}
+	}
+}
 /**
  * Updates the gene tab if at least one node is selected or deselected on the
  * network. This function helps the synchronization between the genes tab and
@@ -586,23 +602,16 @@ NetworkSbgnVis.prototype.updateGenesTab = function(evt)
                 $(this).removeAttr("selected");
             });
 	var nodes = this._vis.nodes();
-        // select options for selected nodes
-	// select all nodes with same glyph label text
-	var nodes = this._vis.nodes();
-        for (var i=0; i < selected.length; i++)
+        
+	// select all nodes with same label
+	var sameNodes =  this.sameHugoGenes(selected);
+	this._vis.select("nodes", sameNodes);
+	// select all nodes with same glyph label text in the gene tab list
+	var hugos = this.hugoGenes(selected);
+        for (var i=0; i < hugos.length; i++)
         {
-		for(var j=0; j<this.HUGOGENES.length; j++)
-		{
-			var label = this.geneLabel(selected[i].data);
-			if( this.geneLabel(this.HUGOGENES[j].data) == label)
-			{
-				$(this.geneListAreaSelector + " #" +  _safeProperty(this.HUGOGENES[j].data.id)).attr(
+		$(this.geneListAreaSelector + " #" +  _safeProperty(this.hugos[i].data.id)).attr(
 				     "selected", "selected");
-				break;
-			}
-		}
-		
-		this.updateSelectedGenes(null);
         }
 
         if (_isIE())
