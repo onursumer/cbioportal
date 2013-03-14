@@ -228,7 +228,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData)
     this.parseGenomicData(genomicData); 
     // this.setInitialData();
 
-    this._geneWeightMap = this._geneWeightArray();
+    this._geneWeightMap = this._geneWeightArray(0, null);
     this._geneWeightThreshold = this.ALTERATION_PERCENT;
     this._maxAlterationPercent = this._maxAlterValNonSeed(this._geneWeightMap);
 
@@ -289,75 +289,159 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData)
  * @returns		a map (array) containing weight values for each gene
  */
 
-NetworkSbgnVis.prototype._geneWeightArray = function()
+NetworkSbgnVis.prototype._geneWeightArray = function(flag, selected)
 {
 	var parents = new Array();
 	var pId = new Array();
 	var weights = new Array();
 	var processes = new Array();
-	var leaveNodes = new Array();
+	var leaves = new Array();
 	var nodes = this._vis.nodes();
-	
-	for (var i = 0; i < nodes.length; i++)
+	// just the visible nodes
+	var i = 0;
+	while (i < nodes.length)
 	{
-		if (nodes[i].data.glyph_class == this.MACROMOLECULE)
+		if (!this.currentVisibility(nodes[i]))
 		{
-			// first update hugogenes to hold one node of every macromolecule hugotype
-			// these are either proteins or genes
-			var label = this.geneLabel(nodes[i].data);
-			var check = 0;
-
-			for (var j = 0; j < this.HUGOGENES.length; j++)
-			{
-				if (label == this.geneLabel(this.HUGOGENES[j].data))
-				{
-					check = 1;
-					break;
-				}
-			}
-			// if its a new hugolabel add it to the hugogenes
-			if (check == 0)
-			{
-					this.HUGOGENES.push(nodes[i]);
-			}
-			
-			// then set the initial weight to be the aleteration percent
-			// if available
-			if (nodes[i].data["PERCENT_ALTERED"] != null)
-			{
-				weights[nodes[i].data.id] = nodes[i].data["PERCENT_ALTERED"] * 100;
-			}
-			else
-			{
-				weights[nodes[i].data.id] = 0;
-			}
-			// update leaves array
-			leaveNodes.push(nodes[i]);
+			weights[nodes[i].data.id] = -1;
+			nodes.splice(i, 1);
 		}
 		else
-		{ 
-			// set initial weight of other nodes as 0
-			weights[nodes[i].data.id] = 0;
+		{
+			i++;
+		}
+	}
+	
+	if (flag == 0)
+	{
+		for (var i = 0; i < nodes.length; i++)
+		{
+			if (nodes[i].data.glyph_class == this.MACROMOLECULE)
+			{
+				// first update hugogenes to hold one node of every macromolecule hugotype
+				// these are either proteins or genes
+				var label = this.geneLabel(nodes[i].data);
+				var check = 0;
+
+				for (var j = 0; j < this.HUGOGENES.length; j++)
+				{
+					if (label == this.geneLabel(this.HUGOGENES[j].data))
+					{
+						check = 1;
+						break;
+					}
+				}
+				// if its a new hugolabel add it to the hugogenes
+				if (check == 0)
+				{
+						this.HUGOGENES.push(nodes[i]);
+				}
+				
+				// then set the initial weight to be the aleteration percent
+				// if available
+				if (nodes[i].data["PERCENT_ALTERED"] != null)
+				{
+					weights[nodes[i].data.id] = nodes[i].data["PERCENT_ALTERED"]  *  100;
+				}
+				else
+				{
+					weights[nodes[i].data.id] = 0;
+				}
+				// update leaves array
+				leaves.push(nodes[i]);
+			}
+			else
+			{ 
+				// set initial weight of other nodes as 0
+				weights[nodes[i].data.id] = 0;
+				
+				// make a list of processes for latter update of weights
+				if (nodes[i].data.glyph_class == this.PROCESS)
+				{
+					processes.push(nodes[i]);
+				}
+				
+			}
+			// initialize the pID
+			pId[nodes[i].data.id] = -1;
+
+		}
+	}
+	else
+	{	
+		// get the subgraph to show for the selected nodes
+		// used for hiding or showing selected nodes
+		for (var i = 0; i < nodes.length; i++)
+		{
 			
-			// make a list of processes for latter update of weights
+			// initialize the weight
+			weights[nodes[i].data.id] = 0;
+			// initialize the pID
+			pId[nodes[i].data.id] = -1;
+			// update processes array
 			if (nodes[i].data.glyph_class == this.PROCESS)
 			{
 				processes.push(nodes[i]);
 			}
-			
+				
 		}
 
+		for (var i = 0; i < selected.length; i++)
+		{
+			
+			if (selected[i].data.glyph_class == this.MACROMOLECULE)
+			{
+				// update leaves array
+				weights[selected[i].data.id] = 1;
+				leaves.push(selected[i]);
+			}
+			else if (selected[i].data.glyph_class == this.COMPLEX || selected[i].data.glyph_class == this.COMPARTMENT)
+			{
+				var children = this._vis.childNodes(selected[i]);
+				while (children.length > 0)
+				{
+					var nextGeneration = new Array();
+					for (var j = 0; j < children.length; j++)
+					{
+						if (children[j].data.glyph_class == this.COMPLEX || children[j].data.glyph_class == this.COMPARTMENT)
+						{
+							nextGeneration.concat(this._vis.childNodes(children[j]));
+						}
+						else
+						{
+							// update leaves array
+							weights[children[j].data.id] = 1;
+							leaves.push(children[j]);
+						}
+					}
+					// update elements array
+					children = nextGeneration;
+				}
+			}
+			else //if (selected[i].data.glyph_class == this.PROCESS)
+			{
+				weights[selected[i].data.id] = 1;
+				leaves.push(selected[i]);
+				//var neighbors = this._vis.firstNeighbors([selected[i]]).neighbors;
+				//for(var j = 0; j < neighbors.length; j++)
+				//{
+				//	if (neighbors[j].data.glyph_class == this.MACROMOLECULE)
+				//	{
+				//		weights[neighbors[j].data.id] = 1;
+				//		// update leaves array
+				//		leaves.push(neighbors[j]);
+				//	}
+				//	else
+				//	{
+				//		selected.push(neighbors[j]);
+				//	}
+				//}
+			}
+			
+		}
 	}
 	
 	// update parents array
-	
-	// 1. all first level nodes should have no parent
-	var parentNodes = this._vis.nodes(true);
-	for (var i = 0; i < parentNodes.length; i++)
-	{
-		pId[parentNodes[i].data.id] = -1;
-	}
-	//  2. the rest should point to their parents
 	var k = 0;
 	for (var i = 0; i < nodes.length; i++)
 	{
@@ -399,7 +483,7 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 				break;
 			}
 			// go up one level
-			node = this._vis.node(parents[pId[node.data.id]]);
+			node = this._vis.node(parentID);
 		}
 	}
 	
@@ -416,7 +500,10 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 				max = weights[nID];
 			}
 		}
-		weights[processes[i].data.id] = max;
+		if (weights[processes[i].data.id] < max)
+		{
+			weights[processes[i].data.id] = max;
+		}
 	}
 	
 	// update all neighbors of processes to have the weight of the process
@@ -430,38 +517,54 @@ NetworkSbgnVis.prototype._geneWeightArray = function()
 			if (weights[neighbors[j].data.id]  < w)
 			{
 				weights[neighbors[j].data.id] = w;
-				// if the neighbor is a compound or compartment
-				// then the children should also be updated
-				if (neighbors[j].data.glyph_class == this.COMPLEX)
-				{
-					complexNeighbors.push(neighbors[j]);
-				}
 			}
 		}
-		while (complexNeighbors.length > 0)
+	}
+	// make sure all complex nodes 
+	// top bottom
+	for (var i = 0; i < nodes.length; i++)
+	{
+		var n = nodes[i];
+		if (n.data.glyph_class == this.COMPLEX && weights[n.data.id] > 0)
 		{
-			var nextGeneration = new Array();
-			for (var i = 0; i < elements.length; i++)
+			var children = this._vis.childNodes(n);
+			while (children.length > 0)
 			{
-				
-				var weight = weights[elements[i].data.id];
-				var children = this._vis.childNodes(elements[i]);
+				var nextGeneration = new Array();
 				for(var j = 0; j < children.length; j++)
 				{
-					weights[children[j].data.id] = weight;
-					// update the next generation
+					weights[children[j].data.id] = weights[n.data.id];
 					if (children[j].data.glyph_class == this.COMPLEX)
 					{
 						nextGeneration.push(children[j]);
 					}
 				}
-			}
-			// update elements array
-			complexNeighbors = nextGeneration;
+				children = nextGeneration;
+			}	
 		}
 	}
-
-    return weights;
+	
+	
+	if (flag == 1)
+	{
+		for (var i = 0; i < nodes.length; i++)
+		{
+			var n = nodes[i];
+			if (weights[n.data.id] == 1)
+			{
+				while (pId[n.data.id] != -1)
+				{
+					var parentID = parents[pId[n.data.id]];
+					weights[parentID] = 1;
+					n = this._vis.node(parentID);
+				}
+				
+				
+			}
+		}
+	}
+	
+	return weights;
 };
 
 
@@ -495,7 +598,7 @@ NetworkSbgnVis.prototype.updateSelectedGenes = function(evt)
 	var hugoIds = new Array();
 
 	// deselect all nodes
-	// this._vis.deselect("nodes");
+	this._vis.deselect("nodes");
 
 
 	// collect id's of selected node's on the tab
@@ -543,6 +646,10 @@ NetworkSbgnVis.prototype.hugoGenes = function(elements)
 	
 	for (var i=0; i < elements.length; i++)
 	{
+		if (elements[i].data.glyph_class != this.MACROMOLECULE)
+		{
+			continue;
+		}
 		for(var j=0; j<this.HUGOGENES.length; j++)
 		{
 			if (this.geneLabel(this.HUGOGENES[j].data) == this.geneLabel(elements[i].data))
@@ -552,6 +659,7 @@ NetworkSbgnVis.prototype.hugoGenes = function(elements)
 			}
 		}
 	}
+	return hugoElements;
 }
 /**
  * returns all nodes in the graph that have the same label as
@@ -563,14 +671,23 @@ NetworkSbgnVis.prototype.sameHugoGenes = function(elements)
 	var nodes = this._vis.nodes();
 	for (var i=0; i < elements.length; i++)
 	{
-		for(var j=0; j<nodes.length; j++)
+		if (elements[i].data.glyph_class == this.MACROMOLECULE)
 		{
-			if (this.geneLabel(nodes[j].data) == this.geneLabel(elements[i].data))
+			for(var j=0; j<nodes.length; j++)
 			{
-				sameElements.push(nodes[j]);
+				if (this.geneLabel(nodes[j].data) == this.geneLabel(elements[i].data))
+				{
+					sameElements.push(nodes[j]);
+				}
 			}
 		}
+		else
+		{
+			sameElements.push(elements[i]);
+		}
+		
 	}
+	return sameElements;
 }
 /**
  * Updates the gene tab if at least one node is selected or deselected on the
@@ -610,7 +727,7 @@ NetworkSbgnVis.prototype.updateGenesTab = function(evt)
 	var hugos = this.hugoGenes(selected);
         for (var i=0; i < hugos.length; i++)
         {
-		$(this.geneListAreaSelector + " #" +  _safeProperty(this.hugos[i].data.id)).attr(
+		$(this.geneListAreaSelector + " #" +  _safeProperty(hugos[i].data.id)).attr(
 				     "selected", "selected");
         }
 
@@ -684,3 +801,100 @@ NetworkSbgnVis.prototype.geneDetailsCheck = function (selected)
 	return check;
 };
 
+
+/**
+ * Filters out all non-selected nodes.
+ */
+NetworkSbgnVis.prototype.filterNonSelected = function()
+{
+	var self = this;
+
+	// this is required to pass "this" instance to the listener
+	var geneVisibility = function(element) {
+	return self.geneVisibility(element);
+	};
+
+	// update selected elements map
+	var selected = this._vis.selected("nodes");
+	var map = new Array();
+	var weights = this._geneWeightArray(1, selected);
+	var nodes = this._vis.nodes();
+
+	for (var i=0; i < nodes.length; i++)
+	{
+		if (weights[nodes[i].data.id] == 1)
+		{
+			var key = nodes[i].data.id;
+			map[key] = nodes[i];
+		}
+	}
+	this._selectedElements = map;
+
+	// filter out non-selected elements
+	this._vis.filter('nodes', geneVisibility);
+
+	// also, filter disconnected nodes if necessary
+	this._filterDisconnected();
+
+	// refresh Genes tab
+	this._refreshGenesTab();
+	this.updateGenesTab();
+
+	// visualization changed, perform layout if necessary
+	this._visChanged();
+};
+/**
+ * Filters out all selected genes.
+ */
+NetworkSbgnVis.prototype.filterSelectedGenes = function()
+{
+	var self = this;
+
+	// this is required to pass "this" instance to the listener
+	var selectionVisibility = function(element) {
+	return self.selectionVisibility(element);
+	};
+
+	// update selected elements map
+	var selected = this._vis.selected("nodes");
+	var map = new Array();
+	var weightsSelected = this._geneWeightArray(1, selected);
+	var nodes = this._vis.nodes();
+	
+	var complement = new Array();
+	for (var i=0; i < nodes.length; i++)
+	{
+		if (weightsSelected[nodes[i].data.id] == 0)
+		{
+			complement.push(nodes[i]);
+		}
+	}
+	
+	var weightsComplement = this._geneWeightArray(1, complement);
+	var reselect = new Array();
+	var deselect = new Array();
+	for (var i=0; i < nodes.length; i++)
+	{
+		if (!this.currentVisibility(nodes[i]))
+			continue;
+		if (weightsSelected[nodes[i].data.id] == 1 && weightsComplement[nodes[i].data.id] == 0)
+		{
+			var key = nodes[i].data.id;
+			map[key] = nodes[i];
+		}
+	}
+	
+	this._selectedElements = map;
+
+	// filter out selected elements
+	this._vis.filter("nodes", selectionVisibility);
+
+	// also, filter disconnected nodes if necessary
+	this._filterDisconnected();
+
+	// refresh genes tab
+	this._refreshGenesTab();
+
+	// visualization changed, perform layout if necessary
+	this._visChanged();
+};
