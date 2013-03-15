@@ -37,7 +37,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author jgao
  */
-public class PanCanAlterationsServlet extends HttpServlet {
+public class HotSpotsFinder extends HttpServlet {
     
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
@@ -49,7 +49,7 @@ public class PanCanAlterationsServlet extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         RequestDispatcher dispatcher =
-                    getServletContext().getRequestDispatcher("/WEB-INF/jsp/pancan_alterations.jsp");
+                    getServletContext().getRequestDispatcher("/WEB-INF/jsp/hotspots.jsp");
             dispatcher.forward(request, response);
     }
     

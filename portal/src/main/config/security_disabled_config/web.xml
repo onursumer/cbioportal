@@ -361,12 +361,12 @@
     </servlet-mapping>
     
     <servlet>
-        <servlet-name>PanCanAlterationsServlet</servlet-name>
-        <servlet-class>org.mskcc.cbio.portal.servlet.PanCanAlterationsServlet</servlet-class>
+        <servlet-name>HotSpots</servlet-name>
+        <servlet-class>org.mskcc.cbio.portal.servlet.HotSpotsFinder</servlet-class>
     </servlet>
     
     <servlet-mapping>
-        <servlet-name>PanCanAlterationsServlet</servlet-name>
+        <servlet-name>HotSpots</servlet-name>
         <url-pattern>/hotspots</url-pattern>
     </servlet-mapping>
     
