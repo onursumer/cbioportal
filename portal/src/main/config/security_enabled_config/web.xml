@@ -368,7 +368,7 @@
     
     <servlet-mapping>
         <servlet-name>PanCanAlterationsServlet</servlet-name>
-        <url-pattern>/pancan_alterations</url-pattern>
+        <url-pattern>/hotspots</url-pattern>
     </servlet-mapping>
      
      <!-- tumor map -->
