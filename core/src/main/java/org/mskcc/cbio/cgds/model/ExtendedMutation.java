@@ -27,6 +27,8 @@
 
 package org.mskcc.cbio.cgds.model;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -574,6 +576,41 @@ public class ExtendedMutation
 
         public void setKeyword(String keyword) {
             this.keyword = keyword;
+        }
+        
+        private static Pattern patternNumber = Pattern.compile("([0-9]+)");
+        int startAAPosition = -2;
+        public int getStartAminoAcidPosition() {
+            if (startAAPosition==-2) {
+                Matcher m = patternNumber.matcher(proteinChange);
+                if (m.find()) {
+                    startAAPosition = Integer.parseInt(m.group(1));
+                } else {
+                    startAAPosition = -1;
+                }
+            }
+            return startAAPosition;
+        }
+        
+        private static Pattern patternAASeq = Pattern.compile("([A-Z]+)");
+        int endAAPosition = -2;
+        public int getEndAminoAcidPosition() {
+            if (endAAPosition==-2) {
+                int start = getStartAminoAcidPosition();
+                if (start == -1) {
+                    endAAPosition = -1;
+                } else if (mutationType.equals("In_Frame_Ins")) {
+                    endAAPosition = start;
+                } else {
+                    Matcher m = patternAASeq.matcher(proteinChange);
+                    if (m.find()) {
+                        endAAPosition = start + m.group(1).length() - 1;
+                    } else {
+                        endAAPosition = -1;
+                    }
+                }
+            }
+            return endAAPosition;
         }
 
 	@Override
