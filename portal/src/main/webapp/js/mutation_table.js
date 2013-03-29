@@ -349,7 +349,7 @@ function drawMutationTable(data)
     for (var col=11; col<count; col++)
     {
         // do not hide frequency columns
-        if (!(col == 16 || col == 19))
+        if (!(col == 17 || col == 20))
         {
             hiddenCols.push(col);
         }
@@ -369,7 +369,7 @@ function drawMutationTable(data)
 
 	if (!containsGermline)
 	{
-		hiddenCols.push(7);
+		hiddenCols.push(9);
 	}
 
     hiddenCols.push(2);
