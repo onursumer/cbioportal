@@ -1,3 +1,8 @@
+# March 28, 2013
+
+* All data TCGA updated to the January Firehose run (January 16, 2012).
+* Data from a new bladder cancer study from MSKCC has been added (97 samples, Iyer et al., JCO in press).
+
 # February 16, 2013
 
 * The cBio Portal now contains mutation data from all provisional TCGA projects. Please adhere to [the TCGA publication guidelines](http://cancergenome.nih.gov/abouttcga/policies/publicationguidelines) when using these and any TCGA data in your publications.
