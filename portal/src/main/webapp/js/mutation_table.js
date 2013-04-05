@@ -389,8 +389,8 @@ function drawMutationTable(data)
 		hiddenCols.push(indexMap["ms"]);
 	}
 
-    hiddenCols.push(2);
-    hiddenCols.push(3);
+    hiddenCols.push(indexMap["refseq mrna id"]);
+    hiddenCols.push(indexMap["codon change"]);
 
     var dataTableOpts = {
         "sDom": '<"H"<"mutation_datatables_filter"f>C<"mutation_datatables_info"i>>t',
