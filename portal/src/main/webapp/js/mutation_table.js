@@ -62,7 +62,7 @@ function _assignValueToPredictedImpact(str)
     } else if (str == "neutral" || str == "n") {
         return 1;
     } else {
-        return 0;
+        return -1;
     }
 }
 
@@ -168,14 +168,14 @@ function _getLabelTextFloatValue(a)
  */
 function _compareSortAsc(a, b, av, bv)
 {
-    if (av>0) {
-        if (bv>0) {
+    if (av >= 0) {
+        if (bv >= 0) {
             return av==bv ? 0 : (av<bv ? -1:1);
         } else {
             return -1;
         }
     } else {
-        if (bv>0) {
+        if (bv >= 0) {
             return 1;
         } else {
             return a==b ? 0 : (a<b ? 1:-1);
@@ -195,14 +195,14 @@ function _compareSortAsc(a, b, av, bv)
  */
 function _compareSortDesc(a, b, av, bv)
 {
-    if (av>0) {
-        if (bv>0) {
+    if (av >= 0) {
+        if (bv >= 0) {
             return av==bv ? 0 : (av<bv ? 1:-1);
         } else {
             return -1;
         }
     } else {
-        if (bv>0) {
+        if (bv >= 0) {
             return 1;
         } else {
             return a==b ? 0 : (a<b ? -1:1);
@@ -214,7 +214,7 @@ function delayedMutationTable(data)
 {
     //TODO temporary work-around for the missing columns in the filter (issue 429)
     setTimeout(function(){drawMutationTable(data);},
-               3000);
+               4000);
 }
 
 /**
@@ -224,7 +224,21 @@ function delayedMutationTable(data)
  */
 function drawMutationTable(data)
 {
-    var divId = "mutation_table_" + data.hugoGeneSymbol.toUpperCase();
+	// build a map, instead of using integer constants for column indexes
+	var buildColumnIndexMap = function() {
+		var headers = _getMutationTableHeaders(data);
+
+		var map = {};
+
+		for (var i=0; i < headers.length; i++)
+		{
+			map[headers[i].toLowerCase()] = i;
+		}
+
+		return map;
+	};
+
+	var divId = "mutation_table_" + data.hugoGeneSymbol.toUpperCase();
     var tableId = "mutation_details_table_" + data.hugoGeneSymbol.toUpperCase();
 
     // generate mutation table HTML for the provided data
@@ -238,6 +252,48 @@ function drawMutationTable(data)
 //    var rows = _getMutationTableRows(data);
 //    var columns = _getMutationTableColumns(data);
 
+    // set hidden column indices
+    var hiddenCols = [];
+    var count = 0;
+
+    for (var key in data.header)
+    {
+        count++;
+    }
+
+    // -2 because of the fields "specialGeneHeaders" and "ncbiBuildNo"
+    count += data.header.specialGeneHeaders.length - 2;
+
+	var indexMap = buildColumnIndexMap();
+
+    // hide special gene columns and less important columns by default
+    for (var col=9; col<count; col++)
+    {
+        // do not hide allele frequency (T) and count columns
+        if (!(col == indexMap["allele freq (t)"] ||
+              col == indexMap["count"]))
+        {
+            hiddenCols.push(col);
+        }
+    }
+
+	// conditionally hide mutation status column if there is no germline mutation
+	var containsGermline = false;
+
+	for (var i=0; i < data.mutations.length; i++)
+	{
+		if (data.mutations[i].mutationStatus.toLowerCase() == "germline")
+		{
+			containsGermline = true;
+			break;
+		}
+	}
+
+	if (!containsGermline)
+	{
+		hiddenCols.push(indexMap["ms"]);
+	}
+
     // format the table with the dataTable plugin
     var oTable = $("#mutation_details #" + tableId).dataTable({
         "sDom": '<"H"<"mutation_datatables_filter"f>C<"mutation_datatables_info"i>>t',
@@ -248,35 +304,37 @@ function drawMutationTable(data)
 //      "aoColumns" : columns,
         "aoColumnDefs":[
             {"sType": 'aa-change-col',
-                "aTargets": [ 1 ]},
+                "aTargets": [ indexMap["aa change"] ]},
             {"sType": 'label-int-col',
                 "sClass": "right-align-td",
-                "aTargets": [3,15,16,18,19]},
+                "aTargets": [indexMap["cosmic"],
+	                indexMap["start pos"],
+	                indexMap["end pos"],
+	                indexMap["var alt"],
+	                indexMap["var ref"],
+	                indexMap["norm alt"],
+	                indexMap["norm ref"],
+                    indexMap["count"]]},
             {"sType": 'label-float-col',
                 "sClass": "right-align-td",
-                "aTargets": [14,17]},
+                "aTargets": [indexMap["allele freq (t)"],
+	                indexMap["allele freq (n)"]]},
             {"sType": 'predicted-impact-col',
-                "aTargets": [ 4 ]},
+                "aTargets": [indexMap["fis"]]},
             {"asSorting": ["desc", "asc"],
-                "aTargets": [3,4,5]}
+                "aTargets": [indexMap["cosmic"],
+	                indexMap["fis"],
+                    indexMap["cons"],
+                    indexMap["3d"],
+                    indexMap["count"]]},
+            {"bVisible": false,
+                "aTargets": hiddenCols}
         ],
         "fnDrawCallback": function(oSettings) {
             // add tooltips to the table
             addMutationTableTooltips(tableId);
         }
     });
-
-    var cols = oTable.fnSettings().aoColumns.length;
-
-    // hide special gene columns and less important columns by default
-    for (var col=9; col<cols; col++)
-    {
-        oTable.fnSetColumnVis( col, false );
-    }
-
-	// show frequency columns by default
-	oTable.fnSetColumnVis(14, true);
-	oTable.fnSetColumnVis(17, true);
 
     oTable.css("width", "100%");
 }
@@ -358,6 +416,7 @@ function _getMutationTableHeaders(data)
     headers.push(data.header.mutationType);
     headers.push(data.header.cosmic);
     headers.push(data.header.functionalImpactScore);
+    headers.push(data.header.msaLink);
     headers.push(data.header.pdbLink);
     headers.push(data.header.mutationStatus);
     headers.push(data.header.validationStatus);
@@ -373,6 +432,7 @@ function _getMutationTableHeaders(data)
     headers.push(data.header.normalFreq);
     headers.push(data.header.normalAltCount);
     headers.push(data.header.normalRefCount);
+	headers.push(data.header.mutationCount);
 
     // special gene headers
     for (var i=0; i < data.header.specialGeneHeaders.length; i++)
@@ -397,6 +457,7 @@ function _getMutationTableHeaderTip(header)
         "cosmic": "Overlapping mutations in COSMIC",
         "fis": "Predicted Functional Impact Score (via Mutation Assessor) for missense mutations",
         "3d": "3-D Structure",
+	    "cons": "Conservation",
         "ms": "Mutation Status",
         "vs": "Validation Status",
         "center": "Sequencing Center",
@@ -406,12 +467,13 @@ function _getMutationTableHeaderTip(header)
         "end pos": "End Position",
         "ref": "Reference Allele",
         "var": "Variant Allele",
-        "allele freq (t)": "Variant allele frequency in the tumor sample",
-        "allele freq (f)": "Variant allele frequency in the normal sample",
+        "allele freq (t)": "Variant allele frequency<br> in the tumor sample",
+        "allele freq (n)": "Variant allele frequency<br> in the normal sample",
         "var ref": "Variant Ref Count",
         "var alt": "Variant Alt Count",
         "norm ref": "Normal Ref Count",
-        "norm alt": "Normal Alt Count"};
+        "norm alt": "Normal Alt Count",
+	    "count" : "Number of mutations<br> in the sample"};
 
     return tooltipMap[header.toLowerCase()];
 }
@@ -433,8 +495,9 @@ function _getMutationTableRows(data)
     var mutationTypeMap = {
         missense_mutation: {label: "Missense", style: "missense_mutation"},
         nonsense_mutation: {label: "Nonsense", style: "trunc_mutation"},
-        frame_shift_del: {label: "Nonstop", style: "trunc_mutation"},
-        frame_shift_ins: {label: "FS del", style: "trunc_mutation"},
+	    nonstop_mutation: {label: "Nonstop", style: "trunc_mutation"},
+	    frame_shift_del: {label: "FS del", style: "trunc_mutation"},
+        frame_shift_ins: {label: "FS ins", style: "trunc_mutation"},
         in_frame_ins: {label: "IF ins", style: "inframe_mutation"},
         in_frame_del: {label: "IF del", style: "inframe_mutation"},
         splice_site: {label: "Splice", style: "trunc_mutation"},
@@ -536,14 +599,14 @@ function _getMutationTableRows(data)
                label + '</label></span>';
     };
 
-    var getFisHtml = function(value, msaLink, xVarLink) {
+    var getFisHtml = function(value, xVarLink) {
 
         var html;
 
         if (omaScoreMap[value] != null)
         {
             html = '<span class="oma_link ' + omaScoreMap[value].style + '" alt="' +
-                   omaScoreMap[value].tooltip + "|" + xVarLink + '|' + msaLink + '">' +
+                   omaScoreMap[value].tooltip + "|" + xVarLink + '">' +
                    '<label>' + omaScoreMap[value].label + '</label>' +
                    '</span>';
         }
@@ -558,9 +621,11 @@ function _getMutationTableRows(data)
     var getPdbLinkHtml = function(value) {
         var html;
 
-        if (value != null)
+        if (value != null &&
+            value.length > 0 &&
+            value != "NA")
         {
-            html = '<a href="' + value + '">' +
+            html = '<a href="' + value + '" target="_blank">' +
                      '<span style="background-color:#88C;color:white;">&nbsp;3D&nbsp;</span>' +
                      '</a>';
         }
@@ -571,6 +636,25 @@ function _getMutationTableRows(data)
 
         return html;
     };
+
+	var getMsaLinkHtml = function(value) {
+		var html;
+
+		if (value != null &&
+		    value.length > 0 &&
+		    value != "NA")
+		{
+			html = '<a href="' + value + '" target="_blank">' +
+			       '<span style="background-color:#88C;color:white">&nbsp;msa&nbsp;</span>' +
+			       '</a>';
+		}
+		else
+		{
+			html = "";
+		}
+
+		return html;
+	};
 
     var getCosmicHtml = function(value, count) {
         var html;
@@ -588,7 +672,7 @@ function _getMutationTableRows(data)
         return html;
     };
 
-    var getAlleleFreqHtml = function(frequency, alt, ref) {
+    var getAlleleFreqHtml = function(frequency, alt, ref, tipClass) {
 		var html;
         var tip = "<b>" + alt + "</b> variant reads out of <b>" + (alt + ref) + "</b> total";
 
@@ -598,7 +682,7 @@ function _getMutationTableRows(data)
         }
         else
         {
-            html = '<label class="mutation_table_allele_freq simple-tip" alt="' + tip + '">' +
+            html = '<label class="mutation_table_allele_freq ' + tipClass + '" alt="' + tip + '">' +
                    frequency.toFixed(2) + '</label>';
         }
 
@@ -621,6 +705,43 @@ function _getMutationTableRows(data)
         return html;
     };
 
+    var getProteinChangeHtml = function(mutation) {
+        var style = "protein_change";
+        var tip = "";
+
+        // TODO disabled temporarily, enable when isoform support completely ready
+//        if (!mutation.canonicalTranscript)
+//        {
+//            style = "best_effect_transcript " + style;
+//            // TODO find a better way to display isoform information
+//            tip = "Specified protein change is for the best effect transcript " +
+//                "instead of the canonical transcript.<br>" +
+//                "<br>RefSeq mRNA id: " + "<b>" + mutation.refseqMrnaId + "</b>" +
+//                "<br>Codon change: " + "<b>" + mutation.codonChange + "</b>" +
+//                "<br>Uniprot id: " + "<b>" + mutation.uniprotId + "</b>";
+//        }
+
+        return '<span class="' + style + '" alt="' + tip + '">' +
+            mutation.proteinChange +
+            '</span>';
+    };
+
+	var getIntValueHtml = function(value){
+		var html;
+
+		if (value == null)
+		{
+			html = "<label>NA</label>";
+		}
+		else
+		{
+			html = '<label class="mutation_table_int_value">' +
+			       + value + '</label>';
+		}
+
+		return html;
+	};
+
     // generate rows as HTML
 
     var row;
@@ -630,35 +751,36 @@ function _getMutationTableRows(data)
     {
         row = new Array();
 
-        row.push('<a href="' + data.mutations[i].linkToPatientView + '">' +
+        row.push('<a href="' + data.mutations[i].linkToPatientView + '" target="_blank">' +
                  '<b>' + data.mutations[i].caseId + "</b></a>");
-        row.push('<span class="protein_change">' +
-                 data.mutations[i].proteinChange +
-                '</span>');
+        row.push(getProteinChangeHtml(data.mutations[i]));
         row.push(getMutationTypeHtml(data.mutations[i].mutationType.toLowerCase()));
         row.push(getCosmicHtml(data.mutations[i].cosmic, data.mutations[i].cosmicCount));
         row.push(getFisHtml(data.mutations[i].functionalImpactScore.toLowerCase(),
-                            data.mutations[i].xVarLink,
-                            data.mutations[i].msaLink));
+                            data.mutations[i].xVarLink));
+	    row.push(getMsaLinkHtml(data.mutations[i].msaLink));
         row.push(getPdbLinkHtml(data.mutations[i].pdbLink));
         row.push(getMutationStatusHtml(data.mutations[i].mutationStatus.toLowerCase()));
         row.push(getValidationStatusHtml(data.mutations[i].validationStatus.toLowerCase()));
         row.push(data.mutations[i].sequencingCenter);
         row.push(data.mutations[i].chr);
-        row.push(data.mutations[i].startPos);
-        row.push(data.mutations[i].endPos);
+        row.push(getIntValueHtml(data.mutations[i].startPos));
+        row.push(getIntValueHtml(data.mutations[i].endPos));
         row.push(data.mutations[i].referenceAllele);
         row.push(data.mutations[i].variantAllele);
         row.push(getAlleleFreqHtml(data.mutations[i].tumorFreq,
                 data.mutations[i].tumorAltCount,
-                data.mutations[i].tumorRefCount));
+                data.mutations[i].tumorRefCount,
+                "simple-tip-left"));
         row.push(getAlleleCountHtml(data.mutations[i].tumorAltCount));
         row.push(getAlleleCountHtml(data.mutations[i].tumorRefCount));
         row.push(getAlleleFreqHtml(data.mutations[i].normalFreq,
                 data.mutations[i].normalAltCount,
-                data.mutations[i].normalRefCount));
+                data.mutations[i].normalRefCount,
+                "simple-tip-left"));
         row.push(getAlleleCountHtml(data.mutations[i].normalAltCount));
         row.push(getAlleleCountHtml(data.mutations[i].normalRefCount));
+	    row.push(getIntValueHtml(data.mutations[i].mutationCount));
 
         //special gene data
         for (var j=0; j < data.mutations[i].specialGeneData.length; j++)
@@ -708,12 +830,25 @@ function addMutationTableTooltips(tableId)
     var qTipOptions = {content: {attr: 'alt'},
         hide: { fixed: true, delay: 100 },
         style: { classes: 'mutation-details-tooltip ui-tooltip-shadow ui-tooltip-light ui-tooltip-rounded' },
-        position: {my:'top center',at:'bottom center'}};
+        position: {my:'top left', at:'bottom right'}};
 
-    $('#' + tableId + ' th').qtip(qTipOptions);
+    var qTipOptionsHeader = new Object();
+	var qTipOptionsFooter = new Object();
+    var qTipOptionsLeft = new Object();
+    jQuery.extend(true, qTipOptionsHeader, qTipOptions);
+	jQuery.extend(true, qTipOptionsFooter, qTipOptions);
+    jQuery.extend(true, qTipOptionsLeft, qTipOptions);
+    qTipOptionsHeader.position = {my:'bottom center', at:'top center'};
+	qTipOptionsFooter.position = {my:'top center', at:'bottom center'};
+    qTipOptionsLeft.position = {my:'top right', at:'bottom left'};
+
+    $('#' + tableId + ' thead th').qtip(qTipOptionsHeader);
+	$('#' + tableId + ' tfoot th').qtip(qTipOptionsFooter);
     //$('#mutation_details .mutation_details_table td').qtip(qTipOptions);
 
     $('#' + tableId + ' .simple-tip').qtip(qTipOptions);
+    $('#' + tableId + ' .best_effect_transcript').qtip(qTipOptions);
+    $('#' + tableId + ' .simple-tip-left').qtip(qTipOptionsLeft);
 
     // copy default qTip options and modify "content" to customize for cosmic
     var qTipOptsCosmic = new Object();
@@ -789,11 +924,12 @@ function addMutationTableTooltips(tableId)
 
         var xvia = parts[1];
         if (xvia&&xvia!='NA')
-            tip += "<br/><a href='"+xvia+"'><img height=15 width=19 src='images/ma.png'> Go to Mutation Assessor</a>";
+            tip += "<br/><a href='"+xvia+"' target='_blank'>" +
+                   "<img height=15 width=19 src='images/ma.png'> Go to Mutation Assessor</a>";
 
-        var msa = parts[2];
-        if (msa&&msa!='NA')
-            tip += "<br/><a href='"+msa+"'><img src='images/msa.png'> View Multiple Sequence Alignment</a>";
+//        var msa = parts[2];
+//        if (msa&&msa!='NA')
+//            tip += "<br/><a href='"+msa+"'><img src='images/msa.png'> View Multiple Sequence Alignment</a>";
 
 //		    var pdb = parts[3];
 //		    if (pdb&&pdb!='NA')

@@ -12,7 +12,7 @@
 <h1 id="basic-query-syntax">Basic Query Syntax</h1>
 <p>All web queries are available at: <a href="webservice.do">webservice.do</a>. All calls to the Web interface are constructed by appending URL parameters.   Within each call, you must specify:</p>
 <ul>
-<li><strong>cmd</strong> = the command that you wish to execute.  The command must be equal to one of the following: getTypesOfCancer, getNetwork, getCancerStudies, getGeneticProfiles, getProfileData, getCaseLists, getClinicalData, getMutationData or getMutationFrequency.</li>
+<li><strong>cmd</strong> = the command that you wish to execute.  The command must be equal to one of the following: getTypesOfCancer, getNetwork, getCancerStudies, getGeneticProfiles, getProfileData, getCaseLists, getClinicalData, or getMutationData.</li>
 <li>optional additional parameters, depending of the command (see below).</li>
 </ul>
 <p>For example, the following query will request all case lists for the TCGA GBM data:</p>
@@ -265,10 +265,10 @@
 <p>Once you have a cancer_study_id, it is very easy to create stable links from your web site to the cBio Portal.  Stable links must point to link.do, and can include the following parameters:</p>
 <ul>
 <li><strong>cancer_study_id</strong>=[cancer study ID] (required)</li>
-<li><strong>gene_list</strong>=[a comma separated list of HUGO gene symbols] (required)</li>
+<li><strong>gene_list</strong>=[a space separated list of HUGO gene symbols] (required)</li>
 <li><strong>report</strong>=[report to display;  can be one of:  full (default), oncoprint_html]</li>
 </ul>
 <p>For example, the following links to the TCGA GBM data for EGFR and NF1:</p>
-<p><a href="link.do?cancer_study_id=gbm_tcga&amp;gene_list=EGFR,NF1">link.do?cancer_study_id=gbm_tcga&amp;gene_list=EGFR,NF1</a></p>
+<p><a href="link.do?cancer_study_id=gbm_tcga&amp;gene_list=EGFR+NF1">link.do?cancer_study_id=gbm_tcga&amp;gene_list=EGFR+NF1</a></p>
 <p>This link displays the same data as an Oncoprint only:</p>
-<p><a href="link.do?cancer_study_id=gbm_tcga&amp;gene_list=EGFR,NF1&amp;report=oncoprint_html">link.do?cancer_study_id=gbm_tcga&amp;gene_list=EGFR,NF1&amp;report=oncoprint_html</a></p>
+<p><a href="link.do?cancer_study_id=gbm_tcga&amp;gene_list=EGFR+NF1&amp;report=oncoprint_html">link.do?cancer_study_id=gbm_tcga&amp;gene_list=EGFR+NF1&amp;report=oncoprint_html</a></p>

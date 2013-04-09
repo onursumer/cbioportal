@@ -21,8 +21,8 @@
 <%@ page import="org.mskcc.cbio.cgds.dao.DaoGeneticProfile" %>
 <%@ page import="org.apache.commons.logging.LogFactory" %>
 <%@ page import="org.apache.commons.logging.Log" %>
+<%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="java.lang.reflect.Array" %>
-<%@ page import="static org.mskcc.cbio.portal.servlet.QueryBuilder.INTERNAL_EXTENDED_MUTATION_LIST" %>
 <%@ page import="static org.mskcc.cbio.portal.servlet.QueryBuilder.INTERNAL_EXTENDED_MUTATION_LIST" %>
 <%@ page import="org.mskcc.cbio.portal.util.*" %>
 
@@ -183,16 +183,17 @@
 
                 // put gene string into a form that javascript can swallow
                 String genes = (String) request.getAttribute(QueryBuilder.RAW_GENE_STR);
-                genes = genes.replace("\n", " ");
+                genes = StringEscapeUtils.escapeJavaScript(genes);
+//                genes = genes.replace("\n", " ");
 
                 // get cases
                 String samples = (String) request.getAttribute(QueryBuilder.SET_OF_CASE_IDS);
+                samples = StringEscapeUtils.escapeJavaScript(samples);
             %>
 
 <script type="text/javascript" src="js/MemoSort.js"></script>
 <script type="text/javascript">
     //  make global variables
-
         var genes = "<%=genes%>",
             samples = "<%=samples%>",
             geneticProfiles = "<%=geneticProfiles%>";
@@ -262,7 +263,7 @@
                         }
                     }
 
-                    out.println ("<li><a href='#summary' class='result-tab' title='Summary of genomic alterations'>Summary</a></li>");
+                    out.println ("<li><a href='#summary' class='result-tab' title='Compact visualization of genomic alterations'>OncoPrint</a></li>");
 
                     if (includeNetworks) {
                         out.println ("<li><a href='#network' class='result-tab' title='Network visualization and analysis'>"
@@ -271,18 +272,14 @@
                         + "Network(SBGN)</a></li>");
                     }
 
-                    out.println ("<li><a href='#plots' class='result-tab' title='Multiple plots, including CNA v. mRNA expression'>"
-                        + "Plots</a></li>");
-
-                    if (clinicalDataList != null && clinicalDataList.size() > 0) {
-                        out.println ("<li><a href='#survival' class='result-tab' title='Survival analysis and Kaplan-Meier curves'>"
-                        + "Survival</a></li>");
-                    }
 
                     if (computeLogOddsRatio && geneWithScoreList.size() > 1) {
                         out.println ("<li><a href='#gene_correlation' class='result-tab' title='Mutual exclusivity and co-occurrence analysis'>"
                         + "Mutual Exclusivity</a></li>");
                     }
+
+                    out.println ("<li><a href='#plots' class='result-tab' title='Multiple plots, including CNA v. mRNA expression'>"
+                        + "Plots</a></li>");
 
                     if (showMutTab){
                         out.println ("<li><a href='#mutation_details' class='result-tab' title='Mutation details, including mutation type, "
@@ -291,20 +288,28 @@
                     }
                     
                     if (rppaExists) {
-                        out.println ("<li><a href='#protein_exp' class='result-tab' title='Reverse Phase Protein Array (RPPA) data'>"
-                        + "RPPA</a></li>");
+                        out.println ("<li><a href='#protein_exp' class='result-tab' title='Protein and Phopshoprotein changes using Reverse Phase Protein Array (RPPA) data'>"
+                        + "Protein Changes</a></li>");
                     }
 
-                    out.println ("<li><a href='#event_map' class='result-tab' title='Detailed event map of all genomic alterations'>"
-                        + "Event Map</a></li>");
+                    if (clinicalDataList != null && clinicalDataList.size() > 0) {
+                        out.println ("<li><a href='#survival' class='result-tab' title='Survival analysis and Kaplan-Meier curves'>"
+                        + "Survival</a></li>");
+                    }
+
+                    if (includeNetworks) {
+                        out.println ("<li><a href='#network' class='result-tab' title='Network visualization and analysis'>"
+                        + "Network</a></li>");
+                    }
+                    
+                    if (showIGVtab){
+                        out.println ("<li><a href='#igv_tab' class='result-tab' title='Visualize copy number data via the Integrative Genomics Viewer (IGV).'>IGV</a></li>");
+                    }
                     %>
 
                     <%@ include file="image_tabs.jsp" %>
 
                     <%
-                    if (showIGVtab){
-                        out.println ("<li><a href='#igv_tab' class='result-tab' title='Visualize copy number data via the Integrative Genomics Viewer (IGV).'>IGV</a></li>");
-                    }
                     out.println ("<li><a href='#data_download' class='result-tab' title='Download all alterations or copy and paste into Excel'>Download</a></li>");
                     out.println ("<li><a href='#bookmark_email' class='result-tab' title='Bookmark or generate a URL for email'>Bookmark</a></li>");
                     out.println ("<!--<li><a href='index.do' class='result-tab'>Create new query</a> -->");
@@ -374,17 +379,6 @@
                     <%@ include file="mutation_details.jsp" %>
             <%  } %>
 
-            <div class="section" id="event_map">
-            <div class="map">
-            <% 
-            out.println( HeatMapLegend.outputHeatMapLegend( theOncoPrintSpecification.getUnionOfPossibleLevels()) );
-            %>
-			</div>            
-                <br>
-            <%@ include file="heatmap.jsp" %>
-            </div>   <!-- end heat map div -->
-            <%@ include file="image_tabs_data.jsp" %>
-
             <%
             if (rppaExists) { %>
                 <%@ include file="protein_exp.jsp" %>
@@ -394,6 +388,10 @@
             if (includeNetworks) { %>
                 <%@ include file="networks.jsp" %>
             <% } %>
+
+            <%@ include file="data_download.jsp" %>
+            
+            <%@ include file="image_tabs_data.jsp" %>
             
             </div> <!-- end tabs div -->
             <% } %>
@@ -412,10 +410,22 @@
 </form>
 
 <script type="text/javascript">
+	// to initially hide the network tab
+    
+	//getting all tabs
+	var $tabs = $('#tabs').tabs();
+	//the active tab
+	var selectedTab = $tabs.tabs('option', 'selected');
+	//index of network tab
+	var networkTabIndex = $('#tabs a[href="#network"]').parent().index();
 
-	// to initially hide the network tabs
-	//$("div.section#network").attr('style', 'display: block !important; height: 0px; width: 0px; visibility: hidden;');
-	$("div.section#network").attr('style', 'display: none !important; height: 0px; width: 0px; visibility: hidden;');
+	//if index of active tab is not equal to the network tab, hide network tab
+	if(selectedTab != networkTabIndex){
+		// to initially hide the network tabs
+		//$("div.section#network").attr('style', 'display: block !important; height: 0px; width: 0px; visibility: hidden;');
+		$("div.section#network").attr('style', 'display: none !important; height: 0px; width: 0px; visibility: hidden;');
+    	// to fix problem of flash repainting
+	}
 	$("div.section#network_sbgn").attr('style', 'display: none !important; height: 0px; width: 0px; visibility: hidden;');
     
     // to fix problem of flash repainting

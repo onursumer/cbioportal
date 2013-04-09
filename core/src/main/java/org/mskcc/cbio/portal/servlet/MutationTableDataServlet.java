@@ -37,7 +37,9 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.mskcc.cbio.cgds.dao.DaoCancerStudy;
+import org.mskcc.cbio.cgds.dao.DaoException;
 import org.mskcc.cbio.cgds.dao.DaoGeneticProfile;
+import org.mskcc.cbio.cgds.dao.DaoMutationEvent;
 import org.mskcc.cbio.cgds.model.ExtendedMutation;
 import org.mskcc.cbio.maf.MafRecord;
 import org.mskcc.cbio.portal.html.special_gene.SpecialGene;
@@ -54,9 +56,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import static org.codehaus.jackson.map.DeserializationConfig.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY;
 
@@ -97,6 +97,9 @@ public class MutationTableDataServlet extends HttpServlet
 
 		List<ExtendedMutation> mutations = readMutations(request.getParameter("mutations"));
 
+		Map<String, Integer> countMap = this.getMutationCountMap(mutations);
+
+		// extract row data for each mutation
 		for (ExtendedMutation mutation : mutations)
 		{
 			HashMap<String, Object> rowData = new HashMap<String, Object>();
@@ -133,6 +136,11 @@ public class MutationTableDataServlet extends HttpServlet
 			rowData.put("tumorAltCount", this.getTumorAltCount(mutation));
 			rowData.put("normalRefCount", this.getNormalRefCount(mutation));
 			rowData.put("normalAltCount", this.getNormalAltCount(mutation));
+			rowData.put("canonicalTranscript", mutation.isCanonicalTranscript());
+			rowData.put("refseqMrnaId", mutation.getOncotatorRefseqMrnaId());
+			rowData.put("codonChange", mutation.getOncotatorCodonChange());
+			rowData.put("uniprotId", this.getUniprotId(mutation));
+			rowData.put("mutationCount", countMap.get(mutation.getCaseId()));
 
 			JSONArray specialGeneData = new JSONArray();
 
@@ -381,9 +389,8 @@ public class MutationTableDataServlet extends HttpServlet
 		}
 	}
 
-	private Integer getNormalAltCount(ExtendedMutation mutation)
+	protected Integer getNormalAltCount(ExtendedMutation mutation)
 	{
-		// TODO consider other possible columns
 		Integer count = mutation.getNormalAltCount();
 
 		if (count == MafRecord.NA_INT)
@@ -394,9 +401,8 @@ public class MutationTableDataServlet extends HttpServlet
 		return count;
 	}
 
-	private Integer getNormalRefCount(ExtendedMutation mutation)
+	protected Integer getNormalRefCount(ExtendedMutation mutation)
 	{
-		// TODO consider other possible columns
 		Integer count = mutation.getNormalRefCount();
 
 		if (count == MafRecord.NA_INT)
@@ -407,9 +413,8 @@ public class MutationTableDataServlet extends HttpServlet
 		return count;
 	}
 
-	private Integer getTumorAltCount(ExtendedMutation mutation)
+	protected Integer getTumorAltCount(ExtendedMutation mutation)
 	{
-		// TODO consider other possible columns
 		Integer count = mutation.getTumorAltCount();
 
 		if (count == MafRecord.NA_INT)
@@ -420,9 +425,8 @@ public class MutationTableDataServlet extends HttpServlet
 		return count;
 	}
 
-	private Integer getTumorRefCount(ExtendedMutation mutation)
+	protected Integer getTumorRefCount(ExtendedMutation mutation)
 	{
-		// TODO consider other possible columns
 		Integer count = mutation.getTumorRefCount();
 
 		if (count == MafRecord.NA_INT)
@@ -433,7 +437,7 @@ public class MutationTableDataServlet extends HttpServlet
 		return count;
 	}
 
-	private Double getNormalFreq(ExtendedMutation mutation)
+	protected Double getNormalFreq(ExtendedMutation mutation)
 	{
 		Integer altCount = this.getNormalAltCount(mutation);
 		Integer refCount = this.getNormalRefCount(mutation);
@@ -441,7 +445,7 @@ public class MutationTableDataServlet extends HttpServlet
 		return this.getFreq(altCount, refCount);
 	}
 
-	private Double getTumorFreq(ExtendedMutation mutation)
+	protected Double getTumorFreq(ExtendedMutation mutation)
 	{
 		Integer altCount = this.getTumorAltCount(mutation);
 		Integer refCount = this.getTumorRefCount(mutation);
@@ -449,7 +453,7 @@ public class MutationTableDataServlet extends HttpServlet
 		return this.getFreq(altCount, refCount);
 	}
 
-	private Double getFreq(Integer altCount, Integer refCount)
+	protected Double getFreq(Integer altCount, Integer refCount)
 	{
 		Double freq;
 
@@ -465,6 +469,53 @@ public class MutationTableDataServlet extends HttpServlet
 		}
 
 		return freq;
+	}
+
+	protected String getUniprotId(ExtendedMutation mutation)
+	{
+		// TODO uniprot name or uniprot accession
+		return mutation.getOncotatorUniprotName();
+	}
+
+	/**
+	 * Creates a map of mutation counts for the given list of mutations.
+	 *
+	 * @param mutations     list of mutations
+	 * @return              map build on (case id, mutation count) pairs
+	 */
+	protected Map<String, Integer> getMutationCountMap(List<ExtendedMutation> mutations)
+	{
+		// build mutation count map
+		List<String> caseIds = new LinkedList<String>();
+
+		Integer geneticProfileId = -1;
+
+		// assuming same genetic profile id for all mutations in the list
+		if (mutations.size() > 0)
+		{
+			geneticProfileId = mutations.iterator().next().getGeneticProfileId();
+		}
+
+		// collect case ids
+		for (ExtendedMutation mutation : mutations)
+		{
+			caseIds.add(mutation.getCaseId());
+		}
+
+		Map<String, Integer> counts;
+
+		// retrieve count map
+		try
+		{
+			counts = DaoMutationEvent.countMutationEvents(
+					geneticProfileId, caseIds);
+		}
+		catch (DaoException e)
+		{
+			counts = null;
+		}
+
+		return counts;
 	}
 
 	/**
@@ -500,6 +551,7 @@ public class MutationTableDataServlet extends HttpServlet
 		headerList.put("mutationType", "Type");
 		headerList.put("cosmic", "COSMIC");
 		headerList.put("functionalImpactScore", "FIS");
+		headerList.put("msaLink", "Cons");
 		headerList.put("pdbLink", "3D");
 		headerList.put("mutationStatus", "MS");
 		headerList.put("validationStatus", "VS");
@@ -511,11 +563,12 @@ public class MutationTableDataServlet extends HttpServlet
 		headerList.put("referenceAllele", "Ref");
 		headerList.put("variantAllele", "Var");
 		headerList.put("tumorFreq", "Allele Freq (T)");
-		headerList.put("normalFreq", "Allele Freq (F)");
+		headerList.put("normalFreq", "Allele Freq (N)");
 		headerList.put("tumorRefCount", "Var Ref");
 		headerList.put("tumorAltCount", "Var Alt");
 		headerList.put("normalRefCount", "Norm Ref");
 		headerList.put("normalAltCount", "Norm Alt");
+		headerList.put("mutationCount", "Count");
 
 		JSONArray specialGeneHeaders = new JSONArray();
 

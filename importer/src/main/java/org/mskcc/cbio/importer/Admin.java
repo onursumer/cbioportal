@@ -32,6 +32,8 @@ package org.mskcc.cbio.importer;
 import org.mskcc.cbio.importer.Config;
 import org.mskcc.cbio.importer.Fetcher;
 import org.mskcc.cbio.importer.DatabaseUtils;
+import org.mskcc.cbio.importer.model.PortalMetadata;
+import org.mskcc.cbio.importer.model.DatatypeMetadata;
 import org.mskcc.cbio.importer.model.DataSourcesMetadata;
 import org.mskcc.cbio.importer.model.ReferenceMetadata;
 
@@ -53,6 +55,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.Collection;
 import java.util.Properties;
 import java.text.SimpleDateFormat;
@@ -147,10 +150,12 @@ public class Admin implements Runnable {
 											   "before staging files are created.")
                               .create("convert_data"));
 
-		Option applyOverrides = (OptionBuilder.withArgName("portal")		
-								 .hasArg()		
+		Option applyOverrides = (OptionBuilder.withArgName("portal:exclude_datatype")		
+								 .hasArgs(2)		
+								 .withValueSeparator(':')
 								 .withDescription("Replace staging files for the given portal " +
-												  "with any exisiting overrides.")
+												  "with any exisiting overrides.  If exclude_datatype is set, " +
+												  "the datatype provided will not have overrides applied.")
 								 .create("apply_overrides"));
 
         Option generateCaseLists = (OptionBuilder.withArgName("portal")
@@ -165,13 +170,22 @@ public class Admin implements Runnable {
 													   "Use \"" + Config.ALL + "\" to import all reference data.")
 									  .create("import_reference_data"));
 
-        Option importData = (OptionBuilder.withArgName("portal:init_portal_db:ref_data")
-                             .hasArgs(3)
+        Option importData = (OptionBuilder.withArgName("portal:init_portal_db:init_tumor_types:ref_data")
+                             .hasArgs(4)
 							 .withValueSeparator(':')
                              .withDescription("Import data for the given portal.  " +
 											  "If init_portal_db is 't' a portal db will be created (an existing one will be clobbered.  " +
+											  "If init_tumor_types is 't' tumor types will be imported  " + 
 											  "If ref_data is 't', all reference data will be imported prior to importing staging files.")
                              .create("import_data"));
+
+        Option copySegFiles = (OptionBuilder.withArgName("portal:seg_datatype:remote_user_name")
+							   .hasArgs(3)
+							   .withValueSeparator(':')
+							   .withDescription("Copy's given portal's .seg files to location used for linking to IGV " + 
+												"from cBio Portal web site. 'ssh-add' should be executed prior to this " +
+												"command to add your identity to the authentication agent.")
+							   .create("copy_seg_files"));
 
 		// create an options instance
 		Options toReturn = new Options();
@@ -188,6 +202,7 @@ public class Admin implements Runnable {
 		toReturn.addOption(generateCaseLists);
 		toReturn.addOption(importReferenceData);
 		toReturn.addOption(importData);
+		toReturn.addOption(copySegFiles);
 
 		// outta here
 		return toReturn;
@@ -252,7 +267,8 @@ public class Admin implements Runnable {
 			}
             // apply overrides		
 			else if (commandLine.hasOption("apply_overrides")) {		
-				applyOverrides(commandLine.getOptionValue("apply_overrides"));
+				String[] values = commandLine.getOptionValues("apply_overrides");
+				applyOverrides(values[0], (values.length == 2) ? values[1] : "");
 			}
 			// convert data
 			else if (commandLine.hasOption("convert_data")) {
@@ -270,9 +286,12 @@ public class Admin implements Runnable {
 			// import data
 			else if (commandLine.hasOption("import_data")) {
                 String[] values = commandLine.getOptionValues("import_data");
-                importData(values[0],
-						   (values.length >= 2) ? values[1] : "",
-						   (values.length == 3) ? values[2] : "");
+                importData(values[0], values[1], values[2], values[3]);
+			}
+			// copy seg files
+			else if (commandLine.hasOption("copy_seg_files")) {
+                String[] values = commandLine.getOptionValues("copy_seg_files");
+                copySegFiles(values[0], values[1], values[2]);
 			}
 			else {
 				Admin.usage(new PrintWriter(System.out, true));
@@ -360,7 +379,6 @@ public class Admin implements Runnable {
 		}
 
 		// create an instance of fetcher
-		ApplicationContext context = new ClassPathXmlApplicationContext(contextFile);
 		Config config = (Config)getBean("config");
 		Collection<ReferenceMetadata> referenceMetadatas = config.getReferenceMetadata(referenceType);
 		if (referenceMetadatas.isEmpty()) {
@@ -486,16 +504,20 @@ public class Admin implements Runnable {
 	 * Helper function to apply overrides to a given portal.
 	 *		
 	 * @param portal String		
+	 * @param excludeDatatype String
 	 * @throws Exception		
 	 */		
-	private void applyOverrides(String portal) throws Exception {		
+	private void applyOverrides(String portal, String excludeDatatype) throws Exception {		
 			
 		if (LOG.isInfoEnabled()) {		
 			LOG.info("applyOverrides(), portal: " + portal);
+			LOG.info("applyOverrides(), exclude_datatype: " + excludeDatatype);
 		}
-			
+
 		Converter converter = (Converter)getBean("converter");		
-		converter.applyOverrides(portal);
+		HashSet<String> excludeDatatypes = new HashSet<String>();
+		if (excludeDatatype.length() > 0) excludeDatatypes.add(excludeDatatype);
+		converter.applyOverrides(portal, excludeDatatypes);
 
 		if (LOG.isInfoEnabled()) {		
 			LOG.info("applyOverrides(), complete");
@@ -566,28 +588,71 @@ public class Admin implements Runnable {
      *
      * @param portal String
 	 * @param initPortalDatabase String
+	 * @param initTumorTypes String
 	 * @param importReferenceData String
 	 *
 	 * @throws Exception
 	 */
-	private void importData(String portal, String initPortalDatabase, String importReferenceData) throws Exception {
+	private void importData(String portal, String initPortalDatabase, String initTumorTypes, String importReferenceData) throws Exception {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("importData(), portal: " + portal);
 			LOG.info("importData(), initPortalDatabase: " + initPortalDatabase);
+			LOG.info("importData(), initTumorTypes: " + initTumorTypes);
 			LOG.info("importData(), importReferenceData: " + importReferenceData);
 		}
 
 		// get booleans
 		Boolean initPortalDatabaseBool = getBoolean(initPortalDatabase);
+		Boolean initTumorTypesBool = getBoolean(initTumorTypes);
 		Boolean importReferenceDataBool = getBoolean(importReferenceData);
 
 		// create an instance of Importer
 		Importer importer = (Importer)getBean("importer");
-		importer.importData(portal, initPortalDatabaseBool, importReferenceDataBool);
+		importer.importData(portal, initPortalDatabaseBool, initTumorTypesBool, importReferenceDataBool);
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("importData(), complete");
+		}
+	}
+
+	/**
+	 * Helper function to copy seg files for IGV linking.
+     *
+     * @param portalName String
+     * @param segDatatype String
+	 * @param removeUserName String
+	 *
+	 * @throws Exception
+	 */
+	private void copySegFiles(String portalName, String segDatatype, String remoteUserName) throws Exception {
+
+		if (LOG.isInfoEnabled()) {
+			LOG.info("copySegFiles(), portal: " + portalName);
+			LOG.info("copySegFiles(), segDatatype: " + segDatatype);
+			LOG.info("copySegFiles(), remoteUserName: " + remoteUserName);
+		}
+
+		Config config = (Config)getBean("config");
+		Collection<PortalMetadata> portalMetadatas = config.getPortalMetadata(portalName);
+		Collection<DatatypeMetadata> datatypeMetadatas = config.getDatatypeMetadata(segDatatype);
+
+		// sanity check args
+		if (remoteUserName.length() == 0 || portalMetadatas.isEmpty() || datatypeMetadatas.isEmpty()) {
+			if (LOG.isInfoEnabled()) {
+				LOG.info("copySegFiles(), error processing arguments, aborting....");
+			}
+		}
+		else {
+			// create an instance of Importer
+			FileUtils fileUtils = (FileUtils)getBean("fileUtils");
+			fileUtils.copySegFiles(portalMetadatas.iterator().next(),
+								   datatypeMetadatas.iterator().next(),
+								   remoteUserName);
+		}
+
+		if (LOG.isInfoEnabled()) {
+			LOG.info("copySegFiles(), complete");
 		}
 	}
 
@@ -623,8 +688,8 @@ public class Admin implements Runnable {
 	 * @return Boolean
 	 */
 	private Boolean getBoolean(String parameterValue) {
-		return (parameterValue.equalsIgnoreCase("t")) ?
-			new Boolean("true") : new Boolean("false");
+		if (parameterValue.length() == 0) return new Boolean("false");
+		return (parameterValue.equalsIgnoreCase("t")) ?	new Boolean("true") : new Boolean("false");
 	}
 
 	/**

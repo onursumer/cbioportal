@@ -98,7 +98,7 @@ public class PiHelperImporter extends AbstractDrugInfoImporter {
             if(line.startsWith("#")) continue;
             if((++lineNo) == 1) continue;
 
-            String[] tokens = line.split(separator);
+            String[] tokens = line.split(separator, -1);
             assert tokens.length ==  5;
             if(tokens.length < 5) continue;
             /*
@@ -141,7 +141,6 @@ public class PiHelperImporter extends AbstractDrugInfoImporter {
     private void importDrugs() throws Exception {
         nameToDrugMap.clear();
 
-
         Scanner scanner = new Scanner(getDrugInfoFile());
         int lineNo = 0;
         while (scanner.hasNextLine()) {
@@ -149,8 +148,9 @@ public class PiHelperImporter extends AbstractDrugInfoImporter {
             if(line.startsWith("#")) continue;
             if((++lineNo) == 1) continue;
 
-            String[] t = line.split(separator);
+            String[] t = line.split(separator, -1);
             assert t.length ==  12;
+            if(t.length < 12) continue;
             /*
                 0 PiHelper_Drug_ID
                 1 Drug_Name

@@ -1,3 +1,19 @@
+# April 2, 2013
+
+* All TCGA data updated to the February Firehose run (February 22, 2012).
+
+# March 26, 2013
+
+* All TCGA data updated to the __January Firehose run__ (January 16, 2012).
+
+# January 21, 2013
+
+* All data updated to the __October Firehose run__ (October 24, 2012), plus updated mutation data for many tumor types.
+* __Sequencing read counts and frequencies__ are now shown in the Mutation Details table when available.
+* __Support for gene fusions__ in lung adenocarcinoma (RET/ROS1/ALK fusions are shown as mutations, other tumor types coming soon).
+* Improved visualization of drugs and clinical trials for individual patients
+* Improved OncoPrints, resulting in performance improvements
+
 # November 21, 2012
 
 * Major new feature: Users can now visualize __genomic alterations and clinical data of individual tumors__, including:

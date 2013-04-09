@@ -53,7 +53,7 @@ public class DaoClinicalFreeForm {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-                con = JdbcUtil.getDbConnection();
+                con = JdbcUtil.getDbConnection(DaoClinicalFreeForm.class);
                 pstmt = con.prepareStatement
                         ("INSERT INTO clinical_free_form (`CANCER_STUDY_ID`, `CASE_ID`, " +
                                 "`PARAM_NAME`, `PARAM_VALUE`)" +
@@ -67,7 +67,7 @@ public class DaoClinicalFreeForm {
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoClinicalFreeForm.class, con, pstmt, rs);
         }
     }
 
@@ -80,7 +80,7 @@ public class DaoClinicalFreeForm {
         ResultSet rs = null;
         HashMap<String, String> valueMap = new HashMap<String, String>();
         try {
-            con = JdbcUtil.getDbConnection();
+            con = JdbcUtil.getDbConnection(DaoClinicalFreeForm.class);
             pstmt = con.prepareStatement ("SELECT * FROM clinical_free_form WHERE CANCER_STUDY_ID=? AND PARAM_NAME=?");
             pstmt.setInt(1, cancerStudyId);
             pstmt.setString(2, paramName);
@@ -94,7 +94,7 @@ public class DaoClinicalFreeForm {
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoClinicalFreeForm.class, con, pstmt, rs);
         }
     }
 
@@ -107,7 +107,7 @@ public class DaoClinicalFreeForm {
         ResultSet rs = null;
         HashSet<String> paramSet = new HashSet<String>();
         try {
-            con = JdbcUtil.getDbConnection();
+            con = JdbcUtil.getDbConnection(DaoClinicalFreeForm.class);
             pstmt = con.prepareStatement ("SELECT DISTINCT(PARAM_NAME) FROM `clinical_free_form`" +
                     "WHERE CANCER_STUDY_ID=?");
             pstmt.setInt(1, cancerStudyId);
@@ -120,7 +120,7 @@ public class DaoClinicalFreeForm {
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoClinicalFreeForm.class, con, pstmt, rs);
         }
     }
 
@@ -133,7 +133,7 @@ public class DaoClinicalFreeForm {
         ResultSet rs = null;
         HashSet<String> caseSet = new HashSet<String>();
         try {
-            con = JdbcUtil.getDbConnection();
+            con = JdbcUtil.getDbConnection(DaoClinicalFreeForm.class);
             pstmt = con.prepareStatement ("SELECT DISTINCT(CASE_ID) FROM `clinical_free_form`" +
                     "WHERE CANCER_STUDY_ID=?");
             pstmt.setInt(1, cancerStudyId);
@@ -146,7 +146,7 @@ public class DaoClinicalFreeForm {
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoClinicalFreeForm.class, con, pstmt, rs);
         }
     }
 
@@ -165,7 +165,7 @@ public class DaoClinicalFreeForm {
         ResultSet rs = null;
         
         try{
-            con = JdbcUtil.getDbConnection();
+            con = JdbcUtil.getDbConnection(DaoClinicalFreeForm.class);
             pstmt = con.prepareStatement ("SELECT * FROM `clinical_free_form`" +
                     "WHERE CANCER_STUDY_ID=?");
             pstmt.setInt(1, cancerStudyId);
@@ -175,7 +175,7 @@ public class DaoClinicalFreeForm {
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoClinicalFreeForm.class, con, pstmt, rs);
         }
     }
 
@@ -187,24 +187,25 @@ public class DaoClinicalFreeForm {
      * @param cancerStudyId internal id of a case
      * @return   list of all ClinicalFreeForm instances for the given cancer study id
      */
-    public List<ClinicalFreeForm> getCasesById(String caseId) throws DaoException
+    public List<ClinicalFreeForm> getCasesById(int cancerStudyId, String caseId) throws DaoException
     {
     	Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
         try{
-            con = JdbcUtil.getDbConnection();
+            con = JdbcUtil.getDbConnection(DaoClinicalFreeForm.class);
             pstmt = con.prepareStatement ("SELECT * FROM `clinical_free_form`" +
-                    "WHERE CASE_ID=?");
-            pstmt.setString(1, caseId);
+                    "WHERE CANCER_STUDY_ID=? AND CASE_ID=?");
+            pstmt.setInt(1, cancerStudyId);
+            pstmt.setString(2, caseId);
             rs = pstmt.executeQuery();
             
             return retrieveClinicalFreeFormData(rs);
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoClinicalFreeForm.class, con, pstmt, rs);
         }
     }
 
@@ -216,16 +217,17 @@ public class DaoClinicalFreeForm {
      * @param caseIds
      * @return list of all ClinicalFreeForm instances for the given cancer study id
      */
-    public List<ClinicalFreeForm> getCasesByCases(Collection<String> caseIds) throws DaoException
+    public List<ClinicalFreeForm> getCasesByCases(int cancerStudyId, Collection<String> caseIds) throws DaoException
     {
     	Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
         try{
-            con = JdbcUtil.getDbConnection();
-            pstmt = con.prepareStatement ("SELECT * FROM `clinical_free_form`" +
-                    "WHERE CASE_ID IN('"
+            con = JdbcUtil.getDbConnection(DaoClinicalFreeForm.class);
+            pstmt = con.prepareStatement ("SELECT * FROM `clinical_free_form`"
+                    + "WHERE CANCER_STUDY_ID="+cancerStudyId
+                    + " AND CASE_ID IN('"
                     + StringUtils.join(caseIds,"','") +"')");
             rs = pstmt.executeQuery();
             
@@ -234,7 +236,6 @@ public class DaoClinicalFreeForm {
             while (rs.next())
             {
             	// get all values as String
-                int cancerStudyId = rs.getInt("CANCER_STUDY_ID");
                 String caseId = rs.getString("CASE_ID");
                 String paramName = rs.getString("PARAM_NAME");
                 String paramValue = rs.getString("PARAM_VALUE");
@@ -253,7 +254,7 @@ public class DaoClinicalFreeForm {
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoClinicalFreeForm.class, con, pstmt, rs);
         }
     }
     
@@ -290,13 +291,13 @@ public class DaoClinicalFreeForm {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            con = JdbcUtil.getDbConnection();
+            con = JdbcUtil.getDbConnection(DaoClinicalFreeForm.class);
             pstmt = con.prepareStatement("TRUNCATE TABLE clinical_free_form");
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
-            JdbcUtil.closeAll(con, pstmt, rs);
+            JdbcUtil.closeAll(DaoClinicalFreeForm.class, con, pstmt, rs);
         }
     }
 }
