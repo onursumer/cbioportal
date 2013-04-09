@@ -265,14 +265,6 @@
 
                     out.println ("<li><a href='#summary' class='result-tab' title='Compact visualization of genomic alterations'>OncoPrint</a></li>");
 
-                    if (includeNetworks) {
-                        out.println ("<li><a href='#network' class='result-tab' title='Network visualization and analysis'>"
-                        + "Network(Simple)</a></li>");
-                        out.println ("<li><a href='#network_sbgn' class='result-tab' title='Network visualization and analysis'>"
-                        + "Network(SBGN)</a></li>");
-                    }
-
-
                     if (computeLogOddsRatio && geneWithScoreList.size() > 1) {
                         out.println ("<li><a href='#gene_correlation' class='result-tab' title='Mutual exclusivity and co-occurrence analysis'>"
                         + "Mutual Exclusivity</a></li>");
@@ -300,6 +292,8 @@
                     if (includeNetworks) {
                         out.println ("<li><a href='#network' class='result-tab' title='Network visualization and analysis'>"
                         + "Network</a></li>");
+                        out.println ("<li><a href='#network_sbgn' class='result-tab' title='Network visualization and analysis'>"
+                        + "Network(SBGN)</a></li>");
                     }
                     
                     if (showIGVtab){
