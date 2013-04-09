@@ -70,17 +70,13 @@ public class NetworkSbgnServlet extends HttpServlet
 		ArrayList<String> convertedList = new ArrayList<String>();
 		DaoGeneOptimized daoGeneOptimized;
 
-        try {
-			daoGeneOptimized = DaoGeneOptimized.getInstance();
+		daoGeneOptimized = DaoGeneOptimized.getInstance();
 
-			for(String gene: geneList) {
-				CanonicalGene cGene = daoGeneOptimized.getGene(gene);
-                String hgncId = HGNC.getID(cGene.getHugoGeneSymbolAllCaps());
-                convertedList.add(HGNC_GENE_PREFIX.replace("+", "%2B") + hgncId);
-            }
-		} catch (DaoException e) {
-			 e.printStackTrace();
-		}
+		for(String gene: geneList) {
+			CanonicalGene cGene = daoGeneOptimized.getGene(gene);
+            String hgncId = HGNC.getID(cGene.getHugoGeneSymbolAllCaps());
+            convertedList.add(HGNC_GENE_PREFIX.replace("+", "%2B") + hgncId);
+        }
 
 		return convertedList;
 	}
