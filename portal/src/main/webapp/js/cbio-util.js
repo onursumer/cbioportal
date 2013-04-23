@@ -13,9 +13,18 @@ cbio.util = (function() {
         
         return number.toPrecision(precision).replace(/\.*0+$/,''); // trim 0s
     };
+    
+    var size = function(obj) {
+        var n = 0, key;
+        for (key in obj) {
+            if (obj.hasOwnProperty(key)) n++;
+        }
+        return n;
+    };
 
     return {
-        toPrecision: toPrecision
+        toPrecision: toPrecision,
+        size: size
     };
 
 })();

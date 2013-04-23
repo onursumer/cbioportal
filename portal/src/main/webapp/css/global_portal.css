@@ -1294,3 +1294,7 @@ cc-ie-message {
 .ui-tooltip-lightyellow {
     background-color: lightyellow;
 }
+
+.ui-tootip-small-font {
+    font-size: 70% !important;
+}

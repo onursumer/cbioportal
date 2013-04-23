@@ -360,6 +360,16 @@
         <url-pattern>/GeneData.json</url-pattern>
     </servlet-mapping>
     
+    <servlet>
+        <servlet-name>HotSpots</servlet-name>
+        <servlet-class>org.mskcc.cbio.portal.servlet.HotSpotsFinder</servlet-class>
+    </servlet>
+    
+    <servlet-mapping>
+        <servlet-name>HotSpots</servlet-name>
+        <url-pattern>/hotspots</url-pattern>
+    </servlet-mapping>
+    
      <!-- tumor map -->
     <servlet>
         <servlet-name>TumorMapServlet</servlet-name>
