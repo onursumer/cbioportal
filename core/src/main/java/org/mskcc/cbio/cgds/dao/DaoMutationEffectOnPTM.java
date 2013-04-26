@@ -127,11 +127,11 @@ public final class DaoMutationEffectOnPTM {
     }
     
     private static int getDistance(PtmAnnotation ptm, ExtendedMutation mutation) {
-        int start = mutation.getStartAminoAcidPosition();
+        int start = mutation.getOncotatorProteinPosStart();
         if (start==-1) {
             return Integer.MAX_VALUE;
         }
-        int end = mutation.getEndAminoAcidPosition();
+        int end = mutation.getOncotatorProteinPosEnd();
         if (end==-1) {
             end = start;
         }

@@ -26,27 +26,17 @@
 **/
 package org.mskcc.cbio.cgds.dao;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import org.mskcc.cbio.cgds.model.ExtendedMutation;
 
 /**
  *
  * @author jgao
  */
 public class DaoMutationContactMap {
-    private static MySQLbulkLoader myMySQLbulkLoader = null;
     private DaoMutationContactMap() {}
-    
-    private static MySQLbulkLoader getMyMySQLbulkLoader() {
-        if (myMySQLbulkLoader==null) {
-            myMySQLbulkLoader = new MySQLbulkLoader("mutation_contact_map");
-        }
-        return myMySQLbulkLoader;
-    }
     
     public static int addDaoMutationContactMap(int mutId1, int mutId2, String pdbId,
             String chain, double distance) throws DaoException {
@@ -55,7 +45,7 @@ public class DaoMutationContactMap {
         ResultSet rs = null;
         if (MySQLbulkLoader.isBulkLoad()) {
             //  write to the temp file maintained by the MySQLbulkLoader
-            getMyMySQLbulkLoader().insertRecord(pdbId, chain, Integer.toString(mutId1),
+            MySQLbulkLoader.getMySQLbulkLoader("mutation_contact_map").insertRecord(pdbId, chain, Integer.toString(mutId1),
                     Integer.toString(mutId1), Double.toString(distance));
 
             // return 1 because normal insert will return 1 if no error occurs
@@ -78,16 +68,6 @@ public class DaoMutationContactMap {
             } finally {
                 JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
             }
-        }
-    }
-    
-    public static int flushToDatabase() throws DaoException {
-        try {
-            return getMyMySQLbulkLoader().loadDataFromTempFileIntoDBMS();
-        } catch (IOException e) {
-            System.err.println("Could not open temp file");
-            e.printStackTrace();
-            return -1;
         }
     }
 }
