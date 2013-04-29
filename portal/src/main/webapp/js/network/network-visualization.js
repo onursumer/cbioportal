@@ -24,7 +24,7 @@ function NetworkVis(divId)
     this.networkTabsSelector = "#" + this.divId + " #network_tabs";
     this.relationsTabSelector = "#" + this.divId + " #relations_tab";
     this.genesTabSelector = "#" + this.divId + " #genes_tab";
-    this.nodeDetailsTabSelector = "#" + this.divId + " #node_details_tab";
+    this.detailsTabSelector = "#" + this.divId + " #element_details_tab";
     this.geneListAreaSelector = "#" + this.divId + " #gene_list_area";
     this.drugFilterSelector = "#" + this.divId + " #drop_down_select";
 
@@ -216,7 +216,12 @@ NetworkVis.prototype.handleMenuEvent = function(command)
 {
     // execute the corresponding function
     var func = this._controlFunctions[command];
-    func();
+
+	// try to call the handler if it is defined
+	if (func != null)
+	{
+		func();
+	}
 };
 
 /**
@@ -325,7 +330,7 @@ NetworkVis.prototype.defaultSettings = function()
 
 /**
  * Shows the node inspector when double clicked on a node.
- *
+ * TODO not showing a node inspector anymore, perform a clean-up after merging into default/stable
  * @param evt	event that triggered this function
  */
 NetworkVis.prototype.showNodeInspector = function(evt)
@@ -392,7 +397,7 @@ NetworkVis.prototype._updateNodeInspectorForDrug = function(data, node)
             '<tr align="left" class="atc_codes-data-row"><td>' +
             '<strong>Drug Class(ATC codes): </strong></td></tr>');
 
-        atc_codes = data["ATC_CODE"].split(",");
+        atc_codes = data["ATC_CODE"].split(";");
 
         for ( var i = 0; i < atc_codes.length; i++)
         {
@@ -443,15 +448,32 @@ NetworkVis.prototype._updateNodeInspectorForDrug = function(data, node)
     }
 
     // For FDA approval
-    $(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-        '<tr align="left" class="fda-data-row"><td>' +
-        '<strong>FDA Approval: </strong></td></tr>');
+	$(this.nodeInspectorSelector + " .node_inspector_content .data").append(
+		'<tr align="left" class="fda-data-row"><td>' +
+		'<strong>FDA Approval: </strong></td></tr>');
 
-    var fda_approval = ((data["FDA_APPROVAL"] == "true")? "Approved":"Not Approved");
+	var fda_approval = ((data["FDA_APPROVAL"] == "true")? "Approved":"Not Approved");
 
-    $(this.nodeInspectorSelector + " .node_inspector_content .fda-data-row td").append(fda_approval);
-    $(this.nodeInspectorSelector + " .node_inspector_content .fda-data-row td").append('<br>');
+	$(this.nodeInspectorSelector + " .node_inspector_content .fda-data-row td").append(fda_approval);
+	$(this.nodeInspectorSelector + " .node_inspector_content .fda-data-row td").append('<br>');
 
+	// For Cancer Drug Info
+
+	var cancerDrug = data["CANCER_DRUG"] == "true";
+
+	if(cancerDrug) {
+		$(this.nodeInspectorSelector + " .node_inspector_content .data").append(
+			'<tr align="left" class="cancerdrug-data-row"><td>' +
+			'<strong>Cancer Drug: </strong> Yes<br></td></tr>');
+
+		var numberOfClinicalTrials = data["NUMBER_OF_CLINICAL_TRIALS"];
+
+		if(numberOfClinicalTrials > 0) {
+			$(this.nodeInspectorSelector + " .node_inspector_content .data").append(
+				'<tr align="left" class="clinicaltrials-data-row"><td>' +
+				'<strong>Number Of Clinical Trials: </strong>' + numberOfClinicalTrials  +  '<br><br></td></tr>');
+		}
+	}
 
     // For Pub Med IDs
 
@@ -459,17 +481,34 @@ NetworkVis.prototype._updateNodeInspectorForDrug = function(data, node)
     var edges = this._vis.edges();
     var existed = false;
 
-    for ( var i = 0; i < edges.length; i++)
+    for (var k = 0; k < edges.length; k++)
     {
-        if (edges[i].data.source == node.data.id && edges[i].data["INTERACTION_PUBMED_ID"] != "")
+        if (edges[k].data.source == node.data.id && edges[k].data["INTERACTION_PUBMED_ID"] != "")
         {
-            if(existed == false){
+            if(existed == false)
+            {
                 $(this.nodeInspectorSelector + " .node_inspector_content .data").append(
                     '<tr align="left" class="pubmed-data-row"><td>' +
-                    '<strong>PubMed IDs:'+edges[i].data["INTERACTION_PUBMED_ID"]+'</strong></td></tr>');
+                    '<strong>PubMed IDs:</strong><br></td></tr>');
                 existed = true;
             }
-            $(this.nodeInspectorSelector + " .node_inspector_content .pubmed-data-row td").append(edges[i].data["INTERACTION_PUBMED_ID"]);
+
+	        var pubmeds = edges[k].data["INTERACTION_PUBMED_ID"];
+	        var pubmedTokens = pubmeds.split(";");
+
+	        for (var j=0; j < pubmedTokens.length; j++)
+	        {
+		        var link = this._resolveXref(pubmedTokens[j]);
+
+		        if (link.href == "#")
+		        {
+			        // skip unknown sources
+			        continue;
+		        }
+
+		        var xref = '- <a href="' + link.href + '" target="_blank">' + link.pieces[1] + '</a><br>';
+		        $(this.nodeInspectorSelector + " .node_inspector_content .pubmed-data-row td").append(xref);
+	        }
         }
     }
 };
@@ -506,6 +545,9 @@ NetworkVis.prototype._updateNodeInspectorContent = function(data, node)
     $(this.nodeInspectorSelector + " .node_inspector_content .data .fda-data-row").remove();
     $(this.nodeInspectorSelector + " .node_inspector_content .data .pubmed-data-row").remove();
 
+	$(this.nodeInspectorSelector + " .node_inspector_content .data .clinicaltrials-data-row").remove();
+	$(this.nodeInspectorSelector + " .node_inspector_content .data .cancerdrug-data-row").remove();
+
     // For non drug view of node inspector
     $(this.nodeInspectorSelector + " .node_inspector_content .data .data-row").remove();
 
@@ -522,8 +564,8 @@ NetworkVis.prototype._updateNodeInspectorContent = function(data, node)
 
     if (data.type == this.PROTEIN)
     {
-        this._addDataRow(this.edgeInspectorSelector, "node", "Gene Symbol", this.geneLabel(data));
-        //_addDataRow(this.edgeInspectorSelector, "node", "User-Specified", data.IN_QUERY);
+        this._addDataRow(this.nodeInspectorSelector, "node", "Gene Symbol", data.label);
+        //_addDataRow(this.nodeInspectorSelector, "node", "User-Specified", data.IN_QUERY);
 
         // add percentage information
         this._addPercentages(data);
@@ -572,137 +614,114 @@ NetworkVis.prototype._updateNodeInspectorContent = function(data, node)
     }
 };
 
-NetworkVis.prototype.geneDetailsCheck = function (selected)
+/**
+ * Updates the contents of the details tab according to
+ * the currently selected elements.
+ *
+ * @param evt
+ */
+NetworkVis.prototype.updateDetailsTab = function(evt)
 {
-	if(selected.length == 1)
-		return 1;
-	return 0;
-	
-}
-NetworkVis.prototype.updateBioGeneContent = function(evt)
-{
-    var selected = this._vis.selected("nodes");
+    // TODO also consider selected edges?
+	var selected = this._vis.selected("nodes");
     var data;
 
     var self = this;
 
     // clean previous content
-    $(self.nodeDetailsTabSelector).empty();
-    $(self.nodeDetailsTabSelector).append(
-        '<img src="images/ajax-loader.gif">');
+    $(self.detailsTabSelector + " div").empty();
+	$(self.detailsTabSelector + " .error").hide();
 
-    if (selected.length >= 1)
+    if (selected.length == 1)
     {
-        check = this.geneDetailsCheck(selected);
-	if ( check > 0)
-	{
-		data = selected[0].data;
-	}
-	else if (check < 0)
-	{
-		$(self.nodeDetailsTabSelector).empty();
-		$(self.nodeDetailsTabSelector).append(
-		    "No details for this node.");
-		return;
-	}
-	else
-	{
-		$(self.nodeDetailsTabSelector).empty();
-		$(self.nodeDetailsTabSelector).append(
-		    "Currently more than one gene is selected. Please, select only one gene to see details.");
-		return;
-	}
+        data = selected[0].data;
+    }
+    else if (selected.length > 1)
+    {
+        //$(self.detailsTabSelector + " div").empty();
+        $(self.detailsTabSelector + " .error").append(
+            "Currently more than one node is selected. Please, select only one node to see details.");
+	    $(self.detailsTabSelector + " .error").show();
+        return;
     }
     else
     {
-        $(self.nodeDetailsTabSelector).empty();
-        $(self.nodeDetailsTabSelector).append(
+        //$(self.detailsTabSelector + " div").empty();
+        $(self.detailsTabSelector + " .error").append(
             "Currently there is no selected node. Please, select a node to see details.");
+	    $(self.detailsTabSelector + " .error").show();
         return;
     }
 
-
     var handler = function(queryResult) {
-        if (typeof queryResult !== "string") {
-            if (window.ActiveXObject) { // IE
-                queryResult = queryResult.xml;
-            } else { // Other browsers
-                queryResult = (new XMLSerializer()).serializeToString(queryResult);
-            }
-        }
+        // check the initial conditions, if they don't match do nothing
+	    // (they may not match because of a delay in the ajax request)
 
-        var parser, xmlDoc;
+	    selected = self._vis.selected("nodes");
 
-        if (window.DOMParser)
-        {
-            parser = new DOMParser();
-            xmlDoc = parser.parseFromString(queryResult, "text/xml");
-        }
-        else // Internet Explorer
-        {
-            xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-            xmlDoc.async = false;
-            xmlDoc.loadXML(queryResult);
-        }
-
-        var bioGene = _parseBioGeneXml(xmlDoc);
+	    if (selected.length != 1 ||
+	        data.id != selected[0].data.id)
+	    {
+		    return;
+	    }
 
         // update tab content
-        $(self.nodeDetailsTabSelector).empty();
+        $(self.detailsTabSelector + " .biogene-content").empty();
 
-        if (bioGene.returnCode != "SUCCESS")
+        if (queryResult.returnCode != "SUCCESS")
         {
-            $(self.nodeDetailsTabSelector).append("Error retrieving data: " + bioGene.returnCode);
+            $(self.detailsTabSelector + " .error").append(
+	            "Error retrieving data: " + queryResult.returnCode);
+	        $(self.detailsTabSelector + " .error").show();
         }
         else
         {
-            var html = "<div class='node-details-info'><table>";
-
-            if (bioGene.geneSymbol != undefined)
-                html += "<tr><td><b>Gene Symbol:</b></td><td>" + bioGene.geneSymbol + "</td></tr>";
-
-            if (bioGene.geneDescription != undefined)
-                html += "<tr><td><b>Description:</b></td><td>" + bioGene.geneDescription + "</td></tr>";
-
-            if (bioGene.geneAliases != undefined)
-                html += "<tr><td><b>Aliases:</b></td><td>" + bioGene.geneAliases + "</td></tr>";
-
-            if (bioGene.geneDesignations != undefined)
-                html += "<tr><td><b>Designations:</b></td><td>" + bioGene.geneDesignations + "</td></tr>";
-
-            if (bioGene.geneChromosome != undefined)
-                html += "<tr><td><b>Chromosome:</b></td><td>" + bioGene.geneChromosome + "</td></tr>";
-
-            if (bioGene.geneLocation != undefined)
-                html += "<tr><td><b>Location:</b></td><td>" + bioGene.geneLocation + "</td></tr>";
-
-            if (bioGene.geneMIM != undefined)
-                html += "<tr><td><b>MIM:</b></td><td>" + bioGene.geneMIM + "</td></tr>";
-
-            if (bioGene.geneId != undefined)
-                html += "<tr><td><b>Gene ID:</b></td><td>" + bioGene.geneId + "</td></tr>";
-
-            html += "</table></div>";
-
-            if (bioGene.geneSummary != undefined)
-            {
-                html += "<div class='node-details-summary'>";
-                html += "<span class='title'><label>Gene Summary:</label></span>";
-                html += "<p class='regular'>" + bioGene.geneSummary + "</p>";
-                html += "</div>";
-            }
-
-            $(self.nodeDetailsTabSelector).append(html);
+	        if (queryResult.count > 0)
+	        {
+		        // generate the view by using backbone
+		        var biogeneView = new BioGeneView(
+			        {el: self.detailsTabSelector + " .biogene-content",
+					data: queryResult.geneInfo[0]});
+	        }
+	        else
+	        {
+		        $(self.detailsTabSelector + " .error").append(
+			        "No additional information available for the selected node.");
+	        }
         }
+
+	    // generate view for genomic profile data
+	    var genomicProfileView = new GenomicProfileView(
+		    {el: self.detailsTabSelector + " .genomic-profile-content",
+			data: data});
     };
 
-    var queryParams = {"query": this.geneLabel(data),
-        "org": "human",
-        "format": "xml"};
 
-    $.post("bioGeneQuery.do",
-           queryParams,
-           handler);
+	if (data.type == this.DRUG)
+	{
+		// update tab content
+		$(self.detailsTabSelector + " div").empty();
+
+		var drugView = new DrugInfoView({el: this.detailsTabSelector + " .drug-info-content",
+			data: data,
+			linkMap: this._linkMap,
+			idPlaceHolder: this.ID_PLACE_HOLDER,
+			edges: this._vis.edges()});
+	}
+	// send biogene query for only genes
+	else
+	{
+		var queryParams = {"query": data.label,
+			"org": "human",
+			"format": "json"};
+
+		$(self.detailsTabSelector + " .biogene-content").append(
+			'<img src="images/ajax-loader.gif">');
+
+		$.post("bioGeneQuery.do",
+			queryParams,
+			handler);
+	}
 };
 
 /**
@@ -1435,12 +1454,20 @@ NetworkVis.prototype.dropDownVisibility = function(element)
         //if the node is a drug then check the drop down selection
 
         if(element.data.type == "Drug"){
-            if(selectedOption.toString() == "HIDE_DRUGS"){
+            if(selectedOption.toString() == "HIDE_DRUGS") {
                 visible = false;
-            }else if(selectedOption.toString() == "SHOW_ALL"){
+            }
+            else if(selectedOption.toString() == "SHOW_ALL") {
                 visible = true;
-            }else{  // check FDA approved
-                if( element.data.FDA_APPROVAL == "true")
+            }
+            else if(selectedOption.toString() == "SHOW_CANCER") {
+	            if( element.data["CANCER_DRUG"] == "true")
+		            visible = true;
+	            else
+		            visible = false;
+            }
+            else {  // check FDA approved
+                if( element.data["FDA_APPROVAL"] == "true")
                     visible = true;
                 else
                     visible = false;
@@ -2075,10 +2102,29 @@ NetworkVis.prototype._xrefArray = function()
     linkMap["entrez gene"] = "http://www.ncbi.nlm.nih.gov/gene?term=";
     linkMap["hgnc"] = "http://www.genenames.org/cgi-bin/quick_search.pl?.cgifields=type&type=equals&num=50&search=" + this.ID_PLACE_HOLDER + "&submit=Submit";
     linkMap["uniprot"] = "http://www.uniprot.org/uniprot/";
-    linkMap["chebi"] = "http://www.ebi.ac.uk/chebi/advancedSearchFT.do?searchString=" + this.ID_PLACE_HOLDER + "&queryBean.stars=3&queryBean.stars=-1";
-    linkMap["pubmed"] = "http://www.ncbi.nlm.nih.gov/pubmed?term=";
+	linkMap["uniprotkb"] = "http://www.uniprot.org/uniprot/";
+    //linkMap["chebi"] = "http://www.ebi.ac.uk/chebi/advancedSearchFT.do?searchString=" + this.ID_PLACE_HOLDER + "&queryBean.stars=3&queryBean.stars=-1";
+	linkMap["chebi"] = "http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI%3A" + this.ID_PLACE_HOLDER;
+	linkMap["pubmed"] = "http://www.ncbi.nlm.nih.gov/pubmed?term=";
     linkMap["drugbank"] = "http://www.drugbank.ca/drugs/" + this.ID_PLACE_HOLDER;
-    linkMap["nucleotide sequence database"] = "";
+	linkMap["kegg"] = "http://www.kegg.jp/dbget-bin/www_bget?dr:" + this.ID_PLACE_HOLDER;
+	linkMap["kegg drug"] = "http://www.kegg.jp/dbget-bin/www_bget?dr:" + this.ID_PLACE_HOLDER;
+	linkMap["chebi"] = "http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI%3A" + this.ID_PLACE_HOLDER;
+	linkMap["chemspider"] = "http://www.chemspider.com/Chemical-Structure." + this.ID_PLACE_HOLDER + ".html";
+	linkMap["kegg compund"] = "http://www.genome.jp/dbget-bin/www_bget?cpd:" + this.ID_PLACE_HOLDER;
+	linkMap["doi"] = "http://www.nature.com/nrd/journal/v10/n8/full/nrd3478.html?";
+	linkMap["nci_drug"] = "http://www.cancer.gov/drugdictionary?CdrID=" + this.ID_PLACE_HOLDER;
+	linkMap["national drug code directory"] = "http://www.fda.gov/Safety/MedWatch/SafetyInformation/SafetyAlertsforHumanMedicalProducts/ucm" + this.ID_PLACE_HOLDER + ".htm";
+	linkMap["pharmgkb"] = "http://www.pharmgkb.org/gene/" + this.ID_PLACE_HOLDER;
+	linkMap["pubchem compund"] = "http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=" + this.ID_PLACE_HOLDER + "&loc=ec_rcs";
+	linkMap["pubchem substance"] = "http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?sid=" + this.ID_PLACE_HOLDER + "&loc=ec_rss";
+	linkMap["pdb"] = "http://www.rcsb.org/pdb/explore/explore.do?structureId=" + this.ID_PLACE_HOLDER;
+	linkMap["bindingdb"] = "http://www.bindingdb.org/data/mols/tenK3/MolStructure_" + this.ID_PLACE_HOLDER  + ".html";
+	linkMap["genbank"] = "http://www.ncbi.nlm.nih.gov/nucleotide?term=" + this.ID_PLACE_HOLDER;
+	linkMap["iuphar"] = "http://www.iuphar-db.org/DATABASE/ObjectDisplayForward?objectId=" + this.ID_PLACE_HOLDER;
+	linkMap["drugs product database (dpd)"] = "http://205.193.93.51/dpdonline/searchRequest.do?din=" + this.ID_PLACE_HOLDER;
+	linkMap["guide to pharmacology"] = "http://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId=" + this.ID_PLACE_HOLDER;
+	linkMap["nucleotide sequence database"] = "";
 
     return linkMap;
 };
@@ -3062,8 +3108,10 @@ NetworkVis.prototype._initControlFunctions = function()
     // define listeners as local variables
     // (this is required to pass "this" instance to the listener functions)
 
-    var showNodeInspector = function(evt) {
-        self.showNodeInspector(evt);
+    var showNodeDetails = function(evt) {
+        //self.showNodeInspector(evt);
+	    // open details tab instead
+	    $(self.networkTabsSelector).tabs("select", 2);
     };
 
     var showEdgeInspector = function(evt) {
@@ -3072,7 +3120,7 @@ NetworkVis.prototype._initControlFunctions = function()
 
     var handleNodeSelect = function(evt) {
         self.updateGenesTab(evt);
-        self.updateBioGeneContent(evt);
+        self.updateDetailsTab(evt);
     };
 
     var filterSelectedGenes = function() {
@@ -3175,10 +3223,6 @@ NetworkVis.prototype._initControlFunctions = function()
         self.handleMenuEvent(evt.target.id);
     };
 
-    var updateNodeDetails = function(evt){
-        self.updateBioGeneContent(evt);
-    };
-
     this._controlFunctions = new Array();
 
     //_controlFunctions["hide_selected"] = _hideSelected;
@@ -3224,7 +3268,7 @@ NetworkVis.prototype._initControlFunctions = function()
 
     this._vis.addListener("dblclick",
                      "nodes",
-                     showNodeInspector);
+                     showNodeDetails);
 
     this._vis.addListener("dblclick",
                      "edges",
@@ -3822,6 +3866,7 @@ NetworkVis.prototype._createSettingsDialog = function(divId)
 /**
  * Parses the given xmlDoc representing the BioGene query result, and
  * returns a corresponding JSON object.
+ * (Not used anymore, using JSON service of the BioGene instead)
  *
  * @param xmlDoc
  * @private
@@ -3883,24 +3928,6 @@ function _parseBioGeneXml(xmlDoc)
     return json;
 }
 
-function _parseDelimitedInfo(info, delimiter, separator)
-{
-    var text = "";
-    var parts = info.split(delimiter);
-
-    if (parts.length > 0)
-    {
-        text = parts[0];
-    }
-
-    for (var i=1; i < parts.length; i++)
-    {
-        text += separator + " " + parts[i];
-    }
-
-    return text;
-}
-
 /**
  * Initializes the style of the network menu by adjusting hover behaviour.
  *
@@ -3950,7 +3977,7 @@ function _geneSort (node1, node2)
     {
         return 1;
     }
-    else if (node1.data.label < node1.data.label)
+    else if (node1.data.label < node2.data.label)
     {
         return -1;
     }

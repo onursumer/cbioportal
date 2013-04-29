@@ -139,5 +139,6 @@
             }
         </script>
 
+<jsp:include page="network_views.jsp"/>
 <jsp:include page="network_div.jsp"/>
 <jsp:include page="network_sbgn_div.jsp"/>
