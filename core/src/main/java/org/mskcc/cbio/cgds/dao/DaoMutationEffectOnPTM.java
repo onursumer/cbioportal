@@ -62,7 +62,7 @@ public final class DaoMutationEffectOnPTM {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoUser.class);
-            pstmt = con.prepareStatement("SELECT MUTATION_EVENT_ID, ENTREZ_GENE_ID, AMINO_ACID_CHANGE, MUTATION_TYPE, KEYWORD FROM mutation_event");
+            pstmt = con.prepareStatement("SELECT MUTATION_EVENT_ID, ENTREZ_GENE_ID, ONCOTATOR_PROTEIN_POS_START, ONCOTATOR_PROTEIN_POS_END, MUTATION_TYPE, KEYWORD FROM mutation_event");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long entrez = rs.getLong("ENTREZ_GENE_ID");
@@ -72,12 +72,14 @@ public final class DaoMutationEffectOnPTM {
                 }
                 
                 long mutId = rs.getLong("MUTATION_EVENT_ID");
-                String aachange = rs.getString("AMINO_ACID_CHANGE");
+                int aaStart = rs.getInt("ONCOTATOR_PROTEIN_POS_START");
+                int aaEnd = rs.getInt("ONCOTATOR_PROTEIN_POS_END");
                 String mutType = rs.getString("MUTATION_TYPE");
                 String keyword = rs.getString("KEYWORD");
                 ExtendedMutation mutation = new ExtendedMutation();
                 mutation.setMutationEventId(mutId);
-                mutation.setProteinChange(aachange);
+                mutation.setOncotatorProteinPosStart(aaStart);
+                mutation.setOncotatorProteinPosEnd(aaEnd);
                 mutation.setMutationType(mutType);
                 mutation.setKeyword(keyword);
                 
