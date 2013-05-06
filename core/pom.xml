@@ -35,12 +35,12 @@
       <dependency>
           <groupId>org.biopax.paxtools</groupId>
           <artifactId>sbgn-converter</artifactId>
-          <version>4.1.7-SNAPSHOT</version>
+          <version>LATEST</version>
       </dependency>
       <dependency>
           <groupId>org.biopax.paxtools</groupId>
           <artifactId>paxtools-query</artifactId>
-          <version>4.1.7-SNAPSHOT</version>
+          <version>LATEST</version>
       </dependency>
       <dependency>
           <groupId>pathwaycommons.cpath</groupId>
