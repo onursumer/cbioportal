@@ -1272,7 +1272,7 @@ public final class DaoMutation {
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             String keywords = "(`KEYWORD` LIKE '%"+StringUtils.join(types,"' OR `KEYWORD` LIKE '%") +"') ";
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `CASE_ID`, `AMINO_ACID_CHANGE` "
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `CASE_ID`, `PROTEIN_CHANGE` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
@@ -1330,13 +1330,13 @@ public final class DaoMutation {
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             String keywords = "(`KEYWORD` LIKE '%truncating') ";
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `AMINO_ACID_CHANGE`, `CASE_ID`, `AMINO_ACID_CHANGE` "
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `PROTEIN_CHANGE`, `CASE_ID` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
                     + "AND " + keywords
-                    + "ORDER BY `ENTREZ_GENE_ID` ASC, `AMINO_ACID_CHANGE`"; // to filter and save memories
+                    + "ORDER BY `ENTREZ_GENE_ID` ASC, `PROTEIN_CHANGE`"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
@@ -1348,7 +1348,7 @@ public final class DaoMutation {
                 int cancerStudyId = rs.getInt(1);
                 String keyword = rs.getString(2) + " (" + rs.getString(3) + ")";
                 String caseId = rs.getString(4);
-                String aaChange = rs.getString(5);
+                String aaChange = rs.getString(3);
                 
                 if (!keyword.equals(currentKeyword)) {
                     if (totalCountPerKeyword>=thresholdSamples) {
@@ -1400,7 +1400,7 @@ public final class DaoMutation {
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             String type = "(`TYPE` ') ";
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, pa.`SYMBOL`, pa.`TYPE`, `RESIDUE`, `CASE_ID`, `AMINO_ACID_CHANGE` "
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, pa.`SYMBOL`, pa.`TYPE`, `RESIDUE`, `CASE_ID`, `PROTEIN_CHANGE` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp, mutation_effect_on_ptm meop, ptm_annotation pa "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
