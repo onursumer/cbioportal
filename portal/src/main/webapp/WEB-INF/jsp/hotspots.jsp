@@ -133,7 +133,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
 
 </style>
 
-<script type="text/javascript" src="js/d3.v2.min.js"></script>
+<script type="text/javascript" src="js/d3.min.js"></script>
 <script type="text/javascript" src="js/heatmap.js"></script>
 
 <script type="text/javascript">
