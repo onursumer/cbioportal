@@ -30,6 +30,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -37,6 +43,63 @@ import java.sql.SQLException;
  */
 public class DaoMutationContactMap {
     private DaoMutationContactMap() {}
+    
+    public static void calculateInBatch(double threshold) throws DaoException {
+        MySQLbulkLoader.bulkLoadOn();
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
+            pstmt = con.prepareStatement(
+                    "SELECT MUTATION_EVENT_ID, PDB_ID, CHAIN, PDB_POSITION " +
+                    "FROM pdb_uniprot_residue_mapping purm " +
+                    "INNER JOIN mutation_event me ON purm.UNIPROT_ID = me.ONCOTATOR_UNIPROT_ENTRY_NAME " +
+                    "ORDER BY PDB_ID, CHAIN");
+            rs = pstmt.executeQuery();
+            String currentPdbId = null;
+            String currentChain = null;
+            Map<Integer, Set<Long>> mapPosEvents = new HashMap<Integer, Set<Long>>();
+            while (rs.next()) {
+                long eventId = rs.getLong("MUTATION_EVENT_ID");
+                String pdbId = rs.getString("PDB_ID");
+                String chain = rs.getString("CHAIN");
+                int position = rs.getInt("PDB_POSITION");
+                if (pdbId.equals(currentPdbId)
+                        && chain.equals(currentChain)) {
+                     Set<Long> events = mapPosEvents.get(position);
+                     if (events==null) {
+                         events = new HashSet<Long>();
+                         mapPosEvents.put(position, events);
+                     }
+                     events.add(eventId);
+               } else {
+                    if (currentPdbId!=null) {
+                        calculateOnAChain(currentPdbId, currentChain, mapPosEvents, threshold);
+                    }
+                    
+                    currentPdbId = pdbId;
+                    currentChain = chain;
+                    mapPosEvents.clear();
+                }
+            }
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
+        }
+    }
+    
+    private static void calculateOnAChain(String pdbId, String chain,
+            Map<Integer, Set<Long>> mapPosEvents, double threshold) throws DaoException {
+        List<Integer> positions = new ArrayList<Integer>(mapPosEvents.keySet());
+        int n = positions.size();
+        for (int i=0; i<n-1; i++) {
+            for (int j=i+1; j<n; j++) {
+                
+            }
+        }
+    }
     
     public static int addDaoMutationContactMap(int mutId1, int mutId2, String pdbId,
             String chain, double distance) throws DaoException {

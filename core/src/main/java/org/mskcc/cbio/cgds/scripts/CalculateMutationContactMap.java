@@ -26,13 +26,91 @@
 **/
 package org.mskcc.cbio.cgds.scripts;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.mskcc.cbio.cgds.dao.DaoException;
+import org.mskcc.cbio.cgds.dao.DaoMutation;
+import org.mskcc.cbio.cgds.dao.DaoPdbUniprotResidueMapping;
+import org.mskcc.cbio.cgds.model.ExtendedMutation.MutationEvent;
+
 /**
  *
  * @author jgao
  */
 public class CalculateMutationContactMap {
     public static void main(String[] args) throws Exception {
-         int distanceThreshold = Integer.parseInt(args[0]);
-         
-     }
+        int distanceThreshold = Integer.parseInt(args[0]);
+        
+        
+        Map<String, Map<Integer, Set<Long>>> mapMutation = new HashMap<String, Map<Integer, Set<Long>>>();
+        for (MutationEvent mutation : DaoMutation.getAllMutationEvents()) {
+            String type = mutation.getMutationType();
+            if (!type.equals("Missense_Mutation")) {
+                // let's only deal with missense mutaitons only
+                continue;
+            }
+            
+            String uniProtId = mutation.getOncotatorUniprotName();
+            int position = mutation.getOncotatorProteinPosStart();
+            
+            Map<String, Map<String, Integer>> pdbMap = DaoPdbUniprotResidueMapping.mapToPdbResidues(uniProtId, position);
+            if (pdbMap==null) {
+                continue;
+            }
+            
+            
+            long eventId = mutation.getMutationEventId();
+            
+            Map<Integer, Set<Long>> mapPosition = mapMutation.get(uniProtId);
+            if (mapPosition==null) {
+                mapPosition = new HashMap<Integer, Set<Long>>();
+                mapMutation.put(uniProtId, mapPosition);
+            }
+            
+            Set<Long> eventIds = mapPosition.get(position);
+            if (eventIds==null) {
+                eventIds = new HashSet<Long>();
+                mapPosition.put(position, eventIds);
+            }
+            eventIds.add(eventId);
+        }
+        
+
+    }
+    
+    /**
+     * All missense mutations in a map
+     * @return Map<UniProtId, Map<UniProtPosition, Set<EventId>>>
+     * @throws DaoException 
+     */
+    private static Map<String, Map<Integer, Set<Long>>> getMutationMap() throws DaoException {
+        Map<String, Map<Integer, Set<Long>>> mapMutation = new HashMap<String, Map<Integer, Set<Long>>>();
+        for (MutationEvent mutation : DaoMutation.getAllMutationEvents()) {
+            String type = mutation.getMutationType();
+            if (!type.equals("Missense_Mutation")) {
+                // let's only deal with missense mutaitons only
+                continue;
+            }
+            
+            String uniProtId = mutation.getOncotatorUniprotName();
+            int position = mutation.getOncotatorProteinPosStart();
+            long eventId = mutation.getMutationEventId();
+            
+            Map<Integer, Set<Long>> mapPosition = mapMutation.get(uniProtId);
+            if (mapPosition==null) {
+                mapPosition = new HashMap<Integer, Set<Long>>();
+                mapMutation.put(uniProtId, mapPosition);
+            }
+            
+            Set<Long> eventIds = mapPosition.get(position);
+            if (eventIds==null) {
+                eventIds = new HashSet<Long>();
+                mapPosition.put(position, eventIds);
+            }
+            eventIds.add(eventId);
+        }
+        return mapMutation;
+    }
 }
