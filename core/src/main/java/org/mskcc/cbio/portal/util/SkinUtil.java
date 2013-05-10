@@ -278,4 +278,12 @@ public class SkinUtil {
         }
         return url.replace("{cancer.type}", typeOfCancer);
     }
+    
+    public static String getTemporaryDir() {Config config = Config.getInstance();
+        String dir = config.getProperty("temporary_dir");
+        if (dir==null || dir.isEmpty()) {
+            return System.getProperty("java.io.tmpdir");
+        }
+        return dir;
+    }
 }
