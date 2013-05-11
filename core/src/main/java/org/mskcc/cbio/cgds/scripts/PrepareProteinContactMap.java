@@ -119,15 +119,14 @@ public class PrepareProteinContactMap {
         ptmParser.setRecordUnidentifiableCompounds(true);
         ptmParser.setbondLengthTolerance(lengthTolerance);
         
-        ptms = ProteinModificationRegistry.getByCategory(ModificationCategory.CROSS_LINK_2);
-        Iterator<ProteinModification> it = ptms.iterator();
-        while (it.hasNext()) {
-            ProteinModification ptm = it.next();
-            if (ptm.getCondition().getLinkages().size()!=1) {
+        ptms = new HashSet<ProteinModification>();
+        for (ProteinModification ptm : ProteinModificationRegistry
+                .getByCategory(ModificationCategory.CROSS_LINK_2)) {
+            if (ptm.getCondition().getLinkages().size()==1) {
                 // for now we are only interested in direct contact between two amino acid.
                 // let's work on other links later such as metal coordinated cross links.
                 // not sure if other ptms such as phoshorylation sites would be useful.
-                it.remove();
+                ptms.add(ptm);
             }
         }
     }
