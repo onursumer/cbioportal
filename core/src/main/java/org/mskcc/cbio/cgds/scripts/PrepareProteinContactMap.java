@@ -32,6 +32,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -40,6 +41,7 @@ import org.biojava.bio.structure.Structure;
 import org.biojava.bio.structure.StructureException;
 import org.biojava.bio.structure.align.util.AtomCache;
 import org.biojava.bio.structure.io.FileParsingParameters;
+import org.biojava3.protmod.ModificationCategory;
 import org.biojava3.protmod.ProteinModification;
 import org.biojava3.protmod.ProteinModificationRegistry;
 import org.biojava3.protmod.structure.ModifiedCompound;
@@ -113,7 +115,17 @@ public class PrepareProteinContactMap {
         ptmParser.setRecordAdditionalAttachments(false);
         ptmParser.setRecordUnidentifiableCompounds(true);
         
-        ptms = ProteinModificationRegistry.allModifications();
+        ptms = ProteinModificationRegistry.getByCategory(ModificationCategory.CROSS_LINK_2);
+        Iterator<ProteinModification> it = ptms.iterator();
+        while (it.hasNext()) {
+            ProteinModification ptm = it.next();
+            if (ptm.getCondition().getLinkages().size()!=1) {
+                // for now we are only interested in direct contact between two amino acid.
+                // let's work on other links later such as metal coordinated cross links.
+                // not sure if other ptms such as phoshorylation sites would be useful.
+                it.remove();
+            }
+        }
     }
     
     private static AtomCache getAtomCache() {
@@ -134,7 +146,7 @@ public class PrepareProteinContactMap {
         for (Map.Entry<String,Set<String>> entry : pdbEntries.entrySet()) {
             String pdbId = entry.getKey();
             System.out.println("Get PDB structure "+pdbId);
-            Structure struc = atomCache.getStructure(pdbId);
+            Structure struc = getAtomCache().getStructure(pdbId);
             if (struc==null) {
                 System.err.println("No PDB structure "+pdbId);
                 return;
@@ -151,10 +163,8 @@ public class PrepareProteinContactMap {
                 for (ModifiedCompound mc : mcs) {
                         Set<StructureGroup> groups = mc.getGroups(true);
                         if (groups.size()!=2) {
-                            // for now we are only interested in direct contact between two amino acid.
-                            // let's work on other links later such as metal coordinated cross links.
-                            // not sure if other ptms such as phoshorylation sites would be useful.
-                            continue;
+                            throw new java.lang.IllegalStateException("Something is wrong. "
+                                    + "Only crosslinks with 2 residues directly linked are possible.");
                         }
                         
                         buf.write(pdbId);
