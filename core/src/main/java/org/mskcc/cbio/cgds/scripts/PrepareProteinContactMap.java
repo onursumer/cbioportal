@@ -48,13 +48,13 @@ import org.biojava3.protmod.structure.ModifiedCompound;
 import org.biojava3.protmod.structure.ProteinModificationIdentifier;
 import org.biojava3.protmod.structure.StructureAtomLinkage;
 import org.biojava3.protmod.structure.StructureGroup;
-import org.mskcc.cbio.portal.util.SkinUtil;
 
 /**
  *
  * @author jgao
  */
 public class PrepareProteinContactMap {
+
     /**
      * 
      * @param args
@@ -63,16 +63,19 @@ public class PrepareProteinContactMap {
     public static void main(String[] args) throws Exception {
         String dirPdbUniProtMappingFile = args[0];
         String dirOutputFile = args[1];
-        if (args.length==3) {
-            int distanceThreshold = Integer.parseInt(args[2]);
-            ptmParser.setbondLengthTolerance(distanceThreshold);
+        String dirCache = args[2];
+        double lengthTolerance = 4.0;
+        if (args.length==4) {
+            lengthTolerance = Double.parseDouble(args[3]);
         }
         
-        Map<String,Set<String>> pdbEntries = getPdbEntries(dirPdbUniProtMappingFile);
-        calculateContactMap(pdbEntries, dirOutputFile);
+        PrepareProteinContactMap prepareProteinContactMap = new PrepareProteinContactMap(dirCache, lengthTolerance);
+        
+        Map<String,Set<String>> pdbEntries = prepareProteinContactMap.getPdbEntries(dirPdbUniProtMappingFile);
+        prepareProteinContactMap.calculateContactMap(pdbEntries, dirOutputFile);
     }
     
-    private static Map<String,Set<String>> getPdbEntries(String dirPdbUniProtMappingFile) throws IOException {
+    private Map<String,Set<String>> getPdbEntries(String dirPdbUniProtMappingFile) throws IOException {
         Map<String,Set<String>> map = new TreeMap<String,Set<String>>(); // sorted treemap so that we know the progress later
         FileReader reader = new FileReader(dirPdbUniProtMappingFile);
         BufferedReader buf = new BufferedReader(reader);
@@ -97,12 +100,12 @@ public class PrepareProteinContactMap {
     }
     
     // read 3d structures and identify ptms
-    private static AtomCache atomCache = null;
-    private static ProteinModificationIdentifier ptmParser = null;
-    private static Set<ProteinModification> ptms = null;
+    private AtomCache atomCache;
+    private ProteinModificationIdentifier ptmParser;
+    private Set<ProteinModification> ptms;
     
-    private static void init() {
-        atomCache = new AtomCache(SkinUtil.getTemporaryDir(), true);
+    private PrepareProteinContactMap(String dirCache, double lengthTolerance) {
+        atomCache = new AtomCache(dirCache, true);
         FileParsingParameters params = new FileParsingParameters();
         params.setLoadChemCompInfo(true);
         params.setAlignSeqRes(true);
@@ -114,6 +117,7 @@ public class PrepareProteinContactMap {
         ptmParser = new ProteinModificationIdentifier();
         ptmParser.setRecordAdditionalAttachments(false);
         ptmParser.setRecordUnidentifiableCompounds(true);
+        ptmParser.setbondLengthTolerance(lengthTolerance);
         
         ptms = ProteinModificationRegistry.getByCategory(ModificationCategory.CROSS_LINK_2);
         Iterator<ProteinModification> it = ptms.iterator();
@@ -128,16 +132,8 @@ public class PrepareProteinContactMap {
         }
     }
     
-    private static AtomCache getAtomCache() {
-        if (atomCache==null) {
-            init();
-        }
-        return atomCache;
-    }
     
-    
-    
-    private static void calculateContactMap(Map<String,Set<String>> pdbEntries, String dirOutputFile)
+    private void calculateContactMap(Map<String,Set<String>> pdbEntries, String dirOutputFile)
             throws IOException, StructureException {
         FileWriter writer = new FileWriter(dirOutputFile);
         BufferedWriter buf = new BufferedWriter(writer);
@@ -146,7 +142,7 @@ public class PrepareProteinContactMap {
         for (Map.Entry<String,Set<String>> entry : pdbEntries.entrySet()) {
             String pdbId = entry.getKey();
             System.out.println("Get PDB structure "+pdbId);
-            Structure struc = getAtomCache().getStructure(pdbId);
+            Structure struc = atomCache.getStructure(pdbId);
             if (struc==null) {
                 System.err.println("No PDB structure "+pdbId);
                 return;

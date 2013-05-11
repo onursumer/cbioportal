@@ -28,3 +28,6 @@
 
 # PDB Uniprot Mapping
 ./importPdbUniprotResidueMapping.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
+
+# Protein contact map
+./prepareProteinContactMap.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/
