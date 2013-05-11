@@ -32,6 +32,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -151,60 +153,98 @@ public class PrepareProteinContactMap {
                 Chain chain = struc.getChainByPDB(chainId);
                 
                 System.out.println("\tIdentify PTMs from chain "+chainId);
-                ptmParser.identify(chain);
+                ptmParser.identify(chain,ptms);
                 
+                // known crosslinks
                 Set<ModifiedCompound> mcs = ptmParser.getIdentifiedModifiedCompound();
                 for (ModifiedCompound mc : mcs) {
-                        Set<StructureGroup> groups = mc.getGroups(true);
-                        if (groups.size()!=2) {
-                            throw new java.lang.IllegalStateException("Something is wrong. "
-                                    + "Only crosslinks with 2 residues directly linked are possible.");
-                        }
-                        
-                        buf.write(pdbId);
-                        buf.write("\t");
-                        buf.write(chainId);
-                        buf.write("\t");
-                        for (StructureGroup group : groups) {
-                            buf.write(Integer.toString(group.getResidueNumber()));
-                            buf.write("\t");
-                        }
-                        buf.write(Double.toString(mc.getAtomLinkages().iterator().next().getDistance()));
-                        buf.write("\t");
-                        
-                        if (mc.getModification().getPsimodId()!=null) {
-                            buf.write(mc.getModification().getPsimodId());
-                            buf.write(";");
-                            buf.write(mc.getModification().getPsimodName());
-                        }
-                        buf.write("\n");
+                    Set<StructureGroup> groups = mc.getGroups(true);
+                    if (groups.size()!=2) {
+                        System.err.println(mc.toString());
+                        throw new java.lang.IllegalStateException("Something is wrong. "
+                                + "Only crosslinks with 2 residues directly linked are possible.");
+                    }
+
+                    writeLinkage(pdbId, chainId, mc.getModification(),
+                            mc.getAtomLinkages().iterator().next(), buf);
                 }
                 
-                Set<StructureAtomLinkage> linkages = ptmParser.getUnidentifiableAtomLinkages();
-                for (StructureAtomLinkage linkage : linkages) {
-                    StructureGroup group1 = linkage.getAtom1().getGroup();
-                    StructureGroup group2 = linkage.getAtom2().getGroup();
-                    
-                    if (!group1.isAminoAcid() || !group2.isAminoAcid()) {
-                        continue;
+                // unknown crosslinks
+                // assuming that the linkages are order by groups
+                LinkedHashSet<StructureAtomLinkage> linkages =
+                        (LinkedHashSet<StructureAtomLinkage>)ptmParser.getUnidentifiableAtomLinkages();
+                
+                Iterator<StructureAtomLinkage> it = linkages.iterator();
+                if (it.hasNext()) {
+                    StructureAtomLinkage selectedLinkage = it.next();
+                    while (it.hasNext()) {
+                        StructureAtomLinkage linkage = it.next();
+                        if (linkage.getAtom1().getGroup().equals(selectedLinkage.getAtom1().getGroup()) &&
+                                linkage.getAtom2().getGroup().equals(selectedLinkage.getAtom2().getGroup())) {
+                            if (selectedLinkage.getDistance() > linkage.getDistance()) {
+                                selectedLinkage = linkage;
+                            }
+                        } else {
+                            writeLinkage(pdbId, chainId, null, selectedLinkage, buf);
+                            selectedLinkage = linkage;
+                        }
                     }
-                    
-                    buf.write(pdbId);
-                    buf.write("\t");
-                    buf.write(chainId);
-                    buf.write("\t");
-                    buf.write(Integer.toString(group1.getResidueNumber()));
-                    buf.write("\t");
-                    buf.write(Integer.toString(group2.getResidueNumber()));
-                    buf.write("\t");
-                    buf.write(Double.toString(linkage.getDistance()));
-                    buf.write("\t");
-                    buf.write("\n");
+                    writeLinkage(pdbId, chainId, null, selectedLinkage, buf);
                 }
             }
             
+            if (pdbId.startsWith("1a")) break;
         }
         buf.close();
         writer.close();
+    }
+    
+    private boolean filterLinkage(StructureAtomLinkage linkage) {
+        StructureGroup group1 = linkage.getAtom1().getGroup();
+        StructureGroup group2 = linkage.getAtom2().getGroup();
+
+        if (!group1.isAminoAcid() || !group2.isAminoAcid()) {
+            return false;
+        }
+
+        int res1 = group1.getResidueNumber();
+        int res2 = group2.getResidueNumber();
+        if (Math.abs(res1-res2)==1) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    private void writeLinkage(String pdbId, String chainId, ProteinModification ptm,
+            StructureAtomLinkage linkage, BufferedWriter buf) throws IOException {
+        if (!filterLinkage(linkage)) {
+            return;
+        }
+        
+        buf.write(pdbId);
+        buf.write("\t");
+        buf.write(chainId);
+        buf.write("\t");
+        
+        buf.write(Integer.toString(linkage.getAtom1().getGroup().getResidueNumber()));
+        buf.write("\t");
+        buf.write(Integer.toString(linkage.getAtom2().getGroup().getResidueNumber()));
+        buf.write("\t");
+        
+        buf.write(Double.toString(linkage.getDistance()));
+        buf.write("\t");
+        
+        if (ptm!=null) {
+            buf.write(ptm.getId());
+            if (ptm.getPsimodId()!=null) {
+                buf.write(";");
+                buf.write(ptm.getPsimodId());
+                buf.write(";");
+                buf.write(ptm.getPsimodName());
+            }
+        }
+        
+        buf.write("\n");
     }
 }
