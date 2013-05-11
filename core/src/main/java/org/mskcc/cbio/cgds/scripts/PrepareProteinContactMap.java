@@ -47,6 +47,7 @@ import org.biojava3.protmod.ProteinModification;
 import org.biojava3.protmod.ProteinModificationRegistry;
 import org.biojava3.protmod.structure.ModifiedCompound;
 import org.biojava3.protmod.structure.ProteinModificationIdentifier;
+import org.biojava3.protmod.structure.StructureAtom;
 import org.biojava3.protmod.structure.StructureAtomLinkage;
 import org.biojava3.protmod.structure.StructureGroup;
 
@@ -134,24 +135,37 @@ public class PrepareProteinContactMap {
     
     
     private void calculateContactMap(Map<String,Set<String>> pdbEntries, String dirOutputFile)
-            throws IOException, StructureException {
+            throws IOException {
         FileWriter writer = new FileWriter(dirOutputFile);
         BufferedWriter buf = new BufferedWriter(writer);
-        buf.write("#PDB_ID\tChain\tResidue1\tResidue2\tDistance\tName\n");
+        buf.write("#PDB_ID\tChain\tResidue1\tAtom1\tResidue2\tAtom2\tDistance\tName\n");
         
         for (Map.Entry<String,Set<String>> entry : pdbEntries.entrySet()) {
             String pdbId = entry.getKey();
             System.out.println("Get PDB structure "+pdbId);
-            Structure struc = atomCache.getStructure(pdbId);
+            Structure struc = null;
+            try {
+                struc = atomCache.getStructure(pdbId);
+            } catch (StructureException ex) {
+                ex.printStackTrace();
+            }
             if (struc==null) {
-                System.err.println("No PDB structure "+pdbId);
-                return;
+                System.err.println("Error: No PDB structure "+pdbId);
+                continue;
             }
             
             Set<String> chains = entry.getValue();
             for (String chainId : chains) {
-                Chain chain = struc.getChainByPDB(chainId);
-                
+                Chain chain = null;
+                try {
+                    chain = struc.getChainByPDB(chainId);
+                } catch (StructureException ex) {
+                    ex.printStackTrace();
+                }
+                if (chain==null) {
+                    System.err.println("Error: No chain "+chainId+" in PDB structure "+pdbId);
+                    continue;
+                }
                 System.out.println("\tIdentify PTMs from chain "+chainId);
                 ptmParser.identify(chain,ptms);
                 
@@ -192,8 +206,6 @@ public class PrepareProteinContactMap {
                     writeLinkage(pdbId, chainId, null, selectedLinkage, buf);
                 }
             }
-            
-            if (pdbId.startsWith("1a")) break;
         }
         buf.close();
         writer.close();
@@ -227,10 +239,8 @@ public class PrepareProteinContactMap {
         buf.write(chainId);
         buf.write("\t");
         
-        buf.write(Integer.toString(linkage.getAtom1().getGroup().getResidueNumber()));
-        buf.write("\t");
-        buf.write(Integer.toString(linkage.getAtom2().getGroup().getResidueNumber()));
-        buf.write("\t");
+        writeAtom(linkage.getAtom1(), buf);
+        writeAtom(linkage.getAtom2(), buf);
         
         buf.write(Double.toString(linkage.getDistance()));
         buf.write("\t");
@@ -246,5 +256,17 @@ public class PrepareProteinContactMap {
         }
         
         buf.write("\n");
+    }
+    
+    private void writeAtom(StructureAtom atom, BufferedWriter buf) throws IOException {
+        StructureGroup group = atom.getGroup();
+        Character insCode = group.getInsCode();
+        if (insCode!=null) {
+            buf.write(insCode);
+        }
+        buf.write(Integer.toString(group.getResidueNumber()));
+        buf.write("\t");
+        buf.write(atom.getAtomName());
+        buf.write("\t");
     }
 }
