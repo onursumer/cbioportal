@@ -32,7 +32,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -167,7 +166,7 @@ public class PrepareProteinContactMap {
                         buf.write(chainId);
                         buf.write("\t");
                         for (StructureGroup group : groups) {
-                            buf.write(group.getResidueNumber());
+                            buf.write(Integer.toString(group.getResidueNumber()));
                             buf.write("\t");
                         }
                         buf.write(Double.toString(mc.getAtomLinkages().iterator().next().getDistance()));
@@ -175,7 +174,7 @@ public class PrepareProteinContactMap {
                         
                         if (mc.getModification().getPsimodId()!=null) {
                             buf.write(mc.getModification().getPsimodId());
-                            buf.write(":");
+                            buf.write(";");
                             buf.write(mc.getModification().getPsimodName());
                         }
                         buf.write("\n");
@@ -194,9 +193,9 @@ public class PrepareProteinContactMap {
                     buf.write("\t");
                     buf.write(chainId);
                     buf.write("\t");
-                    buf.write(group1.getResidueNumber());
+                    buf.write(Integer.toString(group1.getResidueNumber()));
                     buf.write("\t");
-                    buf.write(group2.getResidueNumber());
+                    buf.write(Integer.toString(group2.getResidueNumber()));
                     buf.write("\t");
                     buf.write(Double.toString(linkage.getDistance()));
                     buf.write("\t");
