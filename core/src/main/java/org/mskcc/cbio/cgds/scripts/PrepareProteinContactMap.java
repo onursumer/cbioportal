@@ -260,6 +260,7 @@ public class PrepareProteinContactMap {
     
     private void writeAtom(StructureAtom atom, BufferedWriter buf) throws IOException {
         StructureGroup group = atom.getGroup();
+        buf.write(group.getPDBName()+":");
         Character insCode = group.getInsCode();
         if (insCode!=null) {
             buf.write(insCode);
