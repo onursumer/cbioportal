@@ -22,7 +22,7 @@ def range_to_list(range_str):
         idx.extend(range(start, end+1))
     return idx
 
-def export_row(row):
+def export_row(row, f):
     print >>f, "%s\t%s\t%i\t%s\t%i" % (row[0], row[1], range_to_list(row[5])[row[2]-1], row[3], row[4])
     
 def main():
@@ -62,7 +62,7 @@ def main():
                    "and pp.identp=100;")
     print >>f, "#pdb_id\tchain\tpdb_res\tuniprot_id\tuniprot_res"
     for row in cursor:
-        export_row(row)
+        export_row(row, f)
     db.close()
     f.close()
 
