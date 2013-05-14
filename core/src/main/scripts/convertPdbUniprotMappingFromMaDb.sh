@@ -23,7 +23,7 @@ def range_to_list(range_str):
     return idx
 
 def export_row(row):
-    print("%s\t%s\t%i\t%s\t%i" % (row[0], row[1], range_to_list(row[5])[row[2]], row[3], row[4]))
+    print("%s\t%s\t%i\t%s\t%i" % (row[0], row[1], range_to_list(row[5])[row[2]-1], row[3], row[4]))
     
 def main():
 
