@@ -38,16 +38,20 @@ def main():
     # process the options
     host = ''
     user = ''
-    psw = ''
+    passwd = ''
+    db = ''
     for o, a in opts:
         if o == '--host':
             host = a
         elif o == '--user':
             user = a
-        elif o == '--psw':
-            psw = a
+        elif o == '--passwd':
+            passwd = a
+        elif o == '--db':
+            db = a
+        
 
-    db = MySQLdb.connect(host,user,psw)
+    db = MySQLdb.connect(host,user,passwd,db)
     cursor = db.cursor()
     cursor.execute("select distinct pp.pdbid, pp.chcode, ppr.rpdb, mb.seqID, ppr.rprot+mb.mbegin-1, pmr.res "+
                    "from pdb_protr ppr, pdb_prot pp, msa_built mb, pdb_mol pm, pdb_molr pmr "+
