@@ -17,7 +17,7 @@ def range_to_list(range_str):
         start = int(re_result.group(1))
         end = int(re_result.group(3)) if re_result.group(3)!=None else start
         if end<start:
-            print >> ERROR_FILE, 'end smaller than start'
+            print('end smaller than start')
             sys.exit(2)
         idx.extend(range(start, end+1))
     return idx
@@ -29,10 +29,9 @@ def main():
 
     # parse command line options
     try:
-        opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'user=', 'psw='])
+        opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'user=', 'passwd=', 'db='])
     except getopt.error, msg:
-        print >> ERROR_FILE, msg
-        usage()
+        print(msg)
         sys.exit(2)
 
     # process the options
