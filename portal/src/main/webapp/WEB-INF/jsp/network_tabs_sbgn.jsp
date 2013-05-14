@@ -7,47 +7,18 @@ if (includeHelpTab==null) {
 
 <div id="network_tabs_sbgn" class="hidden-network-ui">
     <ul>
-        <li><a href="#genes_tab" class="network-tab-ref" title="Genes & Drugs (Nodes)"><span>Genes</span></a></li>
-        <li><a href="#relations_tab" class="network-tab-ref"
-               title="Edges between nodes"><span>Interactions</span></a></li>
-	    <li><a href="#node_details_tab" class="network-tab-ref"
+        <li><a href="#genes_tab_sbgn" class="network-tab-ref" title="Genes"><span>Genes</span></a></li>
+        <li><a href="#filtering_tab_sbgn" class="network-tab-ref"
+               title="Filtering options"><span>Filtering</span></a></li>
+	    <li><a href="#element_details_tab_sbgn" class="network-tab-ref"
 	           title="Node details"><span>Details</span></a></li>
         <%if(includeHelpTab){%>
         <li><a href="#help_tab" class="network-tab-ref" title="About & Help"><span>Help</span></a></li>
         <%}%>
     </ul>
-    <div id="genes_tab">
+    <div id="genes_tab_sbgn">
 	    <div class="header">
-		  <span class="title"><label >Drugs of Specified Genes</label></span><br><br>
-	      <div class="combo">
-			<select id="drop_down_select">
-			  <option value="HIDE_DRUGS">Hide Drugs</option>
-              <option value="SHOW_CANCER"> Show Cancer Drugs</option>
-              <option value="SHOW_FDA"> Show FDA Approved Drugs</option>
-			  <option value="SHOW_ALL">Show All Drugs</option>
-			</select>
-		  </div>
-		    <span class="title"><label>Genes</label></span><br><br>
-	    	<div id="slider_area">
-	    		<label>Filter Neighbors by Alteration (%)</label>
-	    		<div id="weight_slider_area">
-		    		<span class="slider-value">
-		    			<input id="weight_slider_field" type="text" value="0"/>
-		    		</span>
-		    		<span class="slider-min"><label>0</label></span>
-		    		<span class="slider-max"><label>MAX</label></span>
-		    		<div id="weight_slider_bar"></div>
-	    		</div>
-	    		
-	    		<div id="affinity_slider_area" class="hidden-network-ui">
-	    			<span class="slider-value">
-	    				<input id="affinity_slider_field" type="text" value="0.80"/>
-	    			</span>
-	    			<span class="slider-min"><label>0</label></span>
-		    		<span class="slider-max"><label>1.0</label></span>
-		    		<div id="affinity_slider_bar"></div>
-	    		</div>
-    		</div>
+		   	<span class="title"><label>Genes</label></span><br><br>
     		<div id="control_area">
     			<table>
     			<tr>
@@ -83,109 +54,58 @@ if (includeHelpTab==null) {
 		<div id="gene_list_area">
 		</div>
     </div>
-    <div id="relations_tab">
-		<div>
-	        <table id="edge_type_filter">
-	        	<tr class="edge-type-header">
-	        		<td>
-	        			<label class="heading">Type:</label>
-	        		</td>
-	        	</tr>
-	        	<tr class="in-same-component">
-		        	<td class="edge-type-checkbox">
-		        		<input id="in_same_component_check" type="checkbox" checked="checked">
-		        		<label>In Same Component</label>
-		        	</td>
-	        	</tr>
-	        	<tr class="in-same-component">
-	        		<td>
-	        			<div class="percent-bar"></div>	        			
-	        		</td>
-	        		<td>
-	        			<div class="percent-value"></div>
-	        		</td>
-	        	</tr>
-	        	<tr class="reacts-with">
-		        	<td class="edge-type-checkbox">
-		        		<input id="reacts_with_check" type="checkbox" checked="checked">
-		        		<label>Reacts with</label>
-		        	</td>
-	        	</tr>
-	        	<tr class="reacts-with">
-	        		<td>
-	        			<div class="percent-bar"></div>	        			
-	        		</td>
-	        		<td>
-	        			<div class="percent-value"></div>
-	        		</td>
-	        	</tr>
-	        	<tr class="state-change">
-		        	<td class="edge-type-checkbox">
-		        		<input id="state_change_check" type="checkbox" checked="checked">
-		        		<label>State Change</label>
-		        	</td>
-	        	</tr>
-	        	<tr class="state-change">
-	        		<td>
-	        			<div class="percent-bar"></div>
-	        		</td>
-	        		<td>
-	        			<div class="percent-value"></div>
-	        		</td>
-	        	</tr>
-	        	<tr class="targeted-by-drug">
-		        	<td class="edge-type-checkbox">
-		        		<input id="targeted_by_drug_check" type="checkbox" checked="checked">
-		        		<label>Targeted by Drug</label>
-		        	</td>
-	        	</tr>
-	        	<tr class="targeted-by-drug">
-	        		<td>
-	        			<div class="percent-bar"></div>	        			
-	        		</td>
-	        		<td>
-	        			<div class="percent-value"></div>
-	        		</td>
-	        	</tr>
-	        	<tr class="other">
-		        	<td class="edge-type-checkbox">
-		        		<input id="other_check" type="checkbox" checked="checked">
-		        		<label>Other</label>
-		        	</td>
-	        	</tr>
-	        	<tr class="other">
-	        		<td>
-	        			<div class="percent-bar"></div>	        			
-	        		</td>
-	        		<td>
-	        			<div class="percent-value"></div>
-	        		</td>
-	        	</tr>
-	        </table>
+
+    <div id="filtering_tab_sbgn">
+		<div class="header">
+			<span class="title"><label>Filter by Alteration</label></span><br><br>
+	    	<div id="slider_area">
+	    		<div id="weight_slider_area">
+		    		<span class="slider-value">
+		    			<input id="weight_slider_field" type="text" value="0"/>
+		    		</span>
+		    		<span class="slider-min"><label>0</label></span>
+		    		<span class="slider-max"><label>MAX</label></span>
+		    		<div id="weight_slider_bar"></div>
+	    		</div>
+	    		
+	    		<div id="affinity_slider_area" class="hidden-network-ui">
+	    			<span class="slider-value">
+	    				<input id="affinity_slider_field" type="text" value="0.80"/>
+	    			</span>
+	    			<span class="slider-min"><label>0</label></span>
+		    		<span class="slider-max"><label>1.0</label></span>
+		    		<div id="affinity_slider_bar"></div>
+	    		</div>
+    		</div>
+
+			<span class="title"><label>Filter by Source</label></span><br><br>
 	        <table id="edge_source_filter">
 	        	<tr class="edge-source-header">
 	        		<td>
-	        			<label class="heading">Source:</label>
+
 	        		</td>
 	        	</tr>
 	        </table>
-	    </div>
-        <div class="footer">
-        	<table>
-        		<tr>
-        			<td>
-        				<label class="button-text">Update</label>
-        			</td>
-        			<td> 
-        				<button id="update_edges" class="tabs-button" title="Update"></button>
-        			</td>
-        		</tr>
-        	</table>
+
+		    <div class="footer">
+		    	<table>
+		    		<tr>
+		    			<td>
+		    				<label class="button-text">Update</label>
+		    			</td>
+		    			<td> 
+		    				<button id="update_edges" class="tabs-button" title="Update"></button>
+		    			</td>
+		    		</tr>
+		    	</table>
+			</div>
 		</div>
     </div>
-	<div id="node_details_tab">
+
+	<div id="element_details_tab_sbgn">
 		Currently there is no selected node. Please, select a node to see details.
 	</div>
+
     <%if(includeHelpTab){%>
     <div id="help_tab">
         <jsp:include page="network_help.jsp"></jsp:include>

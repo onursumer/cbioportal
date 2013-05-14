@@ -9,6 +9,9 @@ function NetworkSbgnVis(divId)
 	// call the parent constructor
 	NetworkVis.call(this, divId);
 	this.networkTabsSelector = "#" + this.divId + " #network_tabs_sbgn";
+    this.filteringTabSelector = "#" + this.divId + " #filtering_tab_sbgn";
+    this.genesTabSelector = "#" + this.divId + " #genes_tab_sbgn";
+    this.detailsTabSelector = "#" + this.divId + " #element_details_tab_sbgn";
 
 	// node glyph class constants
 	this.MACROMOLECULE = "macromolecule";
@@ -853,4 +856,147 @@ NetworkSbgnVis.prototype.filterSelectedGenes = function()
 
 	// visualization changed, perform layout if necessary
 	this._visChanged();
+};
+
+/**
+ * Initializes the gene filter sliders.
+ */
+NetworkSbgnVis.prototype._initSliders = function()
+{
+    var self = this;
+
+    var keyPressListener = function(evt) {
+      self._keyPressListener(evt);
+    };
+
+    var weightSliderStop = function(evt, ui) {
+        self._weightSliderStop(evt, ui);
+    };
+
+    var weightSliderMove = function(evt, ui) {
+        self._weightSliderMove(evt, ui);
+    };
+
+
+    // add key listeners for input fields
+
+    $(this.filteringTabSelector + " #weight_slider_field").keypress(keyPressListener);
+    $(this.filteringTabSelector + " #affinity_slider_field").keypress(keyPressListener);
+
+    // show gene filtering slider
+    $(this.filteringTabSelector + " #weight_slider_bar").slider(
+        {value: this.ALTERATION_PERCENT,
+            stop: weightSliderStop,
+            slide: weightSliderMove});
+
+};
+
+/**
+ * Updates the contents of the details tab according to
+ * the currently selected elements.
+ *
+ * @param evt
+ */
+NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
+{
+    // TODO also consider selected edges?
+	var selected = this._vis.selected("nodes");
+    var data;
+
+    var self = this;
+
+    // clean previous content
+    $(self.detailsTabSelector + " div").empty();
+	$(self.detailsTabSelector + " .error").hide();
+
+    if (selected.length == 1)
+    {
+        data = selected[0].data;
+    }
+    else if (selected.length > 1)
+    {
+        //$(self.detailsTabSelector + " div").empty();
+        $(self.detailsTabSelector + " .error").append(
+            "Currently more than one node is selected. Please, select only one node to see details.");
+	    $(self.detailsTabSelector + " .error").show();
+        return;
+    }
+    else
+    {
+        //$(self.detailsTabSelector + " div").empty();
+        $(self.detailsTabSelector + " .error").append(
+            "Currently there is no selected node. Please, select a node to see details.");
+	    $(self.detailsTabSelector + " .error").show();
+        return;
+    }
+
+    var handler = function(queryResult) {
+        // check the initial conditions, if they don't match do nothing
+	    // (they may not match because of a delay in the ajax request)
+
+	    selected = self._vis.selected("nodes");
+
+	    if (selected.length != 1 ||
+	        data.id != selected[0].data.id)
+	    {
+		    return;
+	    }
+
+        // update tab content
+        $(self.detailsTabSelector + " .biogene-content").empty();
+
+        if (queryResult.returnCode != "SUCCESS")
+        {
+            $(self.detailsTabSelector + " .error").append(
+	            "Error retrieving data: " + queryResult.returnCode);
+	        $(self.detailsTabSelector + " .error").show();
+        }
+        else
+        {
+	        if (queryResult.count > 0)
+	        {
+		        // generate the view by using backbone
+		        var biogeneView = new BioGeneView(
+			        {el: self.detailsTabSelector + " .biogene-content",
+					data: queryResult.geneInfo[0]});
+	        }
+	        else
+	        {
+		        $(self.detailsTabSelector + " .error").append(
+			        "No additional information available for the selected node.");
+	        }
+        }
+
+	    // generate view for genomic profile data
+	    var genomicProfileView = new GenomicProfileView(
+		    {el: self.detailsTabSelector + " .genomic-profile-content",
+			data: data});
+    };
+
+
+	if (data.type == this.DRUG)
+	{
+		// update tab content
+		$(self.detailsTabSelector + " div").empty();
+
+		var drugView = new DrugInfoView({el: this.detailsTabSelector + " .drug-info-content",
+			data: data,
+			linkMap: this._linkMap,
+			idPlaceHolder: this.ID_PLACE_HOLDER,
+			edges: this._vis.edges()});
+	}
+	// send biogene query for only genes
+	else
+	{
+		var queryParams = {"query": data.label,
+			"org": "human",
+			"format": "json"};
+
+		$(self.detailsTabSelector + " .biogene-content").append(
+			'<img src="images/ajax-loader.gif">');
+
+		$.post("bioGeneQuery.do",
+			queryParams,
+			handler);
+	}
 };
