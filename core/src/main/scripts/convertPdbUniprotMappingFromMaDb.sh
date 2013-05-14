@@ -36,9 +36,16 @@ def main():
         sys.exit(2)
 
     # process the options
-    host = opts['--host']
-    user = opts['user']
-    psw = opts['psw']
+    host = ''
+    user = ''
+    psw = ''
+    for o, a in opts:
+        if o == '--host':
+            host = a
+        elif o == '--user':
+            user = a
+        elif o == '--psw':
+            psw = a
 
     db = MySQLdb.connect(host,user,psw)
     cursor = db.cursor()
