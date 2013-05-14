@@ -17,21 +17,21 @@ def range_to_list(range_str):
         start = int(re_result.group(1))
         end = int(re_result.group(3)) if re_result.group(3)!=None else start
         if end<start:
-            print('end smaller than start')
+            print >>f, 'end smaller than start'
             sys.exit(2)
         idx.extend(range(start, end+1))
     return idx
 
 def export_row(row):
-    print("%s\t%s\t%i\t%s\t%i" % (row[0], row[1], range_to_list(row[5])[row[2]-1], row[3], row[4]))
+    print >>f, "%s\t%s\t%i\t%s\t%i" % (row[0], row[1], range_to_list(row[5])[row[2]-1], row[3], row[4])
     
 def main():
 
     # parse command line options
     try:
-        opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'user=', 'passwd=', 'db='])
+        opts, args = getopt.getopt(sys.argv[1:], '', ['host=', 'user=', 'passwd=', 'db=', 'output='])
     except getopt.error, msg:
-        print(msg)
+        print >>f, msg
         sys.exit(2)
 
     # process the options
@@ -39,6 +39,7 @@ def main():
     user = ''
     passwd = ''
     db = ''
+    output = ''
     for o, a in opts:
         if o == '--host':
             host = a
@@ -48,8 +49,10 @@ def main():
             passwd = a
         elif o == '--db':
             db = a
+        elif o == '--output':
+            output = a
         
-
+    f = open(output, 'w')
     db = MySQLdb.connect(host,user,passwd,db)
     cursor = db.cursor()
     cursor.execute("select distinct pp.pdbid, pp.chcode, ppr.rpdb, mb.seqID, ppr.rprot+mb.mbegin-1, pmr.res "+
@@ -57,10 +60,11 @@ def main():
                    "where ppr.ppid=pp.id and pp.msaid=mb.id and pp.pdbid=pm.pdbid and pp.chcode=pm.chain and "+
                    "pp.pdbid=pmr.pdbid and pm.molid=pmr.molid and pm.type='protein' and mb.seqID like '%_HUMAN' "+
                    "and pp.identp=100;")
-    print("#pdb_id\tchain\tpdb_res\tuniprot_id\tuniprot_res")
+    print >>f, "#pdb_id\tchain\tpdb_res\tuniprot_id\tuniprot_res"
     for row in cursor:
         export_row(row)
     db.close()
+    f.close()
 
 if __name__ == '__main__':
     main()
