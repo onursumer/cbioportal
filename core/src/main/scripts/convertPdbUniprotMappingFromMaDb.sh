@@ -12,8 +12,8 @@ range_re = re.compile('(-?[0-9]+)(-(-?[0-9]+))?')
 def range_to_list(range_str):
     idx = []
     ranges = range_str.split(' ')
-    for range in ranges:
-        re_result = range_re.match(range)
+    for r in ranges:
+        re_result = range_re.match(r)
         start = int(re_result.group(1))
         end = int(re_result.group(3)) if re_result.group(3)!=None else start
         if end<start:
