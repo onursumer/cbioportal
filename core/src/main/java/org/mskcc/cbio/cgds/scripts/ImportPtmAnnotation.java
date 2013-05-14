@@ -57,7 +57,7 @@ public class ImportPtmAnnotation {
         BufferedReader buf = new BufferedReader(reader);
         String line;
         
-        while ((line = buf.readLine()) !=null && !line.startsWith("NAME\t")) {
+        while ((line = buf.readLine()) !=null && !line.startsWith("PROTEIN\t")) {
         }
         
         while ((line = buf.readLine()) !=null) {
@@ -67,14 +67,14 @@ public class ImportPtmAnnotation {
             }
             
             String parts[] = line.split("\t");
-            if (!parts[6].equalsIgnoreCase("human")) {
+            if (!parts[7].equalsIgnoreCase("human")) {
                 continue;
             }
             
             String uniprotId = parts[1];
             String symbol = parts[2];
-            String type = parts[3];
-            int residue = Integer.parseInt(parts[4].replaceAll("[^0-9]", ""));
+            String type = parts[4];
+            int residue = Integer.parseInt(parts[5].replaceAll("[^0-9]", ""));
             PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
             ptm.setSymbol(symbol);
             DaoPtmAnnotation.addPtmAnnotation(ptm);
@@ -87,7 +87,7 @@ public class ImportPtmAnnotation {
         BufferedReader buf = new BufferedReader(reader);
         String line;
         
-        while ((line = buf.readLine()) !=null && !line.startsWith("NAME\t")) {
+        while ((line = buf.readLine()) !=null && !line.startsWith("PROTEIN\t")) {
         }
         
         while ((line = buf.readLine()) !=null) {
@@ -97,19 +97,19 @@ public class ImportPtmAnnotation {
             }
             
             String parts[] = line.split("\t");
-            if (parts.length<8 || !parts[5].equalsIgnoreCase("human")) {
+            if (parts.length<9 || !parts[6].equalsIgnoreCase("human")) {
                 continue;
             }
             
             String uniprotId = parts[2];
             String symbol = parts[4];
-            String type = parts[7];
-            int residue = Integer.parseInt(parts[6].replaceAll("[^0-9]", ""));
+            String type = parts[8];
+            int residue = Integer.parseInt(parts[7].replaceAll("[^0-9]", ""));
             PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
             ptm.setSymbol(symbol);
             
             HashSet<String> notes = new HashSet<String>();
-            int[] ixNotes = new int[]{11,12,13,14,19};
+            int[] ixNotes = new int[]{12,13,14,15,20};
             for (int ix : ixNotes) {
                 if (parts.length<=ix) {
                     break;
@@ -144,14 +144,14 @@ public class ImportPtmAnnotation {
             }
             
             String parts[] = line.split("\t");
-            if (parts.length<11 || !parts[7].equalsIgnoreCase("human")) {
+            if (parts.length<11 || !parts[8].equalsIgnoreCase("human")) {
                 continue;
             }
             
             String uniprotId = parts[3];
             String symbol = parts[5];
-            String type = parts[8];
-            int residue = Integer.parseInt(parts[10].replaceAll("[^0-9]", ""));
+            String type = parts[9];
+            int residue = Integer.parseInt(parts[11].replaceAll("[^0-9]", ""));
             PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
             ptm.setSymbol(symbol);
             
@@ -166,8 +166,8 @@ public class ImportPtmAnnotation {
                 notes.add(note.toString());
             }
             
-            if (parts.length>=19 && !parts[18].isEmpty()) {
-                notes.add(parts[18]);
+            if (parts.length>=20 && !parts[19].isEmpty()) {
+                notes.add(parts[19]);
             }
             
             if (!notes.isEmpty()) {
@@ -184,7 +184,7 @@ public class ImportPtmAnnotation {
         BufferedReader buf = new BufferedReader(reader);
         String line;
         
-        while ((line = buf.readLine()) !=null && !line.startsWith("Kinase\t")) {
+        while ((line = buf.readLine()) !=null && !line.startsWith("KINASE\t")) {
         }
         
         while ((line = buf.readLine()) !=null) {
@@ -194,15 +194,15 @@ public class ImportPtmAnnotation {
             }
             
             String parts[] = line.split("\t");
-            if (!parts[8].equalsIgnoreCase("human")) {
+            if (!parts[10].equalsIgnoreCase("human")) {
                 continue;
             }
             
             String enzyme = parts[0];
-            String symbol = parts[7];
-            String uniprotId = parts[6];
+            String symbol = parts[8];
+            String uniprotId = parts[7];
             String type = "PHOSPHORYLATION";
-            int residue = Integer.parseInt(parts[9].replaceAll("[^0-9]", ""));
+            int residue = Integer.parseInt(parts[11].replaceAll("[^0-9]", ""));
             PtmAnnotation ptm = new PtmAnnotation(uniprotId, residue, type);
             ptm.setSymbol(symbol);
             ptm.setEnzyme(new HashSet<String>(Arrays.asList(enzyme)));

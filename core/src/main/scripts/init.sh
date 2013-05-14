@@ -27,7 +27,13 @@
 ./importPiHelperData.pl
 
 # PDB Uniprot Mapping
+## ./convertPdbUniprotMappingFromMaDb.sh --host [host] --user [user] --passwd [passwd] --db [db] --output $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
 ./importPdbUniprotResidueMapping.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
 
 # Protein contact map
-./prepareProteinContactMap.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
+## ./prepareProteinContactMap.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
+
+# just keeping track... this should run post-import
+## ./preparePhosphoSitePlusData.sh
+# ./importPhosphoSitePlusData.sh
+# ./calculateMutationEffectOnPTM.pl 10
