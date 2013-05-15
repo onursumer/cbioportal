@@ -26,17 +26,12 @@
 **/
 package org.mskcc.cbio.cgds.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
 /**
  *
  * @author jgao
  */
-public class ProteinContactMap {
-    private ProteinContactMap() {}
+public class DaoProteinContactMap {
+    private DaoProteinContactMap() {}
     
     public static int addProteinContactMap(String pdbId,
             String chain, int residue1, int residue2) {

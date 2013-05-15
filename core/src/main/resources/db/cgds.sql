@@ -617,8 +617,8 @@ drop table if EXISTS protein_contact_map;
 CREATE TABLE `protein_contact_map` (
   `PDB_ID` char(4) NOT NULL,
   `CHAIN` char(1) NOT NULL,
-  `RESIDUE1` int(255) NOT NULL,
-  `RESIDUE2` int(255) NOT NULL,
+  `RESIDUE1` int(11) NOT NULL,
+  `RESIDUE2` int(11) NOT NULL,
   PRIMARY KEY (`PDB_ID`,`CHAIN`,`RESIDUE1`,`RESIDUE2`),
   KEY (`PDB_ID`,`CHAIN`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;

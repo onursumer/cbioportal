@@ -32,6 +32,7 @@
 
 # Protein contact map
 ## ./prepareProteinContactMap.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
+./ImportProteinContactMap.pl $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt
 
 # just keeping track... this should run post-import
 ## ./preparePhosphoSitePlusData.sh
