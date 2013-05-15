@@ -612,7 +612,6 @@ CREATE TABLE `pdb_uniprot_residue_mapping` (
   KEY(`UNIPROT_ID`, `UNIPROT_POSITION`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
-drop table if EXISTS protein_contact_map
 drop table if EXISTS protein_contact_map;
 CREATE TABLE `protein_contact_map` (
   `PDB_ID` char(4) NOT NULL,
