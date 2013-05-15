@@ -101,7 +101,7 @@ public class DaoMutationContactMap {
         }
     }
     
-    public static int addDaoMutationContactMap(int mutId1, int mutId2, String pdbId,
+    public static int addMutationContactMap(int mutId1, int mutId2, String pdbId,
             String chain, double distance) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
