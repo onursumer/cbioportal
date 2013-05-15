@@ -62,7 +62,7 @@ function _assignValueToPredictedImpact(str)
     } else if (str == "neutral" || str == "n") {
         return 1;
     } else {
-        return 0;
+        return -1;
     }
 }
 
@@ -168,14 +168,14 @@ function _getLabelTextFloatValue(a)
  */
 function _compareSortAsc(a, b, av, bv)
 {
-    if (av>0) {
-        if (bv>0) {
+    if (av >= 0) {
+        if (bv >= 0) {
             return av==bv ? 0 : (av<bv ? -1:1);
         } else {
             return -1;
         }
     } else {
-        if (bv>0) {
+        if (bv >= 0) {
             return 1;
         } else {
             return a==b ? 0 : (a<b ? 1:-1);
@@ -195,14 +195,14 @@ function _compareSortAsc(a, b, av, bv)
  */
 function _compareSortDesc(a, b, av, bv)
 {
-    if (av>0) {
-        if (bv>0) {
+    if (av >= 0) {
+        if (bv >= 0) {
             return av==bv ? 0 : (av<bv ? 1:-1);
         } else {
             return -1;
         }
     } else {
-        if (bv>0) {
+        if (bv >= 0) {
             return 1;
         } else {
             return a==b ? 0 : (a<b ? -1:1);
@@ -366,7 +366,7 @@ function drawMutationTable(data)
     {
         // do not hide allele frequency (T) and count columns
         if (!(col == indexMap["allele freq (t)"] ||
-              col == indexMap["count"]))
+              col == indexMap["#mut in sample"]))
         {
             hiddenCols.push(col);
         }
@@ -411,7 +411,7 @@ function drawMutationTable(data)
 	                indexMap["var ref"],
 	                indexMap["norm alt"],
 	                indexMap["norm ref"],
-                    indexMap["count"]]},
+                    indexMap["#mut in sample"]]},
             {"sType": 'label-float-col',
                 "sClass": "right-align-td",
                 "aTargets": [indexMap["allele freq (t)"],
@@ -423,7 +423,7 @@ function drawMutationTable(data)
 	                indexMap["fis"],
                     indexMap["cons"],
                     indexMap["3d"],
-                    indexMap["count"]]},
+                    indexMap["#mut in sample"]]},
             {"bVisible": false,
                 "aTargets": hiddenCols}
         ],
@@ -626,7 +626,7 @@ function _getMutationTableHeaderTip(header)
         "var alt": "Variant Alt Count",
         "norm ref": "Normal Ref Count",
         "norm alt": "Normal Alt Count",
-	    "count" : "Number of mutations<br> in the sample"};
+	    "#mut in sample" : "Total number of<br> nonsynonymous mutations<br> in the sample"};
 
     return tooltipMap[header.toLowerCase()];
 }
@@ -923,7 +923,7 @@ function _getMutationTableRows(data)
         row.push(getAlleleFreqHtml(data.mutations[i].tumorFreq,
                 data.mutations[i].tumorAltCount,
                 data.mutations[i].tumorRefCount,
-                "simple-tip"));
+                "simple-tip-left"));
         row.push(getAlleleCountHtml(data.mutations[i].tumorAltCount));
         row.push(getAlleleCountHtml(data.mutations[i].tumorRefCount));
         row.push(getAlleleFreqHtml(data.mutations[i].normalFreq,
