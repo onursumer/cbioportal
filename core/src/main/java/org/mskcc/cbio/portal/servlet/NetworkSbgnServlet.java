@@ -158,6 +158,8 @@ public class NetworkSbgnServlet extends HttpServlet
             attributes.put(key, strings);
         }
 
+        attributes.put("type", Collections.singletonList(bpe.getClass().getSimpleName()));
+
         return attributes;
     }
 
