@@ -79,10 +79,10 @@ if (includeHelpTab==null) {
     		</div>
 
 			<span class="title"><label>Filter by Source</label></span><br><br>
-	        <table id="edge_source_filter">
-	        	<tr class="edge-source-header">
+	        <table id="source_filter">
+	        	<tr class="source-header">
 	        		<td>
-
+						<label class="heading">Node Source:</label>
 	        		</td>
 	        	</tr>
 	        </table>
@@ -94,7 +94,7 @@ if (includeHelpTab==null) {
 		    				<label class="button-text">Update</label>
 		    			</td>
 		    			<td> 
-		    				<button id="update_edges" class="tabs-button" title="Update"></button>
+		    				<button id="update_source" class="tabs-button" title="Update"></button>
 		    			</td>
 		    		</tr>
 		    	</table>
@@ -103,7 +103,12 @@ if (includeHelpTab==null) {
     </div>
 
 	<div id="element_details_tab_sbgn">
-		Currently there is no selected node. Please, select a node to see details.
+		<div class="error">
+			Currently there is no selected node. Please, select a node to see details.
+		</div>
+		<div class="genomic-profile-content"></div>
+		<div class="biogene-content"></div>
+		<div class="drug-info-content"></div>
 	</div>
 
     <%if(includeHelpTab){%>

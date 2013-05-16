@@ -19,6 +19,7 @@ function NetworkSbgnVis(divId)
 	this.COMPARTMENT = "compartment";
 	this.COMPLEX = "complex";
 	this.HUGOGENES = new Array();
+
 }
 
 //this simulates NetworkSbgnVis extends NetworkVis (inheritance)
@@ -225,19 +226,26 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData)
     this._filteredBySlider = new Array();
     this._filteredByDropDown = new Array();
     this._filteredByIsolation = new Array();
-    this._edgeTypeVisibility = this._edgeTypeArray();
-    this._edgeSourceVisibility = this._edgeSourceArray();
+    //this._edgeTypeVisibility = this._edgeTypeArray();
+    this._sourceVisibility = this._sourceArray();
     // parse and add genomic data to cytoscape nodes
     this.parseGenomicData(genomicData); 
     // this.setInitialData();
-
-    this._geneWeightMap = this._geneWeightArray(0, null);
+	var weights = this.initializeWeights();
+    this._geneWeightMap = this._geneWeightArray(weights);
     this._geneWeightThreshold = this.ALTERATION_PERCENT;
     this._maxAlterationPercent = this._maxAlterValNonSeed(this._geneWeightMap);
 
     this._resetFlags();
 
     this._initControlFunctions();
+	////////////////////
+	var updateSource = function() {
+        self.updateSource();
+    };
+    $(this.filteringTabSelector + " #update_source").click(updateSource);
+
+
     this._initLayoutOptions();
 
     this._initMainMenu();
@@ -271,7 +279,17 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData)
     this._initGenesTab();
     this._refreshGenesTab();
     this._refreshRelationsTab();
+	    // add source filtering options
 
+    for (var key in this._sourceVisibility)
+    {
+        $(this.filteringTabSelector + " #source_filter").append(
+            '<tr class="' + _safeProperty(key) + '">' +
+            '<td class="source-checkbox">' +
+            '<input id="' + key + '_check" type="checkbox" checked="checked">' +
+            '<label>' + key + '</label>' +
+            '</td></tr>');
+    }
     // adjust things for IE
     this._adjustIE();
 
@@ -291,13 +309,50 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData)
  * @param coeff	coefficient value used in the weight function
  * @returns		a map (array) containing weight values for each gene
  */
-
-
-NetworkSbgnVis.prototype._geneWeightArray = function(flag, selected)
+NetworkSbgnVis.prototype.initializeWeights = function()
 {
+	var weights = new Array();
+	var nodes = this._vis.nodes();
+	for (var i = 0; i < nodes.length; i++)
+	{
+		if (nodes[i].data["PERCENT_ALTERED"] != null)
+		{
+			weights[nodes[i].data.id] = nodes[i].data["PERCENT_ALTERED"]  *  100;
+		}
+		else
+		{
+			weights[nodes[i].data.id] = 0;
+		}
+		var glyph = nodes[i].data.glyph_class;
+		if (glyph == this.MACROMOLECULE)
+		{
+			// first update hugogenes to hold one node of every macromolecule hugotype
+			// these are either proteins or genes
+			var label = this.geneLabel(nodes[i].data);
+			var check = 0;
+			for (var j = 0; j < this.HUGOGENES.length; j++)
+			{
+				if (label == this.geneLabel(this.HUGOGENES[j].data))
+				{
+					check = 1;
+					break;
+				}
+			}
+			// if its a new hugolabel add it to the hugogenes
+			if (check == 0)
+			{
+					this.HUGOGENES.push(nodes[i]);
+			}
+		}		
+	}
+	return weights;
+};
+
+NetworkSbgnVis.prototype._geneWeightArray = function(w)
+{
+	var weights = w;
 	var parents = new Array();
 	var pId = new Array();
-	var weights = new Array();
 	var processes = new Array();
 	var leaves = new Array();
 	
@@ -317,89 +372,23 @@ NetworkSbgnVis.prototype._geneWeightArray = function(flag, selected)
 		}
 	}
 
-	if (flag == 0) // first time calling this method
+	// A0: initialization
+	for (var i = 0; i < nodes.length; i++)
 	{
-		// A0: initialization
-		for (var i = 0; i < nodes.length; i++)
-		{
-			var glyph = nodes[i].data.glyph_class;
-			if (glyph == this.MACROMOLECULE)
-			{
-				// first update hugogenes to hold one node of every macromolecule hugotype
-				// these are either proteins or genes
-				var label = this.geneLabel(nodes[i].data);
-				var check = 0;
+		var glyph = nodes[i].data.glyph_class;
 
-				for (var j = 0; j < this.HUGOGENES.length; j++)
-				{
-					if (label == this.geneLabel(this.HUGOGENES[j].data))
-					{
-						check = 1;
-						break;
-					}
-				}
-				// if its a new hugolabel add it to the hugogenes
-				if (check == 0)
-				{
-						this.HUGOGENES.push(nodes[i]);
-				}
-
-			}
-			else
-			{ 
-				// set initial weight of other nodes as 0
-				weights[nodes[i].data.id] = 0;
-				
-				// make a list of processes for latter update of weights
-				if (glyph == this.PROCESS)
-				{
-					processes.push(nodes[i]);
-				}
-				
-			}
-			// initialize the parent ID
-			pId[nodes[i].data.id] = -1;
-			
-			// update leaves array
-			if ( this._vis.childNodes(nodes[i].data.id).length == 0)
-			{				
-				leaves.push(nodes[i]);
-			}
-			
-			if (nodes[i].data["PERCENT_ALTERED"] != 0)
-			{
-				weights[nodes[i].data.id] = nodes[i].data["PERCENT_ALTERED"]  *  100;
-				
-			}
-			else
-			{
-				weights[nodes[i].data.id] = 0;
-			}
-		}
-	}
-	else // flag == 1 for show and hide methods
-	{
-		for (var i = 0; i < nodes.length; i++)
+		// make a list of processes for latter update of weights
+		if (glyph == this.PROCESS)
 		{
-			if (nodes[i].data.glyph_class == this.PROCESS)
-			{
-				processes.push(nodes[i]);
-			}
-			// update leaves array
-			if ( this._vis.childNodes(nodes[i].data.id).length == 0)
-			{				
-				leaves.push(nodes[i]);
-			}
-			
-			weights[nodes[i].data.id] = 0;
+			processes.push(nodes[i]);
 		}
-		for (var i = 0; i < selected.length; i++)
-		{
-			weights[selected[i].data.id] = 1;
-		//	if (selected[i].data.glyph_class == this.MACROMOLECULE)
-		//	{
-		//		weights[selected[i].data.id] =  selected[i].data["PERCENT_ALTERED"]  *  100;
-		//	}
+		// initialize the parent ID
+		pId[nodes[i].data.id] = -1;
+		
+		// update leaves array
+		if ( this._vis.childNodes(nodes[i].data.id).length == 0)
+		{				
+			leaves.push(nodes[i]);
 		}
 		
 	}
@@ -581,7 +570,7 @@ NetworkSbgnVis.prototype.updateSelectedGenes = function(evt)
 	var nodes = this._vis.nodes();
 	
 	// array of nodes to select
-    	var nodeIds = new Array();
+    var nodeIds = new Array();
 	var check = 0;
 	for (var i = 0; i < nodes.length; i++)
 	{
@@ -783,8 +772,18 @@ NetworkSbgnVis.prototype.filterNonSelected = function()
 	// update selected elements map
 	var selected = this._vis.selected("nodes");
 	var map = new Array();
-	var weights = this._geneWeightArray(1, selected);
+	var weights = new Array();
 	var nodes = this._vis.nodes();
+	for (var i=0; i < nodes.length; i++)
+	{
+		weights[nodes[i].data.id] = 0;
+	}
+	for (var i=0; i < selected.length; i++)
+	{
+		weights[selected[i].data.id] = 1;
+	}
+
+	weights = this._geneWeightArray(weights);
 
 	for (var i=0; i < nodes.length; i++)
 	{
@@ -817,27 +816,38 @@ NetworkSbgnVis.prototype.filterSelectedGenes = function()
 	var self = this;
 
 	// this is required to pass "this" instance to the listener
-	var selectionVisibility = function(element) {
-	return self.selectionVisibility(element);
+	var geneVisibility = function(element) {
+		return self.geneVisibility(element);
 	};
 
 	// update selected elements map
 	var selected = this._vis.selected("nodes");
 	var map = new Array();
-	var weightsSelected = this._geneWeightArray(1, selected);
+
+	var weights = new Array();
 	var nodes = this._vis.nodes();
-	var complement = new Array();
 	for (var i=0; i < nodes.length; i++)
 	{
-		if (weightsSelected[nodes[i].data.id] == 0)
-		{
-			complement.push(nodes[i]);
-		}
+		weights[nodes[i].data.id] = 0;
 	}
-	weightsSelected = this._geneWeightArray(1, complement);
+	for (var i=0; i < selected.length; i++)
+	{
+		weights[selected[i].data.id] = 1;
+	}
+	var weightsSelected = this._geneWeightArray(weights);
+	weights = new Array();
+	for (var key in weightsSelected)
+    {
+		if(weightsSelected[key] == 0)
+			weights[key] = 1;
+		else
+			weights[key] = 0;
+	}
+	weightsSelected = this._geneWeightArray(weights);
+
 	for (var i=0; i < nodes.length; i++)
 	{
-		if (weightsSelected[nodes[i].data.id] == 0)
+		if (weightsSelected[nodes[i].data.id] == 1)
 		{
 			var key = nodes[i].data.id;
 			map[key] = nodes[i];
@@ -846,7 +856,7 @@ NetworkSbgnVis.prototype.filterSelectedGenes = function()
 	this._selectedElements = map;
 
 	// filter out selected elements
-	this._vis.filter("nodes", selectionVisibility);
+	this._vis.filter("nodes", geneVisibility);
 
 	// also, filter disconnected nodes if necessary
 	this._filterDisconnected();
@@ -908,6 +918,24 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
     // clean previous content
     $(self.detailsTabSelector + " div").empty();
 	$(self.detailsTabSelector + " .error").hide();
+	
+	//if stateFlag = 1, all selected genes are the same type,
+	//if stateFlag = 0, they are different type.
+
+	var stateFlag = 0;
+	for(var i = 0 ; i < selected.length - 1 ; i++)
+	{
+		if(selected[i].data.glyph_label_text == selected[i + 1].data.glyph_label_text )
+		{
+			stateFlag = 1;		
+		}
+		else
+		{
+			stateFlag = 0;
+			break;
+		}
+	}
+
 
     if (selected.length == 1)
     {
@@ -915,11 +943,16 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
     }
     else if (selected.length > 1)
     {
-        //$(self.detailsTabSelector + " div").empty();
-        $(self.detailsTabSelector + " .error").append(
-            "Currently more than one node is selected. Please, select only one node to see details.");
-	    $(self.detailsTabSelector + " .error").show();
-        return;
+		if(stateFlag == 1){
+			data = selected[0].data;
+		}
+		else{
+        	//$(self.detailsTabSelector + " div").empty();
+        	$(self.detailsTabSelector + " .error").append(
+            	"Currently more than one node is selected. Please, select only one node to see details.");
+	    	$(self.detailsTabSelector + " .error").show();
+        	return;
+		}
     }
     else
     {
@@ -936,8 +969,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 
 	    selected = self._vis.selected("nodes");
 
-	    if (selected.length != 1 ||
-	        data.id != selected[0].data.id)
+	    if (data.id != selected[0].data.id)
 	    {
 		    return;
 	    }
@@ -1000,3 +1032,219 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 			handler);
 	}
 };
+
+/**
+ * Initializes Genes tab.
+ */
+NetworkSbgnVis.prototype._initGenesTab = function()
+{
+    // init buttons
+
+    $(this.genesTabSelector + " #filter_genes").button({icons: {primary: 'ui-icon-circle-minus'},
+                                  text: false});
+
+    $(this.genesTabSelector + " #crop_genes").button({icons: {primary: 'ui-icon-crop'},
+                                text: false});
+
+    $(this.genesTabSelector + " #unhide_genes").button({icons: {primary: 'ui-icon-circle-plus'},
+                                  text: false});
+
+    $(this.genesTabSelector + " #search_genes").button({icons: {primary: 'ui-icon-search'},
+                                  text: false});
+
+    $(this.filteringTabSelector + " #update_source").button({icons: {primary: 'ui-icon-refresh'},
+                                  text: false});
+
+    // re-submit button is initially disabled
+    $(this.genesTabSelector + " #re-submit_query").button({icons: {primary: 'ui-icon-play'},
+                                     text: false,
+                                     disabled: true});
+
+    // $(this.genesTabSelector + " #re-run_query").button({label: "Re-run query with selected genes"});
+
+    // apply tiptip to all buttons on the network tabs
+    $(this.networkTabsSelector + " button").tipTip({edgeOffset:8});
+};
+
+
+
+/**
+ * Listener for weight slider movement. Updates current value of the slider
+ * after each mouse move.
+ */
+NetworkSbgnVis.prototype._weightSliderMove = function(event, ui)
+{
+    // get slider value
+    var sliderVal = ui.value;
+
+    // update current value field
+    $(this.filteringTabSelector + "#weight_slider_field").val(
+        (_transformValue(sliderVal) * (this._maxAlterationPercent / 100)).toFixed(1));
+};
+
+/**
+ * Listener for weight slider value change. Updates filters with respect to
+ * the new slider value.
+ */
+NetworkSbgnVis.prototype._weightSliderStop = function(event, ui)
+{
+    // get slider value
+    var sliderVal = ui.value;
+
+    // apply transformation to prevent filtering of low values
+    // with a small change in the position of the cursor.
+    sliderVal = _transformValue(sliderVal) * (this._maxAlterationPercent / 100);
+
+    // update threshold
+    this._geneWeightThreshold = sliderVal;
+
+    // update current value field
+    $(this.filteringTabSelector + " #weight_slider_field").val(sliderVal.toFixed(1));
+
+    // update filters
+    this._filterBySlider();
+
+};
+
+/**
+ * Creates a map for edge source visibility.
+ *
+ * @return	an array (map) of edge source visibility.
+ */
+NetworkSbgnVis.prototype._sourceArray = function()
+{
+    var sourceArray = new Array();
+
+    // dynamically collect all sources
+
+    var nodes = this._vis.nodes();
+    var source;
+
+    for (var i = 0; i < nodes.length; i++)
+    {
+		
+        var url = nodes[i].data.id;
+		if (!(url == null
+			|| url == "" || url == undefined))
+		{
+			source = shrinkUrl(url);
+            // by default every edge source is visible
+            sourceArray[source] = true;
+        }
+    }
+
+    // also set a flag for unknown (undefined) sources
+    sourceArray[this.UNKNOWN] = true;
+
+    return sourceArray;
+};
+
+function shrinkUrl(url){
+	var temp = url.split("//");
+	if (temp.length > 1) 
+		url = temp[1];
+	url = url.split("/")[0];
+	url = url.replace("www.","");
+	var i = url.lastIndexOf(".");
+	if (i > 0)
+		url = url.substr(0,i);
+	url = url.replace(/\./g,"_");
+	return url;
+}
+/**
+ * Updates the visibility (by filtering mechanism) of nodes for source filtering.
+ */
+NetworkSbgnVis.prototype.updateSource = function()
+{
+  
+    for (var key in this._sourceVisibility)
+    {
+        this._sourceVisibility[key] =
+            $(this.filteringTabSelector + " #" + _safeProperty(key) + "_check").is(":checked");
+    }
+
+    // remove previous node filters due to disconnection
+    for (var key in this._filteredByIsolation)
+    {
+        this._alreadyFiltered[key] = null;
+    }
+
+    // clear isolation filter array
+    this._filteredByIsolation = new Array();
+
+    // this is required to pass "this" instance to the listener
+    var self = this;
+
+    var currentVisibility = function(element){
+        return self.currentVisibility(element);
+    };
+
+    var nodeVisibility = function(element){
+        return self.nodeVisibility(element);
+    };
+
+    // re-apply filter to update nodes
+    //_vis.removeFilter("nodes", false);
+    this._vis.filter("nodes", currentVisibility);
+
+	
+    // filter nonselected types
+    this._vis.filter("nodes", nodeVisibility);
+
+	// remove previous filters due to disconnection
+    for (var key in this._filteredByIsolation)
+    {
+       this._alreadyFiltered[key] = null;
+    }
+
+    // filter disconnected nodes if necessary
+    this._filterDisconnected();
+
+    // visualization changed, perform layout if necessary
+    this._visChanged();
+};
+/**
+ * Determines the visibility of a node for filtering purposes.
+ *
+ * @param element	node to be checked for visibility criteria
+ * @return			true if the node should be visible, false otherwise
+ */
+NetworkSbgnVis.prototype.nodeVisibility = function(element)
+{
+    var visible = true;
+    var sourceVisible = true;
+
+    // TODO currently we do not allow edge filtering by selection, so
+    // there should not be any edge in the array _alreadyFiltered
+
+    // if an element is already filtered then it should remain invisible
+    if (this._alreadyFiltered[element.data.id] != null)
+    {
+        visible = false;
+    }
+
+	
+    var url = element.data.id;
+
+    if (url == undefined)
+	{
+		// no source specified, check the unknown flag
+        sourceVisible = this._sourceVisibility[this.UNKNOWN];
+	}
+	else 
+	{
+		var source = shrinkUrl(url);
+		if (this._sourceVisibility[source] == null)
+		{
+			// no source specified, check the unknown flag
+		    sourceVisible = this._sourceVisibility[this.UNKNOWN];
+		}
+		else
+		{
+		    sourceVisible = this._sourceVisibility[source];
+		}
+	}
+
+    return (visible && sourceVisible);
+};
+

@@ -103,7 +103,7 @@ function NetworkVis(divId)
     this._edgeTypeVisibility = null;
 
     // array of filtered edge sources
-    this._edgeSourceVisibility = null;
+    this._sourceVisibility = null;
 
     // map used to resolve cross-references
     this._linkMap = null;
@@ -139,7 +139,7 @@ NetworkVis.prototype.initNetworkUI = function(vis)
     this._filteredByDropDown = new Array();
     this._filteredByIsolation = new Array();
     this._edgeTypeVisibility = this._edgeTypeArray();
-    this._edgeSourceVisibility = this._edgeSourceArray();
+    this._sourceVisibility = this._sourceArray();
 
     this._geneWeightMap = this._geneWeightArray();
     this._geneWeightThreshold = this.ALTERATION_PERCENT;
@@ -1246,7 +1246,7 @@ NetworkVis.prototype.filterNonSelected = function()
 /**
  * Updates the visibility (by filtering mechanism) of edges.
  */
-NetworkVis.prototype.updateEdges = function()
+NetworkVis.prototype.updateSource = function()
 {
     // update filtered edge types
 
@@ -1265,9 +1265,9 @@ NetworkVis.prototype.updateEdges = function()
     this._edgeTypeVisibility[this.OTHER] =
         $(this.relationsTabSelector + " #other_check").is(":checked");
 
-    for (var key in this._edgeSourceVisibility)
+    for (var key in this._sourceVisibility)
     {
-        this._edgeSourceVisibility[key] =
+        this._sourceVisibility[key] =
             $(this.relationsTabSelector + " #" + _safeProperty(key) + "_check").is(":checked");
     }
 
@@ -1347,7 +1347,7 @@ NetworkVis.prototype.currentVisibility = function(element)
  * @param element	egde to be checked for visibility criteria
  * @return			true if the edge should be visible, false otherwise
  */
-NetworkVis.prototype.edgeVisibility = function(element)
+NetworkVis.prototype.sourceVisibility = function(element)
 {
     var visible = true;
     var typeVisible = true;
@@ -1375,14 +1375,14 @@ NetworkVis.prototype.edgeVisibility = function(element)
 
     var source = element.data['INTERACTION_DATA_SOURCE'];
 
-    if (this._edgeSourceVisibility[source] != null)
+    if (this._sourceVisibility[source] != null)
     {
-        sourceVisible = this._edgeSourceVisibility[source];
+        sourceVisible = this._sourceVisibility[source];
     }
     else
     {
         // no source specified, check the unknown flag
-        sourceVisible = this._edgeSourceVisibility[this.UNKNOWN];
+        sourceVisible = this._sourceVisibility[this.UNKNOWN];
     }
 
     return (visible && typeVisible && sourceVisible);
@@ -2153,7 +2153,7 @@ NetworkVis.prototype._edgeTypeArray = function()
  *
  * @return	an array (map) of edge source visibility.
  */
-NetworkVis.prototype._edgeSourceArray = function()
+NetworkVis.prototype._sourceArray = function()
 {
     var sourceArray = new Array();
 
@@ -2856,7 +2856,7 @@ NetworkVis.prototype._initGenesTab = function()
     $(this.genesTabSelector + " #search_genes").button({icons: {primary: 'ui-icon-search'},
                                   text: false});
 
-    $(this.relationsTabSelector + " #update_edges").button({icons: {primary: 'ui-icon-refresh'},
+    $(this.relationsTabSelector + " #update_source").button({icons: {primary: 'ui-icon-refresh'},
                                   text: false});
 
     // re-submit button is initially disabled
@@ -3075,22 +3075,22 @@ NetworkVis.prototype._refreshRelationsTab = function()
         percent.toFixed(1) + "%");
 
     // TODO remove old source filters?
-    //$(this.relationsTabSelector + " #edge_source_filter tr").remove();
+    //$(this.relationsTabSelector + " #source_filter tr").remove();
 
     // add source filtering options
 
-    for (var key in this._edgeSourceVisibility)
+    for (var key in this._sourceVisibility)
     {
-        $(this.relationsTabSelector + " #edge_source_filter").append(
+        $(this.relationsTabSelector + " #source_filter").append(
             '<tr class="' + _safeProperty(key) + '">' +
-            '<td class="edge-source-checkbox">' +
+            '<td class="source-checkbox">' +
             '<input id="' + key + '_check" type="checkbox" checked="checked">' +
             '<label>' + key + '</label>' +
             '</td></tr>');
     }
 
     // <tr class="unknown">
-    //		<td class="edge-source-checkbox">
+    //		<td class="source-checkbox">
     //				<input type="checkbox" checked="checked">
     //				<label> Unknown </label>
     //		</td>
@@ -3211,8 +3211,8 @@ NetworkVis.prototype._initControlFunctions = function()
         self.reRunQuery();
     };
 
-    var updateEdges = function() {
-        self.updateEdges();
+    var updateSource = function() {
+        self.updateSource();
     };
 
     var keyPressListener = function(evt) {
@@ -3262,7 +3262,7 @@ NetworkVis.prototype._initControlFunctions = function()
     $(this.genesTabSelector + " #unhide_genes").click(unhideAll);
     $(this.genesTabSelector + " #re-submit_query").click(reRunQuery);
 
-    $(this.relationsTabSelector + " #update_edges").click(updateEdges);
+    $(this.relationsTabSelector + " #update_source").click(updateSource);
 
     // add listener for double click action
 
@@ -3343,13 +3343,13 @@ NetworkVis.prototype._unhideAll = function()
                                    "value", 0);
 
     // re-apply filtering based on edge types
-    this.updateEdges();
+    this.updateSource();
 
     // refresh & update genes tab
     this._refreshGenesTab();
     this.updateGenesTab();
 
-    // no need to call _visChanged(), since it is already called by updateEdges
+    // no need to call _visChanged(), since it is already called by updateSource
     //_visChanged();
 };
 
@@ -4347,6 +4347,6 @@ function _nodeDetails(node)
 NetworkVis.prototype.geneLabel = function(data)
 {
 	return data.label;
-}
+};
 
 
