@@ -408,11 +408,14 @@
     
 	//index of network tab
 	var networkTabIndex = $('#tabs a[href="#network"]').parent().index();
+	var networkTabSbgnIndex = $('#tabs a[href="#network_sbgn"]').parent().index();
 
 	if($.cookie(("results-tab-" + (typeof cancer_study_id_selected === 'undefined'? "" : cancer_study_id_selected))) != networkTabIndex){
 		$("div.section#network").attr('style', 'display: none !important; height: 0px; width: 0px; visibility: hidden;');
 	}
-	$("div.section#network_sbgn").attr('style', 'display: none !important; height: 0px; width: 0px; visibility: hidden;');
+	if($.cookie(("results-tab-" + (typeof cancer_study_id_selected === 'undefined'? "" : cancer_study_id_selected))) != networkTabSbgnIndex){
+		$("div.section#network_sbgn").attr('style', 'display: none !important; height: 0px; width: 0px; visibility: hidden;');
+	}
     
     // to fix problem of flash repainting
     $("a.result-tab").click(function(){
