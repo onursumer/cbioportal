@@ -33,6 +33,7 @@ public class MutationsJSON extends HttpServlet {
     public static final String MUTATION_TYPE = "type";
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
     public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
+    public static final String LINEAR_HOTSPOT_WINDOW = "window";
     
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
@@ -94,6 +95,10 @@ public class MutationsJSON extends HttpServlet {
             } else if (type.equalsIgnoreCase("truncating-sep")) {
                  mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
                     studyIds.toString(), threshold);
+            } else if (type.equalsIgnoreCase("linear")) {
+                int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
+                mapKeywordStudyCaseMut = DaoMutation.getMutatationLinearStatistics(
+                        studyIds.toString(), window, threshold);
             } else {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationStatistics(
                         studyIds.toString(), type.split("[, ]+"), threshold);

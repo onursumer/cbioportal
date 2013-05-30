@@ -30,13 +30,13 @@ package org.mskcc.cbio.cgds.dao;
 import org.mskcc.cbio.cgds.model.ExtendedMutation;
 import org.mskcc.cbio.cgds.model.CanonicalGene;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
@@ -1320,6 +1321,197 @@ public final class DaoMutation {
         } finally {
             JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
         }
+    }
+    
+    
+    
+    /**
+     * @param concatCancerStudyIds cancerStudyIds concatenated by comma (,)
+     * @param thresholdSamples threshold of number of samples
+     * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
+     * TODO: should allow multiple aa changes per case
+     */
+    public static Map<String,Map<Integer, Map<String,String>>> getMutatationLinearStatistics(String concatCancerStudyIds, int window,
+            int thresholdSamples) throws DaoException {
+        DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoMutation.class);
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, me.`ENTREZ_GENE_ID`, `ONCOTATOR_PROTEIN_POS_START`, `CASE_ID`, `PROTEIN_CHANGE` "
+                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp "
+                    + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
+                    + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
+                    + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
+                    + "AND me.`MUTATION_TYPE`='Missense_Mutation' "
+                    + "ORDER BY `ENTREZ_GENE_ID` ASC"; // to filter and save memories
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            Map<String, Map<Integer, Map<String,String>>> map = new HashMap<String, Map<Integer, Map<String,String>>>();
+            Map<Integer, Map<Integer, Map<String,String>>> mapProtein = null; //Map<residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
+            long currentGene = Long.MIN_VALUE;
+            while (rs.next()) {
+                int cancerStudyId = rs.getInt(1);
+                long gene = rs.getLong(2);
+                int residue = rs.getInt(3);
+                if (residue<=0) {
+                    continue;
+                }
+                        
+                if (daoGeneOptimized.getGene(gene)==null) {
+                    continue;
+                }
+                
+                String caseId = rs.getString(4);
+                String aaChange = rs.getString(5);
+                
+                if (gene != currentGene) {
+                    if (mapProtein!=null) {
+                        int lenProtein = -1;
+                        Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
+                        int totalSamples = 0;
+                        for (Map.Entry<Integer, Map<Integer, Map<String,String>>> entry : mapProtein.entrySet()) {
+                            int position = entry.getKey();
+                            if (position>lenProtein) {
+                                lenProtein = position;
+                            }
+                            
+                            int samples = 0;
+                            for (Map<String,String> v : entry.getValue().values()) {
+                                samples += v.size();
+                            }
+                            totalSamples += samples;
+                            mapPositionSamples.put(position, samples);
+                        }
+                        
+                        String symbol = daoGeneOptimized.getGene(gene).getHugoGeneSymbolAllCaps();
+                        if (totalSamples>=thresholdSamples) {
+                            List<Integer> hotspots = findLocalMaximum(mapPositionSamples, lenProtein+2, window, thresholdSamples);
+
+                            for (int hs : hotspots) {
+                                Map<Integer, Map<String,String>> m = new HashMap<Integer, Map<String,String>>();
+                                for (int offset=-window; offset<=window; offset++) {
+                                    Map<Integer, Map<String,String>> mapPosition = mapProtein.get(hs+offset);
+                                    if (mapPosition!=null) {
+                                        for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
+                                            int pos = entry.getKey();
+                                            Map<String,String> mapCaseAA = m.get(pos);
+                                            if (mapCaseAA==null) {
+                                                mapCaseAA = new HashMap<String,String>();
+                                                m.put(pos, mapCaseAA);
+                                            }
+                                            mapCaseAA.putAll(entry.getValue());
+                                        }
+                                    }
+                                }
+                                mapProtein.get(hs);
+                                map.put(symbol+" ["+hs+"]", m);
+                            }
+                        }
+                    }
+                    
+                    currentGene = gene;
+                    mapProtein = new HashMap<Integer, Map<Integer, Map<String,String>>>();
+                }
+                
+                Map<Integer, Map<String,String>> mapPosition = mapProtein.get(residue);
+                if (mapPosition==null) {
+                    mapPosition = new HashMap<Integer, Map<String,String>>();
+                    mapProtein.put(residue, mapPosition);
+                }
+                
+                Map<String,String> mapCaseMut = mapPosition.get(cancerStudyId);
+                if (mapCaseMut==null) {
+                    mapCaseMut = new HashMap<String,String>();
+                    mapPosition.put(cancerStudyId, mapCaseMut);
+                }
+                mapCaseMut.put(caseId, aaChange);
+            }
+            
+            
+            return map;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
+        }
+    }
+    
+    /**
+     * 
+     * @param mapPositionSamples Map<residue position, # samples>
+     * @param lenProtein protein length or maximum position mutated
+     * @param window if window=2, we take 2 upstream and 2 downstream residues
+     * @param threshold samples threshold
+     * @return 
+     */
+    private static List<Integer> findLocalMaximum(Map<Integer,Integer> mapPositionSamples, int lenProtein, int window, int threshold) {
+        if (mapPositionSamples.size()==1) {
+            return new ArrayList<Integer>(mapPositionSamples.keySet());
+        }
+        
+        //arrSamples e.g. 0044400, 0040400, 00400, 004400
+        int[] arrSamples = mapToArray(mapPositionSamples, lenProtein);
+        int[] sumWindow = sumInWindow(arrSamples, window);
+        
+        List<Integer> list = new ArrayList<Integer>();
+        
+        int plateauStart = -1;
+        for (int i=1; i<lenProtein; i++) {
+            if (sumWindow[i]>=threshold) {
+                if (sumWindow[i]>sumWindow[i-1]) {
+                    plateauStart = i;
+                } else if (sumWindow[i]==sumWindow[i-1]) {
+                    // if equal, no change to plateauStart
+                } else if (plateauStart != -1) { // sumWindow[i]<sumWindow[i-1]
+                    list.add((plateauStart+i-1)/2); // add the middle point
+                    plateauStart = -1;
+                } 
+            } else if (plateauStart != -1) {
+                list.add((plateauStart+i-1)/2); // add the middle point
+                plateauStart = -1;
+            }
+        }
+ 
+//        for (int i=1; i<lenProtein-1; i++) {
+//            if (sumWindow[i]>=threshold && ( (sumWindow[i]>sumWindow[i-1] || (sumWindow[i]==sumWindow[i-1] && arrSamples[i]>arrSamples[i-1])) &&
+//                     (sumWindow[i]>sumWindow[i+1] || (sumWindow[i]==sumWindow[i+1] && arrSamples[i]>arrSamples[i+1]))) ) {
+//                list.add(i);
+//            }
+//        }
+
+        
+        return list;
+    }
+    
+    private static int[] mapToArray(Map<Integer,Integer> map, int len) {
+        int[] arr = new int[len];
+        for (Map.Entry<Integer,Integer> entry : map.entrySet()) {
+            arr[entry.getKey()] = entry.getValue();
+        }
+        return arr;
+    }
+    
+    private static int[] sumInWindow(int[] arr, int window) {
+        int len = arr.length;
+        int[] sum = new int[len];
+        int last = 0;
+        for (int i=0; i<len && i<window; i++) {
+            last += arr[i];
+        }
+        
+        for (int i=0; i<len; i++) {
+            if (i>window+1) {
+                last -= arr[i-window-1];
+            }
+            if (i+window<len) {
+                last += arr[i+window];
+            }
+            sum[i] = last;
+        }
+        return sum;
     }
     
     public static Map<String,Map<Integer, Map<String,String>>> getTruncatingMutatationStatistics(String concatCancerStudyIds,

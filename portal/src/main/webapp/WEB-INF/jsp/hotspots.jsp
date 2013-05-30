@@ -72,6 +72,10 @@ String jsonStudies = JSONValue.toJSONString(studies);
             <option selected="selected" value="missense">Missense and In-frame Mutations</option>
             <option value="truncating-sep">Truncating Mutations</option>
             <option value="truncating">Truncating Mutations (merge by gene)</option>
+            <option value="linear-1">Linear hotspots (d<=1)</option>
+            <option value="linear-2">Linear hotspots (d<=2)</option>
+            <option value="linear-3">Linear hotspots (d<=4)</option>
+            <option value="linear-4">Linear hotspots (d<=8)</option>
             <option value="ptm-effect-0">Mutations of PTM sites</option>
             <option value="ptm-effect-1">Mutations of PTM site neighbors (d<=1)</option>
             <option value="ptm-effect-2">Mutations of PTM site neighbors (d<=2)</option>
@@ -516,13 +520,16 @@ AlteredGene.Router = Backbone.Router.extend({
         $('#merge-alterations').prop('checked',type==="truncating");
         $('#merge-alterations').prop('disabled',type==="truncating");
     
-        if (type==="missense" || type==="truncating" || type==="truncating-sep" || type.indexOf('ptm-effect-')===0) {
+        if (type==="missense" || type==="truncating" || type==="truncating-sep"
+            || type.indexOf('ptm-effect-')===0 || type.indexOf('linear-')===0) {
     
             var option_type = type;
             if (type==='missense') {
                 option_type = 'missense,ins,del';
             } else if (type.indexOf('ptm-effect-')===0) {
                 option_type = 'ptm-effect,PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
+            } else if (type.indexOf('linear-')===0) {
+                option_type = 'linear';
             }
             
             var options = {
@@ -534,6 +541,10 @@ AlteredGene.Router = Backbone.Router.extend({
                 
             if(type.indexOf('ptm-effect-')===0) {
                 options['threshold_distance'] = parseInt(type.replace('ptm-effect-',''));
+            }
+                
+            if(type.indexOf('linear-')===0) {
+                options['window'] = parseInt(type.replace('linear-',''));
             }
             
             // alteration view
