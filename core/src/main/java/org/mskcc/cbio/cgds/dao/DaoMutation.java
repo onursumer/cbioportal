@@ -1359,10 +1359,6 @@ public final class DaoMutation {
                 if (residue<=0) {
                     continue;
                 }
-                        
-                if (daoGeneOptimized.getGene(gene)==null) {
-                    continue;
-                }
                 
                 String caseId = rs.getString(4);
                 String aaChange = rs.getString(5);
@@ -1386,7 +1382,13 @@ public final class DaoMutation {
                             mapPositionSamples.put(position, samples);
                         }
                         
-                        String symbol = daoGeneOptimized.getGene(gene).getHugoGeneSymbolAllCaps();
+                        CanonicalGene canonicalGene = daoGeneOptimized.getGene(currentGene);
+                        if (canonicalGene==null) {
+                            System.err.println("No gene for entrez gene id: " + currentGene);
+                            continue;
+                        }
+                        
+                        String symbol = daoGeneOptimized.getGene(currentGene).getHugoGeneSymbolAllCaps();
                         if (totalSamples>=thresholdSamples) {
                             List<Integer> hotspots = findLocalMaximum(mapPositionSamples, lenProtein+2, window, thresholdSamples);
 
