@@ -452,7 +452,7 @@ public class MutationsJSON extends HttpServlet {
         data.get("cosmic").add(cosmic);
         
         // mut sig
-        double mutSigQvalue;
+        Double mutSigQvalue;
         try {
             mutSigQvalue = getMutSigQValue(cancerStudy.getInternalId(),
                     mutation.getGeneSymbol());
@@ -492,7 +492,7 @@ public class MutationsJSON extends HttpServlet {
     private static final Map<Integer,Map<String,Double>> mutSigMap // map from cancer study id
             = new HashMap<Integer,Map<String,Double>>();     // to map from gene to Q-value
     
-    private static double getMutSigQValue(int cancerStudyId, String gene) throws DaoException {
+    private static Double getMutSigQValue(int cancerStudyId, String gene) throws DaoException {
         Map<String,Double> mapGeneQvalue;
         synchronized(mutSigMap) {
             mapGeneQvalue = mutSigMap.get(cancerStudyId);
@@ -506,8 +506,7 @@ public class MutationsJSON extends HttpServlet {
                 }
             }
         }
-        Double qvalue = mapGeneQvalue.get(gene);
-        return qvalue!=null ? qvalue : Double.NaN;
+        return mapGeneQvalue.get(gene);
     }
     
     /**
