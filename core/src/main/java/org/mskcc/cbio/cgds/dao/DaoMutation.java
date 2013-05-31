@@ -1265,7 +1265,7 @@ public final class DaoMutation {
      * @param thresholdSamples threshold of number of samples
      * @return Map<keyword, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
-    public static Map<String,Map<Integer, Map<String,String>>> getMutatationStatistics(String concatCancerStudyIds,
+    public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatationStatistics(String concatCancerStudyIds,
             String[] types, int thresholdSamples) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -1283,9 +1283,9 @@ public final class DaoMutation {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Map<String,Map<Integer, Map<String,String>>> map = new HashMap<String,Map<Integer, Map<String,String>>>();
+            Map<String,Map<Integer, Map<String,Set<String>>>> map = new HashMap<String,Map<Integer, Map<String,Set<String>>>>();
             String currentKeyword = null;
-            Map<Integer, Map<String,String>> mapStudyCaseMut = null;
+            Map<Integer, Map<String,Set<String>>> mapStudyCaseMut = null;
             int totalCountPerKeyword = 0;
             while (rs.next()) {
                 int cancerStudyId = rs.getInt(1);
@@ -1298,16 +1298,16 @@ public final class DaoMutation {
                         map.put(currentKeyword, mapStudyCaseMut);
                     }
                     currentKeyword = keyword;
-                    mapStudyCaseMut = new HashMap<Integer, Map<String,String>>();
+                    mapStudyCaseMut = new HashMap<Integer, Map<String,Set<String>>>();
                     totalCountPerKeyword = 0;
                 }
                 
-                Map<String,String> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
+                Map<String,Set<String>> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
                 if (mapCaseMut==null) {
-                    mapCaseMut = new HashMap<String,String>();
+                    mapCaseMut = new HashMap<String,Set<String>>();
                     mapStudyCaseMut.put(cancerStudyId, mapCaseMut);
                 }
-                mapCaseMut.put(caseId, aaChange);
+                mapCaseMut.put(caseId, Collections.singleton(aaChange));
                 totalCountPerKeyword ++;
             }
             
@@ -1331,7 +1331,7 @@ public final class DaoMutation {
      * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
      * TODO: should allow multiple aa changes per case
      */
-    public static Map<String,Map<Integer, Map<String,String>>> getMutatationLinearStatistics(String concatCancerStudyIds, int window,
+    public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatationLinearStatistics(String concatCancerStudyIds, int window,
             int thresholdSamples) throws DaoException {
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
         Connection con = null;
@@ -1349,7 +1349,7 @@ public final class DaoMutation {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Map<String, Map<Integer, Map<String,String>>> map = new HashMap<String, Map<Integer, Map<String,String>>>();
+            Map<String, Map<Integer, Map<String,Set<String>>>> map = new HashMap<String, Map<Integer, Map<String,Set<String>>>>();
             Map<Integer, Map<Integer, Map<String,String>>> mapProtein = null; //Map<residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
             long currentGene = Long.MIN_VALUE;
             while (rs.next()) {
@@ -1393,23 +1393,33 @@ public final class DaoMutation {
                             List<Integer> hotspots = findLocalMaximum(mapPositionSamples, lenProtein+2, window, thresholdSamples);
 
                             for (int hs : hotspots) {
-                                Map<Integer, Map<String,String>> m = new HashMap<Integer, Map<String,String>>();
+                                Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
                                 for (int offset=-window; offset<=window; offset++) {
                                     Map<Integer, Map<String,String>> mapPosition = mapProtein.get(hs+offset);
                                     if (mapPosition!=null) {
                                         for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
                                             int pos = entry.getKey();
-                                            Map<String,String> mapCaseAA = m.get(pos);
+                                            Map<String,Set<String>> mapCaseAA = m.get(pos);
                                             if (mapCaseAA==null) {
-                                                mapCaseAA = new HashMap<String,String>();
+                                                mapCaseAA = new HashMap<String,Set<String>>();
                                                 m.put(pos, mapCaseAA);
                                             }
-                                            mapCaseAA.putAll(entry.getValue());
+                                            
+                                            for (Map.Entry<String,String> mss : entry.getValue().entrySet()) {
+                                                String cid = mss.getKey();
+                                                String aa = mss.getValue();
+                                                Set<String> aas = mapCaseAA.get(cid);
+                                                if (aas==null) {
+                                                    aas = new HashSet<String>();
+                                                    mapCaseAA.put(cid, aas);
+                                                }
+                                                aas.add(aa);
+                                            }
                                         }
                                     }
                                 }
                                 mapProtein.get(hs);
-                                map.put(symbol+" ["+hs+"]", m);
+                                map.put(symbol+" [~"+hs+"]", m);
                             }
                         }
                     }
@@ -1516,7 +1526,7 @@ public final class DaoMutation {
         return sum;
     }
     
-    public static Map<String,Map<Integer, Map<String,String>>> getTruncatingMutatationStatistics(String concatCancerStudyIds,
+    public static Map<String,Map<Integer, Map<String,Set<String>>>> getTruncatingMutatationStatistics(String concatCancerStudyIds,
             int thresholdSamples) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -1534,9 +1544,9 @@ public final class DaoMutation {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Map<String,Map<Integer, Map<String,String>>> map = new HashMap<String,Map<Integer, Map<String,String>>>();
+            Map<String,Map<Integer, Map<String,Set<String>>>> map = new HashMap<String,Map<Integer, Map<String,Set<String>>>>();
             String currentKeyword = null;
-            Map<Integer, Map<String,String>> mapStudyCaseMut = null;
+            Map<Integer, Map<String,Set<String>>> mapStudyCaseMut = null;
             int totalCountPerKeyword = 0;
             while (rs.next()) {
                 int cancerStudyId = rs.getInt(1);
@@ -1549,16 +1559,16 @@ public final class DaoMutation {
                         map.put(currentKeyword, mapStudyCaseMut);
                     }
                     currentKeyword = keyword;
-                    mapStudyCaseMut = new HashMap<Integer, Map<String,String>>();
+                    mapStudyCaseMut = new HashMap<Integer, Map<String,Set<String>>>();
                     totalCountPerKeyword = 0;
                 }
                 
-                Map<String,String> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
+                Map<String,Set<String>> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
                 if (mapCaseMut==null) {
-                    mapCaseMut = new HashMap<String,String>();
+                    mapCaseMut = new HashMap<String,Set<String>>();
                     mapStudyCaseMut.put(cancerStudyId, mapCaseMut);
                 }
-                mapCaseMut.put(caseId, aaChange);
+                mapCaseMut.put(caseId, Collections.singleton(aaChange));
                 totalCountPerKeyword ++;
             }
             
@@ -1586,7 +1596,7 @@ public final class DaoMutation {
      * @return
      * @throws DaoException 
      */
-    public static Map<String,Map<Integer, Map<String,String>>> getPtmEffectStatistics(String concatCancerStudyIds,
+    public static Map<String,Map<Integer, Map<String,Set<String>>>> getPtmEffectStatistics(String concatCancerStudyIds,
             String[] ptmTypes, int thresholdDistance, int thresholdSamples) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -1608,9 +1618,9 @@ public final class DaoMutation {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Map<String,Map<Integer, Map<String,String>>> map = new HashMap<String,Map<Integer, Map<String,String>>>();
+            Map<String,Map<Integer, Map<String,Set<String>>>> map = new HashMap<String,Map<Integer, Map<String,Set<String>>>>();
             String currentKeyword = null;
-            Map<Integer, Map<String,String>> mapStudyCaseMut = null;
+            Map<Integer, Map<String,Set<String>>> mapStudyCaseMut = null;
             int totalCountPerKeyword = 0;
             while (rs.next()) {
                 int cancerStudyId = rs.getInt(1);
@@ -1623,16 +1633,16 @@ public final class DaoMutation {
                         map.put(currentKeyword, mapStudyCaseMut);
                     }
                     currentKeyword = keyword;
-                    mapStudyCaseMut = new HashMap<Integer, Map<String,String>>();
+                    mapStudyCaseMut = new HashMap<Integer, Map<String,Set<String>>>();
                     totalCountPerKeyword = 0;
                 }
                 
-                Map<String,String> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
+                Map<String,Set<String>> mapCaseMut = mapStudyCaseMut.get(cancerStudyId);
                 if (mapCaseMut==null) {
-                    mapCaseMut = new HashMap<String,String>();
+                    mapCaseMut = new HashMap<String,Set<String>>();
                     mapStudyCaseMut.put(cancerStudyId, mapCaseMut);
                 }
-                mapCaseMut.put(caseId, aaChange);
+                mapCaseMut.put(caseId, Collections.singleton(aaChange));
                 totalCountPerKeyword ++;
             }
             

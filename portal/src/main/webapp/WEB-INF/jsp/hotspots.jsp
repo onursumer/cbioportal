@@ -218,7 +218,7 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
             
         var id = this.model.get('id');
         var sequencedCases = this.model.get('sequenced');
-        if (sequencedCases>0 && id.search(/(merged)|(ccle)|(_pub)/)==-1)
+        if (sequencedCases>0 && id.search(/(merged)|(ccle)|(_pub)/)===-1)
             this.$('input').prop('checked',true);
             
         return this;
@@ -281,9 +281,14 @@ function mergeAlterationsByGene(alterations,alterationsByGene) {
         if (!(gene in geneSampleMap)) geneSampleMap[gene] = {};
         for (var study in studyStatistics) {
             if (!(study in geneSampleMap[gene])) geneSampleMap[gene][study] = {};
-            for (var sample in studyStatistics[study]) {
+            var freqStudy = studyStatistics[study];
+            for (var sample in freqStudy) {
                 if (!(sample in geneSampleMap[gene][study])) geneSampleMap[gene][study][sample] = [];
-                geneSampleMap[gene][study][sample].push(studyStatistics[study][sample]);
+                var freqCase = freqStudy[sample];
+                for (var ix in freqCase) {
+                    var aaChange = freqCase[ix];
+                    geneSampleMap[gene][study][sample].push(aaChange);
+                }
             }
         }
     }
@@ -330,12 +335,15 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
         var formatCaseAA = function(freqStudy, study) {
             var mapAACases = {};
             for (var caseId in freqStudy) {
-                var aaChange = freqStudy[caseId];
-                if (!(aaChange in mapAACases)) {
-                    mapAACases[aaChange] = [];
-                }
-                mapAACases[aaChange].push("<a href='tumormap.do?case_id="+caseId
+                var freqCase = freqStudy[caseId];
+                for (var ix in freqCase) {
+                    var aaChange = freqCase[ix];
+                    if (!(aaChange in mapAACases)) {
+                        mapAACases[aaChange] = [];
+                    }
+                    mapAACases[aaChange].push("<a href='tumormap.do?case_id="+caseId
                             +"&cancer_study_id="+study+"'>"+caseId+"</a>");
+                }
             }
             
             var ret = [];
@@ -378,11 +386,11 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             var altb = alterations.at(b);
             // sort by total samples mutated in gene
             var ret = d3.descending(alta.get('samples_gene'), altb.get('samples_gene'));
-            if (ret!=0) return ret;
+            if (ret!==0) return ret;
             
             // then sort by gene name
             ret = d3.descending(alta.get('gene'), altb.get('gene'));
-            if (ret!=0) return ret;
+            if (ret!==0) return ret;
             
             // then sort by samples with specific mutations
             ret = d3.descending(alta.get('samples'), altb.get('samples'));
@@ -409,7 +417,7 @@ AlteredGene.Alterations.MissenseTable = Backbone.View.extend({
         this.alterations.on('sync', this.render, this);
     },
     render: function() {
-        if (this.alterations.length==0) {
+        if (this.alterations.length===0) {
             this.$el.html("<img src=\"images/ajax-loader.gif\"/> Calculating ...");
             return;
         }

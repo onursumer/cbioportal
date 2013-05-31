@@ -9,9 +9,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
-import org.json.simple.JSONValue;
 import org.mskcc.cbio.cgds.dao.*;
 import org.mskcc.cbio.cgds.model.*;
+import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  *
@@ -72,7 +72,7 @@ public class MutationsJSON extends HttpServlet {
         String type = request.getParameter(MUTATION_TYPE);
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
         
-        Map<String,Map<Integer, Map<String,String>>> mapKeywordStudyCaseMut = Collections.emptyMap();
+        Map<String,Map<Integer, Map<String,Set<String>>>> mapKeywordStudyCaseMut = Collections.emptyMap();
         Map<Integer,String> cancerStudyIdMapping = new HashMap<Integer,String>();
         
         try {
@@ -108,12 +108,12 @@ public class MutationsJSON extends HttpServlet {
         }
         
         // transform the data to use stable cancer study id
-        Map<String,Map<String, Map<String,String>>> map =
-                new HashMap<String,Map<String, Map<String,String>>>(mapKeywordStudyCaseMut.size());
-        for (Map.Entry<String,Map<Integer, Map<String,String>>> entry1 : mapKeywordStudyCaseMut.entrySet()) {
+        Map<String,Map<String, Map<String,Set<String>>>> map =
+                new HashMap<String,Map<String, Map<String,Set<String>>>>(mapKeywordStudyCaseMut.size());
+        for (Map.Entry<String,Map<Integer, Map<String,Set<String>>>> entry1 : mapKeywordStudyCaseMut.entrySet()) {
             String keyword = entry1.getKey();
-            Map<String, Map<String,String>> map1 = new HashMap<String, Map<String,String>>(entry1.getValue().size());
-            for (Map.Entry<Integer, Map<String,String>> entry2 : entry1.getValue().entrySet()) {
+            Map<String, Map<String,Set<String>>> map1 = new HashMap<String, Map<String,Set<String>>>(entry1.getValue().size());
+            for (Map.Entry<Integer, Map<String,Set<String>>> entry2 : entry1.getValue().entrySet()) {
                 map1.put(cancerStudyIdMapping.get(entry2.getKey()), entry2.getValue());
             }
             map.put(keyword, map1);
@@ -122,8 +122,9 @@ public class MutationsJSON extends HttpServlet {
         response.setContentType("application/json");
         
         PrintWriter out = response.getWriter();
+        ObjectMapper mapper = new ObjectMapper();
         try {
-            JSONValue.writeJSONString(map, out);
+            out.write(mapper.writeValueAsString(map));
         } finally {            
             out.close();
         }
@@ -186,8 +187,9 @@ public class MutationsJSON extends HttpServlet {
         response.setContentType("application/json");
         
         PrintWriter out = response.getWriter();
+        ObjectMapper mapper = new ObjectMapper();
         try {
-            JSONValue.writeJSONString(data, out);
+            out.write(mapper.writeValueAsString(data));
         } finally {            
             out.close();
         }
@@ -225,8 +227,9 @@ public class MutationsJSON extends HttpServlet {
         response.setContentType("application/json");
         
         PrintWriter out = response.getWriter();
+        ObjectMapper mapper = new ObjectMapper();
         try {
-            JSONValue.writeJSONString(map, out);
+            out.write(mapper.writeValueAsString(map));
         } finally {            
             out.close();
         }
@@ -254,8 +257,9 @@ public class MutationsJSON extends HttpServlet {
         response.setContentType("application/json");
         
         PrintWriter out = response.getWriter();
+        ObjectMapper mapper = new ObjectMapper();
         try {
-            JSONValue.writeJSONString(count, out);
+            out.write(mapper.writeValueAsString(count));
         } finally {            
             out.close();
         }
