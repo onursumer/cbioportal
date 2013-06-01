@@ -203,7 +203,7 @@ function send2cytoscapeweb(graphml, cwDivId, networkDivId)
     vis.draw(draw_options);
 }
 
-function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData)
+function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annotationData)
 {
     var visualStyle =
     {
@@ -309,7 +309,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData)
         var netVis = new NetworkSbgnVis(networkDivId);
 
         // init UI of the network tab
-        netVis.initNetworkUI(vis, genomicData);
+        netVis.initNetworkUI(vis, genomicData, annotationData);
       
         //to hide drugs initially
         netVis._changeListener();

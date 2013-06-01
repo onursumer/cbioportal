@@ -31,7 +31,7 @@ NetworkSbgnVis.prototype.constructor = NetworkSbgnVis;
 //TODO override necessary methods (filters, inspectors, initializers, etc.) to have a proper UI.
 
 //Genomic data parser method
-NetworkSbgnVis.prototype.parseGenomicData = function(genomicData)
+NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData)
 {
 	var hugoToGene 		= "hugo_to_gene_index";
 	var geneData   		= "gene_data";
@@ -41,15 +41,17 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData)
 	var mutations  		= "mutations";
 	var rppa	   	= "rppa";
 	var percent_altered 	= "percent_altered";
+	var attributes		= "attributes";
 
 	//first extend node fields to support genomic data
 	this.addGenomicFields();
+	this.addAnnotationFields();
 
 	// iterate for every hugo gene symbol in incoming data
 	for(var hugoSymbol in genomicData[hugoToGene])
 	{
 		var geneDataIndex 	= genomicData[hugoToGene][hugoSymbol];		// gene data index for hugo gene symbol
-		var _geneData 	= genomicData[geneData][geneDataIndex];		// corresponding gene data
+		var _geneData 	= genomicData[geneData][geneDataIndex];			// corresponding gene data
 
 		// Arrays and percent altered data 
 		var cnaArray   		= _geneData[cna];
@@ -66,11 +68,32 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData)
 		this.calcMutationPercent(mutationsArray, targetNodes);
 		this.calcRPPAorMRNAPercent(mrnaArray, mrna, targetNodes);
 		this.calcRPPAorMRNAPercent(rppaArray, rppa, targetNodes);
+
+		//Calculate alteration percent and add them to the corresponding nodes.
 		var alterationPercent = parseInt(percentAltered.split('%'),10)/100;		
 		var alterationData =  {PERCENT_ALTERED: alterationPercent };
 		this._vis.updateData("nodes",targetNodes, alterationData);
 	}
+
+	//Lastly parse annotation data and add "dataSource" fields
+	this.addAnnotationData(annotationData);
 };
+
+NetworkSbgnVis.prototype.addAnnotationData = function(annotationData)
+{
+	var nodeArray = this._vis.nodes();
+	for ( var i = 0; i < nodeArray.length; i++) 
+	{
+		if(nodeArray[i].data.glyph_class == "process")
+		{
+			//Temporary hack to get rid of id extensions of glyphs.
+			var glyphID = ((nodeArray[i].data.id).replace("LEFT_TO_RIGHT", "")).replace("LEFT_TO_RIGHT", "");
+			var annData = annotationData[glyphID];
+			var data    = {DATA_SOURCE: annData.dataSource[0]};
+			this._vis.updateData("nodes",[nodeArray[i].data.id], data);
+		}
+	}
+}
 
 
 //Searches an sbgn node whose label fits with parameter hugoSymbol
@@ -174,6 +197,13 @@ NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNod
 	this._vis.updateData("nodes",targetNodes, mutData);
 };
 
+//extends node fields by adding new fields according to annotation data
+NetworkSbgnVis.prototype.addAnnotationFields = function()
+{
+	var DATA_SOURCE = {name:"DATA_SOURCE", type:"string", defValue: ""};
+	this._vis.addDataField(DATA_SOURCE);
+};
+
 //extends node fields by adding new fields according to genomic data
 NetworkSbgnVis.prototype.addGenomicFields = function()
 {
@@ -190,8 +220,6 @@ NetworkSbgnVis.prototype.addGenomicFields = function()
 
 	var mutated			= {name:"PERCENT_MUTATED", type:"number", defValue: 0};
 	var altered			= {name:"PERCENT_ALTERED", type:"number", defValue: 0};
-
-	var label			= {name:"label", type:"text", defValue: ""};
 
 
 	this._vis.addDataField(cna_amplified);
@@ -216,7 +244,7 @@ NetworkSbgnVis.prototype.addGenomicFields = function()
  *
  * @param vis	CytoscapeWeb.Visualization instance associated with this UI
  */
-NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData)
+NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationData)
 {
     this._vis = vis;
     this._linkMap = this._xrefArray();
@@ -229,7 +257,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData)
     //this._edgeTypeVisibility = this._edgeTypeArray();
     this._sourceVisibility = this._sourceArray();
     // parse and add genomic data to cytoscape nodes
-    this.parseGenomicData(genomicData); 
+    this.parseGenomicData(genomicData,annotationData); 
     // this.setInitialData();
 	var weights = this.initializeWeights();
     this._geneWeightMap = this._geneWeightArray(weights);
