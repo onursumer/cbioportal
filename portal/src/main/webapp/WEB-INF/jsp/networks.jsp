@@ -130,7 +130,7 @@
 	                   function(graphData){
                            // All genes coming from SBGN view are in graphData.sbgn
                            // All attributes can be accessed via: graphData.attributes[rdfid]
-		                   send2cytoscapewebSbgn(graphData.sbgn, "cytoscapeweb_sbgn", "network_sbgn", genomicData);
+		                   send2cytoscapewebSbgn(graphData.sbgn, "cytoscapeweb_sbgn", "network_sbgn", genomicData, graphData.attributes);
 		                   // TODO these methods do not work with sbgnml
 		                   //showXDebug(sbgnml);
 		                   //showNetworkMessage(sbgnml, "#network_sbgn #netmsg");
