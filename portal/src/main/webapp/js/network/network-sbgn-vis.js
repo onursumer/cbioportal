@@ -89,7 +89,9 @@ NetworkSbgnVis.prototype.addAnnotationData = function(annotationData)
 			//Temporary hack to get rid of id extensions of glyphs.
 			var glyphID = ((nodeArray[i].data.id).replace("LEFT_TO_RIGHT", "")).replace("LEFT_TO_RIGHT", "");
 			var annData = annotationData[glyphID];
-			var data    = {DATA_SOURCE: annData.dataSource[0]};
+			var parsedData = annData.dataSource[0].split(";")[0];
+			var data    = {DATA_SOURCE: parsedData};
+			//var data    = {DATA_SOURCE: annData.dataSource[0]};
 			this._vis.updateData("nodes",[nodeArray[i].data.id], data);
 		}
 	}
@@ -254,10 +256,10 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
     this._filteredBySlider = new Array();
     this._filteredByDropDown = new Array();
     this._filteredByIsolation = new Array();
-    //this._edgeTypeVisibility = this._edgeTypeArray();
-    this._sourceVisibility = this._sourceArray();
     // parse and add genomic data to cytoscape nodes
-    this.parseGenomicData(genomicData,annotationData); 
+    this.parseGenomicData(genomicData,annotationData);
+    //this._edgeTypeVisibility = this._edgeTypeArray();
+    this._sourceVisibility = this._sourceArray(); 
     // this.setInitialData();
 	var weights = this.initializeWeights();
     this._geneWeightMap = this._geneWeightArray(weights);
@@ -938,32 +940,14 @@ NetworkSbgnVis.prototype._initSliders = function()
 NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 {
     // TODO also consider selected edges?
-	var selected = this._vis.selected("nodes");
+    var selected = this._vis.selected("nodes");
     var data;
 
     var self = this;
 
     // clean previous content
-    $(self.detailsTabSelector + " div").empty();
-	$(self.detailsTabSelector + " .error").hide();
-	
-	//if stateFlag = 1, all selected genes are the same type,
-	//if stateFlag = 0, they are different type.
-
-	var stateFlag = 0;
-	for(var i = 0 ; i < selected.length - 1 ; i++)
-	{
-		if(selected[i].data.glyph_label_text == selected[i + 1].data.glyph_label_text )
-		{
-			stateFlag = 1;		
-		}
-		else
-		{
-			stateFlag = 0;
-			break;
-		}
-	}
-
+    // $(self.detailsTabSelector + " div").empty();
+    $(self.detailsTabSelector + " .error").hide();
 
     if (selected.length == 1)
     {
@@ -971,69 +955,39 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
     }
     else if (selected.length > 1)
     {
-		if(stateFlag == 1){
-			data = selected[0].data;
+	var allMacro = 1;
+	for(var i=1; i < selected.length; i++)
+	{
+		if(selected[i].data.glyph_class != this.MACROMOLECULE 
+			|| selected[i].data.glyph_label_text != selected[i-1].data.glyph_label_text)
+		{
+			allMacro = 0;
+			break;
 		}
-		else{
-        	//$(self.detailsTabSelector + " div").empty();
-        	$(self.detailsTabSelector + " .error").append(
-            	"Currently more than one node is selected. Please, select only one node to see details.");
-	    	$(self.detailsTabSelector + " .error").show();
-        	return;
-		}
+	}
+	if(selected[0].data.glyph_class == this.MACROMOLECULE && allMacro == 1)
+	{
+		data = selected[0].data;
+	}
+	else
+	{
+		$(self.detailsTabSelector + " div").empty();
+		$(self.detailsTabSelector + " .error").append(
+		    "Currently more than one node is selected. Please, select only one node to see details.");
+		    $(self.detailsTabSelector + " .error").show();
+		return;
+	}
     }
     else
     {
-        //$(self.detailsTabSelector + " div").empty();
+        $(self.detailsTabSelector + " div").empty();
         $(self.detailsTabSelector + " .error").append(
             "Currently there is no selected node. Please, select a node to see details.");
 	    $(self.detailsTabSelector + " .error").show();
         return;
     }
 
-    var handler = function(queryResult) {
-        // check the initial conditions, if they don't match do nothing
-	    // (they may not match because of a delay in the ajax request)
-
-	    selected = self._vis.selected("nodes");
-
-	    if (data.id != selected[0].data.id)
-	    {
-		    return;
-	    }
-
-        // update tab content
-        $(self.detailsTabSelector + " .biogene-content").empty();
-
-        if (queryResult.returnCode != "SUCCESS")
-        {
-            $(self.detailsTabSelector + " .error").append(
-	            "Error retrieving data: " + queryResult.returnCode);
-	        $(self.detailsTabSelector + " .error").show();
-        }
-        else
-        {
-	        if (queryResult.count > 0)
-	        {
-		        // generate the view by using backbone
-		        var biogeneView = new BioGeneView(
-			        {el: self.detailsTabSelector + " .biogene-content",
-					data: queryResult.geneInfo[0]});
-	        }
-	        else
-	        {
-		        $(self.detailsTabSelector + " .error").append(
-			        "No additional information available for the selected node.");
-	        }
-        }
-
-	    // generate view for genomic profile data
-	    var genomicProfileView = new GenomicProfileView(
-		    {el: self.detailsTabSelector + " .genomic-profile-content",
-			data: data});
-    };
-
-
+/*
 	if (data.type == this.DRUG)
 	{
 		// update tab content
@@ -1045,21 +999,198 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 			idPlaceHolder: this.ID_PLACE_HOLDER,
 			edges: this._vis.edges()});
 	}
+*/
 	// send biogene query for only genes
+	if(selected.length == 1 && selected[0].data.glyph_class == this.COMPLEX)
+	{
+	
+		var children = this._vis.childNodes(selected[0].data.id);
+		var dataList = new Array();
+		var check = new Array();
+		var text = '<div class="header"><center><span class="title"><label>';
+		text +=  toTitleCase(data.glyph_class) + ' Properties';
+		text += '</label></span></center><br /><br />';
+		for(var i = 0; i < children.length; i++)
+		{
+			data = children[i].data;
+			var label = _safeProperty(this.geneLabel(data));
+			if(data.glyph_class == this.MACROMOLECULE)
+			{
+				check[label] = 0;
+			}
+	
+		}
+		var cnt = 0;
+		
+		for(var i = 0; i < children.length; i++)
+		{
+			data = children[i].data;
+			var label = _safeProperty(this.geneLabel(data));
+			if(data.glyph_class == this.MACROMOLECULE
+				&& check[label] == 0)
+			{
+				text += '<div class="geneHide" id="gene' + label + 'Hide" ';
+				text += 'onclick="$(' + "'#gene" + label + "').hide();";
+				text += "$('#gene" + label + "Hide').hide();";
+				text += "$('#gene" + label + "Show').show();" + '"><span class="title"><label> - ' + this.geneLabel(data);
+				text += '</label></span></div>';
+
+				text += '<div class="geneShow" id="gene' + label + 'Show" ';
+				text += 'onclick="' + "$('#gene" + label + "').show();";
+				text += "$('#gene" + label + "Hide').show();";
+				text += "$('#gene" + label + "Show').hide();" + '"><span class="title"><label> + ' + this.geneLabel(data);
+				text += '</label></span></div>';
+
+				text += '<div class="geneProperty" style="display:none;" id="gene' + label + '">';
+				text += '<div class="genomic-profile-content"></div>';
+				text += '<div class="biogene-content"></div>';
+				text += '</div><br />';
+
+				check[label] = 1;
+				dataList[cnt] = data;
+				cnt ++;
+			}
+		}
+		text += "</div>";
+		$(self.detailsTabSelector).html(text);
+		for(var i = 0; i < dataList.length  ; i++)
+		{
+			data = dataList[i];
+			var label = _safeProperty(this.geneLabel(data));
+			var queryParams = {"query": label,
+				"org": "human",
+				"format": "json",};
+		
+			var divName = self.detailsTabSelector + " #gene" + label;
+			$(divName + " .genomic-profile-content").append(
+			'<img src="images/ajax-loader.gif">');
+
+			$.ajax({
+			    type: "POST",
+			    url: "bioGeneQuery.do",
+			    async: false,
+			    timeout: 5000,
+			    data: queryParams,
+			    error: function(){
+					$(divName + " .genomic-profile-content").empty();
+					$(divName + " .genomic-profile-content").append(
+					    "Error retrieving data: " + queryResult.returnCode);
+					$(divName + " .genomic-profile-content").show();
+					return;
+				},
+			    success: function(queryResult) {
+				if(queryResult.count > 0)
+				{
+					// generate the view by using backbone
+					var biogeneView = new BioGeneView(
+						{el: divName + " .biogene-content",
+						data: queryResult.geneInfo[0]});
+				}
+				else
+				{
+					$(divName + " .biogene-content").html(
+						"<p>No additional information available for the selected node.</p>");
+				}
+	
+				// generate view for genomic profile data
+				var genomicProfileView = new GenomicProfileView(
+				    {el: divName + " .genomic-profile-content",
+					data: data});
+			    }
+			});
+			
+		}
+	}
+	else if(selected.length == 1 
+		&& (data.glyph_class == this.COMPARTMENT || data.glyph_class == this.PROCESS))
+	{
+		data = selected[0].data;
+		var text = '<div class="header"><center><span class="title"><label>';
+		text +=  toTitleCase(data.glyph_class) + ' Properties';
+		text += '</label></span></center>';
+		text += '<br /><br />' + this.geneLabel(data) + "</div>";
+		$(self.detailsTabSelector).html(text);
+	}
+	
 	else
 	{
-		var queryParams = {"query": data.label,
-			"org": "human",
-			"format": "json"};
+		$(self.detailsTabSelector + " div").empty();
+		var text = '<div class="header"><center><span class="title"><label>';
+		text +=  toTitleCase(data.glyph_class) + ' Properties';
+		text += '</label></span></center><br /><br />';
+		text += '<div class="genomic-profile-content"></div>';
+		text += '<div class="biogene-content"></div></div>';
 
+		$(self.detailsTabSelector).html(text);
+		
+		var label = _safeProperty(this.geneLabel(data));
+		var queryParams = {"query": label,
+			"org": "human",
+			"format": "json",
+			"timeout": 5000};
+		
 		$(self.detailsTabSelector + " .biogene-content").append(
 			'<img src="images/ajax-loader.gif">');
 
-		$.post("bioGeneQuery.do",
-			queryParams,
-			handler);
+		$.ajax({
+		    type: "POST",
+		    url: "bioGeneQuery.do",
+		    async: true,
+		    timeout: 5000,
+		    data: queryParams,
+		    error: function(){
+				$(self.detailsTabSelector + " .genomic-profile-content").empty();
+				$(self.detailsTabSelector + " .genomic-profile-content").append(
+				    "Error retrieving data: " + queryResult.returnCode);
+				$(self.detailsTabSelector + " .genomic-profile-content").show();
+				return;
+			},
+		    success: function(queryResult) {
+			if(queryResult.count > 0)
+			{
+				// generate the view by using backbone
+				var biogeneView = new BioGeneView(
+					{el: self.detailsTabSelector + " .biogene-content",
+					data: queryResult.geneInfo[0]});
+			}
+			else
+			{
+				$(self.detailsTabSelector + " .biogene-content").html(
+					"<p>No additional information available for the selected node.</p>");
+			}
+	
+			// generate view for genomic profile data
+			var genomicProfileView = new GenomicProfileView(
+			    {el: self.detailsTabSelector + " .genomic-profile-content",
+				data: data});
+		    }
+		});		
 	}
 };
+function toTitleCase(str) {
+    return str.replace(/(?:^|\s)\w/g, function(match) {
+        return match.toUpperCase();
+    });
+}
+
+function _safeProperty(str)
+{
+    var safeProperty = str;
+
+    safeProperty = _replaceAll(safeProperty, " ", "_");
+    safeProperty = _replaceAll(safeProperty, "/", "_");
+    safeProperty = _replaceAll(safeProperty, "\\", "_");
+    safeProperty = _replaceAll(safeProperty, "#", "_");
+    safeProperty = _replaceAll(safeProperty, ".", "_");
+    safeProperty = _replaceAll(safeProperty, ":", "_");
+    safeProperty = _replaceAll(safeProperty, ";", "_");
+    safeProperty = _replaceAll(safeProperty, '"', "_");
+    safeProperty = _replaceAll(safeProperty, "'", "_");
+
+    return safeProperty;
+}
+
+
 
 /**
  * Initializes Genes tab.
@@ -1139,7 +1270,7 @@ NetworkSbgnVis.prototype._weightSliderStop = function(event, ui)
  *
  * @return	an array (map) of edge source visibility.
  */
-NetworkSbgnVis.prototype._sourceArray = function()
+NetworkSbgnVis.prototype._sourceArray2 = function()
 {
     var sourceArray = new Array();
 
@@ -1159,6 +1290,35 @@ NetworkSbgnVis.prototype._sourceArray = function()
             // by default every edge source is visible
             sourceArray[source] = true;
         }
+    }
+
+    // also set a flag for unknown (undefined) sources
+    sourceArray[this.UNKNOWN] = true;
+
+    return sourceArray;
+};
+
+/**
+ * Creates a map for edge source visibility.
+ *
+ * @return	an array (map) of edge source visibility.
+ */
+NetworkSbgnVis.prototype._sourceArray = function()
+{
+    var sourceArray = new Array();
+
+    // dynamically collect all sources
+
+    var nodes = this._vis.nodes();
+    var source;
+
+    for (var i = 0; i < nodes.length; i++)
+    {
+		if(nodes[i].data.glyph_class == this.PROCESS)
+		{
+        	source = nodes[i].data.DATA_SOURCE;
+            sourceArray[source] = true;
+		}
     }
 
     // also set a flag for unknown (undefined) sources

@@ -18,7 +18,6 @@ if (includeHelpTab==null) {
     </ul>
     <div id="genes_tab_sbgn">
 	    <div class="header">
-		   	<span class="title"><label>Genes</label></span><br><br>
     		<div id="control_area">
     			<table>
     			<tr>
@@ -56,8 +55,7 @@ if (includeHelpTab==null) {
     </div>
 
     <div id="filtering_tab_sbgn">
-		<div class="header">
-			<span class="title"><label>Filter by Alteration</label></span><br><br>
+			<label class="heading">Filter by Alteration:</label>
 	    	<div id="slider_area">
 	    		<div id="weight_slider_area">
 		    		<span class="slider-value">
@@ -78,11 +76,10 @@ if (includeHelpTab==null) {
 	    		</div>
     		</div>
 
-			<span class="title"><label>Filter by Source</label></span><br><br>
 	        <table id="source_filter">
 	        	<tr class="source-header">
 	        		<td>
-						<label class="heading">Node Source:</label>
+						<label class="heading">Filter by Process Source:</label>
 	        		</td>
 	        	</tr>
 	        </table>
@@ -99,7 +96,6 @@ if (includeHelpTab==null) {
 		    		</tr>
 		    	</table>
 			</div>
-		</div>
     </div>
 
 	<div id="element_details_tab_sbgn">

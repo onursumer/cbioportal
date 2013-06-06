@@ -594,13 +594,13 @@
 
 #filtering_tab_sbgn #source_filter
 {
-	padding-top: 1em;
+	padding-top: 0;
 }
 
 #filtering_tab_sbgn #weight_slider_area
 {
-	padding-top: 0px;
-	padding-bottom: 35px;
+	padding-top: 15px;
+	padding-bottom: 25px;
 }
 
 #filtering_tab_sbgn #affinity_slider_area
@@ -624,6 +624,7 @@
     text-align: left;
     padding-left: 5px;
     margin-top: -4px;
+	margin-bottom: 15px;
 }
 
 #filtering_tab_sbgn #slider_area .slider-value input
@@ -766,9 +767,40 @@
 
 #element_details_tab_sbgn
 {
+	height: 575px;
 	overflow-y: auto;
 }
-
+.header .title 
+{
+	text-align: center;
+}
+	
+.geneHide
+{
+	display:none;
+	cursor:pointer;
+	padding-top: 0px;
+	font-weight: bolder;
+}
+.geneShow
+{
+	display: block;
+	cursor: pointer;
+	padding-top: 0px;
+	font-weight: bolder;
+}
+.geneProperty
+{
+	display: none;
+	border-bottom-width: 2px;	
+	border-bottom-style:solid;
+	border-bottom-width:2px;
+	border-bottom-color: #555;
+	margin-right: 20px;
+	margin-top: 0px;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
 #element_details_tab_sbgn p
 {
 	text-align: left;
@@ -784,11 +816,13 @@
 #element_details_tab_sbgn .title
 {
 	text-align: center;
+	cursor: pointer;
 }
 
 #element_details_tab_sbgn .title label
 {
 	font-weight: bold;
+	text-align: center;
 }
 
 #element_details_tab_sbgn td
@@ -811,7 +845,6 @@
 	margin-top: 15px;
 	text-align: right;
 }
-
 /*
  * ######################################################## 
  * ###################### Legends #########################
