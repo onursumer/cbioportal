@@ -126,11 +126,11 @@ function heatmap(data, container, options) {
       
   addCellTooltip();
 
-  function row(row) {
-    var cell = d3.select(this).selectAll(".cell")
+  function row(row, iRow) {
+    var cell = d3.select(this).selectAll("rect")
         .data(row.filter(function(d) { return d.z; }))
         .enter().append("rect")
-        .attr("class", "cell")
+        .attr("class", function(d, i){return "cell_c"+i}) // hack to problem of too many cells
         .attr("x", function(d) { return x(d.x); })
         .attr("width", x.rangeBand())
         .attr("height", y.rangeBand())
@@ -151,13 +151,45 @@ function heatmap(data, container, options) {
   }
   
   function addCellTooltip() {
-    $(".cell").qtip({
-        content: {
-            attr: 'alt'
-        },
-        hide: { fixed: true, delay: 100 },
-        style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
-        position: {my:'top left',at:'bottom right'}
-      });
+    for (var i=0; i<nRows; i++) { // hack to problem of too many cells
+        var elems = $(".cell_c"+i);
+        getTooltipDiv(i).qtip(
+        {
+                content: ' ',
+                position: {
+                        target: 'event', 
+                        effect: false
+                },
+                show: {
+                        target: elems
+                },
+                hide: {
+                        target: elems,
+                        fixed: true,
+                        delay: 100
+                },
+                style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
+                events: {
+                        show: function(event, api) {
+                                // Update the content of the tooltip on each show
+                                var target = $(event.originalEvent.target);
+
+                                if(target.length) {
+                                        api.set('content.text', target.attr('alt'));
+                                }
+                        }
+                }
+        });
+    }
+  }
+  
+  function getTooltipDiv(i) {
+      var divId = "heatmap-tooltip-"+i;
+      var ret = $("#"+divId);
+      if (!ret || ret.length===0) {
+          $("body").append("<div id='"+divId+"'></div>");
+          ret = $("#"+divId);
+      }
+      return ret;
   }
 }
