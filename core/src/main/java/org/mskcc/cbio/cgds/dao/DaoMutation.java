@@ -36,7 +36,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1331,6 +1330,159 @@ public final class DaoMutation {
      * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
      * TODO: should allow multiple aa changes per case
      */
+    public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatation3DStatistics(String concatCancerStudyIds,
+            int thresholdSamples) throws DaoException {
+        DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoMutation.class);
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, me.`ENTREZ_GENE_ID`, `ONCOTATOR_PROTEIN_POS_START`, `CASE_ID`, `PROTEIN_CHANGE`, `PDB_ID`, `CHAIN`, `PDB_POSITION` "
+                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp, `pdb_uniprot_residue_mapping` purm "
+                    + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
+                    + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
+                    + "AND me.`ONCOTATOR_UNIPROT_ENTRY_NAME`=purm.`UNIPROT_ID` "
+                    + "AND me.`ONCOTATOR_PROTEIN_POS_START`=purm.`UNIPROT_POSITION` "
+                    + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
+                    + "AND me.`MUTATION_TYPE`='Missense_Mutation' "
+                    + "ORDER BY `PDB_ID` ASC, `CHAIN` ASC"; // to filter and save memories
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            Map<String, Map<Integer, Map<String,Set<String>>>> map = new HashMap<String, Map<Integer, Map<String,Set<String>>>>();
+            Map<Integer, Map<Integer, Map<String,String>>> mapProtein = null; //Map<residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
+            long currentGene = Long.MIN_VALUE;
+            String currentPdb = null;
+            String currentChain = null;
+            while (rs.next()) {
+                int cancerStudyId = rs.getInt(1);
+                long gene = rs.getLong(2);
+                int residue = rs.getInt(3);
+                if (residue<=0) {
+                    continue;
+                }
+                
+                String caseId = rs.getString(4);
+                String aaChange = rs.getString(5);
+                String pdbId = rs.getString(6);
+                String chainId = rs.getString(7);
+                int pdbPosition = rs.getInt(8);
+                
+                if (!pdbId.equals(currentPdb) || !chainId.equals(currentChain)) {
+                    if (mapProtein!=null) {
+                        Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
+                        int totalSamples = 0;
+                        for (Map.Entry<Integer, Map<Integer, Map<String,String>>> entry : mapProtein.entrySet()) {
+                            int position = entry.getKey();
+                            
+                            int samples = 0;
+                            for (Map<String,String> v : entry.getValue().values()) {
+                                samples += v.size();
+                            }
+                            totalSamples += samples;
+                            mapPositionSamples.put(position, samples);
+                        }
+                        
+                        CanonicalGene canonicalGene = daoGeneOptimized.getGene(currentGene);
+                        if (canonicalGene==null) {
+                            System.err.println("No gene for entrez gene id: " + currentGene);
+                            continue;
+                        }
+                        
+                        String symbol = daoGeneOptimized.getGene(currentGene).getHugoGeneSymbolAllCaps();
+                        if (totalSamples>=thresholdSamples) {
+                            Map<Integer, Set<Integer>> hotspots = find3DHotspots(mapPositionSamples, thresholdSamples, pdbId, chainId);
+
+                            for (Map.Entry<Integer, Set<Integer>> entryHs : hotspots.entrySet()) {
+                                int hs = entryHs.getKey();
+                                
+                                Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
+                                for (int neighbor : entryHs.getValue()) {
+                                    Map<Integer, Map<String,String>> mapPosition = mapProtein.get(neighbor);
+                                    if (mapPosition!=null) {
+                                        for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
+                                            int pos = entry.getKey();
+                                            Map<String,Set<String>> mapCaseAA = m.get(pos);
+                                            if (mapCaseAA==null) {
+                                                mapCaseAA = new HashMap<String,Set<String>>();
+                                                m.put(pos, mapCaseAA);
+                                            }
+                                            
+                                            for (Map.Entry<String,String> mss : entry.getValue().entrySet()) {
+                                                String cid = mss.getKey();
+                                                String aa = mss.getValue();
+                                                Set<String> aas = mapCaseAA.get(cid);
+                                                if (aas==null) {
+                                                    aas = new HashSet<String>();
+                                                    mapCaseAA.put(cid, aas);
+                                                }
+                                                aas.add(aa);
+                                            }
+                                        }
+                                    }
+                                }
+                                map.put(symbol+"_"+currentPdb+"."+chainId+" [~"+hs+"]", m);
+                            }
+                        }
+                    }
+                    
+                    currentGene = gene;
+                    currentPdb = pdbId;
+                    currentChain = chainId;
+                    mapProtein = new HashMap<Integer, Map<Integer, Map<String,String>>>();
+                }
+                
+                Map<Integer, Map<String,String>> mapPosition = mapProtein.get(pdbPosition);
+                if (mapPosition==null) {
+                    mapPosition = new HashMap<Integer, Map<String,String>>();
+                    mapProtein.put(pdbPosition, mapPosition);
+                }
+                
+                Map<String,String> mapCaseMut = mapPosition.get(cancerStudyId);
+                if (mapCaseMut==null) {
+                    mapCaseMut = new HashMap<String,String>();
+                    mapPosition.put(cancerStudyId, mapCaseMut);
+                }
+                mapCaseMut.put(caseId, aaChange);
+                
+            }
+            
+            
+            return map;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
+        }
+    }
+    
+    private static Map<Integer, Set<Integer>> find3DHotspots(Map<Integer,Integer> mapPositionSamples,
+            int thresholdSamples, String pdbId, String chainId) throws DaoException {
+        Map<Integer, Set<Integer>> map = new HashMap<Integer, Set<Integer>>();
+        Map<Integer, Set<Integer>> proteinContactMap = DaoProteinContactMap.getProteinContactMap(
+                pdbId, chainId, mapPositionSamples.keySet());
+        for (Map.Entry<Integer, Set<Integer>> entry : proteinContactMap.entrySet()) {
+            Integer res1 = entry.getKey();
+            Set<Integer> neibors = entry.getValue();
+            neibors.add(res1);
+            int samples = 0;
+            for (Integer res2 : entry.getValue()) {
+                samples += mapPositionSamples.get(res2);
+            }
+            if (samples >= thresholdSamples) {
+                map.put(res1, neibors);
+            }
+        }
+        return map;
+    }
+    
+    /**
+     * @param concatCancerStudyIds cancerStudyIds concatenated by comma (,)
+     * @param thresholdSamples threshold of number of samples
+     * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
+     * TODO: should allow multiple aa changes per case
+     */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatationLinearStatistics(String concatCancerStudyIds, int window,
             int thresholdSamples) throws DaoException {
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
@@ -1418,7 +1570,6 @@ public final class DaoMutation {
                                         }
                                     }
                                 }
-                                mapProtein.get(hs);
                                 map.put(symbol+" [~"+hs+"]", m);
                             }
                         }

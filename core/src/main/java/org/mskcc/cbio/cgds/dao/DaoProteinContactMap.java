@@ -26,6 +26,16 @@
 **/
 package org.mskcc.cbio.cgds.dao;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import org.apache.commons.lang.StringUtils;
+
 /**
  *
  * @author jgao
@@ -44,5 +54,48 @@ public class DaoProteinContactMap {
 
         // return 1 because normal insert will return 1 if no error occurs
         return 1;
+    }
+    
+    /**
+     * Retrieve contact map for a set of residues in a PDB chain
+     * @param pdbId
+     * @param chain
+     * @param residues
+     * @return Map<residue, set <contacting residues>>
+     */
+    public static Map<Integer, Set<Integer>> getProteinContactMap(String pdbId, String chain, Set<Integer> residues) throws DaoException {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoProteinContactMap.class);
+            String strResidues = StringUtils.join(residues, ",");
+            String sql = "SELECT  `RESIDUE1`, `RESIDUE2` "
+                    + "FROM  `protein_contact_map` "
+                    + "WHERE `PDB_ID`='" + pdbId + "' "
+                    + "AND `CHAIN`='" + chain + "' "
+                    + "AND `RESIDUE1` IN (" + strResidues + ") "
+                    + "AND `RESIDUE2` IN (" + strResidues + ")"; 
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            Map<Integer, Set<Integer>> map = new HashMap<Integer, Set<Integer>>(residues.size());
+            for (Integer res : residues) {
+                map.put(res, new HashSet<Integer>());
+            }
+            
+            while (rs.next()) {
+                int res1 = rs.getInt(1);
+                int res2 = rs.getInt(2);
+                map.get(res1).add(res2);
+                map.get(res2).add(res1);
+            }
+            
+            return map;
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoProteinContactMap.class, con, pstmt, rs);
+        }
     }
 }

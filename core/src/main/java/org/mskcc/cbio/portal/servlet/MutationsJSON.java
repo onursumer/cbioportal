@@ -99,6 +99,9 @@ public class MutationsJSON extends HttpServlet {
                 int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationLinearStatistics(
                         studyIds.toString(), window, threshold);
+            } else if (type.equalsIgnoreCase("3d")) {
+                mapKeywordStudyCaseMut = DaoMutation.getMutatation3DStatistics(
+                        studyIds.toString(), threshold);
             } else {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationStatistics(
                         studyIds.toString(), type.split("[, ]+"), threshold);

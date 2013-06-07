@@ -219,11 +219,11 @@ public class PrepareProteinContactMap {
             return false;
         }
 
-        int res1 = group1.getResidueNumber();
-        int res2 = group2.getResidueNumber();
-        if (Math.abs(res1-res2)==1) {
-            return false;
-        }
+//        int res1 = group1.getResidueNumber();
+//        int res2 = group2.getResidueNumber();
+//        if (Math.abs(res1-res2)==1) {
+//            return false;
+//        }
         
         return true;
     }

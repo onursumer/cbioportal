@@ -76,6 +76,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
             <option value="linear-2">Linear hotspots (d<=2)</option>
             <option value="linear-3">Linear hotspots (d<=4)</option>
             <option value="linear-4">Linear hotspots (d<=8)</option>
+            <option value="3d">3D hotspots</option>
             <option value="ptm-effect-0">Mutations of PTM sites</option>
             <option value="ptm-effect-1">Mutations of PTM site neighbors (d<=1)</option>
             <option value="ptm-effect-2">Mutations of PTM site neighbors (d<=2)</option>
@@ -350,6 +351,15 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             for (var aaChange in mapAACases) {
                 ret.push("<b>"+aaChange+"</b>: "+mapAACases[aaChange].join(", "));
             }
+            ret.sort(function(a,b){
+                var patt = /[0-9]+/;
+                var pa = parseInt(a.match(patt));
+                var pb = parseInt(b.match(patt));
+                if (pa===null||pb===null) return a<b?-1:1;
+                var ret=pa-pb;
+                if (ret===0) ret = a<b?-1:1;
+                return ret;
+            });
             return "&nbsp;"+ret.join("<br>&nbsp;");
         }
         
@@ -529,7 +539,8 @@ AlteredGene.Router = Backbone.Router.extend({
         $('#merge-alterations').prop('disabled',type==="truncating");
     
         if (type==="missense" || type==="truncating" || type==="truncating-sep"
-            || type.indexOf('ptm-effect-')===0 || type.indexOf('linear-')===0) {
+            || type.indexOf('ptm-effect-')===0 || type.indexOf('linear-')===0
+            || type==="3d") {
     
             var option_type = type;
             if (type==='missense') {
