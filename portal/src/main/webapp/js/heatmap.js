@@ -152,44 +152,15 @@ function heatmap(data, container, options) {
   
   function addCellTooltip() {
     for (var i=0; i<nRows; i++) { // hack to problem of too many cells
-        var elems = $(".cell_c"+i);
-        getTooltipDiv(i).qtip(
+        $(".cell_c"+i).qtip(
         {
-                content: ' ',
-                position: {
-                        target: 'event', 
-                        effect: false
-                },
-                show: {
-                        target: elems
-                },
-                hide: {
-                        target: elems,
-                        fixed: true,
-                        delay: 100
-                },
-                style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
-                events: {
-                        show: function(event, api) {
-                                // Update the content of the tooltip on each show
-                                var target = $(event.originalEvent.target);
-
-                                if(target.length) {
-                                        api.set('content.text', target.attr('alt'));
-                                }
-                        }
-                }
+            content: {
+                attr: 'alt'
+            },
+            hide: { fixed: true, delay: 100 },
+            style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
+            position: {my:'top left',at:'bottom right'}
         });
     }
-  }
-  
-  function getTooltipDiv(i) {
-      var divId = "heatmap-tooltip-"+i;
-      var ret = $("#"+divId);
-      if (!ret || ret.length===0) {
-          $("body").append("<div id='"+divId+"'></div>");
-          ret = $("#"+divId);
-      }
-      return ret;
   }
 }
