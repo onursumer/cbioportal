@@ -314,6 +314,7 @@
 .genomic-profile-content .label-cell
 {
 	width: 55%;
+
 }
 
 .network_node_inspector .percent-value,
@@ -624,7 +625,7 @@
     text-align: left;
     padding-left: 5px;
     margin-top: -4px;
-	margin-bottom: 15px;
+    margin-bottom: 15px;
 }
 
 #filtering_tab_sbgn #slider_area .slider-value input
@@ -774,13 +775,27 @@
 {
 	text-align: center;
 }
-	
+#element_details_tab_sbgn .title label
+{
+	font-weight: bold;
+}
+#element_details_tab_sbgn label
+{
+	font-weight: bold;
+	text-align: left;
+}
+#element_details_tab_sbgn .header
+{
+	padding-bottom: 0.5em;
+	text-align: center;
+}	
 .geneHide
 {
 	display:none;
 	cursor:pointer;
 	padding-top: 0px;
 	font-weight: bolder;
+	cursor: pointer;
 }
 .geneShow
 {
@@ -788,6 +803,7 @@
 	cursor: pointer;
 	padding-top: 0px;
 	font-weight: bolder;
+	cursor: pointer;
 }
 .geneProperty
 {
@@ -812,19 +828,6 @@
 	font-family: verdana,arial,sans-serif;
 	font-size: 11px;
 }
-
-#element_details_tab_sbgn .title
-{
-	text-align: center;
-	cursor: pointer;
-}
-
-#element_details_tab_sbgn .title label
-{
-	font-weight: bold;
-	text-align: center;
-}
-
 #element_details_tab_sbgn td
 {
 	vertical-align: top;
@@ -844,6 +847,15 @@
 {
 	margin-top: 15px;
 	text-align: right;
+}
+.genomic-profile-content .profile-header td
+{
+	padding:0;
+	margin: 0;
+}
+.genomic-profile-content .profile-header
+{
+	border-collapse:collapse;
 }
 /*
  * ######################################################## 
