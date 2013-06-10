@@ -383,7 +383,7 @@
     
     <servlet>
         <servlet-name>HotSpots</servlet-name>
-        <servlet-class>org.mskcc.cbio.portal.servlet.HotSpotFinder</servlet-class>
+        <servlet-class>org.mskcc.cbio.portal.servlet.HotSpotsFinder</servlet-class>
     </servlet>
     
     <servlet-mapping>
