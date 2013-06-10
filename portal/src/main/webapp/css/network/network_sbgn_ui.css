@@ -675,6 +675,10 @@
 {
 	font-weight: bold;
 }
+#source_filter .source-header td
+{
+	padding-bottom: 15px;
+}
 
 /*
  * ######################################################## 

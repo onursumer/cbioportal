@@ -906,7 +906,7 @@ NetworkVis.prototype.showEdgeInspector = function(evt)
         for (var i = 0; i < edges.length; i++)
         {
             // skip filtered-out edges
-            if (!this.edgeVisibility(edges[i]))
+            if (!this.sourceVisibility(edges[i]))
             {
                 continue;
             }
@@ -1287,8 +1287,8 @@ NetworkVis.prototype.updateSource = function()
         return self.currentVisibility(element);
     };
 
-    var edgeVisibility = function(element){
-        return self.edgeVisibility(element);
+    var sourceVisibility = function(element){
+        return self.sourceVisibility(element);
     };
 
     // re-apply filter to update nodes
@@ -1299,7 +1299,7 @@ NetworkVis.prototype.updateSource = function()
     //_vis.removeFilter("edges", false);
 
     // filter selected types
-    this._vis.filter("edges", edgeVisibility);
+    this._vis.filter("edges", sourceVisibility);
 
     // remove previous filters due to disconnection
     for (var key in this._filteredByIsolation)

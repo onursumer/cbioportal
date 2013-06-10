@@ -107,7 +107,7 @@ function findNode(hugoSymbol, vis)
 	var nodes = new Array();
 	for ( var i = 0; i < nodeArray.length; i++) 
 	{
-		if( nodeArray[i].data.glyph_label_text == hugoSymbol)
+		if(nodeArray[i].data.glyph_label_text == hugoSymbol)
 		{
 			nodes.push(nodeArray[i].data.id);
 		}
@@ -373,7 +373,7 @@ NetworkSbgnVis.prototype.initializeWeights = function()
 			// if its a new hugolabel add it to the hugogenes
 			if (check == 0)
 			{
-					this.HUGOGENES.push(nodes[i]);
+				this.HUGOGENES.push(nodes[i]);
 			}
 		}		
 	}
@@ -952,9 +952,17 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 		{
 			text += '<div class="name"><label>Name: </label>' + this.geneLabel(data) + "</div>";
 		}
+		else if (data.glyph_class == this.NUCLEIC_ACID)
+		{
+			text += '<div class="name"><label>Name: </label>' + this.geneLabel(data) + "</div>";
+		}
 		else if (data.glyph_class == this.PROCESS)
 		{
 			text += '<div class="name"><label>Data Source: </label>' + data.DATA_SOURCE + "</div>";
+		}
+		else if (data.glyph_class == this.SIMPLE_CHEMICAL)
+		{
+			text += '<div class="name"><label>Name: </label>' + this.geneLabel(data) + "</div>";
 		}
 		else if (data.glyph_class == this.COMPLEX)
 		{
@@ -1053,13 +1061,10 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 			}
 			return;
 		}
-		else if (data.glyph_class == this.SIMPLE_CHEMICAL)
-		{
-			text += '<div class="name"><label>Name: </label>' + this.geneLabel(data) + "</div>";
-		}
+		
 		$(self.detailsTabSelector).html(text);
 	}
-	else if (selected.length >= 1 && selected[0].data.glyph_class == this.MACROMOLECULE)
+	if (selected.length >= 1 && selected[0].data.glyph_class == this.MACROMOLECULE)
 	{
 		var allMacro = 1;
 		for(var i=1; i < selected.length; i++)
