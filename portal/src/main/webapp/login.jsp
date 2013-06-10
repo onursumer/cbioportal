@@ -8,7 +8,7 @@
 
 	  <!-- Simple OpenID Selector -->
 	  <link type="text/css" rel="stylesheet" href="css/openid.css" />
-	  <script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+	  <script type="text/javascript" src="js/jquery.min.js"></script>
 	  <script type="text/javascript" src="js/openid-jquery.js"></script>
 	  <script type="text/javascript">
 	      $(document).ready(function() {
