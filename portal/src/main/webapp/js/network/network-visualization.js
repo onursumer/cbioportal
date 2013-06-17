@@ -119,6 +119,10 @@ function NetworkVis(divId)
 
     // CytoscapeWeb.Visualization instance
     this._vis = null;
+
+	//added by marzie&mecit
+	this._manuallyFiltered = null;
+	this.sliderVal = 0;
 }
 
 
@@ -140,6 +144,9 @@ NetworkVis.prototype.initNetworkUI = function(vis)
     this._filteredByIsolation = new Array();
     this._edgeTypeVisibility = this._edgeTypeArray();
     this._sourceVisibility = this._sourceArray();
+
+    //added by marzie&mecit
+    this._manuallyFiltered = new Array();
 
     this._geneWeightMap = this._geneWeightArray();
     this._geneWeightThreshold = this.ALTERATION_PERCENT;
@@ -2920,7 +2927,6 @@ NetworkVis.prototype._refreshGenesTab = function()
         // add double click listener for each gene
 
         $(this.genesTabSelector + " #" + safeId).dblclick(showGeneDetails);
-
         // TODO qtip does not work with Chrome&IE because of the restrictions of
         // the <select><option> structure.
         /*
@@ -3277,11 +3283,11 @@ NetworkVis.prototype._initControlFunctions = function()
     // add listener for node select & deselect actions
 
     this._vis.addListener("select",
-                     "nodes",
+                     "nodes", 
                      handleNodeSelect);
 
     this._vis.addListener("deselect",
-                     "nodes",
+                     "nodes", 
                      handleNodeSelect);
 
     // TODO temp debug option, remove when done

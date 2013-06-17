@@ -9,9 +9,9 @@ function NetworkSbgnVis(divId)
 	// call the parent constructor
 	NetworkVis.call(this, divId);
 	this.networkTabsSelector = "#" + this.divId + " #network_tabs_sbgn";
-    this.filteringTabSelector = "#" + this.divId + " #filtering_tab_sbgn";
-    this.genesTabSelector = "#" + this.divId + " #genes_tab_sbgn";
-    this.detailsTabSelector = "#" + this.divId + " #element_details_tab_sbgn";
+	this.filteringTabSelector = "#" + this.divId + " #filtering_tab_sbgn";
+	this.genesTabSelector = "#" + this.divId + " #genes_tab_sbgn";
+	this.detailsTabSelector = "#" + this.divId + " #element_details_tab_sbgn";
 
 	// node glyph class constants
 	this.MACROMOLECULE = "macromolecule";
@@ -22,6 +22,8 @@ function NetworkSbgnVis(divId)
 	this.SIMPLE_CHEMICAL = "simple chemical";
 	this.SOURCE_SINK = "source and sink";
 	this.HUGOGENES = new Array();
+	//global array for 
+	this._manuallyFiltered = new Array();
 }	
 
 //this simulates NetworkSbgnVis extends NetworkVis (inheritance)
@@ -100,7 +102,9 @@ NetworkSbgnVis.prototype.addAnnotationData = function(annotationData)
 }
 
 
-//Searches an sbgn node whose label fits with parameter hugoSymbol
+/** 
+ * Searches an sbgn node whose label fits with parameter hugoSymbol
+**/
 function findNode(hugoSymbol, vis)
 {
 	var nodeArray = vis.nodes();
@@ -116,7 +120,9 @@ function findNode(hugoSymbol, vis)
 }
 
 
-//calculates cna percents ands adds them to target node
+/** 
+ * calculates cna percents ands adds them to target node
+**/
 NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
 {  
 	var amplified	= "AMPLIFIED";
@@ -151,7 +157,9 @@ NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
 
 };
 
-//calculates rppa or mrna percents ands adds them to target node, data indicator determines which data will be set
+/** 
+ * calculates rppa or mrna percents ands adds them to target node, data indicator determines which data will be set
+**/
 NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicator, targetNodes)
 {  
 	var up		= "UPREGULATED";
@@ -187,7 +195,9 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicat
 	this._vis.updateData("nodes",targetNodes, downData);
 };
 
-//calculates mutation percents ands adds them to target node
+/**
+ * calculates mutation percents ands adds them to target node
+**/
 NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNodes)
 {  
 	var percent = 0;
@@ -201,14 +211,19 @@ NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNod
 	this._vis.updateData("nodes",targetNodes, mutData);
 };
 
-//extends node fields by adding new fields according to annotation data
+/**
+ * extends node fields by adding new fields according to annotation data
+**/
 NetworkSbgnVis.prototype.addAnnotationFields = function()
 {
 	var DATA_SOURCE = {name:"DATA_SOURCE", type:"string", defValue: ""};
 	this._vis.addDataField(DATA_SOURCE);
 };
 
-//extends node fields by adding new fields according to genomic data
+
+/**
+ * extends node fields by adding new fields according to genomic data
+**/
 NetworkSbgnVis.prototype.addGenomicFields = function()
 {
 	var cna_amplified 	= {name:"PERCENT_CNA_AMPLIFIED", type:"number", defValue: 0};
@@ -250,96 +265,223 @@ NetworkSbgnVis.prototype.addGenomicFields = function()
  */
 NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationData)
 {
-    this._vis = vis;
-    this._linkMap = this._xrefArray();
+	var self = this;
+	this._vis = vis;
+	this._linkMap = this._xrefArray();
 
-    // init filter arrays
-    this._alreadyFiltered = new Array();
-    this._filteredBySlider = new Array();
-    this._filteredByDropDown = new Array();
-    this._filteredByIsolation = new Array();
-    // parse and add genomic data to cytoscape nodes
-    this.parseGenomicData(genomicData,annotationData);
-    //this._edgeTypeVisibility = this._edgeTypeArray();
-    this._sourceVisibility = this._sourceArray(); 
-    // this.setInitialData();
+	// init filter arrays
+	// delete this later because it os not used anymore
+	this._alreadyFiltered = new Array();
+
+	this._filteredBySlider = new Array();
+	this._filteredByDropDown = new Array();
+	this._filteredByIsolation = new Array();
+	// parse and add genomic data to cytoscape nodes
+	this.parseGenomicData(genomicData,annotationData);
+	//for once only, get all the process sources and updates _sourceVisibility array
+	this._sourceVisibility = this._initSourceArray(); 
 	var weights = this.initializeWeights();
-    this._geneWeightMap = this._geneWeightArray(weights);
-    this._geneWeightThreshold = this.ALTERATION_PERCENT;
-    this._maxAlterationPercent = this._maxAlterValNonSeed(this._geneWeightMap);
+	this._geneWeightMap = this._geneWeightArray(weights);
+	this._geneWeightThreshold = this.ALTERATION_PERCENT;
+	this._maxAlterationPercent = this._maxAlterValNonSeed(this._geneWeightMap);
 
-    this._resetFlags();
+	this._resetFlags();
 
-    this._initControlFunctions();
-	////////////////////
-	var updateSource = function() {
-        self.updateSource();
-    };
-    $(this.filteringTabSelector + " #update_source").click(updateSource);
+	this._initControlFunctions();
 
+	/**
+	* handlers for selecting nodes
+	* for more information see visialization in cytoscape website
+	**/
+	// first one chooses all nodes with same glyph label
+	// and updates the details tab accordingly
+	var handleMultiNodeSelect = function(evt) 
+	{
+		self.multiSelectHugos(evt);
+		self.multiUpdateDetailsTab(evt);
+	};
+	// normal select which just chooses one node
+	// the details update will only accept one node
+	var handleNodeSelect = function(evt) 
+	{
+		self.updateGenesTab(evt);
+		self.updateDetailsTab(evt);
+	};
 
-    this._initLayoutOptions();
+	// if to choose multiple nodes by glyph labels we need to add and remove listeners
+	// on CTRL key down and keyup (now dblClick is also doing this, we might remove this)
+	var keyDownSelect = function(evt) 
+	{
+		if(evt.keyCode == self.CTRL_KEYCODE)
+		{
+		    self._vis.removeListener("select",
+		     "nodes", 
+		     handleNodeSelect);
 
-    this._initMainMenu();
+	    	    self._vis.removeListener("deselect",
+		     "nodes", 
+		     handleNodeSelect);
 
-    this._initDialogs();
-    this._initPropsUI();
-    this._initSliders();
-    this._initDropDown();
-    this._initTooltipStyle();
+		    self._vis.addListener("select",
+		     "nodes", 
+		     handleMultiNodeSelect);
+		    self._vis.addListener("deselect",
+		     "nodes", 
+		     handleMultiNodeSelect);
+		}
+	
+    	};
+	var keyUpSelect = function(evt) 
+	{
+		self._vis.removeListener("select",
+		     "nodes", 
+		     handleMultiNodeSelect);
+		self._vis.removeListener("deselect",
+		     "nodes", 
+		     handleMultiNodeSelect);
 
-    // add listener for the main tabs to hide dialogs when user selects
-    // a tab other than the Network tab
+		self._vis.addListener("select",
+		     "nodes", 
+		     handleNodeSelect);
 
-    var self = this;
+		self._vis.addListener("deselect",
+		     "nodes", 
+		     handleNodeSelect);
+	};
+	// add jquery listeners
+	$(' #vis_content').keydown(keyDownSelect);
+	$(' #vis_content').keyup(keyUpSelect);
+	// dblclick event listener to select multi nodes by glyph label
+	self._vis.addListener("dblclick",
+	     "nodes", 
+	     handleMultiNodeSelect);
 
-    var hideDialogs = function(evt, ui){
-        self.hideDialogs(evt, ui);
-    };
+	// because here the update source is in a different div 
+	// than the SIF we have to change the jquery listener
+	// to (this.filteringTabSelector)
+	var updateSource = function() 
+	{
+		self.updateSource();
+	};
+	$(this.filteringTabSelector + " #update_source").click(updateSource);
 
-    $("#tabs").bind("tabsshow", hideDialogs);
+	//$(' #vis_content').dblclick(dblClickSelect);
+	this._initLayoutOptions();
 
-    // this is required to prevent hideDialogs function to be invoked
-    // when clicked on a network tab
-    $(this.networkTabsSelector).bind("tabsshow", false);
+	// initializing the tabs and UIs
+	this._initMainMenu();
 
-    // init tabs
-    $(this.networkTabsSelector).tabs();
-    $(this.networkTabsSelector + " .network-tab-ref").tipTip(
-        {defaultPosition: "top", delay:"100", edgeOffset: 10, maxWidth: 200});
+	this._initDialogs();
+	this._initPropsUI();
+	this._initSliders();
+	this._initDropDown();
+	this._initTooltipStyle();
 
-    this._initGenesTab();
-    this._refreshGenesTab();
-    this._refreshRelationsTab();
-	    // add source filtering options
+	// add listener for the main tabs to hide dialogs when user selects
+	// a tab other than the Network tab
 
-    for (var key in this._sourceVisibility)
-    {
-        $(this.filteringTabSelector + " #source_filter").append(
-            '<tr class="' + key + '">' +
-            '<td class="source-checkbox">' +
-            '<input id="' + key + '_check" type="checkbox" checked="checked">' +
-            '<label>' + key + '</label>' +
-            '</td></tr>');
-    }
-    // adjust things for IE
-    this._adjustIE();
+	var hideDialogs = function(evt, ui){
+		self.hideDialogs(evt, ui);
+	};
 
-    // make UI visible
-    this._setVisibility(true);
+	$("#tabs").bind("tabsshow", hideDialogs);
+
+	// this is required to prevent hideDialogs function to be invoked
+	// when clicked on a network tab
+	$(this.networkTabsSelector).bind("tabsshow", false);
+
+	// init tabs
+	$(this.networkTabsSelector).tabs();
+	$(this.networkTabsSelector + " .network-tab-ref").tipTip(
+		{defaultPosition: "top", delay:"100", edgeOffset: 10, maxWidth: 200});
+
+	this._initGenesTab();
+	this._refreshGenesTab();
+	this._refreshRelationsTab();
+	    
+	// add node source filtering checkboxes
+	for (var key in this._sourceVisibility)
+	{
+		$(this.filteringTabSelector + " #source_filter").append(
+		    '<tr class="' + key + '">' +
+		    '<td class="source-checkbox">' +
+		    '<input id="' + key + '_check" type="checkbox" checked="checked">' +
+		    '<label>' + key + '</label>' +
+		    '</td></tr>');
+	}
+
+	// adjust things for IE
+	this._adjustIE();
+
+	// make UI visible
+	this._setVisibility(true);
+
 
 };
 
+/**
+ * Select multiple nodes by glyph label
+ * all states of a gene will be chosen
+**/
+NetworkSbgnVis.prototype.multiSelectHugos = function(event)
+{
+	var selected = this._vis.selected("nodes");
+
+	// do not perform any action on the gene list,
+	// if the selection is due to the genes tab
+	if(!this._selectFromTab)
+	{
+		if (_isIE())
+		{
+		    this._setComponentVis($(this.geneListAreaSelector + " select"), false);
+		}
+
+		// deselect all options
+		$(this.geneListAreaSelector + " select option").each(
+		    function(index)
+		    {
+			$(this).removeAttr("selected");
+		    });
+
+		// select all nodes with same label
+		var nodes = this._vis.nodes();
+		var sameNodes =  this.sameHugoGenes(selected);
+		this._vis.select("nodes", sameNodes);
+		// select all nodes with same glyph label text in the gene tab list
+		var hugos = this.hugoGenes(selected);
+		// update the genelist in the genes tab and select the glyphlabels chosen
+		// note we do not select the genes from the geneList when normal select is done
+		for (var i=0; i < hugos.length; i++)
+		{
+			$(this.geneListAreaSelector + " #" +  _safeProperty(hugos[i].data.id)).attr(
+					     "selected", "selected");
+		}
+
+		if (_isIE())
+		{
+		    this._setComponentVis($(this.geneListAreaSelector + " select"), true);
+		}
+	}
+	// also update Re-submit button
+	if (selected.length > 0)
+	{
+		// enable the button
+		$(this.genesTabSelector + " #re-submit_query").button("enable");
+	}
+	else
+	{
+		// disable the button
+		$(this.genesTabSelector + " #re-submit_query").button("disable");
+	}
+}
 
 /*
 /**
- * Calculates weight values for each gene by using the formula:
- *
- * weight = Max[(Total Alteration of a node),
- *    Max(Total Alteration of its neighbors) * coeff] * 100
- *
- * @param coeff	coefficient value used in the weight function
- * @returns		a map (array) containing weight values for each gene
+ * Calculates weight values for each gene by its alteration frequency
+ * then these weights are adjusted by the adjustWeights function (this._geneWeightArray)
+ * unique to SBGN view
+ * also creates and updates the HUGOGENES
+ * @returns an array of weights ranging from 0 to 100
  */
 NetworkSbgnVis.prototype.initializeWeights = function()
 {
@@ -379,7 +521,22 @@ NetworkSbgnVis.prototype.initializeWeights = function()
 	}
 	return weights;
 };
-
+/**
+ * ADJUST WEIGHTS
+ * used to adjust weights based on the proposed algorithm
+ * propogates the weights to maintain 5 principles:
+ * P1. If a node has a weight of at least  it should be displayed.
+ * P2. If a non-process node has an initial weight of at least , 
+ * all the processes it is involved with should be displayed.
+ * P3. If a process is to be displayed, then all its inputs (substrates), 
+ * outputs (products), and effectors should be displayed too.
+ * P4. If a node has an initial weight of at least , the parent node 
+ * (complex or compartment) should be shown. In other words a parent node 
+ * should be shown if at least one of its children has an initial weight 
+ * of at least .
+ * P5. A complex molecule should always be shown with all its components.
+ * The code has initialization (A0) and  4 steps (A1-A4)
+**/
 NetworkSbgnVis.prototype._geneWeightArray = function(w)
 {
 	var weights = w;
@@ -389,16 +546,6 @@ NetworkSbgnVis.prototype._geneWeightArray = function(w)
 	var leaves = new Array();
 	
 	var nodes = this._vis.nodes();
-	// just the visible nodes
-	var i = 0;
-	while (i < nodes.length)
-	{
-		if (!this.currentVisibility(nodes[i]))
-		{
-			weights[nodes[i].data.id] = 0;
-		}
-		i++;
-	}
 
 	// A0: initialization
 	for (var i = 0; i < nodes.length; i++)
@@ -438,7 +585,7 @@ NetworkSbgnVis.prototype._geneWeightArray = function(w)
 		}
 	}
 	
-	 // A1: update process weights based on neighbors
+	// A1: update process weights based on neighbors
 	// for each process, set the initial weight the maximum of its neighbors
 	for (var i = 0; i < processes.length; i++)
 	{
@@ -501,7 +648,6 @@ NetworkSbgnVis.prototype._geneWeightArray = function(w)
 			node = this._vis.node(parentID);
 		}
 	}
-	
 
 	// A3: propogate max values to parents from leaves to root
 	for (var i = 0; i < leaves.length; i++)
@@ -521,7 +667,6 @@ NetworkSbgnVis.prototype._geneWeightArray = function(w)
 			node = parent;
 		}
 	}
-	
 	
 	// make sure all complex nodes 
 	// A4: propogate max values of complex hierarchies down to leaves
@@ -553,7 +698,8 @@ NetworkSbgnVis.prototype._geneWeightArray = function(w)
 
 /**
  * Creates an array of visible (i.e. non-filtered) genes.
- *
+ * the HUGOGENES are macromolecules, each of a different glyph_label
+ * as a representative of that glyph_label
  * @return		array of visible genes
  */
 NetworkSbgnVis.prototype._visibleGenes = function()
@@ -567,9 +713,9 @@ NetworkSbgnVis.prototype._visibleGenes = function()
 };
 
 /**
- * Updates selected genes when clicked on a gene on the Genes Tab. This function
- * helps the synchronization between the genes tab and the visualization.
- *
+ * Updates selected genes when clicked on a gene on the Genes Tab.
+ * When a gene is selected from the gene list, all macromolecules or nucleic
+ * acid features with the same glyph name are selected.
  * @param evt	target event that triggered the action
  */
 NetworkSbgnVis.prototype.updateSelectedGenes = function(evt)
@@ -598,16 +744,21 @@ NetworkSbgnVis.prototype.updateSelectedGenes = function(evt)
 	var nodes = this._vis.nodes();
 	
 	// array of nodes to select
-    var nodeIds = new Array();
+	var nodeIds = new Array();
 	var check = 0;
+	// find nodes with same 
 	for (var i = 0; i < nodes.length; i++)
 	{
-		for ( var j = 0; j < hugoIds.length; j++) 
+		if (nodes[i].data.glyph_class == this.MACROMOLECULE || 
+			nodes[i].data.glyph_class == this.NUCLEIC_ACID)
 		{
-			if (this.geneLabel(nodes[i].data) == this.geneLabel(this._vis.node(hugoIds[j]).data))
+			for ( var j = 0; j < hugoIds.length; j++) 
 			{
-				nodeIds.push(nodes[i].data.id);
-				break;
+				if (this.geneLabel(nodes[i].data) == this.geneLabel(this._vis.node(hugoIds[j]).data))
+				{
+					nodeIds.push(nodes[i].data.id);
+					break;
+				}
 			}
 		}
 	}
@@ -618,13 +769,14 @@ NetworkSbgnVis.prototype.updateSelectedGenes = function(evt)
 	// reset flag
 	this._selectFromTab = false;
 };
-// used for selecting genes
+
 /**
- * returns all nodes from HUGOGENES array that have the same label as
+ * returns all nodes from HUGOGENES array that have the same glyph_label as
  * the nodes in the elements list.
  */
 NetworkSbgnVis.prototype.hugoGenes = function(elements)
-{
+{	
+	//hugo elements contains nodes from hugo genes.
 	var hugoElements = new Array();
 	
 	for (var i=0; i < elements.length; i++)
@@ -643,7 +795,8 @@ NetworkSbgnVis.prototype.hugoGenes = function(elements)
 		}
 	}
 	return hugoElements;
-}
+};
+
 /**
  * returns all nodes in the graph that have the same label as
  * the nodes in the elements list.
@@ -674,67 +827,53 @@ NetworkSbgnVis.prototype.sameHugoGenes = function(elements)
 }
 /**
  * Updates the gene tab if at least one node is selected or deselected on the
- * network. This function helps the synchronization between the genes tab and
- * visualization.
+ * network. Here, the gene list is not changed. This is single click, 
+ * double click is used for multiple selecting
  * for now whenever a gene is selected the row associated with the glyph label
  * is highlighted and all genes with same property are selected.
- *
+ * 
  * @param evt	event that triggered the action
  */
 NetworkSbgnVis.prototype.updateGenesTab = function(evt)
 {
-    var selected = this._vis.selected("nodes");
+	var selected = this._vis.selected("nodes");
+	if(!this._selectFromTab)
+	{
 
-    // do not perform any action on the gene list,
-    // if the selection is due to the genes tab
-    if(!this._selectFromTab)
-    {
-	
-        if (_isIE())
-        {
-            this._setComponentVis($(this.geneListAreaSelector + " select"), false);
-        }
+	if (_isIE())
+	{
+	    this._setComponentVis($(this.geneListAreaSelector + " select"), false);
+	}
 
-        // deselect all options
-        $(this.geneListAreaSelector + " select option").each(
-            function(index)
-            {
-                $(this).removeAttr("selected");
-            });
+	// deselect all options
+	$(this.geneListAreaSelector + " select option").each(
+	    function(index)
+	    {
+		$(this).removeAttr("selected");
+	    });
 	var nodes = this._vis.nodes();
-        
-	// select all nodes with same label
-	var sameNodes =  this.sameHugoGenes(selected);
-	this._vis.select("nodes", sameNodes);
-	// select all nodes with same glyph label text in the gene tab list
-	var hugos = this.hugoGenes(selected);
-        for (var i=0; i < hugos.length; i++)
-        {
-		$(this.geneListAreaSelector + " #" +  _safeProperty(hugos[i].data.id)).attr(
-				     "selected", "selected");
-        }
 
-        if (_isIE())
-        {
-            this._setComponentVis($(this.geneListAreaSelector + " select"), true);
-        }
-    }
-    // also update Re-submit button
-    if (selected.length > 0)
-    {
-        // enable the button
-        $(this.genesTabSelector + " #re-submit_query").button("enable");
-    }
-    else
-    {
-        // disable the button
-        $(this.genesTabSelector + " #re-submit_query").button("disable");
-    }
+	if (_isIE())
+	{
+	    this._setComponentVis($(this.geneListAreaSelector + " select"), true);
+	}
+	}
+	// also update Re-submit button
+	if (selected.length > 0)
+	{
+		// enable the button
+		$(this.genesTabSelector + " #re-submit_query").button("enable");
+	}
+	else
+	{
+		// disable the button
+		$(this.genesTabSelector + " #re-submit_query").button("disable");
+	}
 };
 
 /**
  * Comparison function to sort genes alphabetically.
- *
+ * overwritten to check againsts glyph_label
  * @param node1	node to compare to node2
  * @param node2 node to compare to node1
  * @return 		positive integer if node1 is alphabetically greater than node2
@@ -757,123 +896,82 @@ function _geneSort (node1, node2)
     }
 }
 
-// make a function to give the label so that we can neasily over ride in the sbgn
+/**
+ *  returns the glyph label which is the name of the macromolecule
+**/
 NetworkSbgnVis.prototype.geneLabel = function(data)
 {
 	return data.glyph_label_text;
 };
 
-
-
 /**
- * Filters out all non-selected nodes.
- */
+ * Filters out all non-selected nodes by the adjust weights (filtering algorithm)
+ * First, we get the selected nodes
+ * Second, by calling adjustWeights, we get weights of nodes to be filtered. 
+ * Third, we add the remaining nodes to manually filtered array. 
+ * Fourth, we update the visibility.
+**/
 NetworkSbgnVis.prototype.filterNonSelected = function()
 {
-	var self = this;
-
-	// this is required to pass "this" instance to the listener
-	var geneVisibility = function(element) {
-	return self.geneVisibility(element);
-	};
-
-	// update selected elements map
-	var selected = this._vis.selected("nodes");
-	var map = new Array();
-	var weights = new Array();
 	var nodes = this._vis.nodes();
+	var selected = this._vis.selected("nodes");
+	var weights = new Array();
+
 	for (var i=0; i < nodes.length; i++)
 	{
-		weights[nodes[i].data.id] = 0;
+		var id = nodes[i].data.id;
+		weights[id] = 0;
 	}
 	for (var i=0; i < selected.length; i++)
 	{
-		weights[selected[i].data.id] = 1;
+		var id = selected[i].data.id;
+		weights[id] = 1;
 	}
-
 	weights = this._geneWeightArray(weights);
-
 	for (var i=0; i < nodes.length; i++)
 	{
-		if (weights[nodes[i].data.id] == 1)
+		var id = nodes[i].data.id;
+		if(weights[id] == 0)
 		{
-			var key = nodes[i].data.id;
-			map[key] = nodes[i];
+			this._manuallyFiltered.push(id);
 		}
 	}
-	this._selectedElements = map;
-
-	// filter out non-selected elements
-	this._vis.filter('nodes', geneVisibility);
-
-	// also, filter disconnected nodes if necessary
-	this._filterDisconnected();
-
-	// refresh Genes tab
-	this._refreshGenesTab();
-	this.updateGenesTab();
-
-	// visualization changed, perform layout if necessary
-	this._visChanged();
+	this.updateVisibility();
 };
+
 /**
- * Filters out all selected genes.
- */
+ * Filters out all selected nodes by the adjust weights (filtering algorithm)
+ * First, we get the selected nodes
+ * Second, by calling adjustWeights, we get weights of nodes to be filtered. 
+ * Third, we add these nodes to manually filtered array. 
+ * Fourth, we update the visibility.
+**/
 NetworkSbgnVis.prototype.filterSelectedGenes = function()
 {
-	var self = this;
-
-	// this is required to pass "this" instance to the listener
-	var geneVisibility = function(element) {
-		return self.geneVisibility(element);
-	};
-
-	// update selected elements map
-	var selected = this._vis.selected("nodes");
-	var map = new Array();
-
-	var weights = new Array();
 	var nodes = this._vis.nodes();
+	var selected = this._vis.selected("nodes");
+	var weights = new Array();
+
 	for (var i=0; i < nodes.length; i++)
 	{
-		weights[nodes[i].data.id] = 0;
+		var id = nodes[i].data.id;
+		weights[id] = 0;
 	}
 	for (var i=0; i < selected.length; i++)
 	{
-		weights[selected[i].data.id] = 1;
+		var id = selected[i].data.id;
+		weights[id] = 1;
 	}
-	var weightsSelected = this._geneWeightArray(weights);
-	weights = new Array();
-	for (var key in weightsSelected)
-    {
-		if(weightsSelected[key] == 0)
-			weights[key] = 1;
-		else
-			weights[key] = 0;
-	}
-	weightsSelected = this._geneWeightArray(weights);
-
+	weights = this._geneWeightArray(weights);
 	for (var i=0; i < nodes.length; i++)
 	{
-		if (weightsSelected[nodes[i].data.id] == 1)
+		var id = nodes[i].data.id;
+		if(weights[id] == 1)
 		{
-			var key = nodes[i].data.id;
-			map[key] = nodes[i];
+			this._manuallyFiltered.push(id);
 		}
 	}
-	this._selectedElements = map;
-
-	// filter out selected elements
-	this._vis.filter("nodes", geneVisibility);
-
-	// also, filter disconnected nodes if necessary
-	this._filterDisconnected();
-
-	// refresh genes tab
-	this._refreshGenesTab();
-
-	// visualization changed, perform layout if necessary
-	this._visChanged();
+	this.updateVisibility();
 };
 
 /**
@@ -881,192 +979,58 @@ NetworkSbgnVis.prototype.filterSelectedGenes = function()
  */
 NetworkSbgnVis.prototype._initSliders = function()
 {
-    var self = this;
+	var self = this;
 
-    var keyPressListener = function(evt) {
-      self._keyPressListener(evt);
-    };
+	var keyPressListener = function(evt) {
+		self._keyPressListener(evt);
+	};
 
-    var weightSliderStop = function(evt, ui) {
-        self._weightSliderStop(evt, ui);
-    };
+	var weightSliderStop = function(evt, ui) {
+		self._weightSliderStop(evt, ui);
+	};
 
-    var weightSliderMove = function(evt, ui) {
-        self._weightSliderMove(evt, ui);
-    };
+	var weightSliderMove = function(evt, ui) {
+		self._weightSliderMove(evt, ui);
+	};
 
 
-    // add key listeners for input fields
+	// add key listeners for input fields
+	$(this.filteringTabSelector + " #weight_slider_field").keypress(keyPressListener);
+	$(this.filteringTabSelector + " #affinity_slider_field").keypress(keyPressListener);
 
-    $(this.filteringTabSelector + " #weight_slider_field").keypress(keyPressListener);
-    $(this.filteringTabSelector + " #affinity_slider_field").keypress(keyPressListener);
-
-    // show gene filtering slider
-    $(this.filteringTabSelector + " #weight_slider_bar").slider(
-        {value: this.ALTERATION_PERCENT,
-            stop: weightSliderStop,
-            slide: weightSliderMove});
+	// show gene filtering slider
+	$(this.filteringTabSelector + " #weight_slider_bar").slider(
+		{value: this.ALTERATION_PERCENT,
+		    stop: weightSliderStop,
+		    slide: weightSliderMove});
 
 };
 
 /**
  * Updates the contents of the details tab according to
  * the currently selected elements.
- *
+ * used for multiple selecting of nodes
+ * so multiple nodes of glyph_class = macromolecule || nucleic acid feature
+ * are acceptable if all of them have the same glyph_label_text
  * @param evt
  */
-NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
+NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 {
-    // TODO also consider selected edges?
-    var selected = this._vis.selected("nodes");
-    var data;
-    var self = this;
-
-/*
-	if (data.type == this.DRUG)
-	{
-		// update tab content
-		$(self.detailsTabSelector + " div").empty();
-
-		var drugView = new DrugInfoView({el: this.detailsTabSelector + " .drug-info-content",
-			data: data,
-			linkMap: this._linkMap,
-			idPlaceHolder: this.ID_PLACE_HOLDER,
-			edges: this._vis.edges()});
-	}
-*/
+	var selected = this._vis.selected("nodes");
+	var data;
+	var self = this;
+	// empty everything and make the error div and hide it
 	$(self.detailsTabSelector).empty();
 	jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
 	$(self.detailsTabSelector + " .error").empty();
 	$(self.detailsTabSelector + " .error").hide();
-	if(selected.length == 1)
-	{
-
-		data = selected[0].data;
-		var text = '<div class="header"><span class="title"><label>';
-		text +=  toTitleCase(data.glyph_class) + ' Properties';
-		text += '</label></span></div>';
-		
-		if(data.glyph_class == this.COMPARTMENT 
-			|| data.glyph_class == this.NUCLEIC_ACID)
-		{
-			text += '<div class="name"><label>Name: </label>' + this.geneLabel(data) + "</div>";
-		}
-		else if (data.glyph_class == this.NUCLEIC_ACID)
-		{
-			text += '<div class="name"><label>Name: </label>' + this.geneLabel(data) + "</div>";
-		}
-		else if (data.glyph_class == this.PROCESS)
-		{
-			text += '<div class="name"><label>Data Source: </label>' + data.DATA_SOURCE + "</div>";
-		}
-		else if (data.glyph_class == this.SIMPLE_CHEMICAL)
-		{
-			text += '<div class="name"><label>Name: </label>' + this.geneLabel(data) + "</div>";
-		}
-		else if (data.glyph_class == this.COMPLEX)
-		{
-			text += '<div class="complexProperty">'
-			var children = this._vis.childNodes(selected[0].data.id);
-			var dataList = new Array();
-			var check = new Array();
-			for(var i = 0; i < children.length; i++)
-			{
-				data = children[i].data;
-				var label = _safeProperty(this.geneLabel(data));
-				if(data.glyph_class == this.MACROMOLECULE)
-				{
-					check[label] = 0;
-				}
-	
-			}
-			var cnt = 0;
-		
-			for(var i = 0; i < children.length; i++)
-			{
-				data = children[i].data;
-				var label = _safeProperty(this.geneLabel(data));
-				if(data.glyph_class == this.MACROMOLECULE
-					&& check[label] == 0)
-				{
-					text += '<div class="geneHide" id="gene' + label + 'Hide" ';
-					text += 'onclick="$(' + "'#gene" + label + "').hide();";
-					text += "$('#gene" + label + "Hide').hide();";
-					text += "$('#gene" + label + "Show').show();" + '"><span class="title"><label> - ' + this.geneLabel(data);
-					text += '</label></span></div>';
-
-					text += '<div class="geneShow" id="gene' + label + 'Show" ';
-					text += 'onclick="' + "$('#gene" + label + "').show();";
-					text += "$('#gene" + label + "Hide').show();";
-					text += "$('#gene" + label + "Show').hide();" + '"><span class="title"><label> + ' + this.geneLabel(data);
-					text += '</label></span></div>';
-
-					text += '<div class="geneProperty" style="display:none;" id="gene' + label + '">';
-					text += '<div class="genomic-profile-content"></div>';
-					text += '<div class="biogene-content"></div>';
-					text += '</div><br />';
-
-					check[label] = 1;
-					dataList[cnt] = data;
-					cnt ++;
-				}
-			}
-			text += "</div>";
-			$(self.detailsTabSelector).html(text);
-			for(var i = 0; i < dataList.length  ; i++)
-			{
-				data = dataList[i];
-				var label = _safeProperty(this.geneLabel(data));
-				var queryParams = {"query": label,
-					"org": "human",
-					"format": "json",};
-		
-				var divName = self.detailsTabSelector + " #gene" + label;
-				$(divName + " .genomic-profile-content").append(
-				'<img src="images/ajax-loader.gif">');
-
-				$.ajax({
-				    type: "POST",
-				    url: "bioGeneQuery.do",
-				    async: false,
-				    timeout: 5000,
-				    data: queryParams,
-				    error: function(){
-						$(divName + " .genomic-profile-content").empty();
-						$(divName + " .genomic-profile-content").append(
-						    "Error retrieving data: " + queryResult.returnCode);
-						$(divName + " .genomic-profile-content").show();
-						return;
-					},
-				    success: function(queryResult) {
-					if(queryResult.count > 0)
-					{
-						// generate the view by using backbone
-						var biogeneView = new BioGeneView(
-							{el: divName + " .biogene-content",
-							data: queryResult.geneInfo[0]});
-					}
-					else
-					{
-						$(divName + " .biogene-content").html(
-							"<p>No additional information available for the selected node.</p>");
-					}
-	
-					// generate view for genomic profile data
-					var genomicProfileView = new GenomicProfileView(
-					    {el: divName + " .genomic-profile-content",
-						data: data});
-				    }
-				});
-			}
-			return;
-		}
-		
-		$(self.detailsTabSelector).html(text);
-	}
-	if (selected.length >= 1 && selected[0].data.glyph_class == this.MACROMOLECULE)
+	var glyph0 = selected[0].data.glyph_class;
+	// if there is more than one node selected and the first is a macromolecule or nucleic acide
+	if (selected.length > 1 && 
+		(glyph0 == this.MACROMOLECULE || glyph0 == this.NUCLEIC_ACID))
 	{
 		var allMacro = 1;
+		// check if all of them have the same glyph_label_text
 		for(var i=1; i < selected.length; i++)
 		{
 			if(selected[i].data.glyph_label_text != selected[i-1].data.glyph_label_text)
@@ -1075,6 +1039,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 				break;
 			}
 		}
+		// if so, retrieve information for the first one
 		if(allMacro == 1)
 		{
 			data = selected[0].data;
@@ -1086,6 +1051,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 			$(self.detailsTabSelector + " .error").show();
 			return;
 		}
+		// right the glyph_class and the glyph_label of the gene 
 		var label = _safeProperty(this.geneLabel(data));
 		$(self.detailsTabSelector + " div").empty();
 		var text = '<div class="header"><span class="title"><label>';
@@ -1097,7 +1063,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 
 		$(self.detailsTabSelector).html(text);
 		
-		
+		// send AJAX request to retrieve information
 		var queryParams = {"query": label,
 			"org": "human",
 			"format": "json",
@@ -1105,7 +1071,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 		
 		$(self.detailsTabSelector + " .genomic-profile-content").append(
 			'<img src="images/ajax-loader.gif">');
-
+		// the ajax request expires in 5 seconds, can be reduced
 		$.ajax({
 		    type: "POST",
 		    url: "bioGeneQuery.do",
@@ -1138,24 +1104,262 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 			var genomicProfileView = new GenomicProfileView(
 			    {el: self.detailsTabSelector + " .genomic-profile-content",
 				data: data});
+			// very important to return to avoid unpredictable delays
+			return;
 		    }
-		});		
-	    }
-	    else
-	    {
+		});	
+	}
+	else
+	{
+		// if this is not the case, go to the normal updateDetailsTab function 
+		// that accepts only one node at a time
+		this.updateDetailsTab(evt);
+	}
+};
+
+/**
+ * Updates the contents of the details tab according to
+ * the currently selected elements.
+ *
+ * @param evt
+ */
+NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
+{
+	var selected = this._vis.selected("nodes");
+	var data;
+	var self = this;
+	// empty everything and make the error div and hide it
+	$(self.detailsTabSelector).empty();
+	jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
+	$(self.detailsTabSelector + " .error").empty();
+	$(self.detailsTabSelector + " .error").hide();
+	// only one node should be selected at a time
+	if(selected.length == 1)
+	{
+
+		data = selected[0].data;
+		// first show the glyph_class
+		var text = '<div class="header"><span class="title"><label>';
+		text +=  toTitleCase(data.glyph_class) + ' Properties';
+		text += '</label></span></div>';
+		// compartment and simple chemicals just have a name
+		if(data.glyph_class == this.COMPARTMENT 
+			|| data.glyph_class == this.SIMPLE_CHEMICAL)
+		{
+			text += '<div class="name"><label>Name: </label>' + this.geneLabel(data) + "</div>";
+		}
+		// processes have data source
+		else if (data.glyph_class == this.PROCESS)
+		{
+			text += '<div class="name"><label>Data Source: </label>' + data.DATA_SOURCE + "</div>";
+		}
+		// for macromolecules and nucleic acids we have to write the name and then send a query to get the information
+		else if (data.glyph_class == this.MACROMOLECULE 
+			|| data.glyph_class == this.NUCLEIC_ACID)
+		{
+			// get the label and make it safe to avoid characters that might cause errorous html code
+			var label = _safeProperty(this.geneLabel(data));
+			text += '<div class="name"><label>Name: </label>' + label + '</div>';
+			// make two areas for genomic data (in the element.data)
+			text += '<div class="genomic-profile-content"></div>';
+			// and biogene content which comes from the ajax query
+			text += '<div class="biogene-content"></div>';
+			// flush this html by jquery (jSON) to update the data later
+			$(self.detailsTabSelector).html(text);
+			// make the ajax query in json format
+			var queryParams = {"query": label,
+				"org": "human",
+				"format": "json"};
+			// put the wait sign
+			$(self.detailsTabSelector + " .genomic-profile-content").append(
+				'<img src="images/ajax-loader.gif">');
+			// send ajax request with async = true and timeout is 5"
+			$.ajax({
+			    type: "POST",
+			    url: "bioGeneQuery.do",
+			    async: true,
+			    timeout: 5000,
+			    data: queryParams,
+			    // if the response fails write an error message
+			    error: function(){
+					$(self.detailsTabSelector).empty();
+					jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
+					$(self.detailsTabSelector + " .error").append(
+					    "Error retrieving data: " + queryResult.returnCode);
+					$(self.detailsTabSelector + " .error").show();
+					return;
+				},
+			    // if success code is returned write the given data in the divs with jSon
+			    success: function(queryResult) {
+				if(queryResult.count > 0)
+				{
+					// generate the view by using backbone
+					var biogeneView = new BioGeneView(
+						{el: self.detailsTabSelector + " .biogene-content",
+						data: queryResult.geneInfo[0]});
+				}
+				else
+				{
+					$(self.detailsTabSelector + " .biogene-content").html(
+						"<p>No additional information available for the selected node.</p>");
+				}
+	
+				// generate view for genomic profile data
+				var genomicProfileView = new GenomicProfileView(
+				    {el: self.detailsTabSelector + " .genomic-profile-content",
+					data: data});
+				return;
+			    }
+			});
+		}
+		// complexes are different. all macromolecule or nuleic acid children should be listed
+		else if (data.glyph_class == this.COMPLEX)
+		{
+			text += '<div class="complexProperty">';
+			// get the children
+			var children = this._vis.childNodes(selected[0].data.id);
+			// holds data of children
+			var dataList = new Array();
+			var check = new Array();
+			
+			for(var i = 0; i < children.length; i++)
+			{
+				data = children[i].data;
+				var label = _safeProperty(this.geneLabel(data));
+				if(data.glyph_class == this.MACROMOLECULE
+					|| data.glyph_class == this.NUCLEIC_ACID)
+				{
+					// to ensure every child is checked only once
+					check[label] = 0;
+				}
+	
+			}
+			// number of unrepetitive children
+			var cnt = 0;
+		
+			for(var i = 0; i < children.length; i++)
+			{
+				// for each child
+				data = children[i].data;
+				var label = _safeProperty(this.geneLabel(data));
+				if(data.glyph_class == this.MACROMOLECULE
+					&& check[label] == 0)
+				{
+					// make divs to update by ajax requests
+					// and add hide and show with jquery
+					text += '<div class="geneHide" id="gene' + label + 'Hide" ';
+					text += 'onclick="$(' + "'#gene" + label + "').hide();";
+					text += "$('#gene" + label + "Hide').hide();";
+					text += "$('#gene" + label + "Show').show();" + '"><span class="title"><label> - ' + this.geneLabel(data);
+					text += '</label></span></div>';
+
+					text += '<div class="geneShow" id="gene' + label + 'Show" ';
+					text += 'onclick="' + "$('#gene" + label + "').show();";
+					text += "$('#gene" + label + "Hide').show();";
+					text += "$('#gene" + label + "Show').hide();" + '"><span class="title"><label> + ' + this.geneLabel(data);
+					text += '</label></span></div>';
+
+					text += '<div class="geneProperty" style="display:none;" id="gene' + label + '">';
+					text += '<div class="genomic-profile-content"></div>';
+					text += '<div class="biogene-content"></div>';
+					text += '</div><br />';
+					// check the element to not write it again
+					check[label] = 1;
+					dataList[cnt] = data;
+					cnt ++;
+				}
+			}
+			text += "</div>";
+			// flush the html5 code to the details tab
+			$(self.detailsTabSelector).html(text);
+			for(var i = 0; i < dataList.length  ; i++)
+			{
+				// for each data send an ajax request as done before 
+				// for macromolecules and nucleic acid features
+				data = dataList[i];
+				var label = _safeProperty(this.geneLabel(data));
+				var queryParams = {"query": label,
+					"org": "human",
+					"format": "json",};
+				// the div to update the data with jSon
+				var divName = self.detailsTabSelector + " #gene" + label;
+				$(divName + " .genomic-profile-content").append(
+				'<img src="images/ajax-loader.gif">');
+				// for each request waits 3" to avoid unresponsiveness
+				$.ajax({
+				    type: "POST",
+				    url: "bioGeneQuery.do",
+				    async: false,
+				    timeout: 3000,
+				    data: queryParams,
+				    error: function(){
+						$(divName + " .genomic-profile-content").empty();
+						$(divName + " .genomic-profile-content").append(
+						    "Error retrieving data: " + queryResult.returnCode);
+						$(divName + " .genomic-profile-content").show();
+						return;
+					},
+				    success: function(queryResult) {
+					if(queryResult.count > 0)
+					{
+						// generate the view by using backbone
+						var biogeneView = new BioGeneView(
+							{el: divName + " .biogene-content",
+							data: queryResult.geneInfo[0]});
+					}
+					else
+					{
+						$(divName + " .biogene-content").html(
+							"<p>No additional information available for the selected node.</p>");
+					}
+	
+					// generate view for genomic profile data
+					var genomicProfileView = new GenomicProfileView(
+					    {el: divName + " .genomic-profile-content",
+						data: data});
+				    }
+				});
+			}
+			// makle sure for complexes we do not continue
+			return;
+		}
+		// update the div with jquery
+		$(self.detailsTabSelector).html(text);
+	}
+	else if (selected.length > 1)
+	{
+		// no nodes were selected
+		$(self.detailsTabSelector + " div").empty();
+		$(self.detailsTabSelector + " .error").append(
+		    "Currently more than one node is selected." +
+		    "Please, select one node to see details or double click on a gene.");
+		    $(self.detailsTabSelector + " .error").show();
+		return;
+	}
+	else
+	{
+		// no nodes were selected
 		$(self.detailsTabSelector + " div").empty();
 		$(self.detailsTabSelector + " .error").append(
 		    "Currently there is no selected node. Please, select a node to see details.");
 		    $(self.detailsTabSelector + " .error").show();
 		return;
-	    }
+	}	
+	
 };
+/**
+ * makes the first letter of each word uppercase
+ *  and the rest lowercase
+**/
 function toTitleCase(str) {
     return str.replace(/(?:^|\s)\w/g, function(match) {
         return match.toUpperCase();
     });
 }
-
+/**
+ * remove illegal characters from text 
+ * to avoid security leaks or incorrect html
+**/
 function _safeProperty(str)
 {
     var safeProperty = str;
@@ -1173,42 +1377,38 @@ function _safeProperty(str)
     return safeProperty;
 }
 
-
-
 /**
  * Initializes Genes tab.
  */
 NetworkSbgnVis.prototype._initGenesTab = function()
 {
-    // init buttons
+	// init buttons
 
-    $(this.genesTabSelector + " #filter_genes").button({icons: {primary: 'ui-icon-circle-minus'},
-                                  text: false});
+	$(this.genesTabSelector + " #filter_genes").button({icons: {primary: 'ui-icon-circle-minus'},
+		                  text: false});
 
-    $(this.genesTabSelector + " #crop_genes").button({icons: {primary: 'ui-icon-crop'},
-                                text: false});
+	$(this.genesTabSelector + " #crop_genes").button({icons: {primary: 'ui-icon-crop'},
+		                text: false});
 
-    $(this.genesTabSelector + " #unhide_genes").button({icons: {primary: 'ui-icon-circle-plus'},
-                                  text: false});
+	$(this.genesTabSelector + " #unhide_genes").button({icons: {primary: 'ui-icon-circle-plus'},
+		                  text: false});
 
-    $(this.genesTabSelector + " #search_genes").button({icons: {primary: 'ui-icon-search'},
-                                  text: false});
+	$(this.genesTabSelector + " #search_genes").button({icons: {primary: 'ui-icon-search'},
+		                  text: false});
 
-    $(this.filteringTabSelector + " #update_source").button({icons: {primary: 'ui-icon-refresh'},
-                                  text: false});
+	$(this.filteringTabSelector + " #update_source").button({icons: {primary: 'ui-icon-refresh'},
+		                  text: false});
 
-    // re-submit button is initially disabled
-    $(this.genesTabSelector + " #re-submit_query").button({icons: {primary: 'ui-icon-play'},
-                                     text: false,
-                                     disabled: true});
+	// re-submit button is initially disabled
+	$(this.genesTabSelector + " #re-submit_query").button({icons: {primary: 'ui-icon-play'},
+		                     text: false,
+		                     disabled: true});
 
-    // $(this.genesTabSelector + " #re-run_query").button({label: "Re-run query with selected genes"});
+	// $(this.genesTabSelector + " #re-run_query").button({label: "Re-run query with selected genes"});
 
-    // apply tiptip to all buttons on the network tabs
-    $(this.networkTabsSelector + " button").tipTip({edgeOffset:8});
+	// apply tiptip to all buttons on the network tabs
+	$(this.networkTabsSelector + " button").tipTip({edgeOffset:8});
 };
-
-
 
 /**
  * Listener for weight slider movement. Updates current value of the slider
@@ -1216,12 +1416,12 @@ NetworkSbgnVis.prototype._initGenesTab = function()
  */
 NetworkSbgnVis.prototype._weightSliderMove = function(event, ui)
 {
-    // get slider value
-    var sliderVal = ui.value;
+	// get slider value
+	this.sliderVal = ui.value;
 
-    // update current value field
-    $(this.filteringTabSelector + "#weight_slider_field").val(
-        (_transformValue(sliderVal) * (this._maxAlterationPercent / 100)).toFixed(1));
+	// update current value field
+	$(this.filteringTabSelector + "#weight_slider_field").val(
+		(_transformValue(this.sliderVal) * (this._maxAlterationPercent / 100)).toFixed(1));
 };
 
 /**
@@ -1230,230 +1430,161 @@ NetworkSbgnVis.prototype._weightSliderMove = function(event, ui)
  */
 NetworkSbgnVis.prototype._weightSliderStop = function(event, ui)
 {
-    // get slider value
-    var sliderVal = ui.value;
+	// get slider value
+	this.sliderVal = ui.value;
 
-    // apply transformation to prevent filtering of low values
-    // with a small change in the position of the cursor.
-    sliderVal = _transformValue(sliderVal) * (this._maxAlterationPercent / 100);
+	// apply transformation to prevent filtering of low values
+	// with a small change in the position of the cursor.
+	this.sliderVal = _transformValue(this.sliderVal) * (this._maxAlterationPercent / 100);
 
-    // update threshold
-    this._geneWeightThreshold = sliderVal;
+	// update threshold
+	this._geneWeightThreshold = this.sliderVal;
 
-    // update current value field
-    $(this.filteringTabSelector + " #weight_slider_field").val(sliderVal.toFixed(1));
+	// update current value field
+	$(this.filteringTabSelector + " #weight_slider_field").val(this.sliderVal.toFixed(1));
 
-    // update filters
-    this._filterBySlider();
-
+	// update filters
+	this._filterBySlider();
 };
 
-/**
- * Creates a map for node source visibility.
- *
- * @return	an array (map) of edge source visibility.
- */
-/*
-NetworkSbgnVis.prototype._sourceArray2 = function()
-{
-    var sourceArray = new Array();
 
-    // dynamically collect all sources
-
-    var nodes = this._vis.nodes();
-    var source;
-
-    for (var i = 0; i < nodes.length; i++)
-    {
-		
-        var url = nodes[i].data.id;
-	if (!(url == null
-		|| url == "" || url == undefined))
-	{
-	    source = shrinkUrl(url);
-            // by default every edge source is visible
-            sourceArray[source] = true;
-        }
-    }
-
-    // also set a flag for unknown (undefined) sources
-    sourceArray[this.UNKNOWN] = true;
-
-    return sourceArray;
-};
-*/
 /**
  * Creates a map for process source visibility.
- *
+ * Scan all processes and add their data sources.
  * @return	an array (map) of edge source visibility.
  */
-NetworkSbgnVis.prototype._sourceArray = function()
+NetworkSbgnVis.prototype._initSourceArray = function()
 {
-    var sourceArray = new Array();
+	var sourceArray = new Array();
 
-    // dynamically collect all sources
+	// dynamically collect all sources
 
-    var nodes = this._vis.nodes();
+	var nodes = this._vis.nodes();
 
-    for (var i = 0; i < nodes.length; i++)
-    {
-	if(nodes[i].data.glyph_class == this.PROCESS)
+	for (var i = 0; i < nodes.length; i++)
 	{
-		var source = nodes[i].data.DATA_SOURCE;
-	    	sourceArray[source] = true;
+		if(nodes[i].data.glyph_class == this.PROCESS)
+		{
+			var source = nodes[i].data.DATA_SOURCE;
+		    	sourceArray[source] = true;
+		}
 	}
-    }
 
-    // also set a flag for unknown (undefined) sources
-    sourceArray[this.UNKNOWN] = true;
+	// also set a flag for unknown (undefined) sources
+	sourceArray[this.UNKNOWN] = true;
 
-    return sourceArray;
+	return sourceArray;
 };
-/*
-function shrinkUrl(url){
-	var temp = url.split("//");
-	if (temp.length > 1) 
-		url = temp[1];
-	url = url.split("/")[0];
-	url = url.replace("www.","");
-	var i = url.lastIndexOf(".");
-	if (i > 0)
-		url = url.substr(0,i);
-	url = url.replace(/\./g,"_");
-	return url;
-}
-*/
+
 /**
- * Updates the visibility (by filtering mechanism) of nodes for source filtering.
+ * when update button is clicked, first updates the source visibility
+ * array and then updates visibility.
  */
 NetworkSbgnVis.prototype.updateSource = function()
 {
-  
-    for (var key in this._sourceVisibility)
-    {
-        this._sourceVisibility[key] =
-            $(this.filteringTabSelector + " #" + key + "_check").is(":checked");
-    }
-
-    // remove previous node filters due to disconnection
-    for (var key in this._filteredByIsolation)
-    {
-        this._alreadyFiltered[key] = null;
-    }
-
-    // clear isolation filter array
-    this._filteredByIsolation = new Array();
-
-    // this is required to pass "this" instance to the listener
-    var self = this;
-
-    var currentVisibility = function(element){
-        return self.currentVisibility(element);
-    };
-    var filterWeights = this.toFilterByWeights();
-    var nodeVisibility = function(element){
-        if(filterWeights[element.data.id] > 0)
+	for (var key in this._sourceVisibility)
 	{
-		return true;
+		this._sourceVisibility[key] =
+		    $(this.filteringTabSelector + " #" + key + "_check").is(":checked");
 	}
-	return false;
-    };
-	
-	
-	
-    // re-apply filter to update nodes
-    //_vis.removeFilter("nodes", false);
-    this._vis.filter("nodes", currentVisibility);
-
-    
-    // filter nonselected types
-    this._vis.filter("nodes", nodeVisibility);
-
-	// remove previous filters due to disconnection
-    for (var key in this._filteredByIsolation)
-    {
-       this._alreadyFiltered[key] = null;
-    }
-
-    // filter disconnected nodes if necessary
-    this._filterDisconnected();
-
-    // visualization changed, perform layout if necessary
-    this._visChanged();
+	this.updateVisibility();
 };
 
 /**
- * Creat initial weights for the source array given for filtering
- * 
- * 
-**/
- 
-NetworkSbgnVis.prototype.toFilterByWeights = function()
+ * updates the visibility according to three priorities
+ * P1 : manually filtered nodes
+ * P2 : source visibility
+ * P3 : alteration visibility (set by the slider)
+ * the details of the design is given in NetworkFiltering.Design documentation
+ * under ftp://cs.bilkent.edu.tr/cBioPortal/node-filtering/
+ */
+NetworkSbgnVis.prototype.updateVisibility = function()
 {
+	//get all nodes.
 	var nodes = this._vis.nodes();
 	var weights = new Array();
+	//set threshold as the current slider value (in range of 0-MAX).
+	var threshold = this.sliderVal;
 	for(var i = 0; i < nodes.length; i++)
 	{
-		var node = nodes[i];
-		if(node.data.glyph_class == this.PROCESS && 
-			this.nodeVisibility(node))
+		var data = nodes[i].data;
+		//check if it should be shown according to alteration frequency
+		if(this._geneWeightMap[data.id] >= threshold)
 		{
-			weights[node.data.id] = 1;
-		}
-		else if(node.data.glyph_class == this.NUCLEIC_ACID
-			&& this._vis.firstNeighbors([node]).neighbors.length == 0)
-		{
-			// weights[node.data.id] = 1;
-		}
-		else
-		{
-			weights[node.data.id] = 0;
-		}
-	}
-	return this._geneWeightArray(weights);
-}
-	
-/**
- * Determines the visibility of a node for filtering purposes.
- *
- * @param element	node to be checked for visibility criteria
- * @return			true if the node should be visible, false otherwise
- */
-NetworkSbgnVis.prototype.nodeVisibility = function(element)
-{
-    var visible = true;
-    var sourceVisible = true;
-
-    // TODO currently we do not allow edge filtering by selection, so
-    // there should not be any edge in the array _alreadyFiltered
-
-    // if an element is already filtered then it should remain invisible
-    if (this._alreadyFiltered[element.data.id] != null)
-    {
-        visible = false;
-    }
-
-	
-    var source = element.data.DATA_SOURCE;
-
-    if (source == undefined)
-	{
-		// no source specified, check the unknown flag
-        	sourceVisible = this._sourceVisibility[this.UNKNOWN];
-	}
-   else 
-	{
-		if (this._sourceVisibility[source] == null)
-		{
-			// no source specified, check the unknown flag
-		    sourceVisible = this._sourceVisibility[this.UNKNOWN];
+			// if so, check the source and set weight accordingly.
+			//notice, only processes have data sources.
+			//source array has boolean value and refers to
+			//whether the source is checked or not
+			if (data.glyph_class == this.PROCESS
+					&& this._sourceVisibility[data.DATA_SOURCE])
+			{
+				weights[data.id] = 1;
+			}
+			else
+			{
+				weights[data.id] = 0;
+			}
 		}
 		else
 		{
-		    sourceVisible = this._sourceVisibility[source];
+			//if it is not to be shown by alteration, set the weight to be zero.
+			weights[data.id] = 0;
 		}
 	}
-
-    return (visible && sourceVisible);
+	// set manually filtered nodes to zero
+	for (var i = 0; i < this._manuallyFiltered.length; i++)
+	{
+		var id =  this._manuallyFiltered[i];
+		weights[id] = 0;
+	}
+	// adjust weights
+	weights = this._geneWeightArray(weights);
+	// find the nodes that should be shown
+	var showList = new Array();
+	for(var i = 0; i < nodes.length; i++)
+	{
+		var id = nodes[i].data.id;
+		if(weights[id] == 1)
+		{
+			showList.push(id);		
+		}
+	}
+	// filter out every nodes except show list.
+	this._vis.filter("nodes", showList);
+	// apply changes
+	this._visChanged();
 };
 
+
+/**
+ * to show all , first empty the manuallyFiltered array, and then update visibility.
+ **/
+NetworkSbgnVis.prototype._unhideAll = function()
+{
+	this._manuallyFiltered = new Array();
+	this.updateVisibility();
+};
+
+/**
+ * update visibility when the slider value is changed.
+ */
+NetworkSbgnVis.prototype._filterBySlider = function()
+{
+	this.updateVisibility();
+};
+/**
+ * Listener for affinity slider value change. Updates filters with respect to
+ * the new slider value.
+ */
+NetworkSbgnVis.prototype._affinitySliderChange = function(event, ui)
+{
+    var sliderVal = ui.value;
+
+    // update current value field
+    $(this.genesTabSelector + " #affinity_slider_field").val((sliderVal / 100).toFixed(2));
+
+    // re-calculate gene weights
+    this._geneWeightMap = this._geneWeightArray(sliderVal / 100);
+
+    // update filters
+};

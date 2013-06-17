@@ -775,6 +775,11 @@
 	height: 575px;
 	overflow-y: auto;
 }
+#element_details_tab_sbgn .error
+{
+	height: 500px;
+	vertical-align: top;
+}
 .header .title 
 {
 	text-align: center;
