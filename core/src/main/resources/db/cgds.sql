@@ -132,6 +132,31 @@ CREATE TABLE `gene_alias` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `gene_panel`
+--
+drop table IF EXISTS gene_panel;
+CREATE TABLE `gene_panel` (
+  `PANEL_ID` int(11) NOT NULL auto_increment,
+  `NAME` varchar(255) NOT NULL,
+  `DESCRIPTION` mediumtext NOT NULL,
+  PRIMARY KEY  (`PANEL_ID`),
+  UNIQUE (`NAME`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+--
+-- Table structure for table `gene_panel_list`
+--
+drop table IF EXISTS gene_panel_list;
+CREATE TABLE `gene_panel_list` (
+  `PANEL_ID` int(11) NOT NULL,
+  `ENTREZ_GENE_ID` int(255) NOT NULL,
+  PRIMARY KEY  (`PANEL_ID`,`ENTREZ_GENE_ID`),
+  FOREIGN KEY (`PANEL_ID`) REFERENCES `gene_panel` (`PANEL_ID`) ON DELETE CASCADE
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `uniprot_id_mapping`
 --
 drop table IF EXISTS uniprot_id_mapping;
