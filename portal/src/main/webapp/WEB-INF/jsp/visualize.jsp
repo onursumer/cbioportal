@@ -293,7 +293,7 @@
                         out.println ("<li><a href='#network' class='result-tab' title='Network visualization and analysis'>"
                         + "Network</a></li>");
                         out.println ("<li><a href='#network_sbgn' class='result-tab' title='Network visualization and analysis'>"
-                        + "Network(SBGN)</a></li>");
+                        + "Network (SBGN)</a></li>");
                     }
                     
                     if (showIGVtab){
