@@ -1643,7 +1643,7 @@ NetworkSbgnVis.prototype._keyPressListener = function(event)
 
             // update threshold value
             this._geneWeightThreshold = input;
-
+			this.sliderVal = input;
             // also update filters
             this._filterBySlider();
         }
@@ -1681,3 +1681,177 @@ NetworkSbgnVis.prototype._keyPressListener = function(event)
         }
     }
 };
+
+/**
+ * Creates a map (an array) with <command, function> pairs. Also, adds listener
+ * functions for the buttons and for the CytoscapeWeb canvas.
+ */
+NetworkVis.prototype._initControlFunctions = function()
+{
+    var self = this;
+
+    // define listeners as local variables
+    // (this is required to pass "this" instance to the listener functions)
+
+    var showNodeDetails = function(evt) {
+        //self.showNodeInspector(evt);
+	    // open details tab instead
+	    $(self.networkTabsSelector).tabs("select", 2);
+    };
+
+    var showEdgeInspector = function(evt) {
+        self.showEdgeInspector(evt);
+    };
+
+    var handleNodeSelect = function(evt) {
+        self.updateGenesTab(evt);
+        self.updateDetailsTab(evt);
+    };
+
+    var filterSelectedGenes = function() {
+        self.filterSelectedGenes();
+    };
+
+    var unhideAll = function() {
+        self._unhideAll();
+    };
+
+    var performLayout = function() {
+        self._performLayout();
+    };
+
+    var toggleNodeLabels = function() {
+        self._toggleNodeLabels();
+    };
+
+    var toggleEdgeLabels = function() {
+        self._toggleEdgeLabels();
+    };
+
+    var toggleMerge = function() {
+        self._toggleMerge();
+    };
+
+    var togglePanZoom = function() {
+        self._togglePanZoom();
+    };
+
+    var toggleAutoLayout = function() {
+        self._toggleAutoLayout();
+    };
+
+    var toggleRemoveDisconnected = function() {
+        self._toggleRemoveDisconnected();
+    };
+
+    var toggleProfileData = function() {
+        self._toggleProfileData();
+    };
+
+    var saveAsPng = function() {
+        self._saveAsPng();
+    };
+
+    var openProperties = function() {
+        self._openProperties();
+    };
+
+    var highlightNeighbors = function() {
+        self._highlightNeighbors();
+    };
+
+    var removeHighlights = function() {
+        self._removeHighlights();
+    };
+
+    var filterNonSelected = function() {
+        self.filterNonSelected();
+    };
+
+    var showNodeLegend = function() {
+        self._showNodeLegend();
+    };
+
+    var showDrugLegend = function() {
+        self._showDrugLegend();
+    };
+
+    var showEdgeLegend = function() {
+        self._showEdgeLegend();
+    };
+
+    var saveSettings = function() {
+        self.saveSettings();
+    };
+
+    var defaultSettings = function() {
+        self.defaultSettings();
+    };
+
+    var searchGene = function() {
+        self.searchGene();
+    };
+
+    var reRunQuery = function() {
+        self.reRunQuery();
+    };
+
+    var updateSource = function() {
+        self.updateSource();
+    };
+
+    var keyPressListener = function(evt) {
+        self._keyPressListener(evt);
+    };
+
+    var handleMenuEvent = function(evt){
+        self.handleMenuEvent(evt.target.id);
+    };
+
+    this._controlFunctions = new Array();
+
+    //_controlFunctions["hide_selected"] = _hideSelected;
+    this._controlFunctions["hide_selected"] = filterSelectedGenes;
+    this._controlFunctions["unhide_all"] = unhideAll;
+    this._controlFunctions["perform_layout"] = performLayout;
+    this._controlFunctions["show_node_labels"] = toggleNodeLabels;
+    //_controlFunctions["show_edge_labels"] = toggleEdgeLabels;
+    this._controlFunctions["merge_links"] = toggleMerge;
+    this._controlFunctions["show_pan_zoom_control"] = togglePanZoom;
+    this._controlFunctions["auto_layout"] = toggleAutoLayout;
+    this._controlFunctions["remove_disconnected"] = toggleRemoveDisconnected;
+    this._controlFunctions["show_profile_data"] = toggleProfileData;
+    this._controlFunctions["save_as_png"] = saveAsPng;
+    //_controlFunctions["save_as_svg"] = _saveAsSvg;
+    this._controlFunctions["layout_properties"] = openProperties;
+    this._controlFunctions["highlight_neighbors"] = highlightNeighbors;
+    this._controlFunctions["remove_highlights"] = removeHighlights;
+    this._controlFunctions["hide_non_selected"] = filterNonSelected;
+    this._controlFunctions["show_node_legend"] = showNodeLegend;
+    this._controlFunctions["show_drug_legend"] = showDrugLegend;
+    this._controlFunctions["show_edge_legend"] = showEdgeLegend;
+
+    // add menu listeners
+    $(this.mainMenuSelector + " #network_menu a").unbind(); // TODO temporary workaround (there is listener attaching itself to every 'a's)
+    $(this.mainMenuSelector + " #network_menu a").click(handleMenuEvent);
+
+    // add button listeners
+
+    $(this.settingsDialogSelector + " #save_layout_settings").click(saveSettings);
+    $(this.settingsDialogSelector + " #default_layout_settings").click(defaultSettings);
+
+    $(this.genesTabSelector + " #search_genes").click(searchGene);
+    $(this.filteringTabSelector + " #search_box").keypress(keyPressListener);
+    $(this.genesTabSelector + " #filter_genes").click(filterSelectedGenes);
+    $(this.genesTabSelector + " #crop_genes").click(filterNonSelected);
+    $(this.genesTabSelector + " #unhide_genes").click(unhideAll);
+    $(this.filteringTabSelector + " #re-submit_query").click(reRunQuery);
+
+
+
+
+
+    // TODO temp debug option, remove when done
+    //_vis.addContextMenuItem("node details", "nodes", jokerAction);
+};
+
