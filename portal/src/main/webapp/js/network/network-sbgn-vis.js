@@ -1588,3 +1588,96 @@ NetworkSbgnVis.prototype._affinitySliderChange = function(event, ui)
 
     // update filters
 };
+
+/**
+ * Listener for affinity slider movement. Updates current value of the slider
+ * after each mouse move.
+ */
+NetworkSbgnVis.prototype._affinitySliderMove = function(event, ui)
+{
+    // get slider value
+    var sliderVal = ui.value;
+
+    // update current value field
+    $(this.genesTabSelector + " #affinity_slider_field").val((sliderVal / 100).toFixed(2));
+};
+
+/**
+ * Key listener for input fields on the genes tab.
+ * Updates the slider values (and filters if necessary), if the input
+ * value is valid.
+ *
+ * @param event		event triggered the action
+ */
+NetworkSbgnVis.prototype._keyPressListener = function(event)
+{
+    var input;
+
+    // check for the ENTER key first
+    if (event.keyCode == this.ENTER_KEYCODE)
+    {
+        if (event.target.id == "weight_slider_field")
+        {
+            input = $(this.filteringTabSelector + " #weight_slider_field").val();
+
+            // update weight slider position if input is valid
+
+            if (isNaN(input))
+            {
+                // not a numeric value, update with defaults
+                input = this.ALTERATION_PERCENT;
+            }
+            else if (input < 0)
+            {
+                // set values below zero to zero
+                input = 0;
+            }
+            else if (input > 100)
+            {
+                // set values above 100 to 100
+                input = 100;
+            }
+
+            $(this.filteringTabSelector + " #weight_slider_bar").slider("option", "value",
+                                           _reverseTransformValue(input / (this._maxAlterationPercent / 100)));
+
+            // update threshold value
+            this._geneWeightThreshold = input;
+
+            // also update filters
+            this._filterBySlider();
+        }
+        else if (event.target.id == "affinity_slider_field")
+        {
+            input = $(this.filteringTabSelector + " #affinity_slider_field").val();
+
+            var value;
+            // update affinity slider position if input is valid
+            // (this will also update filters if necessary)
+
+            if (isNaN(input))
+            {
+                // not a numeric value, update with defaults
+                value = 0;
+            }
+            else if (input < 0)
+            {
+                // set values below zero to zero
+                value = 0;
+            }
+            else if (input > 1)
+            {
+                // set values above 1 to 1
+                value = 1;
+            }
+
+            $(this.filteringTabSelector + " #affinity_slider_bar").slider("option",
+                                             "value",
+                                             Math.round(input * 100));
+        }
+        else if (event.target.id == "search_box")
+        {
+            this.searchGene();
+        }
+    }
+};
