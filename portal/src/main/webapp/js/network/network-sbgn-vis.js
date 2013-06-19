@@ -1686,7 +1686,7 @@ NetworkSbgnVis.prototype._keyPressListener = function(event)
  * Creates a map (an array) with <command, function> pairs. Also, adds listener
  * functions for the buttons and for the CytoscapeWeb canvas.
  */
-NetworkVis.prototype._initControlFunctions = function()
+NetworkSbgnVis.prototype._initControlFunctions = function()
 {
     var self = this;
 
