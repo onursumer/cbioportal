@@ -30,12 +30,12 @@
  * ########################################################
  */
 
-#network_menu_div
+#network_menu_div_sbgn
 {
 	margin-top: -10px;
 }
 
-#network_menu_div ul
+#network_menu_div_sbgn ul
 {
 	margin:0;
 	padding:0;
@@ -45,7 +45,7 @@
 	line-height:1.3em;
 }
 
-#network_menu a
+#network_menu_sbgn a
 {
 	cursor:pointer;
 	display:block;
@@ -62,42 +62,42 @@
 	font-size: 11px;
 }
 
-#network_menu li
+#network_menu_sbgn li
 {
 	float:left;
 	position:relative;
 }
 
-#network_menu ul
+#network_menu_sbgn ul
 {
 	position: absolute;
 	display: none;
 	top: 1.4em;
 }
 
-#network_menu li ul a
+#network_menu_sbgn li ul a
 {
 	height: auto;
 	float: left;
 }
 
-#network_menu ul ul
+#network_menu_sbgn ul ul
 {
 	top:auto;
 }	
 
-#network_menu li ul ul 
+#network_menu_sbgn li ul ul 
 {
 	left:12em;
 	margin:0px 0 0 10px;
 }
 
-#network_menu li:hover ul ul, #network_menu li:hover ul ul ul, #network_menu li:hover ul ul ul ul
+#network_menu_sbgn li:hover ul ul, #network_menu_sbgn li:hover ul ul ul, #network_menu_sbgn li:hover ul ul ul ul
 {
 	display:none;
 }
 
-#network_menu li:hover ul, #network_menu li li:hover ul, #network_menu li li li:hover ul, #network_menu li li li li:hover ul
+#network_menu_sbgn li:hover ul, #network_menu_sbgn li li:hover ul, #network_menu_sbgn li li li:hover ul, #network_menu_sbgn li li li li:hover ul
 {
 	display:block;
 }
@@ -152,24 +152,24 @@
 	width: 14em;
 }
 
-#network_menu .hovered-menu-item
+#network_menu_sbgn .hovered-menu-item
 {
 	background-color: #fff;
 	color: #2e6e9e;
 }
 
-#network_menu .checked-menu-item
+#network_menu_sbgn .checked-menu-item
 {
 	background-image: url("images/menu_check.gif");
 	background-position: left;
 }
 
-#network_menu .separator-menu-item
+#network_menu_sbgn .separator-menu-item
 {
 	border-top:1px solid #aaaaaa;
 }
 
-#network_menu .first-menu-item
+#network_menu_sbgn .first-menu-item
 {
 	-moz-border-radius-topleft: 5px;
 	-webkit-border-top-left-radius: 5px;
@@ -179,7 +179,7 @@
 	border-top-right-radius: 5px;
 }
 
-#network_menu .last-menu-item
+#network_menu_sbgn .last-menu-item
 {
 	border-bottom:1px solid #aaaaaa;
 	-moz-border-radius-bottomleft: 5px;
@@ -190,7 +190,7 @@
 	border-bottom-right-radius: 5px;
 }
 
-#network_menu .main-menu-item
+#network_menu_sbgn .main-menu-item
 {
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
@@ -198,7 +198,7 @@
 	border:1px solid #aaaaaa;
 }
 
-#network_menu .sub-menu-item
+#network_menu_sbgn .sub-menu-item
 {
 	background-image: url("images/menu_right.png");
 	background-position: right;

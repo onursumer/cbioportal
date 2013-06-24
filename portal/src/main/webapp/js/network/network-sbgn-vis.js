@@ -6,9 +6,6 @@
  */
 function NetworkSbgnVis(divId)
 {
-	// call the parent constructor
-	// NetworkVis.call(this, divId);
-
     // div id for the network vis html content
     this.divId = divId;
 
@@ -29,15 +26,11 @@ function NetworkSbgnVis(divId)
 	//global array for 
 	this._manuallyFiltered = new Array();
 
-	//////////////////////////////////////////////////
-    this.nodeInspectorSelector = this._createNodeInspector(divId);
-    this.edgeInspectorSelector = this._createEdgeInspector(divId);
-    this.geneLegendSelector = this._createGeneLegend(divId);
-    this.drugLegendSelector = this._createDrugLegend(divId);
-    this.edgeLegendSelector = this._createEdgeLegend(divId);
+    this.nodeLegendSelector = this._createNodeLegend(divId);
+    this.interactionLegendSelector = this._createInteractionLegend(divId);
     this.settingsDialogSelector = this._createSettingsDialog(divId);
 
-    this.mainMenuSelector = "#" + this.divId + " #network_menu_div";
+    this.mainMenuSelector = "#" + this.divId + " #network_menu_div_sbgn";
     this.quickInfoSelector = "#" + this.divId + " #quick_info_div";
     this.geneListAreaSelector = "#" + this.divId + " #gene_list_area";
 
@@ -47,24 +40,15 @@ function NetworkSbgnVis(divId)
     this._nodeLabelsVisible = false;
     this._edgeLabelsVisible = false;
     this._panZoomVisible = false;
-    this._linksMerged = false;
     this._profileDataVisible = false;
     this._selectFromTab = false;
 
     // array of control functions
     this._controlFunctions = null;
 
-    // edge type constants
-    this.IN_SAME_COMPONENT = "IN_SAME_COMPONENT";
-    this.REACTS_WITH = "REACTS_WITH";
-    this.STATE_CHANGE = "STATE_CHANGE";
-    this.DRUG_TARGET = "DRUG_TARGET";
-    this.OTHER = "OTHER";
-
     // node type constants
     this.PROTEIN = "Protein";
     this.SMALL_MOLECULE = "SmallMolecule";
-    this.DRUG = "Drug";
     this.UNKNOWN = "Unknown";
 
     // default values for sliders
@@ -109,8 +93,6 @@ function NetworkSbgnVis(divId)
     // array of filtered edge sources
     this._sourceVisibility = null;
 
-    // map used to resolve cross-references
-    this._linkMap = null;
 
     // map used to filter genes by weight slider
     this._geneWeightMap = null;
@@ -140,8 +122,6 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 {
 	var self = this;
 	this._vis = vis;
-	this._linkMap = this._xrefArray();
-
 
 	// init filter arrays
 	// delete this later because it os not used anymore
@@ -152,7 +132,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	//for once only, get all the process sources and updates _sourceVisibility array
 	this._sourceVisibility = this._initSourceArray(); 
 	var weights = this.initializeWeights();
-	this._geneWeightMap = this._geneWeightArray(weights);
+	this._geneWeightMap = this.adjustWeights(weights);
 	this._geneWeightThreshold = this.ALTERATION_PERCENT;
 	this._maxAlterationPercent = this._maxAlterValNonSeed(this._geneWeightMap);
 
@@ -189,7 +169,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 		     "nodes", 
 		     handleNodeSelect);
 
-	    	    self._vis.removeListener("deselect",
+	    	self._vis.removeListener("deselect",
 		     "nodes", 
 		     handleNodeSelect);
 
@@ -241,11 +221,9 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 
 	// initializing the tabs and UIs
 	this._initMainMenu();
-
 	this._initDialogs();
 	this._initPropsUI();
 	this._initSliders();
-	//this._initTooltipStyle();
 
 	// add listener for the main tabs to hide dialogs when user selects
 	// a tab other than the Network tab
@@ -369,7 +347,6 @@ NetworkSbgnVis.prototype.addAnnotationData = function(annotationData)
 	}
 }
 
-
 /** 
  * Searches an sbgn node whose label fits with parameter hugoSymbol
 **/
@@ -386,7 +363,6 @@ function findNode(hugoSymbol, vis)
 	}
 	return nodes;
 }
-
 
 /** 
  * calculates cna percents ands adds them to target node
@@ -591,7 +567,7 @@ NetworkSbgnVis.prototype.multiSelectHugos = function(event)
 /*
 /**
  * Calculates weight values for each gene by its alteration frequency
- * then these weights are adjusted by the adjustWeights function (this._geneWeightArray)
+ * then these weights are adjusted by the adjustWeights function (this.adjustWeights)
  * unique to SBGN view
  * also creates and updates the HUGOGENES
  * @returns an array of weights ranging from 0 to 100
@@ -650,7 +626,7 @@ NetworkSbgnVis.prototype.initializeWeights = function()
  * P5. A complex molecule should always be shown with all its components.
  * The code has initialization (A0) and  4 steps (A1-A4)
 **/
-NetworkSbgnVis.prototype._geneWeightArray = function(w)
+NetworkSbgnVis.prototype.adjustWeights = function(w)
 {
 	var weights = w;
 	var parents = new Array();
@@ -1038,7 +1014,7 @@ NetworkSbgnVis.prototype.filterNonSelected = function()
 		var id = selected[i].data.id;
 		weights[id] = 1;
 	}
-	weights = this._geneWeightArray(weights);
+	weights = this.adjustWeights(weights);
 	for (var i=0; i < nodes.length; i++)
 	{
 		var id = nodes[i].data.id;
@@ -1073,7 +1049,7 @@ NetworkSbgnVis.prototype.filterSelectedGenes = function()
 		var id = selected[i].data.id;
 		weights[id] = 1;
 	}
-	weights = this._geneWeightArray(weights);
+	weights = this.adjustWeights(weights);
 	for (var i=0; i < nodes.length; i++)
 	{
 		var id = nodes[i].data.id;
@@ -1649,7 +1625,7 @@ NetworkSbgnVis.prototype.updateVisibility = function()
 		weights[id] = 0;
 	}
 	// adjust weights
-	weights = this._geneWeightArray(weights);
+	weights = this.adjustWeights(weights);
 	// find the nodes that should be shown
 	var showList = new Array();
 	for(var i = 0; i < nodes.length; i++)
@@ -1657,7 +1633,7 @@ NetworkSbgnVis.prototype.updateVisibility = function()
 		var id = nodes[i].data.id;
 		if(weights[id] == 1)
 		{
-			showList.push(nodes[i]);		
+			showList.push(nodes[i]);
 		}
 	}
 
@@ -1686,22 +1662,6 @@ NetworkSbgnVis.prototype._filterBySlider = function()
 {
 	this.updateVisibility();
 };
-/**
- * Listener for affinity slider value change. Updates filters with respect to
- * the new slider value.
- */
-NetworkSbgnVis.prototype._affinitySliderChange = function(event, ui)
-{
-    var sliderVal = ui.value;
-
-    // update current value field
-    $(this.genesTabSelector + " #affinity_slider_field").val((sliderVal / 100).toFixed(2));
-
-    // re-calculate gene weights
-    this._geneWeightMap = this._geneWeightArray(sliderVal / 100);
-
-    // update filters
-};
 
 /**
  * Listener for affinity slider movement. Updates current value of the slider
@@ -1713,7 +1673,7 @@ NetworkSbgnVis.prototype._affinitySliderMove = function(event, ui)
     var sliderVal = ui.value;
 
     // update current value field
-    $(this.genesTabSelector + " #affinity_slider_field").val((sliderVal / 100).toFixed(2));
+    $(this.filteringTabSelector + " #affinity_slider_field").val((sliderVal / 100).toFixed(2));
 };
 
 /**
@@ -1808,7 +1768,6 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     // (this is required to pass "this" instance to the listener functions)
 
     var showNodeDetails = function(evt) {
-
 	    // open details tab instead
 	    $(self.networkTabsSelector).tabs("select", 2);
     };
@@ -1836,10 +1795,6 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
 
     var toggleEdgeLabels = function() {
         self._toggleEdgeLabels();
-    };
-
-    var toggleMerge = function() {
-        self._toggleMerge();
     };
 
     var togglePanZoom = function() {
@@ -1882,6 +1837,10 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
         self._showNodeLegend();
     };
 
+    var showInteractionLegend = function() {
+        self._showInteractionLegend();
+    };
+
     var saveSettings = function() {
         self.saveSettings();
     };
@@ -1912,28 +1871,26 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
 
     this._controlFunctions = new Array();
 
-    //_controlFunctions["hide_selected"] = _hideSelected;
     this._controlFunctions["hide_selected"] = filterSelectedGenes;
     this._controlFunctions["unhide_all"] = unhideAll;
     this._controlFunctions["perform_layout"] = performLayout;
     this._controlFunctions["show_node_labels"] = toggleNodeLabels;
-    //_controlFunctions["show_edge_labels"] = toggleEdgeLabels;
-    this._controlFunctions["merge_links"] = toggleMerge;
     this._controlFunctions["show_pan_zoom_control"] = togglePanZoom;
     this._controlFunctions["auto_layout"] = toggleAutoLayout;
     this._controlFunctions["remove_disconnected"] = toggleRemoveDisconnected;
     this._controlFunctions["show_profile_data"] = toggleProfileData;
     this._controlFunctions["save_as_png"] = saveAsPng;
-    //_controlFunctions["save_as_svg"] = _saveAsSvg;
     this._controlFunctions["layout_properties"] = openProperties;
     this._controlFunctions["highlight_neighbors"] = highlightNeighbors;
     this._controlFunctions["remove_highlights"] = removeHighlights;
     this._controlFunctions["hide_non_selected"] = filterNonSelected;
     this._controlFunctions["show_node_legend"] = showNodeLegend;
+    this._controlFunctions["show_interaction_legend"] = showInteractionLegend;
+
 
     // add menu listeners
-    $(this.mainMenuSelector + " #network_menu a").unbind(); // TODO temporary workaround (there is listener attaching itself to every 'a's)
-    $(this.mainMenuSelector + " #network_menu a").click(handleMenuEvent);
+    $(this.mainMenuSelector + " #network_menu_sbgn a").unbind(); // TODO temporary workaround (there is listener attaching itself to every 'a's)
+    $(this.mainMenuSelector + " #network_menu_sbgn a").click(handleMenuEvent);
 
     // add button listeners
 
@@ -2042,13 +1999,19 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
     // (this is required to pass "this" instance to the listener functions)
     var self = this;
 
-    var showGeneDetails = function(evt){
-        self.showGeneDetails(evt);
-    };
+    //TODO : fill this function to go details tab.
+    //var showGeneDetails = function(evt){
+ 	//	$(self.networkTabsSelector).tabs("select", 2);    
+ 	//};
+ 	var showGeneDetails = function(evt) 
+	{
+		self.multiSelectHugos(evt);
+		self.multiUpdateDetailsTab(evt);
+		$(self.networkTabsSelector).tabs("select", 2);
+
+	};
 
     var visibleMap = self.getMapOfVisibleNodes();
-    var nodeList = self.getVisibleNodes();
-
     // clear old content
     $(this.geneListAreaSelector + " select").remove();
 
@@ -2062,7 +2025,7 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
 
         var classContent;
 
-        if (visibleMap[key] == "true")
+        if (visibleMap[key] == true)
         {
             classContent = 'class="in-query" ';
         }
@@ -2079,7 +2042,7 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
             '</option>');
 
         // add double click listener for each gene
-
+        //TODO: that must go to details tab on double click
         $(this.genesTabSelector + " #" + safeId).dblclick(showGeneDetails);
 
     }
@@ -2095,6 +2058,7 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
     {
         // listeners on <option> elements do not work in IE, therefore add
         // double click listener to the select box
+       	//TODO: that must go to details tab on double click
         $(this.geneListAreaSelector + " select").dblclick(showGeneDetails);
 
         // TODO if multiple genes are selected, double click always shows
@@ -2112,47 +2076,60 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
+
+NetworkSbgnVis.prototype._createNodeLegend = function(divId)
+{
+};
+
+
+NetworkSbgnVis.prototype._createInteractionLegend = function(divId)
+{
+};
+
+NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
+{
+};
+
+/**
+ * Displays the node legend in a separate panel.
+ */
+NetworkSbgnVis.prototype._showNodeLegend = function()
+{
+    // open legend panel
+    $(this.nodeLegendSelector).dialog("open").height("auto");
+    alert("fill _createNodeLegend function");
+};
+
+/**
+ * Displays the interaction legend in a separate panel.
+ */
+NetworkSbgnVis.prototype._showInteractionLegend = function()
+{
+    // open legend panel
+    $(this.interactionLegendSelector).dialog("open").height("auto");
+        alert("fill _createInteractionLegend function");
+};
+
+/**
+ * Displays the layout properties panel.
+ */
+NetworkSbgnVis.prototype._openProperties = function()
+{
+    this._updatePropsUI();
+    $(this.settingsDialogSelector).dialog("open").height("auto");
+    alert("fill _createSettingsDialog function");
+
+};
+
 /**
  * Hides all dialogs upon selecting a tab other than the network tab.
  */
 NetworkSbgnVis.prototype.hideDialogs = function (evt, ui)
 {
-    // get the index of the tab that is currently selected
-    // var selectIdx = $("#tabs").tabs("option", "selected");
-
     // close all dialogs
     $(this.settingsDialogSelector).dialog("close");
-    $(this.nodeInspectorSelector).dialog("close");
-    $(this.edgeInspectorSelector).dialog("close");
-    $(this.geneLegendSelector).dialog("close");
-    $(this.drugLegendSelector).dialog("close");
-    $(this.edgeLegendSelector).dialog("close");
+    $(this.nodeLegendSelector).dialog("close");
+    $(this.interactionLegendSelector).dialog("close");
 };
 
 NetworkSbgnVis.prototype.handleMenuEvent = function(command)
@@ -2166,6 +2143,43 @@ NetworkSbgnVis.prototype.handleMenuEvent = function(command)
 		func();
 	}
 };
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 
 /**
  * Saves layout settings when clicked on the "Save" button of the
@@ -2219,272 +2233,6 @@ NetworkSbgnVis.prototype.defaultSettings = function()
     this._updatePropsUI();
 };
 
-/**
- * Updates the content of the node inspector with respect to the provided data.
- * Data is assumed to be the data of a node.
- *
- * @param data	node data containing necessary fields
- */
-NetworkSbgnVis.prototype._updateNodeInspectorContent = function(data, node)
-{
-    // set title
-
-    var title = this.geneLabel(data);
-
-    if (title == null)
-    {
-        title = data.id;
-    }
-
-    $(this.nodeInspectorSelector).dialog("option",
-                                "title",
-                                title);
-
-    // clean xref, percent, and data rows
-
-    // These rows for drug view of node inspector.
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .targets-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .atc_codes-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .synonyms-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .description-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .fda-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .pubmed-data-row").remove();
-
-	$(this.nodeInspectorSelector + " .node_inspector_content .data .clinicaltrials-data-row").remove();
-	$(this.nodeInspectorSelector + " .node_inspector_content .data .cancerdrug-data-row").remove();
-
-    // For non drug view of node inspector
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .data-row").remove();
-
-    $(this.nodeInspectorSelector + " .node_inspector_content .xref .xref-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .profile .percent-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .profile-header .header-row").remove();
-
-    if (data.type == this.PROTEIN)
-    {
-        this._addDataRow(this.nodeInspectorSelector, "node", "Gene Symbol", data.label);
-        //_addDataRow(this.nodeInspectorSelector, "node", "User-Specified", data.IN_QUERY);
-
-        // add percentage information
-        this._addPercentages(data);
-    }
-
-    // add cross references
-
-    var links = new Array();
-
-    // parse the xref data, and construct link and labels
-
-    var xrefData = new Array();
-
-    if (data["UNIFICATION_XREF"] != null)
-    {
-        xrefData = data["UNIFICATION_XREF"].split(";");
-    }
-
-    if (data["RELATIONSHIP_XREF"] != null)
-    {
-        xrefData = xrefData.concat(data["RELATIONSHIP_XREF"].split(";"));
-    }
-
-    var link, xref;
-
-    for (var i = 0; i < xrefData.length; i++)
-    {
-        link = this._resolveXref(xrefData[i]);
-        links.push(link);
-    }
-
-    // add each link as an xref entry
-
-    if (links.length > 0)
-    {
-        $(this.nodeInspectorSelector + " .node_inspector_content .xref").append(
-            '<tr class="xref-row"><td><strong>More at: </strong></td></tr>');
-
-        this._addXrefEntry(this.nodeInspectorSelector, 'node', links[0].href, links[0].text);
-    }
-
-    for (i=1; i < links.length; i++)
-    {
-        $(this.nodeInspectorSelector + " .node_inspector_content .xref-row td").append(', ');
-        this._addXrefEntry(this.nodeInspectorSelector, 'node', links[i].href, links[i].text);
-    }
-};
-
-/**
- * Add percentages (genomic profile data) to the node inspector with their
- * corresponding colors & names.
- *
- * @param data	node (gene) data
- */
-NetworkSbgnVis.prototype._addPercentages = function(data)
-{
-    var percent;
-
-    // init available profiles array
-    var available = new Array();
-    available['CNA'] = new Array();
-    available['MRNA'] = new Array();
-    available['MUTATED'] = new Array();
-
-    // add percentage values
-
-    if (data["PERCENT_CNA_AMPLIFIED"] != null)
-    {
-        percent = (data["PERCENT_CNA_AMPLIFIED"] * 100);
-        this._addPercentRow("cna-amplified", "Amplification", percent, "#FF2500");
-        available['CNA'].push("cna-amplified");
-    }
-
-    if (data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] != null)
-    {
-        percent = (data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] * 100);
-        this._addPercentRow("cna-homozygously-deleted", "Homozygous Deletion", percent, "#0332FF");
-        available['CNA'].push("cna-homozygously-deleted");
-    }
-
-    if (data["PERCENT_CNA_GAINED"] != null)
-    {
-        percent = (data["PERCENT_CNA_GAINED"] * 100);
-        this._addPercentRow("cna-gained", "Gain", percent, "#FFC5CC");
-        available['CNA'].push("cna-gained");
-    }
-
-    if (data["PERCENT_CNA_HEMIZYGOUSLY_DELETED"] != null)
-    {
-        percent = (data["PERCENT_CNA_HEMIZYGOUSLY_DELETED"] * 100);
-        this._addPercentRow("cna-hemizygously-deleted", "Hemizygous Deletion", percent, "#9EDFE0");
-        available['CNA'].push("cna-hemizygously-deleted");
-    }
-
-    if (data["PERCENT_MRNA_WAY_UP"] != null)
-    {
-        percent = (data["PERCENT_MRNA_WAY_UP"] * 100);
-        this._addPercentRow("mrna-way-up", "Up-regulation", percent, "#FFACA9");
-        available['MRNA'].push("mrna-way-up");
-    }
-
-    if (data["PERCENT_MRNA_WAY_DOWN"] != null)
-    {
-        percent = (data["PERCENT_MRNA_WAY_DOWN"] * 100);
-        this._addPercentRow("mrna-way-down", "Down-regulation", percent, "#78AAD6");
-        available['MRNA'].push("mrna-way-down");
-    }
-
-    if (data["PERCENT_MUTATED"] != null)
-    {
-        percent = (data["PERCENT_MUTATED"] * 100);
-        this._addPercentRow("mutated", "Mutation", percent, "#008F00");
-        available['MUTATED'].push("mutated");
-    }
-
-    // add separators
-
-    if (available['CNA'].length > 0)
-    {
-        $(this.nodeInspectorSelector + " .profile ." + available['CNA'][0]).addClass(
-            this.SECTION_SEPARATOR_CLASS);
-    }
-
-    if (available['MRNA'].length > 0)
-    {
-        $(this.nodeInspectorSelector + " .profile ." + available['MRNA'][0]).addClass(
-            this.SECTION_SEPARATOR_CLASS);
-    }
-
-    if (available['MUTATED'].length > 0)
-    {
-        $(this.nodeInspectorSelector + " .profile ." + available['MUTATED'][0]).addClass(
-            this.SECTION_SEPARATOR_CLASS);
-    }
-
-
-    // add header & total alteration value if at least one of the profiles is
-    // available
-
-    if (available['CNA'].length > 0
-            || available['MRNA'].length > 0
-        || available['MUTATED'].length > 0)
-    {
-
-        // add header
-        $(this.nodeInspectorSelector + " .profile-header").append('<tr class="header-row">' +
-                                                    '<td><div>Genomic Profile(s):</div></td></tr>');
-
-        // add total alteration frequency
-
-        percent = (data["PERCENT_ALTERED"] * 100);
-
-        var row = '<tr class="total-alteration percent-row">' +
-                  '<td><div class="percent-label">Total Alteration</div></td>' +
-                  '<td class="percent-cell"></td>' +
-                  '<td><div class="percent-value">' + percent.toFixed(1) + '%</div></td>' +
-                  '</tr>';
-
-        // append as a first row
-        $(this.nodeInspectorSelector + " .profile").prepend(row);
-    }
-};
-
-/**
- * Adds a row to the genomic profile table of the node inspector.
- *
- * @param section	class name of the percentage
- * @param label		label to be displayed
- * @param percent	percentage value
- * @param color		color of the percent bar
- */
-NetworkSbgnVis.prototype._addPercentRow = function(section, label, percent, color)
-{
-    var row = '<tr class="' + section + ' percent-row">' +
-              '<td><div class="percent-label"></div></td>' +
-              '<td class="percent-cell"><div class="percent-bar"></div></td>' +
-              '<td><div class="percent-value"></div></td>' +
-              '</tr>';
-
-    $(this.nodeInspectorSelector + " .profile").append(row);
-
-    $(this.nodeInspectorSelector + " .profile ." + section + " .percent-label").text(label);
-
-    $(this.nodeInspectorSelector + " .profile ." + section + " .percent-bar").css(
-        "width", Math.ceil(percent) + "%");
-
-    $(this.nodeInspectorSelector + " .profile ." + section + " .percent-bar").css(
-        "background-color", color);
-
-    $(this.nodeInspectorSelector + " .profile ." + section + " .percent-value").text(
-        percent.toFixed(1) + "%");
-};
-
-/**
- * This function shows gene details when double clicked on a node name on the
- * genes tab.
- *
- * @param evt	event that triggered the action
- */
-NetworkSbgnVis.prototype.showGeneDetails = function(evt)
-{
-    // retrieve the selected node
-    var node = this._vis.node(evt.target.value);
-
-    // TODO position the inspector, (also center the selected gene?)
-
-    // update inspector content
-    this._updateNodeInspectorContent(node.data, node);
-
-    // open inspector panel
-    $(this.nodeInspectorSelector).dialog("open").height("auto");
-
-    // if the inspector panel height exceeds the max height value
-    // adjust its height (this also adds scroll bars by default)
-    if ($(this.nodeInspectorSelector).height() >
-        $(this.nodeInspectorSelector).dialog("option", "maxHeight"))
-    {
-        $(this.nodeInspectorSelector).dialog("open").height(
-            $(this.nodeInspectorSelector).dialog("option", "maxHeight"));
-    }
-};
 
 NetworkSbgnVis.prototype.reRunQuery = function()
 {
@@ -2559,47 +2307,6 @@ NetworkSbgnVis.prototype._selectedElementsMap = function(group)
     {
         var key = selected[i].data.id;
         map[key] = selected[i];
-    }
-
-    return map;
-};
-
-/**
- * Creates a map (on element id) of connected nodes.
- *
- * @return	a map of connected nodes
- */
-NetworkSbgnVis.prototype._connectedNodesMap = function()
-{
-    var map = new Array();
-    var edges;
-
-    // if edges merged, traverse over merged edges for a better performance
-    if (this._vis.edgesMerged())
-    {
-        edges = this._vis.mergedEdges();
-    }
-    // else traverse over regular edges
-    else
-    {
-        edges = this._vis.edges();
-    }
-
-    var source;
-    var target;
-
-
-    // for each edge, add the source and target to the map of connected nodes
-    for (var i=0; i < edges.length; i++)
-    {
-        if (edges[i].visible)
-        {
-            source = this._vis.node(edges[i].data.source);
-            target = this._vis.node(edges[i].data.target);
-
-            map[source.data.id] = source;
-            map[target.data.id] = target;
-        }
     }
 
     return map;
@@ -2742,106 +2449,7 @@ NetworkSbgnVis.prototype._removeHighlights = function()
     //$("#menu_neighbors_clear").addClass("ui-state-disabled");
 };
 
-/**
- * Displays the gene legend in a separate panel.
- */
-NetworkSbgnVis.prototype._showNodeLegend = function()
-{
-    // open legend panel
-    $(this.geneLegendSelector).dialog("open").height("auto");
-};
 
-/**
- * Adds a data row to the node or edge inspector.
- *
- * @param selector	node or edge inspector selector (div id)
- * @param type		type of the inspector (should be "node" or "edge")
- * @param label		label of the data field
- * @param value		value of the data field
- * @param section	optional class value for row element
- */
-NetworkSbgnVis.prototype._addDataRow = function(selector, type, label, value /*, section*/)
-{
-    var section = arguments[4];
-
-    if (section == null)
-    {
-        section = "";
-    }
-    else
-    {
-        section += " ";
-    }
-
-    // replace null string with a predefined string
-
-    if (value == null)
-    {
-        value = this.UNKNOWN;
-    }
-
-    $(selector + " ." + type + "_inspector_content .data").append(
-        '<tr align="left" class="' + section + 'data-row"><td>' +
-        '<strong>' + label + ':</strong> ' + value +
-        '</td></tr>');
-};
-
-/**
- * Adds a cross reference entry to the node or edge inspector.
- *
- * @param selector	node or edge inspector selector (div id)
- * @param type		type of the inspector (should be "node" or "edge")
- * @param href		URL of the reference
- * @param label		label to be displayed
- */
-NetworkSbgnVis.prototype._addXrefEntry = function(selector, type, href, label)
-{
-    $(selector + " ." + type + "_inspector_content .xref-row td").append(
-        '<a href="' + href + '" target="_blank">' +
-        label + '</a>');
-};
-
-/**
- * Generates the URL and the display text for the given xref string.
- *
- * @param xref	xref as a string
- * @return		array of href and text pairs for the given xref
- */
-NetworkSbgnVis.prototype._resolveXref = function(xref)
-{
-    var link = null;
-
-    if (xref != null)
-    {
-        // split the string into two parts
-        var pieces = xref.split(":", 2);
-
-        // construct the link object containing href and text
-        link = new Object();
-
-        link.href = this._linkMap[pieces[0].toLowerCase()];
-
-        if (link.href == null)
-        {
-            // unknown source
-            link.href = "#";
-        }
-        // else, check where search id should be inserted
-        else if (link.href.indexOf(this.ID_PLACE_HOLDER) != -1)
-        {
-            link.href = link.href.replace(this.ID_PLACE_HOLDER, pieces[1]);
-        }
-        else
-        {
-            link.href += pieces[1];
-        }
-
-        link.text = xref;
-        link.pieces = pieces;
-    }
-
-    return link;
-};
 
 /**
  * Sets the default values of the control flags.
@@ -2853,7 +2461,6 @@ NetworkSbgnVis.prototype._resetFlags = function()
     this._nodeLabelsVisible = true;
     this._edgeLabelsVisible = false;
     this._panZoomVisible = true;
-    this._linksMerged = true;
     this._profileDataVisible = false;
     this._selectFromTab = false;
 };
@@ -2873,11 +2480,8 @@ NetworkSbgnVis.prototype._setVisibility = function(visible)
             $(this.mainMenuSelector).removeClass("hidden-network-ui");
             $(this.quickInfoSelector).removeClass("hidden-network-ui");
             $(this.networkTabsSelector).removeClass("hidden-network-ui");
-            $(this.nodeInspectorSelector).removeClass("hidden-network-ui");
-            $(this.edgeInspectorSelector).removeClass("hidden-network-ui");
-            $(this.geneLegendSelector).removeClass("hidden-network-ui");
-            $(this.drugLegendSelector).removeClass("hidden-network-ui");
-            $(this.edgeLegendSelector).removeClass("hidden-network-ui");
+            $(this.nodeLegendSelector).removeClass("hidden-network-ui");
+            $(this.interactionLegendSelector).removeClass("hidden-network-ui");
             $(this.settingsDialogSelector).removeClass("hidden-network-ui");
         }
     }
@@ -2889,11 +2493,8 @@ NetworkSbgnVis.prototype._setVisibility = function(visible)
             $(this.mainMenuSelector).addClass("hidden-network-ui");
             $(this.quickInfoSelector).addClass("hidden-network-ui");
             $(this.networkTabsSelector).addClass("hidden-network-ui");
-            $(this.nodeInspectorSelector).addClass("hidden-network-ui");
-            $(this.edgeInspectorSelector).addClass("hidden-network-ui");
-            $(this.geneLegendSelector).addClass("hidden-network-ui");
-            $(this.drugLegendSelector).addClass("hidden-network-ui");
-            $(this.edgeLegendSelector).addClass("hidden-network-ui");
+            $(this.nodeLegendSelector).addClass("hidden-network-ui");
+            $(this.interactionLegendSelector).addClass("hidden-network-ui");
             $(this.settingsDialogSelector).addClass("hidden-network-ui");
         }
     }
@@ -2946,48 +2547,6 @@ NetworkSbgnVis.prototype._defaultOptsArray = function()
             { id: "autoStabilize", label: "Auto stabilize",  value: true,   tip: "If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations." } ];
 
     return defaultOpts;
-};
-
-/**
- * Creates a map for xref entries.
- *
- * @return	an array (map) of xref entries
- */
-NetworkSbgnVis.prototype._xrefArray = function()
-{
-    var linkMap = new Array();
-
-    // TODO find missing links (Nucleotide Sequence Database)
-    //linkMap["refseq"] =	"http://www.genome.jp/dbget-bin/www_bget?refseq:";
-    linkMap["refseq"] = "http://www.ncbi.nlm.nih.gov/protein/";
-    linkMap["entrez gene"] = "http://www.ncbi.nlm.nih.gov/gene?term=";
-    linkMap["hgnc"] = "http://www.genenames.org/cgi-bin/quick_search.pl?.cgifields=type&type=equals&num=50&search=" + this.ID_PLACE_HOLDER + "&submit=Submit";
-    linkMap["uniprot"] = "http://www.uniprot.org/uniprot/";
-	linkMap["uniprotkb"] = "http://www.uniprot.org/uniprot/";
-    //linkMap["chebi"] = "http://www.ebi.ac.uk/chebi/advancedSearchFT.do?searchString=" + this.ID_PLACE_HOLDER + "&queryBean.stars=3&queryBean.stars=-1";
-	linkMap["chebi"] = "http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI%3A" + this.ID_PLACE_HOLDER;
-	linkMap["pubmed"] = "http://www.ncbi.nlm.nih.gov/pubmed?term=";
-    linkMap["drugbank"] = "http://www.drugbank.ca/drugs/" + this.ID_PLACE_HOLDER;
-	linkMap["kegg"] = "http://www.kegg.jp/dbget-bin/www_bget?dr:" + this.ID_PLACE_HOLDER;
-	linkMap["kegg drug"] = "http://www.kegg.jp/dbget-bin/www_bget?dr:" + this.ID_PLACE_HOLDER;
-	linkMap["chebi"] = "http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI%3A" + this.ID_PLACE_HOLDER;
-	linkMap["chemspider"] = "http://www.chemspider.com/Chemical-Structure." + this.ID_PLACE_HOLDER + ".html";
-	linkMap["kegg compund"] = "http://www.genome.jp/dbget-bin/www_bget?cpd:" + this.ID_PLACE_HOLDER;
-	linkMap["doi"] = "http://www.nature.com/nrd/journal/v10/n8/full/nrd3478.html?";
-	linkMap["nci_drug"] = "http://www.cancer.gov/drugdictionary?CdrID=" + this.ID_PLACE_HOLDER;
-	linkMap["national drug code directory"] = "http://www.fda.gov/Safety/MedWatch/SafetyInformation/SafetyAlertsforHumanMedicalProducts/ucm" + this.ID_PLACE_HOLDER + ".htm";
-	linkMap["pharmgkb"] = "http://www.pharmgkb.org/gene/" + this.ID_PLACE_HOLDER;
-	linkMap["pubchem compund"] = "http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=" + this.ID_PLACE_HOLDER + "&loc=ec_rcs";
-	linkMap["pubchem substance"] = "http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?sid=" + this.ID_PLACE_HOLDER + "&loc=ec_rss";
-	linkMap["pdb"] = "http://www.rcsb.org/pdb/explore/explore.do?structureId=" + this.ID_PLACE_HOLDER;
-	linkMap["bindingdb"] = "http://www.bindingdb.org/data/mols/tenK3/MolStructure_" + this.ID_PLACE_HOLDER  + ".html";
-	linkMap["genbank"] = "http://www.ncbi.nlm.nih.gov/nucleotide?term=" + this.ID_PLACE_HOLDER;
-	linkMap["iuphar"] = "http://www.iuphar-db.org/DATABASE/ObjectDisplayForward?objectId=" + this.ID_PLACE_HOLDER;
-	linkMap["drugs product database (dpd)"] = "http://205.193.93.51/dpdonline/searchRequest.do?din=" + this.ID_PLACE_HOLDER;
-	linkMap["guide to pharmacology"] = "http://www.guidetopharmacology.org/GRAC/LigandDisplayForward?ligandId=" + this.ID_PLACE_HOLDER;
-	linkMap["nucleotide sequence database"] = "";
-
-    return linkMap;
 };
 
 /**
@@ -3055,12 +2614,11 @@ NetworkSbgnVis.prototype._initMainMenu = function()
 
     $(this.mainMenuSelector + " #perform_layout").addClass(this.FIRST_CLASS);
     $(this.mainMenuSelector + " #perform_layout").addClass(this.MENU_SEPARATOR_CLASS);
-    //$("#layout_properties").addClass(SUB_MENU_CLASS);
     $(this.mainMenuSelector + " #auto_layout").addClass(this.MENU_SEPARATOR_CLASS);
     $(this.mainMenuSelector + " #auto_layout").addClass(this.LAST_CLASS);
 
     $(this.mainMenuSelector + " #show_node_legend").addClass(this.FIRST_CLASS);
-    $(this.mainMenuSelector + " #show_edge_legend").addClass(this.LAST_CLASS);
+    $(this.mainMenuSelector + " #show_interaction_legend").addClass(this.LAST_CLASS);
 
     // init check icons for checkable menu items
     this._updateMenuCheckIcons();
@@ -3116,15 +2674,6 @@ NetworkSbgnVis.prototype._updateMenuCheckIcons = function()
         $(this.mainMenuSelector + " #show_pan_zoom_control").removeClass(this.CHECKED_CLASS);
     }
 
-    if (this._linksMerged)
-    {
-        $(this.mainMenuSelector + " #merge_links").addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        $(this.mainMenuSelector + " #merge_links").removeClass(this.CHECKED_CLASS);
-    }
-
     if (this._profileDataVisible)
     {
         $(this.mainMenuSelector + " #show_profile_data").addClass(this.CHECKED_CLASS);
@@ -3146,30 +2695,14 @@ NetworkSbgnVis.prototype._initDialogs = function()
                                      resizable: false,
                                      width: 333});
 
-    // adjust node inspector
-    $(this.nodeInspectorSelector).dialog({autoOpen: false,
-                                    resizable: false,
-                                    width: 366,
-                                    maxHeight: 300});
-
-    // adjust edge inspector
-    $(this.edgeInspectorSelector).dialog({autoOpen: false,
-                                    resizable: false,
-                                    width: 366,
-                                    maxHeight: 300});
-
     // adjust node legend
-    $(this.geneLegendSelector).dialog({autoOpen: false,
+    $(this.nodeLegendSelector).dialog({autoOpen: false,
                                  resizable: false,
                                  width: 440});
 
-    // adjust drug legend
-    $(this.drugLegendSelector).dialog({autoOpen: false,
-                                 resizable: false,
-                                 width: 320});
 
     // adjust edge legend
-    $(this.edgeLegendSelector).dialog({autoOpen: false,
+    $(this.interactionLegendSelector).dialog({autoOpen: false,
                                  resizable: false,
                                  width: 280,
                                  height: 152});
@@ -3277,32 +2810,6 @@ NetworkSbgnVis.prototype._togglePanZoom = function()
 };
 
 /**
- * Merges the edges, if not merged. If edges are already merges, then show all
- * edges.
- */
-NetworkSbgnVis.prototype._toggleMerge = function()
-{
-    // merge/unmerge the edges
-
-    this._linksMerged = !this._linksMerged;
-
-    this._vis.edgesMerged(this._linksMerged);
-
-    // update check icon of the corresponding menu item
-
-    var item = $(this.mainMenuSelector + " #merge_links");
-
-    if (this._linksMerged)
-    {
-        item.addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(this.CHECKED_CLASS);
-    }
-};
-
-/**
  * Toggle auto layout option on or off. If auto layout is active, then the
  * graph is laid out automatically upon any change.
  */
@@ -3383,23 +2890,6 @@ NetworkSbgnVis.prototype._saveAsPng = function()
 };
 
 /**
- * Saves the network as a SVG image.
- */
-NetworkSbgnVis.prototype._saveAsSvg = function()
-{
-    this._vis.exportNetwork('svg', 'export_network.jsp?type=svg');
-};
-
-/**
- * Displays the layout properties panel.
- */
-NetworkSbgnVis.prototype._openProperties = function()
-{
-    this._updatePropsUI();
-    $(this.settingsDialogSelector).dialog("open").height("auto");
-};
-
-/**
  * Initializes the layout settings panel.
  */
 NetworkSbgnVis.prototype._initPropsUI = function()
@@ -3416,17 +2906,6 @@ NetworkSbgnVis.prototype._updatePropsUI = function()
 
     for (var i=0; i < this._layoutOptions.length; i++)
     {
-//		if (_layoutOptions[i].id == "weightNorm")
-//		{
-//			// clean all selections
-//			$("#norm_linear").removeAttr("selected");
-//			$("#norm_invlinear").removeAttr("selected");
-//			$("#norm_log").removeAttr("selected");
-//
-//			// set the correct option as selected
-//
-//			$("#norm_" + _layoutOptions[i].value).attr("selected", "selected");
-//		}
 
         if (this._layoutOptions[i].id == "autoStabilize")
         {
@@ -3468,191 +2947,6 @@ NetworkSbgnVis.prototype._updateLayoutOptions = function()
     this._graphLayout.options = options;
 };
 
-NetworkSbgnVis.prototype._createNodeInspector = function(divId)
-{
-    var id = "node_inspector_" + divId;
-
-    var html =
-        '<div id="' + id + '" class="network_node_inspector hidden-network-ui" title="Node Inspector">' +
-            '<div class="node_inspector_content content ui-widget-content">' +
-                '<table class="data"></table>' +
-                '<table class="profile-header"></table>' +
-                '<table class="profile"></table>' +
-                '<table class="xref"></table>' +
-            '</div>' +
-        '</div>';
-
-    $("#" + divId).append(html);
-
-    return "#" + id;
-};
-
-NetworkSbgnVis.prototype._createEdgeInspector = function(divId)
-{
-    var id = "edge_inspector_" + divId;
-
-    var html =
-        '<div id="' + id + '" class="network_edge_inspector hidden-network-ui" title="Edge Inspector">' +
-            '<div class="edge_inspector_content content ui-widget-content">' +
-                '<table class="data"></table>' +
-                '<table class="xref"></table>' +
-            '</div>' +
-        '</div>';
-
-    $("#" + divId).append(html);
-
-    return "#" + id;
-};
-
-NetworkSbgnVis.prototype._createGeneLegend = function(divId)
-{
-    var id = "node_legend_" + divId;
-
-    var html =
-        '<div id="' + id + '" class="network_node_legend hidden-network-ui" title="Gene Legend">' +
-            '<div id="node_legend_content" class="content ui-widget-content">' +
-                '<img src="images/network/gene_legend.png"/>' +
-            '</div>' +
-        '</div>';
-
-    $("#" + divId).append(html);
-
-    return "#" + id;
-};
-
-NetworkSbgnVis.prototype._createDrugLegend = function(divId)
-{
-    var id = "drug_legend_" + divId;
-
-    var html =
-        '<div id="' + id + '" class="network_drug_legend hidden-network-ui" title="Drug Legend">' +
-            '<div id="drug_legend_content" class="content ui-widget-content">' +
-                '<img src="images/network/drug_legend.png"/>' +
-            '</div>' +
-        '</div>';
-
-    $("#" + divId).append(html);
-
-    return "#" + id;
-};
-
-NetworkSbgnVis.prototype._createEdgeLegend = function(divId)
-{
-    var id = "edge_legend_" + divId;
-
-    var html =
-        '<div id="' + id + '" class="network_edge_legend hidden-network-ui" title="Interaction Legend">' +
-            '<div id="edge_legend_content" class="content ui-widget-content">' +
-                '<img src="images/network/interaction_legend.png"/>' +
-            '</div>' +
-        '</div>';
-
-    $("#" + divId).append(html);
-
-    return "#" + id;
-};
-
-NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
-{
-    var id = "settings_dialog_" + divId;
-
-    var html =
-        '<div id="' + id + '" class="settings_dialog hidden-network-ui" title="Layout Properties">' +
-            '<div id="fd_layout_settings" class="content ui-widget-content">' +
-                '<table>' +
-                    '<tr title="The gravitational constant. Negative values produce a repulsive force.">' +
-                        '<td align="right">' +
-                            '<label>Gravitation</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="gravitation" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="The default mass value for nodes.">' +
-                        '<td align="right">' +
-                            '<label>Node mass</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="mass" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="The default spring tension for edges.">' +
-                        '<td align="right">' +
-                            '<label>Edge tension</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="tension" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="The default spring rest length for edges.">' +
-                        '<td align="right">' +
-                            '<label>Edge rest length</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="restLength" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="The co-efficient for frictional drag forces.">' +
-                        '<td align="right">' +
-                            '<label>Drag co-efficient</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="drag" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="The minimum effective distance over which forces are exerted.">' +
-                        '<td align="right">' +
-                            '<label>Minimum distance</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="minDistance" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="The maximum distance over which forces are exerted.">' +
-                        '<td align="right">' +
-                            '<label>Maximum distance</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="maxDistance" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="The number of iterations to run the simulation.">' +
-                        '<td align="right">' +
-                            '<label>Iterations</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="iterations" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="The maximum time to run the simulation, in milliseconds.">' +
-                        '<td align="right">' +
-                            '<label>Maximum Time</label>' +
-                        '</td>' +
-                        '<td>' +
-                            '<input type="text" id="maxTime" value=""/>' +
-                        '</td>' +
-                    '</tr>' +
-                    '<tr title="If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations.">' +
-                        '<td align="right">' +
-                            '<label>Auto Stabilize</label>' +
-                        '</td>' +
-                        '<td align="left">' +
-                            '<input type="checkbox" id="autoStabilize" value="true" checked="checked"/>' +
-                        '</td>' +
-                    '</tr>' +
-                '</table>' +
-            '</div>' +
-            '<div class="footer">' +
-                '<input type="button" id="save_layout_settings" value="Save"/>' +
-                '<input type="button" id="default_layout_settings" value="Default"/>' +
-            '</div>' +
-        '</div>';
-
-    $("#" + divId).append(html);
-
-    return "#" + id;
-};
-
 /*
  * ##################################################################
  * ##################### Utility Functions ##########################
@@ -3669,11 +2963,11 @@ NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
 function _initMenuStyle(divId, hoverClass)
 {
     // Opera fix
-    $("#" + divId + " #network_menu ul").css({display: "none"});
+    $("#" + divId + " #network_menu _sbgn ul").css({display: "none"});
 
     // adds hover effect to main menu items (File, Topology, View)
 
-    $("#" + divId + " #network_menu li").hover(
+    $("#" + divId + " #network_menu_sbgn li").hover(
         function() {
             $(this).find('ul:first').css(
                 {visibility: "visible",display: "none"}).show(400);
@@ -3685,7 +2979,7 @@ function _initMenuStyle(divId, hoverClass)
 
     // adds hover effect to menu items
 
-    $("#" + divId + " #network_menu ul a").hover(
+    $("#" + divId + " #network_menu_sbgn ul a").hover(
         function() {
             $(this).addClass(hoverClass);
         },
