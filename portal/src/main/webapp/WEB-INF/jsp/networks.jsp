@@ -39,6 +39,8 @@
 <script type="text/javascript" src="js/cytoscape_web/cytoscapewebSBGN.min.js"></script>
 
 <!-- <script type="text/javascript" src="js/network/network-ui.js"></script> -->
+<script type="text/javascript" src="js/network/utility-functions.js"></script>
+<script type="text/javascript" src="js/network/common-functions.js"></script>
 <script type="text/javascript" src="js/network/network-visualization.js"></script>
 <script type="text/javascript" src="js/network/network-sbgn-vis.js"></script>
 <script type="text/javascript" src="js/network/network-viz.js"></script>

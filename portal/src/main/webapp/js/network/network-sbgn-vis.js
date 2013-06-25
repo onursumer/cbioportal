@@ -38,7 +38,6 @@ function NetworkSbgnVis(divId)
     this._autoLayout = false;
     this._removeDisconnected = false;
     this._nodeLabelsVisible = false;
-    this._edgeLabelsVisible = false;
     this._panZoomVisible = false;
     this._profileDataVisible = false;
     this._selectFromTab = false;
@@ -46,9 +45,7 @@ function NetworkSbgnVis(divId)
     // array of control functions
     this._controlFunctions = null;
 
-    // node type constants
-    this.PROTEIN = "Protein";
-    this.SMALL_MOLECULE = "SmallMolecule";
+    // node type constant
     this.UNKNOWN = "Unknown";
 
     // default values for sliders
@@ -87,9 +84,6 @@ function NetworkSbgnVis(divId)
     // array of previously filtered elements
     this._alreadyFiltered = null;
 
-    // array of nodes filtered due to disconnection
-    this._filteredByIsolation = null;
-
     // array of filtered edge sources
     this._sourceVisibility = null;
 
@@ -126,7 +120,6 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	// init filter arrays
 	// delete this later because it os not used anymore
 	this._alreadyFiltered = new Array();
-	this._filteredByIsolation = new Array();
 	// parse and add genomic data to cytoscape nodes
 	this.parseGenomicData(genomicData,annotationData);
 	//for once only, get all the process sources and updates _sourceVisibility array
@@ -134,7 +127,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	var weights = this.initializeWeights();
 	this._geneWeightMap = this.adjustWeights(weights);
 	this._geneWeightThreshold = this.ALTERATION_PERCENT;
-	this._maxAlterationPercent = this._maxAlterValNonSeed(this._geneWeightMap);
+	this._maxAlterationPercent = _maxAlterValNonSeed(this, this._geneWeightMap);
 
 	this._resetFlags();
 
@@ -217,12 +210,12 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	$(this.filteringTabSelector + " #update_source").click(updateSource);
 
 	//$(' #vis_content').dblclick(dblClickSelect);
-	this._initLayoutOptions();
+	_initLayoutOptions(this);
 
 	// initializing the tabs and UIs
 	this._initMainMenu();
 	this._initDialogs();
-	this._initPropsUI();
+	_initPropsUI(this);
 	this._initSliders();
 
 	// add listener for the main tabs to hide dialogs when user selects
@@ -258,12 +251,10 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	}
 
 	// adjust things for IE
-	this._adjustIE();
+	_adjustIE();
 
 	// make UI visible
 	this._setVisibility(true);
-
-
 };
 
 
@@ -522,7 +513,7 @@ NetworkSbgnVis.prototype.multiSelectHugos = function(event)
 	{
 		if (_isIE())
 		{
-		    this._setComponentVis($(this.geneListAreaSelector + " select"), false);
+		    _setComponentVis($(this.geneListAreaSelector + " select"), false);
 		}
 
 		// deselect all options
@@ -548,7 +539,7 @@ NetworkSbgnVis.prototype.multiSelectHugos = function(event)
 
 		if (_isIE())
 		{
-		    this._setComponentVis($(this.geneListAreaSelector + " select"), true);
+		    _setComponentVis($(this.geneListAreaSelector + " select"), true);
 		}
 	}
 	// also update Re-submit button
@@ -931,7 +922,7 @@ NetworkSbgnVis.prototype.updateGenesTab = function(evt)
 	{
 		if (_isIE())
 		{
-			this._setComponentVis($(this.geneListAreaSelector + " select"), false);
+			_setComponentVis($(this.geneListAreaSelector + " select"), false);
 		}
 
 		// deselect all options
@@ -943,7 +934,7 @@ NetworkSbgnVis.prototype.updateGenesTab = function(evt)
 
 		if (_isIE())
 		{
-			this._setComponentVis($(this.geneListAreaSelector + " select"), true);
+			_setComponentVis($(this.geneListAreaSelector + " select"), true);
 		}
 	}
 	// also update Re-submit button
@@ -1642,7 +1633,7 @@ NetworkSbgnVis.prototype.updateVisibility = function()
 	this._vis.filter("nodes", showList);
 	// apply changes
 	this._refreshGenesTab();
-	this._visChanged();
+	_visChanged(this);
 };
 
 
@@ -1786,35 +1777,31 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     };
 
     var performLayout = function() {
-        self._performLayout();
+        _performLayout(self);
     };
 
     var toggleNodeLabels = function() {
-        self._toggleNodeLabels();
-    };
-
-    var toggleEdgeLabels = function() {
-        self._toggleEdgeLabels();
+        _toggleNodeLabels(self);
     };
 
     var togglePanZoom = function() {
-        self._togglePanZoom();
+        _togglePanZoom(self);
     };
 
     var toggleAutoLayout = function() {
-        self._toggleAutoLayout();
+        _toggleAutoLayout(self);
     };
 
     var toggleRemoveDisconnected = function() {
-        self._toggleRemoveDisconnected();
+        _toggleRemoveDisconnected(self);
     };
 
     var toggleProfileData = function() {
-        self._toggleProfileData();
+       _toggleProfileData(self);
     };
 
     var saveAsPng = function() {
-        self._saveAsPng();
+        _saveAsPng(self);
     };
 
     var openProperties = function() {
@@ -1822,11 +1809,11 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     };
 
     var highlightNeighbors = function() {
-        self._highlightNeighbors();
+        _highlightNeighbors(self);
     };
 
     var removeHighlights = function() {
-        self._removeHighlights();
+        _removeHighlights(self);
     };
 
     var filterNonSelected = function() {
@@ -1842,11 +1829,11 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     };
 
     var saveSettings = function() {
-        self.saveSettings();
+        _saveSettings(self);
     };
 
     var defaultSettings = function() {
-        self.defaultSettings();
+        _defaultSettings(self);
     };
 
     var searchGene = function() {
@@ -2066,17 +2053,6 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
     }
 };
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-
 NetworkSbgnVis.prototype._createNodeLegend = function(divId)
 {
 };
@@ -2115,7 +2091,7 @@ NetworkSbgnVis.prototype._showInteractionLegend = function()
  */
 NetworkSbgnVis.prototype._openProperties = function()
 {
-    this._updatePropsUI();
+    _updatePropsUI(this);
     $(this.settingsDialogSelector).dialog("open").height("auto");
     alert("fill _createSettingsDialog function");
 
@@ -2144,325 +2120,11 @@ NetworkSbgnVis.prototype.handleMenuEvent = function(command)
 	}
 };
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-
-/**
- * Saves layout settings when clicked on the "Save" button of the
- * "Layout Options" panel.
- */
-NetworkSbgnVis.prototype.saveSettings = function()
-{
-    // update layout option values
-
-    for (var i=0; i < (this._layoutOptions).length; i++)
-    {
-
-        if (this._layoutOptions[i].id == "autoStabilize")
-        {
-            // check if the auto stabilize box is checked
-
-            if($(this.settingsDialogSelector + " #autoStabilize").is(":checked"))
-            {
-                this._layoutOptions[i].value = true;
-                $(this.settingsDialogSelector + " #autoStabilize").val(true);
-            }
-            else
-            {
-                this._layoutOptions[i].value = false;
-                $(this.settingsDialogSelector + " #autoStabilize").val(false);
-            }
-        }
-        else
-        {
-            // simply copy the text field value
-            this._layoutOptions[i].value =
-                $(this.settingsDialogSelector + " #" + this._layoutOptions[i].id).val();
-        }
-    }
-
-    // update graphLayout options
-    this._updateLayoutOptions();
-
-    // close the settings panel
-    $(this.settingsDialogSelector).dialog("close");
-};
-
-/**
- * Reverts to default layout settings when clicked on "Default" button of the
- * "Layout Options" panel.
- */
-NetworkSbgnVis.prototype.defaultSettings = function()
-{
-    this._layoutOptions = this._defaultOptsArray();
-    this._updateLayoutOptions();
-    this._updatePropsUI();
-};
-
-
 NetworkSbgnVis.prototype.reRunQuery = function()
 {
     // TODO get the list of currently interested genes
-    var currentGenes = "";
-    var nodeMap = this._selectedElementsMap("nodes");
+        alert("fill reRunQuery function");
 
-    for (var key in nodeMap)
-    {
-        currentGenes += this.geneLabel(nodeMap[key].data) + " ";
-    }
-
-    if (currentGenes.length > 0)
-    {
-        // update the list of seed genes for the query
-        $("#main_form #gene_list").val(currentGenes);
-
-        // re-run query by performing click action on the submit button
-        $("#main_form #main_submit").click();
-    }
-};
-
-/**
- * Determines the visibility of a node for filtering purposes. This function is
- * designed to filter disconnected nodes.
- *
- * @param element	node to be checked for visibility criteria
- * @return			true if the node should be visible, false otherwise
- */
-NetworkSbgnVis.prototype.isolation = function(element)
-{
-    var visible = false;
-
-    // if an element is already filtered then it should remain invisible
-    if (this._alreadyFiltered[element.data.id] != null)
-    {
-        visible = false;
-    }
-    else
-    {
-        // check if the node is connected, if it is disconnected it should be
-        // filtered out
-        if (this._connectedNodes[element.data.id] != null)
-        {
-            visible = true;
-        }
-
-        if (!visible)
-        {
-            // if the node should be filtered, then add it to the map
-            this._alreadyFiltered[element.data.id] = element;
-            this._filteredByIsolation[element.data.id] = element;
-        }
-    }
-
-    return visible;
-};
-
-
-/**
- * Creates a map (on element id) of selected elements.
- *
- * @param group		data group (nodes, edges, all)
- * @return			a map of selected elements
- */
-NetworkSbgnVis.prototype._selectedElementsMap = function(group)
-{
-    var selected = this._vis.selected(group);
-    var map = new Array();
-
-    for (var i=0; i < selected.length; i++)
-    {
-        var key = selected[i].data.id;
-        map[key] = selected[i];
-    }
-
-    return map;
-};
-
-/**
- * This function is designed to be invoked after an operation (such as filtering
- * nodes or edges) that changes the graph topology.
- */
-NetworkSbgnVis.prototype._visChanged = function()
-{
-    // perform layout if auto layout flag is set
-
-    if (this._autoLayout)
-    {
-        // re-apply layout
-        this._performLayout();
-    }
-};
-
-/**
- * Highlights the neighbors of the selected nodes.
- *
- * The content of this method is copied from GeneMANIA (genemania.org) sources.
- */
-NetworkSbgnVis.prototype._highlightNeighbors = function(/*nodes*/)
-{
-    /*
-     if (nodes == null)
-     {
-     nodes = _vis.selected("nodes");
-     }
-     */
-
-    var nodes = this._vis.selected("nodes");
-
-    if (nodes != null && nodes.length > 0)
-    {
-        var fn = this._vis.firstNeighbors(nodes, true);
-        var neighbors = fn.neighbors;
-        var edges = fn.edges;
-        edges = edges.concat(fn.mergedEdges);
-        neighbors = neighbors.concat(fn.rootNodes);
-        var bypass = this._vis.visualStyleBypass() || {};
-
-        if( ! bypass.nodes )
-        {
-            bypass.nodes = {};
-        }
-        if( ! bypass.edges )
-        {
-            bypass.edges = {};
-        }
-
-        var allNodes = this._vis.nodes();
-
-        $.each(allNodes, function(i, n) {
-            if( !bypass.nodes[n.data.id] ){
-                bypass.nodes[n.data.id] = {};
-            }
-            bypass.nodes[n.data.id].opacity = 0.25;
-        });
-
-        $.each(neighbors, function(i, n) {
-            if( !bypass.nodes[n.data.id] ){
-                bypass.nodes[n.data.id] = {};
-            }
-            bypass.nodes[n.data.id].opacity = 1;
-        });
-
-        var opacity;
-        var allEdges = this._vis.edges();
-        allEdges = allEdges.concat(this._vis.mergedEdges());
-
-        $.each(allEdges, function(i, e) {
-            if( !bypass.edges[e.data.id] ){
-                bypass.edges[e.data.id] = {};
-            }
-            /*
-             if (e.data.networkGroupCode === "coexp" || e.data.networkGroupCode === "coloc") {
-             opacity = AUX_UNHIGHLIGHT_EDGE_OPACITY;
-             } else {
-             opacity = DEF_UNHIGHLIGHT_EDGE_OPACITY;
-             }
-             */
-
-            opacity = 0.15;
-
-            bypass.edges[e.data.id].opacity = opacity;
-            bypass.edges[e.data.id].mergeOpacity = opacity;
-        });
-
-        $.each(edges, function(i, e) {
-            if( !bypass.edges[e.data.id] ){
-                bypass.edges[e.data.id] = {};
-            }
-            /*
-             if (e.data.networkGroupCode === "coexp" || e.data.networkGroupCode === "coloc") {
-             opacity = AUX_HIGHLIGHT_EDGE_OPACITY;
-             } else {
-             opacity = DEF_HIGHLIGHT_EDGE_OPACITY;
-             }
-             */
-
-            opacity = 0.85;
-
-            bypass.edges[e.data.id].opacity = opacity;
-            bypass.edges[e.data.id].mergeOpacity = opacity;
-        });
-
-        this._vis.visualStyleBypass(bypass);
-        //CytowebUtil.neighborsHighlighted = true;
-
-        //$("#menu_neighbors_clear").removeClass("ui-state-disabled");
-    }
-};
-
-/**
- * Removes all highlights from the visualization.
- *
- * The content of this method is copied from GeneMANIA (genemania.org) sources.
- */
-NetworkSbgnVis.prototype._removeHighlights = function()
-{
-    var bypass = this._vis.visualStyleBypass();
-    bypass.edges = {};
-
-    var nodes = bypass.nodes;
-
-    for (var id in nodes)
-    {
-        var styles = nodes[id];
-        delete styles["opacity"];
-        delete styles["mergeOpacity"];
-    }
-
-    this._vis.visualStyleBypass(bypass);
-
-    //CytowebUtil.neighborsHighlighted = false;
-    //$("#menu_neighbors_clear").addClass("ui-state-disabled");
-};
-
-
-
-/**
- * Sets the default values of the control flags.
- */
-NetworkSbgnVis.prototype._resetFlags = function()
-{
-    this._autoLayout = false;
-    this._removeDisconnected = false;
-    this._nodeLabelsVisible = true;
-    this._edgeLabelsVisible = false;
-    this._panZoomVisible = true;
-    this._profileDataVisible = false;
-    this._selectFromTab = false;
 };
 
 /**
@@ -2475,7 +2137,6 @@ NetworkSbgnVis.prototype._setVisibility = function(visible)
     if (visible)
     {
         if ($(this.networkTabsSelector).hasClass("hidden-network-ui"))
-        //if ($("#network_menu_div").hasClass("hidden-network-ui"))
         {
             $(this.mainMenuSelector).removeClass("hidden-network-ui");
             $(this.quickInfoSelector).removeClass("hidden-network-ui");
@@ -2488,7 +2149,6 @@ NetworkSbgnVis.prototype._setVisibility = function(visible)
     else
     {
         if (!$(this.networkTabsSelector).hasClass("hidden-network-ui"))
-        //if (!$("#network_menu_div").hasClass("hidden-network-ui"))
         {
             $(this.mainMenuSelector).addClass("hidden-network-ui");
             $(this.quickInfoSelector).addClass("hidden-network-ui");
@@ -2501,85 +2161,27 @@ NetworkSbgnVis.prototype._setVisibility = function(visible)
 };
 
 /**
- * Sets visibility of the given UI component.
- *
- * @param component	an html UI component
- * @param visible	a boolean to set the visibility.
+ * Initializes dialog panels for node inspector, edge inspector, and layout
+ * settings.
  */
-NetworkSbgnVis.prototype._setComponentVis = function(component, visible)
+NetworkSbgnVis.prototype._initDialogs = function()
 {
-    // set visible
-    if (visible)
-    {
-        if (component.hasClass("hidden-network-ui"))
-        {
-            component.removeClass("hidden-network-ui");
-        }
-    }
-    // set invisible
-    else
-    {
-        if (!component.hasClass("hidden-network-ui"))
-        {
-            component.addClass("hidden-network-ui");
-        }
-    }
-};
+    // adjust settings panel
+    $(this.settingsDialogSelector).dialog({autoOpen: false,
+                                     resizable: false,
+                                     width: 333});
 
-/**
- * Creates an array containing default option values for the ForceDirected
- * layout.
- *
- * @return	an array of default layout options
- */
-NetworkSbgnVis.prototype._defaultOptsArray = function()
-{
-    var defaultOpts =
-        [ { id: "gravitation", label: "Gravitation",       value: -350,   tip: "The gravitational constant. Negative values produce a repulsive force." },
-            { id: "mass",        label: "Node mass",         value: 3,      tip: "The default mass value for nodes." },
-            { id: "tension",     label: "Edge tension",      value: 0.1,    tip: "The default spring tension for edges." },
-            { id: "restLength",  label: "Edge rest length",  value: "auto", tip: "The default spring rest length for edges." },
-            { id: "drag",        label: "Drag co-efficient", value: 0.4,    tip: "The co-efficient for frictional drag forces." },
-            { id: "minDistance", label: "Minimum distance",  value: 1,      tip: "The minimum effective distance over which forces are exerted." },
-            { id: "maxDistance", label: "Maximum distance",  value: 10000,  tip: "The maximum distance over which forces are exerted." },
-            { id: "iterations",  label: "Iterations",        value: 400,    tip: "The number of iterations to run the simulation." },
-            { id: "maxTime",     label: "Maximum time",      value: 30000,  tip: "The maximum time to run the simulation, in milliseconds." },
-            { id: "autoStabilize", label: "Auto stabilize",  value: true,   tip: "If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations." } ];
+    // adjust node legend
+    $(this.nodeLegendSelector).dialog({autoOpen: false,
+                                 resizable: false,
+                                 width: 440});
 
-    return defaultOpts;
-};
 
-/**
- * Finds the non-seed gene having the maximum alteration percent in
- * the network, and returns the maximum alteration percent value.
- *
- * @param map	weight map for the genes in the network
- * @return		max alteration percent of non-seed genes
- */
-NetworkSbgnVis.prototype._maxAlterValNonSeed = function(map)
-{
-    var max = 0.0;
-
-    for (var key in map)
-    {
-        // skip seed genes
-
-        var node = this._vis.node(key);
-
-        if (node != null &&
-            node.data["IN_QUERY"] == "true")
-        {
-            continue;
-        }
-
-        // update max value if necessary
-        if (map[key] > max)
-        {
-            max = map[key];
-        }
-    }
-
-    return max+1;
+    // adjust edge legend
+    $(this.interactionLegendSelector).dialog({autoOpen: false,
+                                 resizable: false,
+                                 width: 280,
+                                 height: 152});
 };
 
 /**
@@ -2656,15 +2258,6 @@ NetworkSbgnVis.prototype._updateMenuCheckIcons = function()
         $(this.mainMenuSelector + " #show_node_labels").removeClass(this.CHECKED_CLASS);
     }
 
-    if (this._edgeLabelsVisible)
-    {
-        $(this.mainMenuSelector + " #show_edge_labels").addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        $(this.mainMenuSelector + " #show_edge_labels").removeClass(this.CHECKED_CLASS);
-    }
-
     if (this._panZoomVisible)
     {
         $(this.mainMenuSelector + " #show_pan_zoom_control").addClass(this.CHECKED_CLASS);
@@ -2685,520 +2278,14 @@ NetworkSbgnVis.prototype._updateMenuCheckIcons = function()
 };
 
 /**
- * Initializes dialog panels for node inspector, edge inspector, and layout
- * settings.
+ * Sets the default values of the control flags.
  */
-NetworkSbgnVis.prototype._initDialogs = function()
+NetworkSbgnVis.prototype._resetFlags = function()
 {
-    // adjust settings panel
-    $(this.settingsDialogSelector).dialog({autoOpen: false,
-                                     resizable: false,
-                                     width: 333});
-
-    // adjust node legend
-    $(this.nodeLegendSelector).dialog({autoOpen: false,
-                                 resizable: false,
-                                 width: 440});
-
-
-    // adjust edge legend
-    $(this.interactionLegendSelector).dialog({autoOpen: false,
-                                 resizable: false,
-                                 width: 280,
-                                 height: 152});
-};
-
-NetworkSbgnVis.prototype._adjustIE = function()
-{
-    if (_isIE())
-    {
-        // this is required to position scrollbar on IE
-        //var width = $("#help_tab").width();
-        //$("#help_tab").width(width * 1.15);
-    }
-};
-
-/**
- * Initializes the layout options by default values and updates the
- * corresponding UI content.
- */
-NetworkSbgnVis.prototype._initLayoutOptions = function()
-{
-    this._layoutOptions = this._defaultOptsArray();
-    this._updateLayoutOptions();
-};
-
-/**
- * Performs the current layout on the graph.
- */
-NetworkSbgnVis.prototype._performLayout = function()
-{
-    this._vis.layout(this._graphLayout);
-};
-
-/**
- * Toggles the visibility of the node labels.
- */
-NetworkSbgnVis.prototype._toggleNodeLabels = function()
-{
-    // update visibility of labels
-
-    this._nodeLabelsVisible = !this._nodeLabelsVisible;
-    this._vis.nodeLabelsVisible(this._nodeLabelsVisible);
-
-    // update check icon of the corresponding menu item
-
-    var item = $(this.mainMenuSelector + " #show_node_labels");
-
-    if (this._nodeLabelsVisible)
-    {
-        item.addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(this.CHECKED_CLASS);
-    }
-};
-
-/**
- * Toggles the visibility of the edge labels.
- */
-NetworkSbgnVis.prototype._toggleEdgeLabels = function()
-{
-    // update visibility of labels
-
-    this._edgeLabelsVisible = !this._edgeLabelsVisible;
-    this._vis.edgeLabelsVisible(this._edgeLabelsVisible);
-
-    // update check icon of the corresponding menu item
-
-    var item = $(this.mainMenuSelector + " #show_edge_labels");
-
-    if (this._edgeLabelsVisible)
-    {
-        item.addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(this.CHECKED_CLASS);
-    }
-};
-
-/**
- * Toggles the visibility of the pan/zoom control panel.
- */
-NetworkSbgnVis.prototype._togglePanZoom = function()
-{
-    // update visibility of the pan/zoom control
-
-    this._panZoomVisible = !this._panZoomVisible;
-
-    this._vis.panZoomControlVisible(this._panZoomVisible);
-
-    // update check icon of the corresponding menu item
-
-    var item = $(this.mainMenuSelector + " #show_pan_zoom_control");
-
-    if (this._panZoomVisible)
-    {
-        item.addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(this.CHECKED_CLASS);
-    }
-};
-
-/**
- * Toggle auto layout option on or off. If auto layout is active, then the
- * graph is laid out automatically upon any change.
- */
-NetworkSbgnVis.prototype._toggleAutoLayout = function()
-{
-    // toggle autoLayout option
-
-    this._autoLayout = !this._autoLayout;
-
-    // update check icon of the corresponding menu item
-
-    var item = $(this.settingsDialogSelector + " #auto_layout");
-
-    if (this._autoLayout)
-    {
-        item.addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(CHECKED_CLASS);
-    }
-};
-
-/**
- * Toggle "remove disconnected on hide" option on or off. If this option is
- * active, then any disconnected node will also be hidden after the hide action.
- */
-NetworkSbgnVis.prototype._toggleRemoveDisconnected = function()
-{
-    // toggle removeDisconnected option
-
-    this._removeDisconnected = !this._removeDisconnected;
-
-    // update check icon of the corresponding menu item
-
-    var item = $(this.mainMenuSelector + " #remove_disconnected");
-
-    if (this._removeDisconnected)
-    {
-        item.addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(this.CHECKED_CLASS);
-    }
-};
-
-/**
- * Toggles the visibility of the profile data for the nodes.
- */
-NetworkSbgnVis.prototype._toggleProfileData = function()
-{
-    // toggle value and pass to CW
-
-    this._profileDataVisible = !this._profileDataVisible;
-    this._vis.profileDataAlwaysShown(this._profileDataVisible);
-
-    // update check icon of the corresponding menu item
-
-    var item = $(this.mainMenuSelector + " #show_profile_data");
-
-    if (this._profileDataVisible)
-    {
-        item.addClass(this.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(this.CHECKED_CLASS);
-    }
-};
-
-/**
- * Saves the network as a PNG image.
- */
-NetworkSbgnVis.prototype._saveAsPng = function()
-{
-    this._vis.exportNetwork('png', 'export_network.jsp?type=png');
-};
-
-/**
- * Initializes the layout settings panel.
- */
-NetworkSbgnVis.prototype._initPropsUI = function()
-{
-    $(this.settingsDialogSelector + " #fd_layout_settings tr").tipTip();
-};
-
-/**
- * Updates the contents of the layout properties panel.
- */
-NetworkSbgnVis.prototype._updatePropsUI = function()
-{
-    // update settings panel UI
-
-    for (var i=0; i < this._layoutOptions.length; i++)
-    {
-
-        if (this._layoutOptions[i].id == "autoStabilize")
-        {
-            if (this._layoutOptions[i].value == true)
-            {
-                // check the box
-                $(this.settingsDialogSelector + " #autoStabilize").attr("checked", true);
-                $(this.settingsDialogSelector + " #autoStabilize").val(true);
-            }
-            else
-            {
-                // uncheck the box
-                $(this.settingsDialogSelector + " #autoStabilize").attr("checked", false);
-                $(this.settingsDialogSelector + " #autoStabilize").val(false);
-            }
-        }
-        else
-        {
-            $(this.settingsDialogSelector + " #" + this._layoutOptions[i].id).val(
-                this._layoutOptions[i].value);
-        }
-    }
-};
-
-/**
- * Updates the graphLayout options for CytoscapeWeb.
- */
-NetworkSbgnVis.prototype._updateLayoutOptions = function()
-{
-    // update graphLayout object
-
-    var options = new Object();
-
-    for (var i=0; i < this._layoutOptions.length; i++)
-    {
-        options[this._layoutOptions[i].id] = this._layoutOptions[i].value;
-    }
-
-    this._graphLayout.options = options;
-};
-
-/*
- * ##################################################################
- * ##################### Utility Functions ##########################
- * ##################################################################
- */
-
-/**
- * Initializes the style of the network menu by adjusting hover behaviour.
- *
- * @param divId
- * @param hoverClass
- * @private
- */
-function _initMenuStyle(divId, hoverClass)
-{
-    // Opera fix
-    $("#" + divId + " #network_menu _sbgn ul").css({display: "none"});
-
-    // adds hover effect to main menu items (File, Topology, View)
-
-    $("#" + divId + " #network_menu_sbgn li").hover(
-        function() {
-            $(this).find('ul:first').css(
-                {visibility: "visible",display: "none"}).show(400);
-        },
-        function() {
-            $(this).find('ul:first').css({visibility: "hidden"});
-        });
-
-
-    // adds hover effect to menu items
-
-    $("#" + divId + " #network_menu_sbgn ul a").hover(
-        function() {
-            $(this).addClass(hoverClass);
-        },
-        function() {
-            $(this).removeClass(hoverClass);
-        });
-}
-
-/**
- * Replaces all occurrences of the given string in the source string.
- *
- * @param source		string to be modified
- * @param toFind		string to match
- * @param toReplace		string to be replaced with the matched string
- * @return				modified version of the source string
- */
-function _replaceAll(source, toFind, toReplace)
-{
-    var target = source;
-    var index = target.indexOf(toFind);
-
-    while (index != -1)
-    {
-        target = target.replace(toFind, toReplace);
-        index = target.indexOf(toFind);
-    }
-
-    return target;
-}
-
-/**
- * Checks if the user browser is IE.
- *
- * @return	true if IE, false otherwise
- */
-function _isIE()
-{
-    var result = false;
-
-    if (navigator.appName.toLowerCase().indexOf("microsoft") != -1)
-    {
-        result = true;
-    }
-
-    return result;
-}
-
-/**
- * Converts the given string to title case format. Also replaces each
- * underdash with a space.
- *
- * @param source	source string to be converted to title case
- */
-function _toTitleCase(source)
-{
-    var str;
-
-    if (source == null)
-    {
-        return source;
-    }
-
-    // first, trim the string
-    str = source.replace(/\s+$/, "");
-
-    // replace each underdash with a space
-    str = _replaceAll(str, "_", " ");
-
-    // change to lower case
-    str = str.toLowerCase();
-
-    // capitalize starting character of each word
-
-    var titleCase = new Array();
-
-    titleCase.push(str.charAt(0).toUpperCase());
-
-    for (var i = 1; i < str.length; i++)
-    {
-        if (str.charAt(i-1) == ' ')
-        {
-            titleCase.push(str.charAt(i).toUpperCase());
-        }
-        else
-        {
-            titleCase.push(str.charAt(i));
-        }
-    }
-
-    return titleCase.join("");
-}
-
-/**
- * Finds and returns the maximum value in a given map.
- *
- * @param map	map that contains real numbers
- */
-function _getMaxValue(map)
-{
-    var max = 0.0;
-
-    for (var key in map)
-    {
-        if (map[key] > max)
-        {
-            max = map[key];
-        }
-    }
-
-    return max;
-}
-
-/**
- * Transforms the input value by using the function:
- * y = (0.000230926)x^3 - (0.0182175)x^2 + (0.511788)x
- *
- * This function is designed to transform slider input, which is between
- * 0 and 100, to provide a better filtering.
- *
- * @param value		input value to be transformed
- */
-function _transformValue(value)
-{
-    // previous function: y = (0.000166377)x^3 - (0.0118428)x^2 + (0.520007)x
-
-    var transformed = 0.000230926 * Math.pow(value, 3) -
-                      0.0182175 * Math.pow(value, 2) +
-                      0.511788 * value;
-
-    if (transformed < 0)
-    {
-        transformed = 0;
-    }
-    else if (transformed > 100)
-    {
-        transformed = 100;
-    }
-
-    return transformed;
-}
-
-/**
- * Transforms the given value by solving the equation
- *
- *   y = (0.000230926)x^3 - (0.0182175)x^2 + (0.511788)x
- *
- * where y = value
- *
- * @param value	value to be reverse transformed
- * @returns		reverse transformed value
- */
-function _reverseTransformValue(value)
-{
-    // find x, where y = value
-
-    var reverse = _solveCubic(0.000230926,
-                              -0.0182175,
-                              0.511788,
-                              -value);
-
-    return reverse;
-}
-
-/**
- * Solves the cubic function
- *
- *   a(x^3) + b(x^2) + c(x) + d = 0
- *
- * by using the following formula
- *
- *   x = {q + [q^2 + (r-p^2)^3]^(1/2)}^(1/3) + {q - [q^2 + (r-p^2)^3]^(1/2)}^(1/3) + p
- *
- * where
- *
- *   p = -b/(3a), q = p^3 + (bc-3ad)/(6a^2), r = c/(3a)
- *
- * @param a	coefficient of the term x^3
- * @param b	coefficient of the term x^2
- * @param c coefficient of the term x^1
- * @param d coefficient of the term x^0
- *
- * @returns one of the roots of the cubic function
- */
-function _solveCubic(a, b, c, d)
-{
-    var p = (-b) / (3*a);
-    var q = Math.pow(p, 3) + (b*c - 3*a*d) / (6 * Math.pow(a,2));
-    var r = c / (3*a);
-
-    //alert(q*q + Math.pow(r - p*p, 3));
-
-    var sqrt = Math.pow(q*q + Math.pow(r - p*p, 3), 1/2);
-
-    //var root = Math.pow(q + sqrt, 1/3) +
-    //	Math.pow(q - sqrt, 1/3) +
-    //	p;
-
-    var x = _cubeRoot(q + sqrt) +
-            _cubeRoot(q - sqrt) +
-            p;
-
-    return x;
-}
-
-/**
- * Evaluates the cube root of the given value. This function also handles
- * negative values unlike the built-in Math.pow() function.
- *
- * @param value	source value
- * @returns		cube root of the source value
- */
-function _cubeRoot(value)
-{
-    var root = Math.pow(Math.abs(value), 1/3);
-
-    if (value < 0)
-    {
-        root = -root;
-    }
-
-    return root;
+    this._autoLayout = false;
+    this._removeDisconnected = false;
+    this._nodeLabelsVisible = true;
+    this._panZoomVisible = true;
+    this._profileDataVisible = false;
+    this._selectFromTab = false;
 }

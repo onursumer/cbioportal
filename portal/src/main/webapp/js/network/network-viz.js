@@ -218,7 +218,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
             //shape: {customMapper: {functionName: "shapeFunction"}},
             labelVerticalAnchor: "middle",
             labelHorizontalAnchor: "center",
-            compoundLabelVerticalAnchor: "middle",
+            compoundLabelVerticalAnchor: "top",
             compoundLabelHorizontalAnchor: "center",
             compoundLabelYOffset: 7.0
             	

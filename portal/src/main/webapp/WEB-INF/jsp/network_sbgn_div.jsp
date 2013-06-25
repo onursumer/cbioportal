@@ -3,7 +3,7 @@
 	<table id="network_wrapper">
 		<tr><td>
 			<div>
-				<jsp:include page="network_menu.jsp"/>
+				<jsp:include page="network_menu_sbgn.jsp"/>
 			</div>
 		</td></tr>
 		<tr>
