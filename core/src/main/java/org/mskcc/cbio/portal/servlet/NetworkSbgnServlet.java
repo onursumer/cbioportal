@@ -58,8 +58,7 @@ public class NetworkSbgnServlet extends HttpServlet
 {
     private final static Log log = LogFactory.getLog(NetworkSbgnServlet.class);
 
-	public final static String HGNC_GENE_PREFIX = "urn:biopax:RelationshipXref:HGNC_HGNC%3A";
-	public final static String CPATH_SERVICE = "http://awabi.cbio.mskcc.org/cpath2/";
+	public final static String CPATH_SERVICE = "http://purl.org/pc2/current/";
 	public final static String NA = "NA";
     public final static Integer GRAPH_QUERY_LIMIT = 1;
     public final static String ATTRIBUTES_FIELD = "attributes";
@@ -74,8 +73,8 @@ public class NetworkSbgnServlet extends HttpServlet
 
 		for(String gene: geneList) {
 			CanonicalGene cGene = daoGeneOptimized.getGene(gene);
-            String hgncId = HGNC.getID(cGene.getHugoGeneSymbolAllCaps());
-            convertedList.add(HGNC_GENE_PREFIX.replace("+", "%2B") + hgncId);
+            String geneSymbol = cGene.getHugoGeneSymbolAllCaps();
+            convertedList.add(geneSymbol);
         }
 
 		return convertedList;
