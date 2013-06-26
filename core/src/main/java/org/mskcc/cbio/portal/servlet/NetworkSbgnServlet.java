@@ -130,10 +130,8 @@ public class NetworkSbgnServlet extends HttpServlet
         HashSet<String> genes = new HashSet<String>();
 
         for (Xref xref : model.getObjects(Xref.class)) {
-            if(xref.getDb() != null && xref.getDb().equalsIgnoreCase("HGNC")) {
-                String rawId = xref.getId();
-                String id = rawId.split(":")[1].trim();
-                String symbol = HGNC.getSymbol(id);
+            if(xref.getDb() != null && xref.getDb().equalsIgnoreCase("HGNC Symbol")) {
+                String symbol = xref.getId();
                 if(symbol != null)
                     genes.add(symbol);
             }
