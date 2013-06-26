@@ -103,30 +103,6 @@ function _initMenuStyle(divId, hoverClass)
             $(this).removeClass(hoverClass);
         });
 }
-/**
- * Comparison function to sort genes alphabetically.
- *
- * @param node1	node to compare to node2
- * @param node2 node to compare to node1
- * @return 		positive integer if node1 is alphabetically greater than node2
- * 				negative integer if node2 is alphabetically greater than node1
- * 				zero if node1 and node2 are alphabetically equal
- */
-function _geneSort (node1, node2)
-{
-    if (node1.data.label > node2.data.label)
-    {
-        return 1;
-    }
-    else if (node1.data.label < node2.data.label)
-    {
-        return -1;
-    }
-    else
-    {
-        return 0;
-    }
-}
 
 /**
  * Generates a shortened version of the given node id.
@@ -161,7 +137,7 @@ function _shortId(id)
  */
 function _safeProperty(str)
 {
-    var safeProperty = str;
+    var safeProperty = str.toUpperCase();
 
     safeProperty = _replaceAll(safeProperty, " ", "_");
     safeProperty = _replaceAll(safeProperty, "/", "_");
@@ -484,3 +460,8 @@ function _nodeDetails(node)
 
     return str;
 }
+//** UTILITY FUNCTIONS FOR SBGN **/
+/**
+ *
+ * 
+**/
