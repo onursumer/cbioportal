@@ -1148,7 +1148,6 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 		text += '<div class="biogene-content"></div>';
 
 		$(self.detailsTabSelector).html(text);
-		
 		// send AJAX request to retrieve information
 		var queryParams = {"query": label,
 			"org": "human",
@@ -1193,6 +1192,7 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 			return;
 		    }
 		});	
+
 	}
 	else
 	{
@@ -1357,6 +1357,9 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 			text += "</div>";
 			// flush the html5 code to the details tab
 			$(self.detailsTabSelector).html(text);
+			// make the mouse waiting TODO
+
+			// for each macromolecule send an ajax request
 			for(var i = 0; i < dataList.length  ; i++)
 			{
 				// for each data send an ajax request as done before 
@@ -1405,6 +1408,8 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 				    }
 				});
 			}
+			// make the mouse normal TODO
+
 			// makle sure for complexes we do not continue
 			return;
 		}
