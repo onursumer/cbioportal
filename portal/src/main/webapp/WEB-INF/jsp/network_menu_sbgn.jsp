@@ -39,6 +39,11 @@ if (includeNetLegend==null) {
 	    				Remove Disconnected Nodes on Changes
 	    			</a>
 	    		</li>
+	    		<li>
+	    			<a id="show_compartments" alt="show_compartments">
+	    				Show compartments
+	    			</a>
+	    		</li>
 	    	</ul>
 	    </li>
 	    <li>
