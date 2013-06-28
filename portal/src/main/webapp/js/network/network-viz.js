@@ -205,58 +205,66 @@ function send2cytoscapeweb(graphml, cwDivId, networkDivId)
 
 function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annotationData)
 {
+    var paddingOffset = 5;
     var visualStyle =
     {
-        nodes:
-        {
-            label: {customMapper: {functionName: "labelFunction"}},
-            compoundColor: "#FFFFFF",
-            compoundOpacity: 1.0,
-            opacity: 1.0,
-            compoundShape: {customMapper: {functionName: "compoundShapeFunction"}},
-            color: "#FFFFFF",
-            //shape: {customMapper: {functionName: "shapeFunction"}},
-            labelVerticalAnchor: "middle",
-            labelHorizontalAnchor: "center",
-            compoundLabelVerticalAnchor: "top",
-            compoundLabelHorizontalAnchor: "center",
-            compoundLabelYOffset: 7.0
-            	
-        },
+		nodes: 
+		{
+		        label: {customMapper: {functionName: "labelFunction"}},
+		        compoundLabel: {customMapper: {functionName: "labelFunction"}},
+		        compoundColor: "#FFFFFF",
+		        compoundOpacity: 1.0,
+		        opacity: 1.0,
+		        compoundShape: {customMapper: {functionName: "compoundShapeFunction"}},
+		        color: "#FFFFFF",
+		        //shape: {customMapper: {functionName: "shapeFunction"}},
+		        labelVerticalAnchor: "middle",
+		        labelHorizontalAnchor: "center",
+		        labelYOffset: {customMapper: {functionName: "labelYOffsetFunction"}},
+		        compoundLabelVerticalAnchor: "top",
+		        compoundLabelHorizontalAnchor: "center",
+		        compoundLabelYOffset: 0.0,
+		        compoundPaddingLeft: paddingOffset,
+			compoundPaddingRight: paddingOffset,
+			compoundPaddingTop: paddingOffset,
+			compoundPaddingBottom: paddingOffset,
+			compoundSize: "auto",
+		        labelFontSize:{customMapper: {functionName: "labelSizeFunction"}}
+		},
 
-        edges:
-        {
-            targetArrowShape:
-            {
-                defaultValue: "NONE",
-                discreteMapper:
-                {
-                    attrName: "arc_class",
-                    entries:
-                        [
-                            {attrValue:"consumption", value: "NONE"},
-                            {attrValue:"modulation", value: "DIAMOND"},
-                            {attrValue:"catalysis", value: "CIRCLE"},
-                            {attrValue:"inhibition", value: "T"},
-                            {attrValue:"production", value: "ARROW"},
-                            {attrValue:"stimulation", value: "ARROW"},
-                            {attrValue:"necessary stimulation", value: "T-ARROW"}
-                        ]
-                }
-            },
-            targetArrowColor:
-            {
-                defaultValue: "#ffffff",
-                discreteMapper:
-                {
-                    attrName: "arc_class",
-                    entries:
-                        [
-                            {attrValue:"production", value: "#000000"}
-                        ]
-                }
-            }
-        }
+		edges: 
+		{
+		        targetArrowShape: 
+		        {
+		                defaultValue: "NONE",
+		                discreteMapper: 
+		                {
+		                        attrName: "arc_class",
+		                        entries: 
+		                        [
+		                                {attrValue:"consumption", value: "NONE"},
+		                                {attrValue:"modulation", value: "DIAMOND"},
+		                                {attrValue:"catalysis", value: "CIRCLE"},
+		                                {attrValue:"inhibition", value: "T"},
+		                                {attrValue:"production", value: "ARROW"},
+		                                {attrValue:"stimulation", value: "ARROW"},
+		                                {attrValue:"necessary stimulation", value: "T-ARROW"}
+		                        ]
+		                }
+		        },
+		        targetArrowColor: 
+		        {
+		                defaultValue: "#ffffff",
+		                discreteMapper: 
+		                {
+		                        attrName: "arc_class",
+		                        entries: 
+		                        [
+		                                {attrValue:"production", value: "#000000"}
+		                        ]
+		                }
+		        }
+		}
     };
 
     // initialization options
@@ -270,40 +278,83 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
     // now we create visualization objects as follows.
     var vis = new org.cytoscapeweb.VisualizationSBGN(cwDivId, options);
 
-    vis["compoundShapeFunction"] = function (data)
-    {
-        var retValue = "COMPLEX";
+	vis["labelYOffsetFunction"] = function (data)
+	{
+		var retValue = 0;
+		if(data["has_state"] == true && data["has_info"] == false)
+		{
+			retValue = -2.0;
+		}
+		else if(data["has_state"] == false && data["has_info"] == true)
+		{
+			retValue = -2.0;
+		}
+		else if( (data["has_state"] == false && data["has_info"] == false) 
+				  || (data["has_state"] == true && data["has_info"] == true) )
+		{
+			retValue = 0;
+		}
 
-        if(data["glyph_class"] == "compartment")
-        {
-            retValue = "ROUNDRECT";
-        }
+		return retValue;        
+	}    
+		   
+	vis["labelSizeFunction"] = function (data)
+	{
+		var retValue = 11;
 
-        return retValue;
-    };
+		if(data["clone_marker"] == true)
+		{
+			retValue = 9;
+		}
 
-    vis["labelFunction"] = function (data)
-    {
-        var retValue = data["glyph_label_text"];
+		return retValue;        
+	}
 
-        if(data["glyph_class"] == "omitted process")
-        {
-            retValue = "\\\\";
-        }
+	vis["compoundShapeFunction"] = function (data)
+	{
+		var retValue = "COMPLEX";
 
-        if(data["glyph_class"] == "uncertain process")
-        {
-            retValue = "?";
-        }
+		if(data["glyph_class"] == "compartment")
+		{
+			retValue = "COMPARTMENT";
+		}
 
-        if(data["glyph_class"] == "and" || data["glyph_class"] == "or" || data["glyph_class"] == "not" )
-        {
-            retValue = data["glyph_class"].toUpperCase();
-        }
+		return retValue;        
+	}
 
+	vis["labelFunction"] = function (data)
+	{
+		var retValue = data["glyph_label_text"];
 
-        return retValue;
-    };
+		if(data["glyph_class"] == "omitted process")
+		{
+			retValue = "\\\\";
+		}
+
+		if(data["glyph_class"] == "uncertain process")
+		{
+			retValue = "?";
+		}
+
+		if(data["glyph_class"] == "and" || data["glyph_class"] == "or" || data["glyph_class"] == "not" )
+		{
+			retValue = data["glyph_class"].toUpperCase();
+		}
+
+		/*if(data["glyph_class"] != "complex" && data["glyph_class"] != "compartment" )
+		{
+			 var truncateIndicator = '...';
+	       		 var nameSize = retValue.length;
+	     		 var truncateOffset = 5;
+	
+			if (nameSize >= truncateOffset) 
+			{
+			        retValue = retValue.substring(0, truncateOffset);
+			        retValue = retValue.concat(truncateIndicator);
+			}
+		}    */    
+		return retValue;
+	}
 
     vis.ready(function() {
         var netVis = new NetworkSbgnVis(networkDivId);
@@ -332,4 +383,3 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 
     vis.draw(draw_options);
 }
-
