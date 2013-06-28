@@ -25,17 +25,23 @@ function NetworkSbgnVis(divId)
 	this.NUCLEIC_ACID = "nucleic acid feature";
 	this.SIMPLE_CHEMICAL = "simple chemical";
 	this.SOURCE_SINK = "source and sink";
-
+	
 	//global array for manually filtered nodes
 	this._manuallyFiltered = new Array();
 
 	// flags
 	this._autoLayout = false;
 	this._removeDisconnected = false;
+	this._showCompartments = true;
 	this._nodeLabelsVisible = false;
 	this._panZoomVisible = false;
 	this._profileDataVisible = false;
 	this._selectFromTab = false;
+	
+	// for show and hide compartments
+	this.nodesOfCompartments = new Array();
+	this.edgedOfCompartments = new Array();
+	this.compartments = new Array();
 
 	// array of control functions
 	this._controlFunctions = null;
@@ -127,7 +133,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	this._geneWeightMap = this.adjustWeights(weights);
 	this._geneWeightThreshold = this.ALTERATION_PERCENT;
 	this._maxAlterationPercent = _maxAlterValNonSeed(this, this._geneWeightMap);
-
+	this.setCompartmentElements();
 	this._resetFlags();
 
 	this._initControlFunctions();
@@ -367,7 +373,31 @@ NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
 	percents[gained] = 0;
 	percents[hemiDeleted] = 0;
 	percents[homoDeleted] = 0;
+	
+	var amplifiedNo	  = 0;
+	var gainedNo   	  = 0;
+	var hemiDeletedNo = 0;
+	var homoDeletedNo = 0;
 
+	for(var i = 0; i < cnaArray.length; i++)
+	{
+		if(cnaArray[i] == amplified)
+		{
+			amplifiedNo++; 
+		}
+		else if(cnaArray[i] == gained)
+		{
+			gainedNo++; 
+		}
+		else if(cnaArray[i] == hemiDeleted)
+		{
+			hemiDeletedNo++; 
+		}
+		else if(cnaArray[i] == homoDeleted)
+		{
+			homoDeletedNo++; 
+		}
+	}
 	var increment = 1/cnaArray.length;
 
 	for(var i = 0; i < cnaArray.length; i++)
@@ -377,15 +407,26 @@ NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
 
 	}
 
-	var ampl = { PERCENT_CNA_AMPLIFIED:percents[amplified] };
-	var gain = { PERCENT_CNA_GAINED: percents[gained]};
-	var hem =  { PERCENT_CNA_HEMIZYGOUSLY_DELETED: percents[hemiDeleted] };
-	var hom =  { PERCENT_CNA_HOMOZYGOUSLY_DELETED: percents[homoDeleted]};
-	
-	this._vis.updateData("nodes",targetNodes, ampl);
-	this._vis.updateData("nodes",targetNodes, gain);
-	this._vis.updateData("nodes",targetNodes, hem);
-	this._vis.updateData("nodes",targetNodes, hom);
+	if(amplifiedNo > 0)
+	{
+		var ampl = { PERCENT_CNA_AMPLIFIED:percents[amplified] };
+		this._vis.updateData("nodes",targetNodes, ampl);
+	}
+	if (gainedNo > 0)
+	{
+		var gain = { PERCENT_CNA_GAINED: percents[gained]};
+		this._vis.updateData("nodes",targetNodes, gain);
+	}
+	if (hemiDeleted > 0)
+	{
+		var hem =  { PERCENT_CNA_HEMIZYGOUSLY_DELETED: percents[hemiDeleted] };
+		this._vis.updateData("nodes",targetNodes, hem);
+	}
+	if (homoDeletedNo > 0)
+	{
+		var hom =  { PERCENT_CNA_HOMOZYGOUSLY_DELETED: percents[homoDeleted]};
+		this._vis.updateData("nodes",targetNodes, hom);
+	}
 
 };
 
@@ -403,13 +444,26 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicat
 	var percents = {};
 	percents[up] = 0;
 	percents[down] = 0;
-
-	var increment = 1/dataArray.length;
-
+	var upNo = 0;
+	var downNo = 0;
+	for(var i = 0; i < dataArray.length; i++)
+	{
+		if(dataArray[i] == up)
+		{
+			upNo++;
+		}
+		else if(dataArray[i] == down)
+		{
+			downNo++;
+		}
+	}
+	var increment = 1 / dataArray.length;
 	for(var i = 0; i < dataArray.length; i++)
 	{
 		if(dataArray[i] != null)
+		{
 			percents[dataArray[i]] += increment; 
+		}
 	}
 
 	if (dataIndicator == "mrna") 
@@ -422,9 +476,14 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicat
 		upData =   {PERCENT_RPPA_UP: percents[up]};
 		downData = {PERCENT_RPPA_DOWN: percents[down]};
 	}
-	
-	this._vis.updateData("nodes",targetNodes, upData);
-	this._vis.updateData("nodes",targetNodes, downData);
+	if(upNo > 0)
+	{
+		this._vis.updateData("nodes",targetNodes, upData);
+	}
+	if(downNo > 0)
+	{
+		this._vis.updateData("nodes",targetNodes, downData);		
+	}
 };
 
 /**
@@ -433,14 +492,29 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicat
 NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNodes)
 {  
 	var percent = 0;
-	var increment = 1/mutationArray.length
+	var sampleNo = 0;
 	for(var i = 0; i < mutationArray.length; i++)
 	{
 		if(mutationArray[i] != null)
-			percent += increment;  
+		{
+			sampleNo++;
+		}
 	}
-	var mutData = {PERCENT_MUTATED: percent};
-	this._vis.updateData("nodes",targetNodes, mutData);
+	
+	if(sampleNo > 0)
+	{
+		var increment = 1 / mutationArray.length;
+		for(var i = 0; i < mutationArray.length; i++)
+		{
+			if(mutationArray[i] != null)
+			{
+				percent += increment;  
+				check = 1;
+			}
+		}
+		var mutData = {PERCENT_MUTATED: percent};
+		this._vis.updateData("nodes",targetNodes, mutData);
+	}
 };
 
 NetworkSbgnVis.prototype.addInQueryField = function()
@@ -464,19 +538,19 @@ NetworkSbgnVis.prototype.addAnnotationFields = function()
 **/
 NetworkSbgnVis.prototype.addGenomicFields = function()
 {
-	var cna_amplified 	= {name:"PERCENT_CNA_AMPLIFIED", type:"number", defValue: 0};
+	var cna_amplified 	= {name:"PERCENT_CNA_AMPLIFIED", type:"number", defValue: null};
 	var cna_gained		= {name:"PERCENT_CNA_GAINED", type:"number"};
-	var cna_homodel 	= {name:"PERCENT_CNA_HOMOZYGOUSLY_DELETED", type:"number", defValue: 0};
-	var cna_hemydel		= {name:"PERCENT_CNA_HEMIZYGOUSLY_DELETED", type:"number", defValue: 0};
+	var cna_homodel 	= {name:"PERCENT_CNA_HOMOZYGOUSLY_DELETED", type:"number", defValue: null};
+	var cna_hemydel		= {name:"PERCENT_CNA_HEMIZYGOUSLY_DELETED", type:"number", defValue: null};
 
-	var mrna_up 		= {name:"PERCENT_MRNA_UP", type:"number", defValue: 0};
-	var mrna_down 		= {name:"PERCENT_MRNA_DOWN", type:"number", defValue: 0};
+	var mrna_up 		= {name:"PERCENT_MRNA_UP", type:"number", defValue: null};
+	var mrna_down 		= {name:"PERCENT_MRNA_DOWN", type:"number", defValue: null};
 
-	var rppa_up 		= {name:"PERCENT_RPPA_UP", type:"number", defValue: 0};
-	var rppa_down 		= {name:"PERCENT_RPPA_DOWN", type:"number", defValue: 0};
+	var rppa_up 		= {name:"PERCENT_RPPA_UP", type:"number", defValue: null};
+	var rppa_down 		= {name:"PERCENT_RPPA_DOWN", type:"number", defValue: null};
 
-	var mutated		= {name:"PERCENT_MUTATED", type:"number", defValue: 0};
-	var altered		= {name:"PERCENT_ALTERED", type:"number", defValue: 0};
+	var mutated		= {name:"PERCENT_MUTATED", type:"number", defValue: null};
+	var altered		= {name:"PERCENT_ALTERED", type:"number", defValue: null};
 
 
 	this._vis.addDataField(cna_amplified);
@@ -1700,6 +1774,10 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
         _toggleRemoveDisconnected(self);
     };
 
+    var toggleShowCompartments = function() {
+        _toggleShowCompartments(self);
+    };
+
     var toggleProfileData = function() {
        _toggleProfileData(self);
     };
@@ -1769,6 +1847,7 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     this._controlFunctions["show_pan_zoom_control"] = togglePanZoom;
     this._controlFunctions["auto_layout"] = toggleAutoLayout;
     this._controlFunctions["remove_disconnected"] = toggleRemoveDisconnected;
+    this._controlFunctions["show_compartments"] = toggleShowCompartments;
     this._controlFunctions["show_profile_data"] = toggleProfileData;
     this._controlFunctions["save_as_png"] = saveAsPng;
     this._controlFunctions["layout_properties"] = openProperties;
@@ -2104,7 +2183,7 @@ NetworkSbgnVis.prototype._initMainMenu = function()
     $(this.mainMenuSelector + " #hide_selected").addClass(this.FIRST_CLASS);
     $(this.mainMenuSelector + " #hide_selected").addClass(this.MENU_SEPARATOR_CLASS);
     $(this.mainMenuSelector + " #remove_disconnected").addClass(this.MENU_SEPARATOR_CLASS);
-    $(this.mainMenuSelector + " #remove_disconnected").addClass(this.LAST_CLASS);
+    $(this.mainMenuSelector + " #show_compartments").addClass(this.LAST_CLASS);
 
     $(this.mainMenuSelector + " #show_profile_data").addClass(this.FIRST_CLASS);
     $(this.mainMenuSelector + " #show_profile_data").addClass(this.MENU_SEPARATOR_CLASS);
@@ -2146,6 +2225,15 @@ NetworkSbgnVis.prototype._updateMenuCheckIcons = function()
         $(this.mainMenuSelector + " #remove_disconnected").removeClass(this.CHECKED_CLASS);
     }
 
+    if (this._showCompartments)
+    {
+        $(this.mainMenuSelector + " #show_compartments").addClass(this.CHECKED_CLASS);
+    }
+    else
+    {
+        $(this.mainMenuSelector + " #show_compartments").removeClass(this.CHECKED_CLASS);
+    }
+
     if (this._nodeLabelsVisible)
     {
         $(this.mainMenuSelector + " #show_node_labels").addClass(this.CHECKED_CLASS);
@@ -2182,7 +2270,128 @@ NetworkSbgnVis.prototype._resetFlags = function()
     this._autoLayout = false;
     this._removeDisconnected = false;
     this._nodeLabelsVisible = true;
+    this._showCompartments = true;
     this._panZoomVisible = true;
     this._profileDataVisible = false;
     this._selectFromTab = false;
 };
+
+/**
+ * Toggle "remove disconnected on hide" option on or off. If this option is
+ * active, then any disconnected node will also be hidden after the hide action.
+ */
+function _toggleShowCompartments(self)
+{
+	// toggle removeDisconnected option
+
+	self._showCompartments = !self._showCompartments;
+
+	// update check icon of the corresponding menu item
+
+	var item = $(self.mainMenuSelector + " #show_compartments");
+
+	if (self._showCompartments)
+	{
+		item.addClass(self.CHECKED_CLASS);
+	}
+	else
+	{
+		item.removeClass(self.CHECKED_CLASS);
+	}
+	// remove all compartments and add its children
+	if(self._showCompartments)
+	{
+		// show compartments
+		self._vis.addElements(self.compartments, true);
+
+		// change parents of nodes to null
+		for(var i = 0; i < self.compartments; i++)
+		{
+			var nodeIDs = new Array();
+			var id = self.compartments.data.id;
+			var children = self._vis.childNodes(id);
+			for(var j = 0; j < children; j++)
+			{
+				nodeIDs.push(children.data.id);
+			}
+			var data = {parent: id};
+			self._vis.updateData(nodeIDs, data);
+		}
+	}
+	else
+	{
+		// change parents of nodes to null
+		var nodeIDs = new Array();
+		for(var i = 0; i < self.nodesOfCompartments; i++)
+		{
+			nodeIDs.push(self.nodesOfCompartments.data.id);
+		}
+		var data = {parent: null};
+		self._vis.updateData(nodeIDs, data);
+		// remove compartments
+		self._vis.removeElements(self.compartments, true);
+	}
+    
+}
+/**
+ * Toggle "remove disconnected on hide" option on or off. If this option is
+ * active, then any disconnected node will also be hidden after the hide action.
+ */
+function _toggleRemoveDisconnected(self)
+{
+    // toggle removeDisconnected option
+
+    self._removeDisconnected = !self._removeDisconnected;
+
+    // update check icon of the corresponding menu item
+
+    var item = $(self.mainMenuSelector + " #remove_disconnected");
+
+    if (self._removeDisconnected)
+    {
+        item.addClass(self.CHECKED_CLASS);
+    }
+    else
+    {
+        item.removeClass(self.CHECKED_CLASS);
+    }
+}
+/**
+ * Sets the arrays for compartments for nodes and edges of compartments
+ */
+NetworkSbgnVis.prototype.setCompartmentElements = function()
+{
+	this.nodesOfCompartments = new Array();
+	this.edgedOfCompartments = new Array();
+	this.compartments = new Array();
+	var nodes = this._vis.nodes();
+	for(var i = 0; i < nodes.length; i++)
+	{
+		if(nodes[i].data.glyph_class == this.COMPARTMENT)
+		{
+			this.compartments.push(nodes[i]);
+			var pID = nodes[i].data.id;
+			for(var j = 0; j < nodes.length; j++)
+			{
+				if(nodes[j].data.parent == pID)
+				{
+					this.nodesOfCompartments.push(nodes[j]);
+				}
+			}
+		}
+	}
+	var edges = this._vis.edges();
+	for(var j = 0; j < edges.length; j++)
+	{
+		for(var i = 0; i < this.nodesOfCompartments.length; i++)
+		{
+			if(edges[j].data.source == this.nodesOfCompartments[i].data.id ||
+				edges[j].data.target == this.nodesOfCompartments[i].data.id)
+			{
+				this.edgedOfCompartments.push(edges[j]);
+				break;
+			}
+		}
+	}
+};
+

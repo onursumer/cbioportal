@@ -94,29 +94,7 @@ function _toggleAutoLayout(self)
     }
 }
 
-/**
- * Toggle "remove disconnected on hide" option on or off. If this option is
- * active, then any disconnected node will also be hidden after the hide action.
- */
-function _toggleRemoveDisconnected(self)
-{
-    // toggle removeDisconnected option
 
-    self._removeDisconnected = !self._removeDisconnected;
-
-    // update check icon of the corresponding menu item
-
-    var item = $(self.mainMenuSelector + " #remove_disconnected");
-
-    if (self._removeDisconnected)
-    {
-        item.addClass(self.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(self.CHECKED_CLASS);
-    }
-}
 
 /**
  * Toggles the visibility of the profile data for the nodes.
