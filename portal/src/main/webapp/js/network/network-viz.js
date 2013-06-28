@@ -217,10 +217,9 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 		        opacity: 1.0,
 		        compoundShape: {customMapper: {functionName: "compoundShapeFunction"}},
 		        color: "#FFFFFF",
-		        //shape: {customMapper: {functionName: "shapeFunction"}},
 		        labelVerticalAnchor: "middle",
 		        labelHorizontalAnchor: "center",
-		        labelYOffset: {customMapper: {functionName: "labelYOffsetFunction"}},
+		        //labelYOffset: {customMapper: {functionName: "labelYOffsetFunction"}},
 		        compoundLabelVerticalAnchor: "top",
 		        compoundLabelHorizontalAnchor: "center",
 		        compoundLabelYOffset: 0.0,
@@ -228,7 +227,6 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 			compoundPaddingRight: paddingOffset,
 			compoundPaddingTop: paddingOffset,
 			compoundPaddingBottom: paddingOffset,
-			compoundSize: "auto",
 		        labelFontSize:{customMapper: {functionName: "labelSizeFunction"}}
 		},
 
@@ -287,12 +285,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 		}
 		else if(data["has_state"] == false && data["has_info"] == true)
 		{
-			retValue = -2.0;
-		}
-		else if( (data["has_state"] == false && data["has_info"] == false) 
-				  || (data["has_state"] == true && data["has_info"] == true) )
-		{
-			retValue = 0;
+			retValue = 2.0;
 		}
 
 		return retValue;        
@@ -341,7 +334,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 			retValue = data["glyph_class"].toUpperCase();
 		}
 
-		/*if(data["glyph_class"] != "complex" && data["glyph_class"] != "compartment" )
+		if(data["glyph_class"] != "complex" && data["glyph_class"] != "compartment" )
 		{
 			 var truncateIndicator = '...';
 	       		 var nameSize = retValue.length;
@@ -352,7 +345,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 			        retValue = retValue.substring(0, truncateOffset);
 			        retValue = retValue.concat(truncateIndicator);
 			}
-		}    */    
+		}    
 		return retValue;
 	}
 
@@ -361,14 +354,11 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 
         // init UI of the network tab
         netVis.initNetworkUI(vis, genomicData, annotationData);
-      
-        //to hide drugs initially
-        netVis._changeListener();
 
-        // set the style programmatically
-        document.getElementById("color").onclick = function(){
-            vis.visualStyle(visualStyle);
-        };
+	// set the style programmatically
+	document.getElementById("color").onclick = function(){
+			vis.visualStyle(visualStyle);
+		};
     });
 
     var draw_options = {
