@@ -45,13 +45,14 @@ public class TestGenePanel extends TestCase {
    public void testGenePanel() throws Exception{
 
       ResetDatabase.resetDatabase();
+      // get required background gene data
+      JUnitCore.runClasses(TestImportGeneData.class);
       String args[] = {"target/test-classes/test-gene-panel.txt"};
       ImportGenePanel.main(args);
 
       DaoGenePanel daoGenePanel = DaoGenePanel.getInstance();
       GenePanel testPanel = daoGenePanel.getGenePanelByName("TEST-PANEL");
       assertNotNull(testPanel);
-
       assertEquals("TEST-PANEL", testPanel.getName());
       assertEquals("Test gene panel.", testPanel.getDescription());
       assertEquals(6, testPanel.getCanonicalGeneList().size());
