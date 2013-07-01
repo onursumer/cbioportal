@@ -280,10 +280,6 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 	var percent_altered 	= "percent_altered";
 	var attributes		= "attributes";
 
-	//first extend node fields to support genomic data
-	this.addGenomicFields();
-	this.addAnnotationFields();
-	this.addInQueryField();
 	var nodes = this._vis.nodes();
 	// iterate for every hugo gene symbol in incoming data
 	for(var hugoSymbol in genomicData[hugoToGene])
@@ -300,7 +296,7 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 		
 		// Corresponding cytoscape web nodes
 		var targetNodes = findNode(hugoSymbol, nodes);
-		this.addInQueryData(targetNodes);
+		this.updateInQueryData(targetNodes);
 		this.calcCNAPercents(cnaArray, targetNodes);
 		this.calcMutationPercent(mutationsArray, targetNodes);
 		this.calcRPPAorMRNAPercent(mrnaArray, mrna, targetNodes);
@@ -313,16 +309,16 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 	}
 
 	// Lastly parse annotation data and add "dataSource" fields
-	this.addAnnotationData(annotationData);
+	this.updateAnnotationData(annotationData);
 };
 
-NetworkSbgnVis.prototype.addInQueryData = function(targetNodes)
+NetworkSbgnVis.prototype.updateInQueryData = function(targetNodes)
 {
 	var in_query_data =  {IN_QUERY: "true" };
 	this._vis.updateData("nodes",targetNodes, in_query_data);
 };
 
-NetworkSbgnVis.prototype.addAnnotationData = function(annotationData)
+NetworkSbgnVis.prototype.updateAnnotationData = function(annotationData)
 {
 	var nodeArray = this._vis.nodes();
 	for ( var i = 0; i < nodeArray.length; i++) 
@@ -334,7 +330,6 @@ NetworkSbgnVis.prototype.addAnnotationData = function(annotationData)
 			var annData = annotationData[glyphID];
 			var parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
 			var data    = {DATA_SOURCE: parsedData};
-			//var data    = {DATA_SOURCE: annData.dataSource[0]};
 			this._vis.updateData("nodes",[nodeArray[i].data.id], data);
 		}
 	}
@@ -516,58 +511,6 @@ NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNod
 		this._vis.updateData("nodes",targetNodes, mutData);
 	}
 };
-
-NetworkSbgnVis.prototype.addInQueryField = function()
-{
-	var IN_QUERY = {name:"IN_QUERY", type:"string", defValue: "false"};
-	this._vis.addDataField(IN_QUERY);
-};
-
-/**
- * extends node fields by adding new fields according to annotation data
-**/
-NetworkSbgnVis.prototype.addAnnotationFields = function()
-{
-	var DATA_SOURCE = {name:"DATA_SOURCE", type:"string", defValue: ""};
-	this._vis.addDataField(DATA_SOURCE);
-};
-
-
-/**
- * extends node fields by adding new fields according to genomic data
-**/
-NetworkSbgnVis.prototype.addGenomicFields = function()
-{
-	var cna_amplified 	= {name:"PERCENT_CNA_AMPLIFIED", type:"number", defValue: null};
-	var cna_gained		= {name:"PERCENT_CNA_GAINED", type:"number"};
-	var cna_homodel 	= {name:"PERCENT_CNA_HOMOZYGOUSLY_DELETED", type:"number", defValue: null};
-	var cna_hemydel		= {name:"PERCENT_CNA_HEMIZYGOUSLY_DELETED", type:"number", defValue: null};
-
-	var mrna_up 		= {name:"PERCENT_MRNA_UP", type:"number", defValue: null};
-	var mrna_down 		= {name:"PERCENT_MRNA_DOWN", type:"number", defValue: null};
-
-	var rppa_up 		= {name:"PERCENT_RPPA_UP", type:"number", defValue: null};
-	var rppa_down 		= {name:"PERCENT_RPPA_DOWN", type:"number", defValue: null};
-
-	var mutated		= {name:"PERCENT_MUTATED", type:"number", defValue: null};
-	var altered		= {name:"PERCENT_ALTERED", type:"number", defValue: null};
-
-
-	this._vis.addDataField(cna_amplified);
-	this._vis.addDataField(cna_gained);
-	this._vis.addDataField(cna_homodel);
-	this._vis.addDataField(cna_hemydel);
-
-	this._vis.addDataField(mrna_down);
-	this._vis.addDataField(mrna_up);
-
-	this._vis.addDataField(rppa_down);
-	this._vis.addDataField(rppa_up);
-
-	this._vis.addDataField(mutated);
-	this._vis.addDataField(altered);
-};
-
 
 /**
  * Select multiple nodes by glyph label
