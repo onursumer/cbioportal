@@ -88,6 +88,8 @@ public class ResetDatabase {
         daoTextCache.deleteAllKeys();
         DaoClinicalTrial daoClinicalTrial = DaoClinicalTrial.getInstance();
         daoClinicalTrial.deleteAllRecords();
+        DaoGenePanel daoGenePanel = DaoGenePanel.getInstance();
+        daoGenePanel.deleteAllRecords();
         System.out.println("all database reset.");
     }
 

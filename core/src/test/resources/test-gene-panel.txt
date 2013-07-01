@@ -1,0 +1,4 @@
+gene_panel_name: TEST-PANEL
+gene_panel_description: Test gene panel.
+gene_panel_genes: A1BG	A2M	NAT1	SERPINA3	ACR	ACPP
+

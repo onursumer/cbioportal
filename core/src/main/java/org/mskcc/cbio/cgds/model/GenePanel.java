@@ -74,7 +74,7 @@ public class GenePanel {
 	}
 
 	public boolean containsGene(String hugoGeneSymbol) {
-		return hugoGeneSymbolCache.containsKey(hugoGeneSymbol);
+		return hugoGeneSymbolCache.containsKey(hugoGeneSymbol.toUpperCase());
 	}
 
 	/**
@@ -84,10 +84,11 @@ public class GenePanel {
 	public boolean containsAmbiguousGene(String geneID) {
 		
 		if (geneID.matches("[0-9]+")) {
-			return entrezGeneCache.containsKey(Integer.parseInt(geneID));
+			return entrezGeneCache.containsKey(Long.parseLong(geneID));
+
 		}
 		else {
-			return hugoGeneSymbolCache.containsKey(geneID);
+			return hugoGeneSymbolCache.containsKey(geneID.toUpperCase());
 		}
 	}
 
