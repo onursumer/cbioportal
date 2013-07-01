@@ -61,8 +61,9 @@ public class ImportGenePanel {
 		pMonitor.setCurrentMessage("Reading gene panel data from:  " + genePanelFile.getAbsolutePath());
 
 		DaoGenePanel daoGenePanel = DaoGenePanel.getInstance();
-		PropertiesConfiguration config = new PropertiesConfiguration(genePanelFile);
+		PropertiesConfiguration config = new PropertiesConfiguration();
 		config.setListDelimiter(PANEL_GENES_DELIM);
+		config.load(new java.io.FileReader(genePanelFile));
 		String genePanelName = config.getString(ImportGenePanel.PANEL_NAME_PROP);
 		checkValidProperty(ImportGenePanel.PANEL_NAME_PROP, genePanelName);
 		checkExistingPanel(daoGenePanel, genePanelName);
