@@ -92,7 +92,7 @@ public class DaoGenePanel {
 	}
 
 	/**
-	 * Returns a GenePanel instance for the given gene panel name.
+	 * Returns a GenePanelServlet instance for the given gene panel name.
 	 */
 	public GenePanel getGenePanelByName(String genePanelName) throws DaoException {
 

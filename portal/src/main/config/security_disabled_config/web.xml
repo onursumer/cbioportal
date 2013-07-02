@@ -480,6 +480,16 @@
         <servlet-name>DrugsJSON</servlet-name>
         <url-pattern>/drugs.json</url-pattern>
     </servlet-mapping>
+
+    <servlet>
+        <servlet-name>GenePanelServlet</servlet-name>
+        <servlet-class>org.mskcc.cbio.portal.servlet.GenePanelServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>GenePanelServlet</servlet-name>
+        <url-pattern>/gene-panel.json</url-pattern>
+    </servlet-mapping>
     <!-- end tumor map -->
     
     <welcome-file-list>
