@@ -10,8 +10,6 @@ function NetworkVis(divId)
     this.divId = divId;
 
     // relative selectors for the given div id
-
-    this.nodeInspectorSelector = this._createNodeInspector(divId);
     this.edgeInspectorSelector = this._createEdgeInspector(divId);
     this.geneLegendSelector = this._createGeneLegend(divId);
     this.drugLegendSelector = this._createDrugLegend(divId);
@@ -201,7 +199,6 @@ NetworkVis.prototype.hideDialogs = function (evt, ui)
 
     // close all dialogs
     $(this.settingsDialogSelector).dialog("close");
-    $(this.nodeInspectorSelector).dialog("close");
     $(this.edgeInspectorSelector).dialog("close");
     $(this.geneLegendSelector).dialog("close");
     $(this.drugLegendSelector).dialog("close");
@@ -261,291 +258,6 @@ NetworkVis.prototype.updateSelectedGenes = function(evt)
     this._selectFromTab = false;
 };
 
-/**
- * Shows the node inspector when double clicked on a node.
- * TODO not showing a node inspector anymore, perform a clean-up after merging into default/stable
- * @param evt	event that triggered this function
- */
-NetworkVis.prototype.showNodeInspector = function(evt)
-{
-    // set the position of the inspector
-
-    // TODO evt.target.x and evt.target.y are local (relative) coordiates inside
-    // the CytoscapeWeb flash object, however those values are used as global
-    // coordinate by the dialog() function. We need to transform the local
-    // coordinates to global coordinates.
-    //$("#node_inspector").dialog("option",
-    //	"position",
-    //	[_mouseX(evt), _mouseY(evt)]);
-
-    // update the contents of the inspector by using the target node
-
-    var data = evt.target.data;
-    this._updateNodeInspectorContent(data, evt.target);
-
-    // open inspector panel
-    $(this.nodeInspectorSelector).dialog("open").height("auto");
-
-    // if the inspector panel height exceeds the max height value
-    // adjust its height (this also adds scroll bars by default)
-    if ($(this.nodeInspectorSelector).height() >
-        $(this.nodeInspectorSelector).dialog("option", "maxHeight"))
-    {
-        $(this.nodeInspectorSelector).dialog("open").height(
-            $(this.nodeInspectorSelector).dialog("option", "maxHeight"));
-    }
-};
-
-/**
- * Updates node inspector data for drug node type
- * @param data double clicked node's ( drug for this method ) data
- * */
-NetworkVis.prototype._updateNodeInspectorForDrug = function(data, node)
-{
-    var targets = new Array();
-    var atc_codes = new Array();
-    var synonyms = new Array();
-
-    //For number of targeted genes
-    if (data["TARGETS"] != "")
-    {
-        targets = data["TARGETS"].split(";");
-
-        $(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-            '<tr align="left" class="targets-data-row"><td>' +
-            '<strong>Number of Genes Targeted: </strong> ' +
-            '<span class="num-of-drug-targets" title="' + data["TARGETS"] + '">' +
-            targets.length + '</span>' +
-            '</td></tr>');
-        $(this.nodeInspectorSelector + " .node_inspector_content .targets-data-row td").append('<br><br>');
-        $(".num-of-drug-targets").tipTip(); // TODO may not be safe...
-    }
-
-    // For drug atc code
-
-    var href = "http://www.whocc.no/atc_ddd_index/?code=";
-    if (data["ATC_CODE"] != "")
-    {
-        $(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-            '<tr align="left" class="atc_codes-data-row"><td>' +
-            '<strong>Drug Class(ATC codes): </strong></td></tr>');
-
-        atc_codes = data["ATC_CODE"].split(";");
-
-        for ( var i = 0; i < atc_codes.length; i++)
-        {
-            $(this.nodeInspectorSelector + " .node_inspector_content .atc_codes-data-row td").append('<a href="' + href+ atc_codes[i] + '" target="_blank">' +
-                                                                       atc_codes[i] + '</a>');
-            if (i != atc_codes.length - 1)
-            {
-                $(this.nodeInspectorSelector + " .node_inspector_content .atc_codes-data-row td").append(', ');
-            }
-        }
-
-        $(this.nodeInspectorSelector + " .node_inspector_content .atc_codes-data-row td").append('<br><br>');
-    }
-
-
-    // For drug Synonyms
-
-    if (data["SYNONYMS"] != "")
-    {
-        $(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-            '<tr align="left" class="synonyms-data-row"><td>' +
-            '<strong>Synonyms: </strong></td></tr>');
-
-        synonyms = data["SYNONYMS"].split(";");
-        if(synonyms.length == 1)
-        {
-            $(this.nodeInspectorSelector + " .node_inspector_content .synonyms-data-row td").append(synonyms[0]);
-            $(this.nodeInspectorSelector + " .node_inspector_content .synonyms-data-row td").append('<br>');
-        }
-        else
-            for ( var i = 0; i < synonyms.length; i++)
-            {
-                $(this.nodeInspectorSelector + " .node_inspector_content .synonyms-data-row td").append('<p style="margin: 0px;"> -' + synonyms[i] + '</p>');
-            }
-        $(this.nodeInspectorSelector + " .node_inspector_content .synonyms-data-row td").append('<br>');
-    }
-
-
-
-    // For Drug description
-    var description = data["DESCRIPTION"];
-    if(description != ""){
-        $(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-            '<tr align="left" class="description-data-row"><td>' +
-            '<strong>Description: </strong></td></tr>');
-        $(this.nodeInspectorSelector + " .node_inspector_content .description-data-row td").append(description);
-        $(this.nodeInspectorSelector + " .node_inspector_content .description-data-row td").append('<br><br>');
-    }
-
-    // For FDA approval
-	$(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-		'<tr align="left" class="fda-data-row"><td>' +
-		'<strong>FDA Approval: </strong></td></tr>');
-
-	var fda_approval = ((data["FDA_APPROVAL"] == "true")? "Approved":"Not Approved");
-
-	$(this.nodeInspectorSelector + " .node_inspector_content .fda-data-row td").append(fda_approval);
-	$(this.nodeInspectorSelector + " .node_inspector_content .fda-data-row td").append('<br>');
-
-	// For Cancer Drug Info
-
-	var cancerDrug = data["CANCER_DRUG"] == "true";
-
-	if(cancerDrug) {
-		$(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-			'<tr align="left" class="cancerdrug-data-row"><td>' +
-			'<strong>Cancer Drug: </strong> Yes<br></td></tr>');
-
-		var numberOfClinicalTrials = data["NUMBER_OF_CLINICAL_TRIALS"];
-
-		if(numberOfClinicalTrials > 0) {
-			$(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-				'<tr align="left" class="clinicaltrials-data-row"><td>' +
-				'<strong>Number Of Clinical Trials: </strong>' + numberOfClinicalTrials  +  '<br><br></td></tr>');
-		}
-	}
-
-    // For Pub Med IDs
-
-    var pubmeds = new Array();
-    var edges = this._vis.edges();
-    var existed = false;
-
-    for (var k = 0; k < edges.length; k++)
-    {
-        if (edges[k].data.source == node.data.id && edges[k].data["INTERACTION_PUBMED_ID"] != "")
-        {
-            if(existed == false)
-            {
-                $(this.nodeInspectorSelector + " .node_inspector_content .data").append(
-                    '<tr align="left" class="pubmed-data-row"><td>' +
-                    '<strong>PubMed IDs:</strong><br></td></tr>');
-                existed = true;
-            }
-
-	        var pubmeds = edges[k].data["INTERACTION_PUBMED_ID"];
-	        var pubmedTokens = pubmeds.split(";");
-
-	        for (var j=0; j < pubmedTokens.length; j++)
-	        {
-		        var link = this._resolveXref(pubmedTokens[j]);
-
-		        if (link.href == "#")
-		        {
-			        // skip unknown sources
-			        continue;
-		        }
-
-		        var xref = '- <a href="' + link.href + '" target="_blank">' + link.pieces[1] + '</a><br>';
-		        $(this.nodeInspectorSelector + " .node_inspector_content .pubmed-data-row td").append(xref);
-	        }
-        }
-    }
-};
-
-
-/**
- * Updates the content of the node inspector with respect to the provided data.
- * Data is assumed to be the data of a node.
- *
- * @param data	node data containing necessary fields
- */
-NetworkVis.prototype._updateNodeInspectorContent = function(data, node)
-{
-    // set title
-
-    var title = this.geneLabel(data);
-
-    if (title == null)
-    {
-        title = data.id;
-    }
-
-    $(this.nodeInspectorSelector).dialog("option",
-                                "title",
-                                title);
-
-    // clean xref, percent, and data rows
-
-    // These rows for drug view of node inspector.
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .targets-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .atc_codes-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .synonyms-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .description-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .fda-data-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .pubmed-data-row").remove();
-
-	$(this.nodeInspectorSelector + " .node_inspector_content .data .clinicaltrials-data-row").remove();
-	$(this.nodeInspectorSelector + " .node_inspector_content .data .cancerdrug-data-row").remove();
-
-    // For non drug view of node inspector
-    $(this.nodeInspectorSelector + " .node_inspector_content .data .data-row").remove();
-
-    $(this.nodeInspectorSelector + " .node_inspector_content .xref .xref-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .profile .percent-row").remove();
-    $(this.nodeInspectorSelector + " .node_inspector_content .profile-header .header-row").remove();
-
-    if (data.type == this.DRUG)
-    {
-        this._updateNodeInspectorForDrug(data, node);
-    }
-
-    //_addDataRow(this.edgeInspectorSelector, "node", "ID", data.id);
-
-    if (data.type == this.PROTEIN)
-    {
-        this._addDataRow(this.nodeInspectorSelector, "node", "Gene Symbol", data.label);
-        //_addDataRow(this.nodeInspectorSelector, "node", "User-Specified", data.IN_QUERY);
-
-        // add percentage information
-        this._addPercentages(data);
-    }
-
-    // add cross references
-
-    var links = new Array();
-
-    // parse the xref data, and construct link and labels
-
-    var xrefData = new Array();
-
-    if (data["UNIFICATION_XREF"] != null)
-    {
-        xrefData = data["UNIFICATION_XREF"].split(";");
-    }
-
-    if (data["RELATIONSHIP_XREF"] != null)
-    {
-        xrefData = xrefData.concat(data["RELATIONSHIP_XREF"].split(";"));
-    }
-
-    var link, xref;
-
-    for (var i = 0; i < xrefData.length; i++)
-    {
-        link = this._resolveXref(xrefData[i]);
-        links.push(link);
-    }
-
-    // add each link as an xref entry
-
-    if (links.length > 0)
-    {
-        $(this.nodeInspectorSelector + " .node_inspector_content .xref").append(
-            '<tr class="xref-row"><td><strong>More at: </strong></td></tr>');
-
-        this._addXrefEntry(this.nodeInspectorSelector, 'node', links[0].href, links[0].text);
-    }
-
-    for (i=1; i < links.length; i++)
-    {
-        $(this.nodeInspectorSelector + " .node_inspector_content .xref-row td").append(', ');
-        this._addXrefEntry(this.nodeInspectorSelector, 'node', links[i].href, links[i].text);
-    }
-};
 
 /**
  * Updates the contents of the details tab according to
@@ -658,151 +370,6 @@ NetworkVis.prototype.updateDetailsTab = function(evt)
 };
 
 /**
- * Add percentages (genomic profile data) to the node inspector with their
- * corresponding colors & names.
- *
- * @param data	node (gene) data
- */
-NetworkVis.prototype._addPercentages = function(data)
-{
-    var percent;
-
-    // init available profiles array
-    var available = new Array();
-    available['CNA'] = new Array();
-    available['MRNA'] = new Array();
-    available['MUTATED'] = new Array();
-
-    // add percentage values
-
-    if (data["PERCENT_CNA_AMPLIFIED"] != null)
-    {
-        percent = (data["PERCENT_CNA_AMPLIFIED"] * 100);
-        this._addPercentRow("cna-amplified", "Amplification", percent, "#FF2500");
-        available['CNA'].push("cna-amplified");
-    }
-
-    if (data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] != null)
-    {
-        percent = (data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] * 100);
-        this._addPercentRow("cna-homozygously-deleted", "Homozygous Deletion", percent, "#0332FF");
-        available['CNA'].push("cna-homozygously-deleted");
-    }
-
-    if (data["PERCENT_CNA_GAINED"] != null)
-    {
-        percent = (data["PERCENT_CNA_GAINED"] * 100);
-        this._addPercentRow("cna-gained", "Gain", percent, "#FFC5CC");
-        available['CNA'].push("cna-gained");
-    }
-
-    if (data["PERCENT_CNA_HEMIZYGOUSLY_DELETED"] != null)
-    {
-        percent = (data["PERCENT_CNA_HEMIZYGOUSLY_DELETED"] * 100);
-        this._addPercentRow("cna-hemizygously-deleted", "Hemizygous Deletion", percent, "#9EDFE0");
-        available['CNA'].push("cna-hemizygously-deleted");
-    }
-
-    if (data["PERCENT_MRNA_WAY_UP"] != null)
-    {
-        percent = (data["PERCENT_MRNA_WAY_UP"] * 100);
-        this._addPercentRow("mrna-way-up", "Up-regulation", percent, "#FFACA9");
-        available['MRNA'].push("mrna-way-up");
-    }
-
-    if (data["PERCENT_MRNA_WAY_DOWN"] != null)
-    {
-        percent = (data["PERCENT_MRNA_WAY_DOWN"] * 100);
-        this._addPercentRow("mrna-way-down", "Down-regulation", percent, "#78AAD6");
-        available['MRNA'].push("mrna-way-down");
-    }
-
-    if (data["PERCENT_MUTATED"] != null)
-    {
-        percent = (data["PERCENT_MUTATED"] * 100);
-        this._addPercentRow("mutated", "Mutation", percent, "#008F00");
-        available['MUTATED'].push("mutated");
-    }
-
-    // add separators
-
-    if (available['CNA'].length > 0)
-    {
-        $(this.nodeInspectorSelector + " .profile ." + available['CNA'][0]).addClass(
-            this.SECTION_SEPARATOR_CLASS);
-    }
-
-    if (available['MRNA'].length > 0)
-    {
-        $(this.nodeInspectorSelector + " .profile ." + available['MRNA'][0]).addClass(
-            this.SECTION_SEPARATOR_CLASS);
-    }
-
-    if (available['MUTATED'].length > 0)
-    {
-        $(this.nodeInspectorSelector + " .profile ." + available['MUTATED'][0]).addClass(
-            this.SECTION_SEPARATOR_CLASS);
-    }
-
-
-    // add header & total alteration value if at least one of the profiles is
-    // available
-
-    if (available['CNA'].length > 0
-            || available['MRNA'].length > 0
-        || available['MUTATED'].length > 0)
-    {
-
-        // add header
-        $(this.nodeInspectorSelector + " .profile-header").append('<tr class="header-row">' +
-                                                    '<td><div>Genomic Profile(s):</div></td></tr>');
-
-        // add total alteration frequency
-
-        percent = (data["PERCENT_ALTERED"] * 100);
-
-        var row = '<tr class="total-alteration percent-row">' +
-                  '<td><div class="percent-label">Total Alteration</div></td>' +
-                  '<td class="percent-cell"></td>' +
-                  '<td><div class="percent-value">' + percent.toFixed(1) + '%</div></td>' +
-                  '</tr>';
-
-        // append as a first row
-        $(this.nodeInspectorSelector + " .profile").prepend(row);
-    }
-};
-
-/**
- * Adds a row to the genomic profile table of the node inspector.
- *
- * @param section	class name of the percentage
- * @param label		label to be displayed
- * @param percent	percentage value
- * @param color		color of the percent bar
- */
-NetworkVis.prototype._addPercentRow = function(section, label, percent, color)
-{
-    var row = '<tr class="' + section + ' percent-row">' +
-              '<td><div class="percent-label"></div></td>' +
-              '<td class="percent-cell"><div class="percent-bar"></div></td>' +
-              '<td><div class="percent-value"></div></td>' +
-              '</tr>';
-
-    $(this.nodeInspectorSelector + " .profile").append(row);
-
-    $(this.nodeInspectorSelector + " .profile ." + section + " .percent-label").text(label);
-
-    $(this.nodeInspectorSelector + " .profile ." + section + " .percent-bar").css(
-        "width", Math.ceil(percent) + "%");
-
-    $(this.nodeInspectorSelector + " .profile ." + section + " .percent-bar").css(
-        "background-color", color);
-
-    $(this.nodeInspectorSelector + " .profile ." + section + " .percent-value").text(
-        percent.toFixed(1) + "%");
-};
-
-/**
  * Shows the edge inspector when double clicked on an edge.
  *
  * @param evt	event that triggered this function
@@ -810,7 +377,6 @@ NetworkVis.prototype._addPercentRow = function(section, label, percent, color)
 NetworkVis.prototype.showEdgeInspector = function(evt)
 {
     // set the position of the inspector
-    // TODO same coordinate problems as node inspector
     //$(this.edgeInspectorSelector).dialog({position: [_mouseX(evt), _mouseY(evt)]});
 
     // TODO update the contents of the inspector by using the target edge
@@ -974,34 +540,6 @@ NetworkVis.prototype._addPubMedIds = function(data, summaryEdge)
     }
 };
 
-/**
- * This function shows gene details when double clicked on a node name on the
- * genes tab.
- *
- * @param evt	event that triggered the action
- */
-NetworkVis.prototype.showGeneDetails = function(evt)
-{
-    // retrieve the selected node
-    var node = this._vis.node(evt.target.value);
-
-    // TODO position the inspector, (also center the selected gene?)
-
-    // update inspector content
-    this._updateNodeInspectorContent(node.data, node);
-
-    // open inspector panel
-    $(this.nodeInspectorSelector).dialog("open").height("auto");
-
-    // if the inspector panel height exceeds the max height value
-    // adjust its height (this also adds scroll bars by default)
-    if ($(this.nodeInspectorSelector).height() >
-        $(this.nodeInspectorSelector).dialog("option", "maxHeight"))
-    {
-        $(this.nodeInspectorSelector).dialog("open").height(
-            $(this.nodeInspectorSelector).dialog("option", "maxHeight"));
-    }
-};
 
 /**
  * Updates the gene tab if at least one node is selected or deselected on the
@@ -1808,7 +1346,6 @@ NetworkVis.prototype._setVisibility = function(visible)
             $(this.mainMenuSelector).removeClass("hidden-network-ui");
             $(this.quickInfoSelector).removeClass("hidden-network-ui");
             $(this.networkTabsSelector).removeClass("hidden-network-ui");
-            $(this.nodeInspectorSelector).removeClass("hidden-network-ui");
             $(this.edgeInspectorSelector).removeClass("hidden-network-ui");
             $(this.geneLegendSelector).removeClass("hidden-network-ui");
             $(this.drugLegendSelector).removeClass("hidden-network-ui");
@@ -1824,7 +1361,6 @@ NetworkVis.prototype._setVisibility = function(visible)
             $(this.mainMenuSelector).addClass("hidden-network-ui");
             $(this.quickInfoSelector).addClass("hidden-network-ui");
             $(this.networkTabsSelector).addClass("hidden-network-ui");
-            $(this.nodeInspectorSelector).addClass("hidden-network-ui");
             $(this.edgeInspectorSelector).addClass("hidden-network-ui");
             $(this.geneLegendSelector).addClass("hidden-network-ui");
             $(this.drugLegendSelector).addClass("hidden-network-ui");
@@ -2077,7 +1613,7 @@ NetworkVis.prototype._updateMenuCheckIcons = function()
 };
 
 /**
- * Initializes dialog panels for node inspector, edge inspector, and layout
+ * Initializes dialog panels for edge inspector, and layout
  * settings.
  */
 NetworkVis.prototype._initDialogs = function()
@@ -2086,12 +1622,6 @@ NetworkVis.prototype._initDialogs = function()
     $(this.settingsDialogSelector).dialog({autoOpen: false,
                                      resizable: false,
                                      width: 333});
-
-    // adjust node inspector
-    $(this.nodeInspectorSelector).dialog({autoOpen: false,
-                                    resizable: false,
-                                    width: 366,
-                                    maxHeight: 300});
 
     // adjust edge inspector
     $(this.edgeInspectorSelector).dialog({autoOpen: false,
@@ -2583,8 +2113,9 @@ NetworkVis.prototype._refreshGenesTab = function()
     // (this is required to pass "this" instance to the listener functions)
     var self = this;
 
-    var showGeneDetails = function(evt){
-        self.showGeneDetails(evt);
+    var showNodeDetails = function(evt){
+	// show the details tab
+        $(self.networkTabsSelector).tabs("select", 2);
     };
 
     // get visible genes
@@ -2622,7 +2153,7 @@ NetworkVis.prototype._refreshGenesTab = function()
 
         // add double click listener for each gene
 
-        $(this.genesTabSelector + " #" + safeId).dblclick(showGeneDetails);
+        $(this.genesTabSelector + " #" + safeId).dblclick(showNodeDetails);
         // TODO qtip does not work with Chrome&IE because of the restrictions of
         // the <select><option> structure.
         /*
@@ -2668,7 +2199,7 @@ NetworkVis.prototype._refreshGenesTab = function()
     {
         // listeners on <option> elements do not work in IE, therefore add
         // double click listener to the select box
-        $(this.geneListAreaSelector + " select").dblclick(showGeneDetails);
+        $(this.geneListAreaSelector + " select").dblclick(showNodeDetails);
 
         // TODO if multiple genes are selected, double click always shows
         // the first selected gene's details in IE
@@ -2811,7 +2342,6 @@ NetworkVis.prototype._initControlFunctions = function()
     // (this is required to pass "this" instance to the listener functions)
 
     var showNodeDetails = function(evt) {
-        //self.showNodeInspector(evt);
 	    // open details tab instead
 	    $(self.networkTabsSelector).tabs("select", 2);
     };
@@ -3163,24 +2693,6 @@ NetworkVis.prototype._openProperties = function()
     $(this.settingsDialogSelector).dialog("open").height("auto");
 };
 
-NetworkVis.prototype._createNodeInspector = function(divId)
-{
-    var id = "node_inspector_" + divId;
-
-    var html =
-        '<div id="' + id + '" class="network_node_inspector hidden-network-ui" title="Node Inspector">' +
-            '<div class="node_inspector_content content ui-widget-content">' +
-                '<table class="data"></table>' +
-                '<table class="profile-header"></table>' +
-                '<table class="profile"></table>' +
-                '<table class="xref"></table>' +
-            '</div>' +
-        '</div>';
-
-    $("#" + divId).append(html);
-
-    return "#" + id;
-};
 
 NetworkVis.prototype._createEdgeInspector = function(divId)
 {
