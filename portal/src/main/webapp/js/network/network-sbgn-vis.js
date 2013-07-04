@@ -77,7 +77,7 @@ function NetworkSbgnVis(divId)
 	this.settingsDialogSelector = this._createSettingsDialog(divId);
 
 	// name of the graph layout
-	this._graphLayout = {name: "ForceDirected"};
+	this._graphLayout = {name: "CompoundSpringEmbedder"};
 	//var _graphLayout = {name: "ForceDirected", options:{weightAttr: "weight"}};
 
 	// force directed layout options
@@ -283,10 +283,6 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 	var percent_altered 	= "percent_altered";
 	var attributes		= "attributes";
 
-	//first extend node fields to support genomic data
-	this.addGenomicFields();
-	this.addAnnotationFields();
-	this.addInQueryField();
 	var nodes = this._vis.nodes();
 	// iterate for every hugo gene symbol in incoming data
 	for(var hugoSymbol in genomicData[hugoToGene])
@@ -321,7 +317,7 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 
 NetworkSbgnVis.prototype.addInQueryData = function(targetNodes)
 {
-	var in_query_data =  {IN_QUERY: "true" };
+	var in_query_data =  {IN_QUERY: true };
 	this._vis.updateData("nodes",targetNodes, in_query_data);
 };
 
@@ -502,57 +498,6 @@ NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNod
 		var mutData = {PERCENT_MUTATED: value};
 		this._vis.updateData("nodes", targetNodes, mutData);
 	}
-};
-
-NetworkSbgnVis.prototype.addInQueryField = function()
-{
-	var IN_QUERY = {name:"IN_QUERY", type:"string", defValue: "false"};
-	this._vis.addDataField(IN_QUERY);
-};
-
-/**
- * extends node fields by adding new fields according to annotation data
-**/
-NetworkSbgnVis.prototype.addAnnotationFields = function()
-{
-	var DATA_SOURCE = {name:"DATA_SOURCE", type:"string", defValue: ""};
-	this._vis.addDataField(DATA_SOURCE);
-};
-
-
-/**
- * extends node fields by adding new fields according to genomic data
-**/
-NetworkSbgnVis.prototype.addGenomicFields = function()
-{
-	var cna_amplified 	= {name:"PERCENT_CNA_AMPLIFIED", type:"number", defValue: null};
-	var cna_gained		= {name:"PERCENT_CNA_GAINED", type:"number"};
-	var cna_homodel 	= {name:"PERCENT_CNA_HOMOZYGOUSLY_DELETED", type:"number", defValue: null};
-	var cna_hemydel		= {name:"PERCENT_CNA_HEMIZYGOUSLY_DELETED", type:"number", defValue: null};
-
-	var mrna_up 		= {name:"PERCENT_MRNA_UP", type:"number", defValue: null};
-	var mrna_down 		= {name:"PERCENT_MRNA_DOWN", type:"number", defValue: null};
-
-	var rppa_up 		= {name:"PERCENT_RPPA_UP", type:"number", defValue: null};
-	var rppa_down 		= {name:"PERCENT_RPPA_DOWN", type:"number", defValue: null};
-
-	var mutated		= {name:"PERCENT_MUTATED", type:"number", defValue: null};
-	var altered		= {name:"PERCENT_ALTERED", type:"number", defValue: null};
-
-
-	this._vis.addDataField("nodes", cna_amplified);
-	this._vis.addDataField("nodes", cna_gained);
-	this._vis.addDataField("nodes", cna_homodel);
-	this._vis.addDataField("nodes", cna_hemydel);
-
-	this._vis.addDataField("nodes", mrna_down);
-	this._vis.addDataField("nodes", mrna_up);
-
-	this._vis.addDataField("nodes", rppa_down);
-	this._vis.addDataField("nodes", rppa_up);
-
-	this._vis.addDataField("nodes", mutated);
-	this._vis.addDataField("nodes", altered);
 };
 
 
@@ -1941,7 +1886,7 @@ NetworkSbgnVis.prototype.getMapOfVisibleNodes = function()
 		if(visNodes[i].data.glyph_class == this.MACROMOLECULE
 			|| visNodes[i].data.glyph_class == this.NUCLEIC_ACID)
 		{
-			if(visNodes[i].data.IN_QUERY == "true")
+			if(visNodes[i].data.IN_QUERY == true)
 				visibleMap[_geneLabel(visNodes[i].data)] = true;
 			else
 				visibleMap[_geneLabel(visNodes[i].data)] = false;
