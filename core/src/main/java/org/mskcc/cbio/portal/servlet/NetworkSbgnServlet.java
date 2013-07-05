@@ -27,12 +27,12 @@
 
 package org.mskcc.cbio.portal.servlet;
 
-import cpath.client.CPath2Client;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
 import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
 import org.biopax.paxtools.io.sbgn.idmapping.HGNC;
@@ -49,6 +49,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.*;
 
 /**
@@ -58,7 +60,7 @@ public class NetworkSbgnServlet extends HttpServlet
 {
     private final static Log log = LogFactory.getLog(NetworkSbgnServlet.class);
 
-	public final static String CPATH_SERVICE = "http://purl.org/pc2/current/";
+	public final static String CPATH_SERVICE = "http://www.pathwaycommons.org/pc2/";
 	public final static String NA = "NA";
     public final static Integer GRAPH_QUERY_LIMIT = 1;
     public final static String ATTRIBUTES_FIELD = "attributes";
@@ -94,15 +96,18 @@ public class NetworkSbgnServlet extends HttpServlet
 
 		String[] sourceGeneSet = sourceSymbols.split("\\s");
 
-        CPath2Client client = CPath2Client.newInstance();
-        client.setEndPointURL(CPATH_SERVICE);
-        client.setGraphQueryLimit(GRAPH_QUERY_LIMIT);
-        client.setDirection(CPath2Client.Direction.BOTHSTREAM);
-
         ArrayList<String> convertedList = convert(sourceGeneSet);
-        Model model = convertedList.size() > 1
-                ? client.getPathsBetween(convertedList)
-                : client.getNeighborhood(convertedList);
+        String queryType = convertedList.size() > 1 ? "pathsbetween" : "neighborhood";
+        String urlStr = CPATH_SERVICE + "/graph?";
+        for (String s : convertedList) {
+            urlStr += "source=" + s + "&";
+        }
+        urlStr += "kind=" + queryType;
+        SimpleIOHandler ioHandler = new SimpleIOHandler();
+        URL url = new URL(urlStr);
+        URLConnection urlConnection = url.openConnection();
+        Model model = ioHandler.convertFromOWL(urlConnection.getInputStream());
+
 
         L3ToSBGNPDConverter converter
                 = new L3ToSBGNPDConverter(new ListUbiqueDetector(new HashSet<String>()), null, true);
