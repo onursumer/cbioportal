@@ -28,10 +28,7 @@ function NetworkSbgnVis(divId)
 	
 	//global array for manually filtered nodes
 	this._manuallyFiltered = new Array();
-	// TODO TEST for show and hide compartments
-	this.nodesOfCompartments = new Array();
-	this.edgesOfCompartments = new Array();
-	this.compartments = new Array();
+
 	// flags
 	this._autoLayout = false;
 	this._removeDisconnected = false;
@@ -43,7 +40,7 @@ function NetworkSbgnVis(divId)
 	
 	// for show and hide compartments
 	this.nodesOfCompartments = new Array();
-	this.edgesOfCompartments = new Array();
+	this.edgedOfCompartments = new Array();
 	this.compartments = new Array();
 
 	// array of control functions
@@ -275,10 +272,10 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 {
 	var hugoToGene 		= "hugo_to_gene_index";
 	var geneData   		= "gene_data";
-	var cna 	   	= "cna";
 	var hugo 	   	= "hugo";
-	var mrna	   	= "mrna";
 	var mutations  		= "mutations";
+	var cna			= "cna";
+	var mrna		= "mrna";
 	var rppa	   	= "rppa";
 	var percent_altered 	= "percent_altered";
 	var attributes		= "attributes";
@@ -292,49 +289,55 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 
 		// Arrays and percent altered data 
 		var cnaArray   		= _geneData[cna];
-		var mrnaArray  	= _geneData[mrna];
+		var mrnaArray  		= _geneData[mrna];
 		var mutationsArray 	= _geneData[mutations];
 		var rppaArray	  	= _geneData[rppa];
 		var percentAltered 	= _geneData[percent_altered];
 		
 		// Corresponding cytoscape web nodes
 		var targetNodes = findNode(hugoSymbol, nodes);
-		// calculate the alteration percents
-		this.calcCNAPercents(cnaArray, targetNodes);
-		this.calcMutationPercent(mutationsArray, targetNodes);
-		this.calcRPPAorMRNAPercent(mrnaArray, mrna, targetNodes);
-		this.calcRPPAorMRNAPercent(rppaArray, rppa, targetNodes);
+		var cnaData = this.calcCNAPercents(cnaArray);
+		var mutationPercent = this.calcMutationPercent(mutationsArray);
+		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray);
+		var rppaData = this.calcRPPAorMRNAPercent(rppaArray);
 
 		// Calculate alteration percent and add them to the corresponding nodes.
-		var alterationPercent = parseInt(percentAltered.split('%'),10) / 100.0;		
-		var alterationData =  {PERCENT_ALTERED: alterationPercent };
-		this._vis.updateData("nodes",targetNodes, alterationData);
+		var alterationPercent = parseInt(percentAltered.split('%'),10)/100;		
+		var genomicsData = 
+		{
+			IN_QUERY: true, 
+			PERCENT_ALTERED: alterationPercent, 
+			PERCENT_MUTATED: mutationPercent, 
+			PERCENT_CNA_AMPLIFIED: cnaData["AMPLIFIED"],
+			PERCENT_CNA_HEMIZYGOUSLY_DELETED: cnaData["HEMIZYGOUSLY_DELETED"],
+			PERCENT_CNA_HOMOZYGOUSLY_DELETED: cnaData["HOMOZYGOUSLY_DELETED"],
+			PERCENT_MRNA_UP: mrnaData["UPREGULATED"],
+			PERCENT_MRNA_DOWN: mrnaData["DOWNREGULATED"],
+			PERCENT_RPPA_UP: rppaData["UPREGULATED"],
+			PERCENT_RPPA_DOWN: rppaData["DOWNREGULATED"]
+		};
+		this._vis.updateData("nodes",targetNodes, genomicsData);
 	}
 
 	// Lastly parse annotation data and add "dataSource" fields
-	this.addAnnotationData(annotationData);
+	this.updateAnnotationData(annotationData);
 };
 
-NetworkSbgnVis.prototype.addInQueryData = function(targetNodes)
-{
-	var in_query_data =  {IN_QUERY: true };
-	this._vis.updateData("nodes",targetNodes, in_query_data);
-};
 
-NetworkSbgnVis.prototype.addAnnotationData = function(annotationData)
+NetworkSbgnVis.prototype.updateAnnotationData = function(annotationData)
 {
 	var nodeArray = this._vis.nodes();
+	var parsedData;
 	for ( var i = 0; i < nodeArray.length; i++) 
 	{
 		if(nodeArray[i].data.glyph_class == "process")
 		{
-			//Temporary hack to get rid of id extensions of glyphs.
-			var glyphID = ((nodeArray[i].data.id).replace("LEFT_TO_RIGHT", "")).replace("LEFT_TO_RIGHT", "");
-			var annData = annotationData[glyphID];
-			var parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
-			var data    = {DATA_SOURCE: parsedData};
-			//var data    = {DATA_SOURCE: annData.dataSource[0]};
-			this._vis.updateData("nodes",[nodeArray[i].data.id], data);
+                        //Temporary hack to get rid of id extensions of glyphs.
+                        var glyphID = ((nodeArray[i].data.id).replace("LEFT_TO_RIGHT", "")).replace("LEFT_TO_RIGHT", "");
+                        var annData = annotationData[glyphID];
+                        var parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
+                        var data    = {DATA_SOURCE: parsedData};
+                        this._vis.updateData("nodes",[nodeArray[i].data.id], data);
 		}
 	}
 };
@@ -360,12 +363,12 @@ function findNode(label, nodes)
 /** 
  * calculates cna percents ands adds them to target node
 **/
-NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
+NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray)
 {  
 	var amplified	= "AMPLIFIED";
 	var gained    	= "GAINED";
 	var hemiDeleted = "HEMIZYGOUSLYDELETED";
-	var homoDeleted	= "HOMODELETED";
+	var homoDeleted	= "HOMOZYGOUSLY_DELETED";
 
 	var percents = {};
 	percents[amplified] = 0;
@@ -397,39 +400,28 @@ NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
 			homoDeletedNo++; 
 		}
 	}
-	var value;
-	var len = cnaArray.length;
-	if(amplifiedNo > 0)
+	var increment = 1/cnaArray.length;
+
+	for(var i = 0; i < cnaArray.length; i++)
 	{
-		value =  amplifiedNo/len;
-		var ampl = { PERCENT_CNA_AMPLIFIED: value};
-		this._vis.updateData("nodes",targetNodes, ampl);
+		if(cnaArray[i] != null)
+			percents[cnaArray[i]] += increment; 
+
 	}
-	if (gainedNo > 0)
-	{
-		value =  gainedNo/len;
-		var gain = { PERCENT_CNA_GAINED: value};
-		this._vis.updateData("nodes",targetNodes, gain);
-	}
-	if (hemiDeleted > 0)
-	{
-		value =  hemiDeletedNo/len;
-		var hem =  { PERCENT_CNA_HEMIZYGOUSLY_DELETED: value };
-		this._vis.updateData("nodes",targetNodes, hem);
-	}
-	if (homoDeletedNo > 0)
-	{
-		value =  homoDeletedNo/len;
-		var hom =  { PERCENT_CNA_HOMOZYGOUSLY_DELETED: value};
-		this._vis.updateData("nodes",targetNodes, hom);
-	}
+
+	percents[amplified] 	= (amplifiedNo > 0) ? percents[amplified]:null;
+	percents[gained] 	= (gainedNo > 0) ? percents[gained]:null;
+	percents[hemiDeleted] 	= (hemiDeletedNo > 0) ? percents[hemiDeleted]:null;
+	percents[homoDeleted] 	= (homoDeletedNo > 0) ? percents[homoDeleted]:null;
+	
+	return percents;
 
 };
 
 /** 
  * calculates rppa or mrna percents ands adds them to target node, data indicator determines which data will be set
 **/
-NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicator, targetNodes)
+NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray)
 {  
 	var up		= "UPREGULATED";
 	var down   	= "DOWNREGULATED";
@@ -457,30 +449,16 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicat
 	var valueUp  = upNo / len;
 	var valueDown  = downNo / len;
 
-	if (dataIndicator == "mrna") 
-	{
-		upData =  {PERCENT_MRNA_UP: valueUp};
-		downData = {PERCENT_MRNA_DOWN: valueDown};
-	} 
-	else if(dataIndicator == "rppa") 
-	{
-		upData =   {PERCENT_RPPA_UP: valueUp};
-		downData = {PERCENT_RPPA_DOWN: valueDown};
-	}
-	if(upNo > 0)
-	{
-		this._vis.updateData("nodes",targetNodes, upData);
-	}
-	if(downNo > 0)
-	{
-		this._vis.updateData("nodes",targetNodes, downData);		
-	}
+	percents[up] 	= (upNo > 0) ? valueUp:null;
+	percents[down] 	= (downNo > 0) ? valueDown:null;
+
+	return percents;
 };
 
 /**
  * calculates mutation percents ands adds them to target node
 **/
-NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNodes)
+NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray)
 {  
 	var percent = 0;
 	var sampleNo = 0;
@@ -494,12 +472,19 @@ NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNod
 	
 	if(sampleNo > 0)
 	{
-		var value  =  sampleNo/mutationArray.length;
-		var mutData = {PERCENT_MUTATED: value};
-		this._vis.updateData("nodes", targetNodes, mutData);
+		var increment = 1 / mutationArray.length;
+		for(var i = 0; i < mutationArray.length; i++)
+		{
+			if(mutationArray[i] != null)
+			{
+				percent += increment;  
+			}
+		}
+		return percent;
 	}
+	else 
+		return null;
 };
-
 
 /**
  * Select multiple nodes by glyph label
@@ -2199,7 +2184,6 @@ NetworkSbgnVis.prototype._updateMenuCheckIcons = function()
     }
 };
 
-
 /**
  * Sets the default values of the control flags.
  */
@@ -2239,77 +2223,35 @@ function _toggleShowCompartments(self)
 	// remove all compartments and add its children
 	if(self._showCompartments)
 	{
-		// remove compartment edges
-		self._vis.removeElements(self.edgesOfCompartments, true);
-		
-		// remove nodes of compartments
-		self._vis.removeElements(self.nodesOfCompartments, true);
+		// show compartments
+		self._vis.addElements(self.compartments, true);
 
-		// add compartments
-		if(self.compartments.length > 0)
-			self._vis.addElements(self.compartments, true);
-		
-		// divide nodes to complexes and children
-		var tempArray = self.nodesOfCompartments.slice(0);
-		var complexes = new Array();
-		var others = new Array();
-		for(var i = 0; i < tempArray.length; i++)
+		// change parents of nodes to null
+		for(var i = 0; i < self.compartments; i++)
 		{
-			if(tempArray[i].data.glyph_class == self.COMPLEX)
+			var nodeIDs = new Array();
+			var id = self.compartments.data.id;
+			var children = self._vis.childNodes(id);
+			for(var j = 0; j < children; j++)
 			{
-				complexes.push(tempArray[i].data.id);
+				nodeIDs.push(children.data.id);
 			}
-			else 
-			{
-				others.push(tempArray[i].data.id);
-			}
+			var data = {parent: id};
+			self._vis.updateData(nodeIDs, data);
 		}
-		// add nodes again
-		if(others.length > 0)
-			self._vis.addElements(complexes, true);
-		if(complexes.length > 0)
-			self._vis.addElements(others, true);
-
-		// add edges again
-		if(self.edgesOfCompartments.length > 0)
-			self._vis.addElements(self.edgesOfCompartments, true);
 	}
 	else
 	{
-		// remove compartments
-		if(self.compartments.length > 0)
-			self._vis.removeElements(self.compartments, true);
-		else return;
-		// remove nodes of compartments
-		var tempArray = self.nodesOfCompartments.slice(0);
-		var complexes = new Array();
-		var others = new Array();
-		for(var i = 0; i < tempArray.length; i++)
+		// change parents of nodes to null
+		var nodeIDs = new Array();
+		for(var i = 0; i < self.nodesOfCompartments; i++)
 		{
-			var pId = tempArray[i].data.parent;
-			var parent = self._vis.node(pId);
-			if(parent != null && parent.data.glyph_class == self.COMPARTMENT)
-			{
-				tempArray[i].data.parent = null;
-			}
-			if(tempArray[i].data.glyph_class == self.COMPLEX)
-			{
-				complexes.push(tempArray[i].data.id);
-			}
-			else 
-			{
-				others.push(tempArray[i].data.id);
-			}
+			nodeIDs.push(self.nodesOfCompartments.data.id);
 		}
-		// add nodes again
-		if(complexes.length > 0)
-			self._vis.addElements(complexes, true);
-		if(others.length > 0)
-			self._vis.addElements(others, true);
-
-		// add edges again
-		if(self.edgesOfCompartments.length > 0)
-			self._vis.addElements(processes, true);	
+		var data = {parent: null};
+		self._vis.updateData(nodeIDs, data);
+		// remove compartments
+		self._vis.removeElements(self.compartments, true);
 	}
     
 }
@@ -2341,47 +2283,25 @@ function _toggleRemoveDisconnected(self)
  */
 NetworkSbgnVis.prototype.setCompartmentElements = function()
 {
-	var tempArray = new Array();
-	var tempComp = new Array();
 	this.nodesOfCompartments = new Array();
-	this.edgesOfCompartments = new Array();
+	this.edgedOfCompartments = new Array();
 	this.compartments = new Array();
 	var nodes = this._vis.nodes();
 	for(var i = 0; i < nodes.length; i++)
 	{
 		if(nodes[i].data.glyph_class == this.COMPARTMENT)
 		{
-			tempComp.push(nodes[i]);
-			var children = this._vis.childNodes(nodes[i]);
-			for(var j = 0; j < children.length; j++)
+			this.compartments.push(nodes[i]);
+			var pID = nodes[i].data.id;
+			for(var j = 0; j < nodes.length; j++)
 			{
-				if(children[j].data.glyph_class != this.COMPARTMENT)
+				if(nodes[j].data.parent == pID)
 				{
-					if (children[j].data.glyph_class == this.COMPLEX)
-					{
-						var nextGen = this._vis.childNodes(children[j]);
-						while(nextGen.length > 0)
-						{
-							var temp = new Array();
-							for(var k = 0; k < nextGen.length; k++)
-							{
-								tempArray.push(nextGen[k]);
-								if(nextGen[k].data.glyph_class == this.COMPLEX)
-								{
-									temp.concat(this._vis.childNodes(nextGen[k]));
-								}
-							}
-							nextGen = temp;
-						}
-					}
-					tempArray.push(children[j]);
+					this.nodesOfCompartments.push(nodes[j]);
 				}
 			}
 		}
 	}
-	this.compartments = tempComp.slice(0);
-	this.nodesOfCompartments = tempArray.slice(0);
-	tempArray = new Array();
 	var edges = this._vis.edges();
 	for(var j = 0; j < edges.length; j++)
 	{
@@ -2390,10 +2310,10 @@ NetworkSbgnVis.prototype.setCompartmentElements = function()
 			if(edges[j].data.source == this.nodesOfCompartments[i].data.id ||
 				edges[j].data.target == this.nodesOfCompartments[i].data.id)
 			{
-				tempArray.push(edges[j]);
+				this.edgedOfCompartments.push(edges[j]);
 				break;
 			}
 		}
 	}
-	this.edgesOfCompartments = tempArray.slice(0);
 };
+
