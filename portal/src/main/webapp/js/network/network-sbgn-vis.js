@@ -272,10 +272,10 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 {
 	var hugoToGene 		= "hugo_to_gene_index";
 	var geneData   		= "gene_data";
+	var cna 	   	= "cna";
 	var hugo 	   	= "hugo";
+	var mrna	   	= "mrna";
 	var mutations  		= "mutations";
-	var cna			= "cna";
-	var mrna		= "mrna";
 	var rppa	   	= "rppa";
 	var percent_altered 	= "percent_altered";
 	var attributes		= "attributes";
@@ -289,17 +289,17 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 
 		// Arrays and percent altered data 
 		var cnaArray   		= _geneData[cna];
-		var mrnaArray  		= _geneData[mrna];
+		var mrnaArray  	= _geneData[mrna];
 		var mutationsArray 	= _geneData[mutations];
 		var rppaArray	  	= _geneData[rppa];
 		var percentAltered 	= _geneData[percent_altered];
 		
 		// Corresponding cytoscape web nodes
 		var targetNodes = findNode(hugoSymbol, nodes);
-		var cnaData = this.calcCNAPercents(cnaArray);
-		var mutationPercent = this.calcMutationPercent(mutationsArray);
-		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray);
-		var rppaData = this.calcRPPAorMRNAPercent(rppaArray);
+		var cnaData = this.calcCNAPercents(cnaArray, targetNodes);
+		var mutationPercent = this.calcMutationPercent(mutationsArray, targetNodes);
+		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray, mrna, targetNodes);
+		var rppaData = this.calcRPPAorMRNAPercent(rppaArray, rppa, targetNodes);
 
 		// Calculate alteration percent and add them to the corresponding nodes.
 		var alterationPercent = parseInt(percentAltered.split('%'),10)/100;		
@@ -332,12 +332,10 @@ NetworkSbgnVis.prototype.updateAnnotationData = function(annotationData)
 	{
 		if(nodeArray[i].data.glyph_class == "process")
 		{
-                        //Temporary hack to get rid of id extensions of glyphs.
-                        var glyphID = ((nodeArray[i].data.id).replace("LEFT_TO_RIGHT", "")).replace("LEFT_TO_RIGHT", "");
-                        var annData = annotationData[glyphID];
-                        var parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
-                        var data    = {DATA_SOURCE: parsedData};
-                        this._vis.updateData("nodes",[nodeArray[i].data.id], data);
+			var annData = annotationData[nodeArray[i].data.id];
+			parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
+			var data    = {DATA_SOURCE: parsedData};
+			this._vis.updateData("nodes",[nodeArray[i].data.id], data);
 		}
 	}
 };
@@ -363,7 +361,7 @@ function findNode(label, nodes)
 /** 
  * calculates cna percents ands adds them to target node
 **/
-NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray)
+NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
 {  
 	var amplified	= "AMPLIFIED";
 	var gained    	= "GAINED";
@@ -421,7 +419,7 @@ NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray)
 /** 
  * calculates rppa or mrna percents ands adds them to target node, data indicator determines which data will be set
 **/
-NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray)
+NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicator, targetNodes)
 {  
 	var up		= "UPREGULATED";
 	var down   	= "DOWNREGULATED";
@@ -445,20 +443,23 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray)
 			downNo++;
 		}
 	}
-	var len = dataArray.length;
-	var valueUp  = upNo / len;
-	var valueDown  = downNo / len;
+	var increment = 1 / dataArray.length;
+	for(var i = 0; i < dataArray.length; i++)
+	{
+		if(dataArray[i] != null)
+		{
+			percents[dataArray[i]] += increment; 
+		}
+	}
 
-	percents[up] 	= (upNo > 0) ? valueUp:null;
-	percents[down] 	= (downNo > 0) ? valueDown:null;
-
-	return percents;
+	percents[up] 	= (upNo > 0) ? percents[up]:null;
+	percents[down] 	= (downNo > 0) ? percents[down]:null;
 };
 
 /**
  * calculates mutation percents ands adds them to target node
 **/
-NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray)
+NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNodes)
 {  
 	var percent = 0;
 	var sampleNo = 0;
