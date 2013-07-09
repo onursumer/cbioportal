@@ -109,6 +109,8 @@ function NetworkSbgnVis(divId)
 
 	//////////////////////////////////////////////////
 	this.visibleNodes = null;
+
+	this.idToDataSource = {};
 }
 
 /**
@@ -320,11 +322,11 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 	}
 
 	// Lastly parse annotation data and add "dataSource" fields
-	this.updateAnnotationData(annotationData);
+	this.parseDataSource(annotationData);
 };
 
 
-NetworkSbgnVis.prototype.updateAnnotationData = function(annotationData)
+NetworkSbgnVis.prototype.parseDataSource = function(annotationData)
 {
 	var nodeArray = this._vis.nodes();
 	for ( var i = 0; i < nodeArray.length; i++) 
@@ -335,10 +337,10 @@ NetworkSbgnVis.prototype.updateAnnotationData = function(annotationData)
                         var glyphID = ((nodeArray[i].data.id).replace("LEFT_TO_RIGHT", "")).replace("RIGHT_TO_LEFT", "");
                         var annData = annotationData[glyphID];
                         var parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
-                        var data    = {DATA_SOURCE: parsedData};
-                        this._vis.updateData("nodes",[nodeArray[i].data.id], data);
+			this.idToDataSource[nodeArray[i].data.id] = parsedData;
 		}
 	}
+	return this.idToDataSource;
 };
 
 /** 
