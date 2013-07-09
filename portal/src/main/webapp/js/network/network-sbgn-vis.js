@@ -285,21 +285,21 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 	for(var hugoSymbol in genomicData[hugoToGene])
 	{
 		var geneDataIndex 	= genomicData[hugoToGene][hugoSymbol];		// gene data index for hugo gene symbol
-		var _geneData 	= genomicData[geneData][geneDataIndex];			// corresponding gene data
+		var _geneData 		= genomicData[geneData][geneDataIndex];		// corresponding gene data
 
 		// Arrays and percent altered data 
 		var cnaArray   		= _geneData[cna];
-		var mrnaArray  	= _geneData[mrna];
+		var mrnaArray  		= _geneData[mrna];
 		var mutationsArray 	= _geneData[mutations];
 		var rppaArray	  	= _geneData[rppa];
 		var percentAltered 	= _geneData[percent_altered];
 		
 		// Corresponding cytoscape web nodes
 		var targetNodes = findNode(hugoSymbol, nodes);
-		var cnaData = this.calcCNAPercents(cnaArray, targetNodes);
-		var mutationPercent = this.calcMutationPercent(mutationsArray, targetNodes);
-		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray, mrna, targetNodes);
-		var rppaData = this.calcRPPAorMRNAPercent(rppaArray, rppa, targetNodes);
+		var cnaData = this.calcCNAPercents(cnaArray);
+		var mutationPercent = this.calcMutationPercent(mutationsArray);
+		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray);
+		var rppaData = this.calcRPPAorMRNAPercent(rppaArray);
 
 		// Calculate alteration percent and add them to the corresponding nodes.
 		var alterationPercent = parseInt(percentAltered.split('%'),10)/100;		
@@ -311,10 +311,10 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 			PERCENT_CNA_AMPLIFIED: cnaData["AMPLIFIED"],
 			PERCENT_CNA_HEMIZYGOUSLY_DELETED: cnaData["HEMIZYGOUSLY_DELETED"],
 			PERCENT_CNA_HOMOZYGOUSLY_DELETED: cnaData["HOMOZYGOUSLY_DELETED"],
-			PERCENT_MRNA_UP: mrnaData["UPREGULATED"],
-			PERCENT_MRNA_DOWN: mrnaData["DOWNREGULATED"],
-			PERCENT_RPPA_UP: rppaData["UPREGULATED"],
-			PERCENT_RPPA_DOWN: rppaData["DOWNREGULATED"]
+			PERCENT_MRNA_WAY_UP: mrnaData["UPREGULATED"],
+			PERCENT_MRNA_WAY_DOWN: mrnaData["DOWNREGULATED"],
+			PERCENT_RPPA_WAY_UP: rppaData["UPREGULATED"],
+			PERCENT_RPPA_WAY_DOWN: rppaData["DOWNREGULATED"]
 		};
 		this._vis.updateData("nodes",targetNodes, genomicsData);
 	}
@@ -361,11 +361,11 @@ function findNode(label, nodes)
 /** 
  * calculates cna percents ands adds them to target node
 **/
-NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
+NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray)
 {  
 	var amplified	= "AMPLIFIED";
 	var gained    	= "GAINED";
-	var hemiDeleted = "HEMIZYGOUSLYDELETED";
+	var hemiDeleted = "HEMIZYGOUSLY_DELETED";
 	var homoDeleted	= "HOMOZYGOUSLY_DELETED";
 
 	var percents = {};
@@ -419,7 +419,7 @@ NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray, targetNodes)
 /** 
  * calculates rppa or mrna percents ands adds them to target node, data indicator determines which data will be set
 **/
-NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicator, targetNodes)
+NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray)
 {  
 	var up		= "UPREGULATED";
 	var down   	= "DOWNREGULATED";
@@ -454,12 +454,14 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray, dataIndicat
 
 	percents[up] 	= (upNo > 0) ? percents[up]:null;
 	percents[down] 	= (downNo > 0) ? percents[down]:null;
+	
+	return percents;
 };
 
 /**
  * calculates mutation percents ands adds them to target node
 **/
-NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray, targetNodes)
+NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray)
 {  
 	var percent = 0;
 	var sampleNo = 0;
