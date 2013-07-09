@@ -327,15 +327,16 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 NetworkSbgnVis.prototype.updateAnnotationData = function(annotationData)
 {
 	var nodeArray = this._vis.nodes();
-	var parsedData;
 	for ( var i = 0; i < nodeArray.length; i++) 
 	{
 		if(nodeArray[i].data.glyph_class == "process")
 		{
-			var annData = annotationData[nodeArray[i].data.id];
-			parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
-			var data    = {DATA_SOURCE: parsedData};
-			this._vis.updateData("nodes",[nodeArray[i].data.id], data);
+                        //Temporary hack to get rid of id extensions of glyphs.
+                        var glyphID = ((nodeArray[i].data.id).replace("LEFT_TO_RIGHT", "")).replace("RIGHT_TO_LEFT", "");
+                        var annData = annotationData[glyphID];
+                        var parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
+                        var data    = {DATA_SOURCE: parsedData};
+                        this._vis.updateData("nodes",[nodeArray[i].data.id], data);
 		}
 	}
 };
