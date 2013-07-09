@@ -70,7 +70,6 @@
 	</table>
 
 </script>
-
 <script type="text/template" id="genomic_profile_template">
 	<table class="profile-header">
 		<tr class="header-row">
@@ -149,29 +148,58 @@
 		</tr>
 		<tr class="mrna-way-up percent-row">
 			<td class="label-cell">
-				<div class="percent-label">Up-regulation</div>
+				<div class="percent-label">MRNA Up-regulation</div>
 			</td>
 			<td class="percent-cell">
 				<div class="percent-bar"
-				     style="width: {{upRegulationWidth}}%; background-color: #FFACA9;"></div>
+				     style="width: {{mrnaUpRegulationWidth}}%; background-color: #FFACA9;"></div>
 			</td>
 			<td>
-				<div class="percent-value">{{upRegulationPercent}}%</div>
+				<div class="percent-value">{{mrnaUpRegulationPercent}}%</div>
 			</td>
 		</tr>
 		<tr class="mrna-way-down percent-row">
 			<td class="label-cell">
-				<div class="percent-label">Down-regulation</div>
+				<div class="percent-label">MRNA Down-regulation</div>
 			</td>
 			<td class="percent-cell">
 				<div class="percent-bar"
-				     style="width: {{downRegulationWidth}}%; background-color: #78AAD6;"></div>
+				     style="width: {{mrnaDownRegulationWidth}}%; background-color: #78AAD6;"></div>
 			</td>
 			<td>
-				<div class="percent-value">{{downRegulationPercent}}%</div>
+				<div class="percent-value">{{mrnaDownRegulationPercent}}%</div>
 			</td>
 		</tr>
 		<tr class="section-separator mrna-section-separator">
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr class="rppa-way-up percent-row">
+			<td class="label-cell">
+				<div class="percent-label">RPPA Up-regulation</div>
+			</td>
+			<td class="percent-cell">
+				<div class="percent-bar"
+				     style="width: {{rppaUpRegulationWidth}}%; background-color: #FFACA9;"></div>
+			</td>
+			<td>
+				<div class="percent-value">{{rppaUpRegulationPercent}}%</div>
+			</td>
+		</tr>
+		<tr class="rppa-way-down percent-row">
+			<td class="label-cell">
+				<div class="percent-label">RPPA Down-regulation</div>
+			</td>
+			<td class="percent-cell">
+				<div class="percent-bar"
+				     style="width: {{rppaDownRegulationWidth}}%; background-color: #78AAD6;"></div>
+			</td>
+			<td>
+				<div class="percent-value">{{rppaDownRegulationPercent}}%</div>
+			</td>
+		</tr>
+		<tr class="section-separator rppa-section-separator">
 			<td></td>
 			<td></td>
 			<td></td>
@@ -190,7 +218,6 @@
 		</tr>
 	</table>
 </script>
-
 
 <script type="text/template" id="biogene_template">
 	<div class='node-details-info'>
@@ -438,60 +465,100 @@
 		},
 		render: function(options){
 			var data = options.data;
-
+			var sbgnFlag;
+			var checks = options.check;
+			if(options.flag == "sbgn")
+				sbgnFlag = true;
+			else
+				sbgnFlag = false;
 			var cnaDataAvailable = !(data["PERCENT_CNA_AMPLIFIED"] == null &&
 			                         data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] == null &&
-			                         data["PERCENT_CNA_GAINED"] &&
+			                         data["PERCENT_CNA_GAINED"] == null &&
 			                         data["PERCENT_CNA_HEMIZYGOUSLY_DELETED"] == null);
 
 			var mrnaDataAvailable = !(data["PERCENT_MRNA_WAY_UP"] == null &&
 			                          data["PERCENT_MRNA_WAY_DOWN"] == null);
-
-			var mutationDataAvailable = data["PERCENT_MUTATED"] != null;
-
+			
+			var rppaDataAvailable;
+			if(sbgnFlag)
+			{
+				rppaDataAvailable = !(data["PERCENT_RPPA_WAY_UP"] == null &&
+			                          data["PERCENT_RPPA_WAY_DOWN"] == null);
+			}
+			else
+			{
+				rppaDataAvailable = false;
+			}
+			var mutationDataAvailable = (data["PERCENT_MUTATED"] != null);
+			
 			// if no genomic data available at all, do not render anything
-			if (!cnaDataAvailable && !mrnaDataAvailable && !mutationDataAvailable)
+			if (!cnaDataAvailable && !mrnaDataAvailable && !rppaDataAvailable && !mutationDataAvailable)
 			{
 				return;
 			}
-
 			// pass variables in using Underscore.js template
 			var variables = { totalAlterationPercent: (data["PERCENT_ALTERED"] * 100).toFixed(1),
 				cnaAmplifiedPercent: (data["PERCENT_CNA_AMPLIFIED"] * 100).toFixed(1),
-				cnaAmplifiedWidth: Math.max(Math.ceil(data["PERCENT_CNA_AMPLIFIED"] * 100)),
+				cnaAmplifiedWidth: Math.ceil(data["PERCENT_CNA_AMPLIFIED"] * 100),
 				homozygousDelPercent: (data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] * 100).toFixed(1),
 				homozygousDelWidth: Math.ceil(data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] * 100),
 				cnaGainedPercent: (data["PERCENT_CNA_GAINED"] * 100).toFixed(1),
 				cnaGainedWidth: Math.ceil(data["PERCENT_CNA_GAINED"] * 100),
 				hemizygousDelPercent: (data["PERCENT_CNA_HEMIZYGOUSLY_DELETED"] * 100).toFixed(1),
 				hemizygousDelWidth: Math.ceil(data["PERCENT_CNA_HEMIZYGOUSLY_DELETED"] * 100),
-				upRegulationPercent: (data["PERCENT_MRNA_WAY_UP"] * 100).toFixed(1),
-				upRegulationWidth: Math.ceil(data["PERCENT_MRNA_WAY_UP"] * 100),
-				downRegulationPercent: (data["PERCENT_MRNA_WAY_DOWN"] * 100).toFixed(1),
-				downRegulationWidth: Math.ceil(data["PERCENT_MRNA_WAY_DOWN"] * 100),
+				mrnaUpRegulationPercent: (data["PERCENT_MRNA_WAY_UP"] * 100).toFixed(1),
+				mrnaUpRegulationWidth: Math.ceil(data["PERCENT_MRNA_WAY_UP"] * 100),
+				mrnaDownRegulationPercent: (data["PERCENT_MRNA_WAY_DOWN"] * 100).toFixed(1),
+				mrnaDownRegulationWidth: Math.ceil(data["PERCENT_MRNA_WAY_DOWN"] * 100),
 				mutationPercent: (data["PERCENT_MUTATED"] * 100).toFixed(1),
 				mutationWidth: Math.ceil(data["PERCENT_MUTATED"] * 100)};
+			if(sbgnFlag)
+			{
+				variables["rppaUpRegulationPercent"] = (data["PERCENT_RPPA_WAY_UP"] * 100).toFixed(1);
+				variables["rppaUpRegulationWidth"] = Math.ceil(data["PERCENT_RPPA_WAY_UP"] * 100);
+				variables["rppaDownRegulationPercent"] = (data["PERCENT_RPPA_WAY_DOWN"] * 100).toFixed(1);
+				variables["rppaDownRegulationWidth"] = Math.ceil(data["PERCENT_RPPA_WAY_DOWN"] * 100);
+			}
+			else
+			{
+				variables["rppaUpRegulationPercent"] = 0;
+				variables["rppaUpRegulationWidth"] = 0;
+				variables["rppaDownRegulationPercent"] = 0;
+				variables["rppaDownRegulationWidth"] = 0;
+			}
 
 			// compile the template using underscore
 			var template = _.template( $("#genomic_profile_template").html(), variables);
 
 			// load the compiled HTML into the Backbone "el"
 			this.$el.html(template);
-
 			// format after loading
 			this.format(options, variables);
 		},
 		format: function(options, variables) {
 			var data = options.data;
-
+			var sbgnFlag;
+			if(options.flag == "sbgn")
+				sbgnFlag = true;
+			else
+				sbgnFlag = false;
 			var cnaDataAvailable = !(data["PERCENT_CNA_AMPLIFIED"] == null &&
 			                         data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] == null &&
-			                         data["PERCENT_CNA_GAINED"] &&
+			                         data["PERCENT_CNA_GAINED"] == null &&
 			                         data["PERCENT_CNA_HEMIZYGOUSLY_DELETED"] == null);
 
 			var mrnaDataAvailable = !(data["PERCENT_MRNA_WAY_UP"] == null &&
 			                          data["PERCENT_MRNA_WAY_DOWN"] == null);
-
+			var rppaDataAvailable;
+			if(sbgnFlag)
+			{
+				var rppaDataAvailable = !(data["PERCENT_RPPA_WAY_UP"] == null &&
+	                	          data["PERCENT_RPPA_WAY_DOWN"] == null);
+			}
+			else
+			{
+				rppaDataAvailable = false;
+			}
 			// hide data rows with no information
 
 			if (data["PERCENT_CNA_AMPLIFIED"] == null)
@@ -511,6 +578,12 @@
 
 			if (data["PERCENT_MRNA_WAY_DOWN"] == null)
 				$(options.el + " .mrna-way-down").hide();
+			
+			if(!sbgnFlag || (data["PERCENT_RPPA_WAY_UP"] == null))
+				$(options.el + " .rppa-way-up").hide();
+
+			if(!sbgnFlag || (data["PERCENT_RPPA_WAY_DOWN"] == null))
+				$(options.el + " .rppa-way-down").hide();
 
 			if (data["PERCENT_MUTATED"] == null)
 				$(options.el + " .mutated").hide();
@@ -523,8 +596,12 @@
 
 			if (!mrnaDataAvailable)
 				$(options.el + " .mrna-section-separator").hide();
+
+			if (!rppaDataAvailable)
+				$(options.el + " .rppa-section-separator").hide();
 		}
 	});
+
 
 	/**
 	 * Backbone view for the BioGene information.
