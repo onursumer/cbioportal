@@ -340,7 +340,6 @@ NetworkSbgnVis.prototype.parseDataSource = function(annotationData)
 			this.idToDataSource[nodeArray[i].data.id] = parsedData;
 		}
 	}
-	return this.idToDataSource;
 };
 
 /** 
@@ -392,28 +391,21 @@ NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray)
 		{
 			gainedNo++; 
 		}
-		else if(cnaArray[i] == hemiDeleted)
+		else if(cnaArray[i] == hemiDeleted || cnaArray[i] == "HEMIDELETED" || cnaArray[i] == "HEMIZYGOUSLYDELETED")
 		{
 			hemiDeletedNo++; 
 		}
-		else if(cnaArray[i] == homoDeleted)
+		else if(cnaArray[i] == homoDeleted || cnaArray[i] == "HOMODELETED" || cnaArray[i] == "HOMOZYGOUSLYDELETED")
 		{
 			homoDeletedNo++; 
 		}
 	}
-	var increment = 1/cnaArray.length;
+	
 
-	for(var i = 0; i < cnaArray.length; i++)
-	{
-		if(cnaArray[i] != null)
-			percents[cnaArray[i]] += increment; 
-
-	}
-
-	percents[amplified] 	= (amplifiedNo > 0) ? percents[amplified]:null;
-	percents[gained] 	= (gainedNo > 0) ? percents[gained]:null;
-	percents[hemiDeleted] 	= (hemiDeletedNo > 0) ? percents[hemiDeleted]:null;
-	percents[homoDeleted] 	= (homoDeletedNo > 0) ? percents[homoDeleted]:null;
+	percents[amplified] 	= (amplifiedNo > 0) ? (amplifiedNo/cnaArray.length):null;
+	percents[gained] 	= (gainedNo > 0) ? (gainedNo/cnaArray.length):null;
+	percents[hemiDeleted] 	= (hemiDeletedNo > 0) ? (hemiDeletedNo/cnaArray.length):null;
+	percents[homoDeleted] 	= (homoDeletedNo > 0) ? (homoDeletedNo/cnaArray.length):null;
 	
 	return percents;
 
@@ -426,13 +418,11 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray)
 {  
 	var up		= "UPREGULATED";
 	var down   	= "DOWNREGULATED";
-	
-	var upData = null;
-	var DownData = null;
 
 	var percents = {};
 	percents[up] = 0;
 	percents[down] = 0;
+
 	var upNo = 0;
 	var downNo = 0;
 	for(var i = 0; i < dataArray.length; i++)
@@ -446,17 +436,9 @@ NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray)
 			downNo++;
 		}
 	}
-	var increment = 1 / dataArray.length;
-	for(var i = 0; i < dataArray.length; i++)
-	{
-		if(dataArray[i] != null)
-		{
-			percents[dataArray[i]] += increment; 
-		}
-	}
 
-	percents[up] 	= (upNo > 0) ? percents[up]:null;
-	percents[down] 	= (downNo > 0) ? percents[down]:null;
+	percents[up] 	= (upNo > 0) ? (upNo / dataArray.length):null;
+	percents[down] 	= (downNo > 0) ? (downNo / dataArray.length):null;
 	
 	return percents;
 };
@@ -478,15 +460,7 @@ NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray)
 	
 	if(sampleNo > 0)
 	{
-		var increment = 1 / mutationArray.length;
-		for(var i = 0; i < mutationArray.length; i++)
-		{
-			if(mutationArray[i] != null)
-			{
-				percent += increment;  
-			}
-		}
-		return percent;
+		return (sampleNo / mutationArray.length);
 	}
 	else 
 		return null;
@@ -1077,7 +1051,7 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 			"format": "json",
 			"timeout": 5000};
 		
-		$(self.detailsTabSelector + " .genomic-profile-content").append(
+		$(self.detailsTabSelector + " .biogene-content").append(
 			'<img src="images/ajax-loader.gif">');
 		// the ajax request expires in 5 seconds, can be reduced
 		$.ajax({
@@ -1108,9 +1082,10 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 			}
 	
 			// generate view for genomic profile data
-			var genomicProfileView = new GenomicProfileView(
+			var genomicProfileViewSbgn = new GenomicProfileView(
 			    {el: self.detailsTabSelector + " .genomic-profile-content",
-				data: data});
+				data: data,
+				flag: "sbgn"});
 			// very important to return to avoid unpredictable delays
 			return;
 		    }
@@ -1159,7 +1134,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 		// processes have data source
 		else if (data.glyph_class == this.PROCESS)
 		{
-			text += '<div class="name"><label>Data Source: </label>' + data.DATA_SOURCE + "</div>";
+			text += '<div class="name"><label>Data Source: </label>' + this.idToDataSource[data.id] + "</div>";
 		}
 		// for macromolecules and nucleic acids we have to write the name and then send a query to get the information
 		else if (data.glyph_class == this.MACROMOLECULE 
@@ -1179,7 +1154,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 				"org": "human",
 				"format": "json"};
 			// put the wait sign
-			$(self.detailsTabSelector + " .genomic-profile-content").append(
+			$(self.detailsTabSelector + " .biogene-content").append(
 				'<img src="images/ajax-loader.gif">');
 			// send ajax request with async = true and timeout is 5"
 			$.ajax({
@@ -1213,9 +1188,10 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 				}
 	
 				// generate view for genomic profile data
-				var genomicProfileView = new GenomicProfileView(
+				var genomicProfileViewSbgn = new GenomicProfileView(
 				    {el: self.detailsTabSelector + " .genomic-profile-content",
-					data: data});
+					data: data,
+					flag: "sbgn"});
 				return;
 			    }
 			});
@@ -1294,7 +1270,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 					"format": "json",};
 				// the div to update the data with jSon
 				var divName = self.detailsTabSelector + " #gene" + label;
-				$(divName + " .genomic-profile-content").append(
+				$(divName + " .biogene-content").append(
 				'<img src="images/ajax-loader.gif">');
 				// for each request waits 3" to avoid unresponsiveness
 				$.ajax({
@@ -1325,9 +1301,10 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 					}
 	
 					// generate view for genomic profile data
-					var genomicProfileView = new GenomicProfileView(
+					var genomicProfileViewSbgn = new GenomicProfileView(
 					    {el: divName + " .genomic-profile-content",
-						data: data});
+					    data: data,
+					    flag: "sbgn"});
 				    }
 				});
 			}
@@ -1443,15 +1420,10 @@ NetworkSbgnVis.prototype._initSourceArray = function()
 
 	// dynamically collect all sources
 
-	var nodes = this._vis.nodes();
-
-	for (var i = 0; i < nodes.length; i++)
+	for (var key in this.idToDataSource)
 	{
-		if(nodes[i].data.glyph_class == this.PROCESS)
-		{
-			var source = nodes[i].data.DATA_SOURCE;
-		    	sourceArray[source] = true;
-		}
+		var source = this.idToDataSource[key];
+		sourceArray[source] = true;
 	}
 
 	// also set a flag for unknown (undefined) sources
@@ -1500,7 +1472,7 @@ NetworkSbgnVis.prototype.updateVisibility = function()
 			//source array has boolean value and refers to
 			//whether the source is checked or not
 			if (data.glyph_class == this.PROCESS
-					&& this._sourceVisibility[data.DATA_SOURCE])
+					&& this._sourceVisibility[this.idToDataSource[data.id]])
 			{
 				weights[data.id] = 1;
 			}
