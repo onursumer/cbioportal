@@ -1694,6 +1694,10 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
         _highlightNeighbors(self);
     };
 
+   	var highlightProcesses = function(){
+    	self._highlightProcesses();
+    }
+
     var removeHighlights = function() {
         _removeHighlights(self);
     };
@@ -1752,6 +1756,7 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     this._controlFunctions["save_as_png"] = saveAsPng;
     this._controlFunctions["layout_properties"] = openProperties;
     this._controlFunctions["highlight_neighbors"] = highlightNeighbors;
+    this._controlFunctions["highlight_processes"] = highlightProcesses;
     this._controlFunctions["remove_highlights"] = removeHighlights;
     this._controlFunctions["hide_non_selected"] = filterNonSelected;
     this._controlFunctions["show_node_legend"] = showNodeLegend;
@@ -2295,3 +2300,47 @@ NetworkSbgnVis.prototype.setCompartmentElements = function()
 	}
 };
 
+NetworkSbgnVis.prototype._highlightProcesses = function()
+{
+	var self = this;
+	var allNodes = this._vis.nodes();
+	var selectedNodes = this._vis.selected("nodes");
+	var nodesToHighlight = new Array();
+	var edgesToHighlight = new Array();
+	var weights = new Array();
+
+	for (var i=0; i < allNodes.length; i++)
+	{
+		var id = allNodes[i].data.id;
+		weights[id] = 0;
+	}
+
+	for (var i=0; i < selectedNodes.length; i++)
+	{
+		var id = selectedNodes[i].data.id;
+		weights[id] = 1;
+	}
+
+	weights = this.adjustWeights(weights);
+
+	for (var i=0; i < allNodes.length; i++)
+	{
+		if(weights[allNodes[i].data.id] == 1 )
+			nodesToHighlight.push(allNodes[i]);
+	}
+
+	var allEdges = self._vis.edges();
+
+	for (var i=0; i < allEdges.length; i++)
+	{
+		var source = allEdges[i].data.source;
+		var target = allEdges[i].data.target;
+		if(weights[source] == 1 &&
+			weights[target] == 1)
+		{
+			edgesToHighlight.push(allEdges[i]);
+		}
+	}
+
+	_applyHighlight(nodesToHighlight, edgesToHighlight, self);
+};

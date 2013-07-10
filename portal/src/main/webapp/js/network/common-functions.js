@@ -120,23 +120,8 @@ function _toggleProfileData(self)
     }
 }
 
-/**
- * Highlights the neighbors of the selected nodes.
- *
- * The content of this method is copied from GeneMANIA (genemania.org) sources.
- */
-function _highlightNeighbors(self)
+function _applyHighlight(neighbors, edges, self)
 {
-
-    var nodes = self._vis.selected("nodes");
-
-    if (nodes != null && nodes.length > 0)
-    {
-        var fn = self._vis.firstNeighbors(nodes, true);
-        var neighbors = fn.neighbors;
-        var edges = fn.edges;
-        edges = edges.concat(fn.mergedEdges);
-        neighbors = neighbors.concat(fn.rootNodes);
         var bypass = self._vis.visualStyleBypass() || {};
 
         if( ! bypass.nodes )
@@ -191,7 +176,25 @@ function _highlightNeighbors(self)
         });
 
         self._vis.visualStyleBypass(bypass);
+}
+/**
+ * Highlights the neighbors of the selected nodes.
+ *
+ * The content of this method is copied from GeneMANIA (genemania.org) sources.
+ */
+function _highlightNeighbors(self)
+{
+    var nodes = self._vis.selected("nodes");
 
+    if (nodes != null && nodes.length > 0)
+    {
+        var fn = self._vis.firstNeighbors(nodes, true);
+        var neighbors = fn.neighbors;
+        var edges = fn.edges;
+        edges = edges.concat(fn.mergedEdges);
+        neighbors = neighbors.concat(fn.rootNodes);
+
+        _applyHighlight(neighbors, edges, self);
     }
 }
 
