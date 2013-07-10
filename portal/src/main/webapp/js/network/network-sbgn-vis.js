@@ -1500,7 +1500,24 @@ NetworkSbgnVis.prototype.updateVisibility = function()
 	for(var i = 0; i < nodes.length; i++)
 	{
 		var id = nodes[i].data.id;
-		if(weights[id] == 1)
+		//not to hide the nodes that has no neighbors and
+		//not manually hidden.
+		var neighbors = this._vis.firstNeighbors([nodes[i]]).neighbors;
+		if(neighbors.length < 1 && this._manuallyFiltered.indexOf(id) == -1)
+		{
+			weights[id] = 1;
+		}
+
+		var isDisconnected = false;
+
+		if(this._removeDisconnected && nodes[i].data.parent == null && 
+			neighbors.length < 1 && !(nodes[i].data.glyph_class == this.COMPARTMENT ||
+					nodes[i].data.glyph_class == this.COMPLEX))
+		{
+			isDisconnected = true;
+		}
+
+		if(weights[id] == 1 && !isDisconnected)
 		{
 			showList.push(nodes[i]);
 		}
