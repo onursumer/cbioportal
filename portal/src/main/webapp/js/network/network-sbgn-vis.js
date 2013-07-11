@@ -1456,79 +1456,80 @@ NetworkSbgnVis.prototype.updateSource = function()
  */
 NetworkSbgnVis.prototype.updateVisibility = function()
 {
-	//get all nodes.
-	var nodes = this._vis.nodes();
-	var weights = new Array();
-	//set threshold as the current slider value (in range of 0-MAX).
-	var threshold = this.sliderVal;
-	for(var i = 0; i < nodes.length; i++)
-	{
-		var data = nodes[i].data;
-		//check if it should be shown according to alteration frequency
-		if(this._geneWeightMap[data.id] >= threshold)
-		{
-			// if so, check the source and set weight accordingly.
-			//notice, only processes have data sources.
-			//source array has boolean value and refers to
-			//whether the source is checked or not
-			if (data.glyph_class == this.PROCESS
-					&& this._sourceVisibility[this.idToDataSource[data.id]])
-			{
-				weights[data.id] = 1;
-			}
-			else
-			{
-				weights[data.id] = 0;
-			}
-		}
-		else
-		{
-			//if it is not to be shown by alteration, set the weight to be zero.
-			weights[data.id] = 0;
-		}
-	}
-	// set manually filtered nodes to zero
-	for (var i = 0; i < this._manuallyFiltered.length; i++)
-	{
-		var id =  this._manuallyFiltered[i];
-		weights[id] = 0;
-	}
-	// adjust weights
-	weights = this.adjustWeights(weights);
-	// find the nodes that should be shown
-	var showList = new Array();
-	for(var i = 0; i < nodes.length; i++)
-	{
-		var id = nodes[i].data.id;
-		//not to hide the nodes that has no neighbors and
-		//not manually hidden.
-		var neighbors = this._vis.firstNeighbors([nodes[i]]).neighbors;
-		if(neighbors.length < 1 && this._manuallyFiltered.indexOf(id) == -1)
-		{
-			weights[id] = 1;
-		}
+        //get all nodes.
+        var nodes = this._vis.nodes();
+        var weights = new Array();
+        //set threshold as the current slider value (in range of 0-MAX).
+        var threshold = this.sliderVal;
+        for(var i = 0; i < nodes.length; i++)
+        {
+                var data = nodes[i].data;
+                //check if it should be shown according to alteration frequency
+                if(this._geneWeightMap[data.id] >= threshold)
+                {
+                        // if so, check the source and set weight accordingly.
+                        //notice, only processes have data sources.
+                        //source array has boolean value and refers to
+                        //whether the source is checked or not
+                        if (data.glyph_class == this.PROCESS
+                                        && this._sourceVisibility[this.idToDataSource[data.id]])
+                        {
+                                weights[data.id] = 1;
+                        }
+                        else
+                        {
+                                weights[data.id] = 0;
+                        }
+                }
+                else
+                {
+                        //if it is not to be shown by alteration, set the weight to be zero.
+                        weights[data.id] = 0;
+                }
+        }
+        // set manually filtered nodes to zero
+        for (var i = 0; i < this._manuallyFiltered.length; i++)
+        {
+                var id =  this._manuallyFiltered[i];
+                weights[id] = 0;
+        }
+        // adjust weights
+        weights = this.adjustWeights(weights);
+        // find the nodes that should be shown
+        var showList = new Array();
+        for(var i = 0; i < nodes.length; i++)
+        {
+                var id = nodes[i].data.id;
+                //not to hide the nodes that has no neighbors and
+                //not manually hidden.
+                var neighbors = this._vis.firstNeighbors([nodes[i]]).neighbors;
+                if(neighbors.length < 1 && this._manuallyFiltered.indexOf(id) == -1 &&
+                	this._geneWeightMap[id] >= threshold)
+                {
+                        weights[id] = 1;
+                }
 
-		var isDisconnected = false;
+                var isDisconnected = false;
 
-		if(this._removeDisconnected && nodes[i].data.parent == null && 
-			neighbors.length < 1 && !(nodes[i].data.glyph_class == this.COMPARTMENT ||
-					nodes[i].data.glyph_class == this.COMPLEX))
-		{
-			isDisconnected = true;
-		}
+                if(this._removeDisconnected && nodes[i].data.parent == null && 
+                        neighbors.length < 1 && !(nodes[i].data.glyph_class == this.COMPARTMENT ||
+                                        nodes[i].data.glyph_class == this.COMPLEX))
+                {
+                        isDisconnected = true;
+                }
 
-		if(weights[id] == 1 && !isDisconnected)
-		{
-			showList.push(nodes[i]);
-		}
-	}
+                if(weights[id] == 1 && !isDisconnected)
+                {
+                        showList.push(nodes[i]);
+                }
+        }
 
-	this.visibleNodes = showList.slice(0);
-	// filter out every nodes except show list.
-	this._vis.filter("nodes", showList);
-	// apply changes
-	this._refreshGenesTab();
-	_visChanged(this);
+        this.visibleNodes = showList.slice(0);
+        // filter out every nodes except show list.
+        this._vis.filter("nodes", showList);
+        // apply changes
+        this._refreshGenesTab();
+        _visChanged(this);
 };
 
 
