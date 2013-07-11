@@ -875,25 +875,26 @@
 	margin: 0.4em;
 }
 
-.network_drug_legend img
-{
-	margin: 0.4em;
-}
-
-.network_edge_legend #edge_type_legend
+.network_interaction_legend #edge_type_legend
 {
 	/* centering the table */
 	margin-left: auto;
 	margin-right: auto;
 }
 
-.network_edge_legend img
+.network_interaction_legend img
 {
 	margin-top: 0.4em;
 	margin-bottom: 0.4em;
 }
 
-.network_edge_legend .color-bar
+.network_genomics_legend  img
+{
+	margin-top: 0.4em;
+	margin-bottom: 0.4em;
+}
+
+.network_genomics_legend .color-bar
 {
 	width: 95%;
 	margin: 0.2em 0.5em 0 1.0em;
@@ -902,17 +903,17 @@
 	clear: both;
 }
 
-.network_edge_legend .color-cell
+.network_genomics_legend .color-cell
 {
 	width: 100px;
 }
 
-.network_edge_legend .label-cell
+.network_genomics_legend .label-cell
 {
 	width: 165px;
 }
 
-.network_edge_legend .type-label
+.network_genomics_legend .type-label
 {
 	align: left;
 	white-space: nowrap;

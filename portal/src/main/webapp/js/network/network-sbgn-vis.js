@@ -71,7 +71,9 @@ function NetworkSbgnVis(divId)
 	
 	this.nodeLegendSelector = this._createNodeLegend(divId);
 	this.interactionLegendSelector = this._createInteractionLegend(divId);
+	this.genomicsLegendSelector = this._createGenomicDataLegend(divId);
 	this.settingsDialogSelector = this._createSettingsDialog(divId);
+
 
 	// name of the graph layout
 	this._graphLayout = {name: "CompoundSpringEmbedder"};
@@ -1732,6 +1734,10 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
         self._showInteractionLegend();
     };
 
+    var showGenomicsLegend = function() {
+        self._showGenomicsLegend();
+    };
+
     var saveSettings = function() {
         _saveSettings(self);
     };
@@ -1779,6 +1785,8 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     this._controlFunctions["hide_non_selected"] = filterNonSelected;
     this._controlFunctions["show_node_legend"] = showNodeLegend;
     this._controlFunctions["show_interaction_legend"] = showInteractionLegend;
+    this._controlFunctions["show_genomics_legend"] = showGenomicsLegend;
+
 
 
     // add menu listeners
@@ -1812,6 +1820,36 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
                      "nodes", 
                      handleNodeSelect);
 
+};
+
+/**
+ * Displays the gene legend in a separate panel.
+ */
+NetworkSbgnVis.prototype._showNodeLegend = function()
+{
+    // open legend panel
+    $(this.nodeLegendSelector).dialog("open").height("auto");
+};
+
+/**
+ * Displays the drug legend in a separate panel.
+ */
+NetworkSbgnVis.prototype._showGenomicsLegend = function()
+{
+    // open legend panel
+    $(this.genomicsLegendSelector).dialog("open").height("auto");
+};
+
+/**
+ * Displays the edge legend in a separate panel.
+ */
+NetworkSbgnVis.prototype._showInteractionLegend = function()
+{
+    $(this.interactionLegendSelector).dialog("open");
+};
+
+NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
+{
 };
 
 /**
@@ -1954,35 +1992,51 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
 
 NetworkSbgnVis.prototype._createNodeLegend = function(divId)
 {
+	var id = "node_legend_" + divId;
+
+    var html =
+        '<div id="' + id + '" class="network_node_legend hidden-network-ui" title="Node Legend">' +
+            '<div id="node_legend_content" class="content ui-widget-content">' +
+                '<img src="images/network/sbgn-node-legend.png"/>' +
+            '</div>' +
+        '</div>';
+
+    $("#" + divId).append(html);
+
+    return "#" + id;
 };
 
 
 NetworkSbgnVis.prototype._createInteractionLegend = function(divId)
 {
+	var id = "interaction_legend_" + divId;
+
+    var html =
+        '<div id="' + id + '" class="network_interaction_legend hidden-network-ui" title="Edge Legend">' +
+            '<div id="interaction_legend_content" class="content ui-widget-content">' +
+                '<img src="images/network/sbgn-interaction-legend.png"/>' +
+            '</div>' +
+        '</div>';
+
+    $("#" + divId).append(html);
+
+    return "#" + id;
 };
 
-NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
+NetworkSbgnVis.prototype._createGenomicDataLegend = function(divId)
 {
-};
+	var id = "genomic_data_legend_" + divId;
 
-/**
- * Displays the node legend in a separate panel.
- */
-NetworkSbgnVis.prototype._showNodeLegend = function()
-{
-    // open legend panel
-    $(this.nodeLegendSelector).dialog("open").height("auto");
-    alert("fill _createNodeLegend function");
-};
+    var html =
+        '<div id="' + id + '" class="network_genomics_legend hidden-network-ui" title="Genomics Data Legend">' +
+            '<div id="genomic_data_legend_content" class="content ui-widget-content">' +
+                '<img src="images/network/sbgn-genomics-legend.png"/>' +
+            '</div>' +
+        '</div>';
 
-/**
- * Displays the interaction legend in a separate panel.
- */
-NetworkSbgnVis.prototype._showInteractionLegend = function()
-{
-    // open legend panel
-    $(this.interactionLegendSelector).dialog("open").height("auto");
-        alert("fill _createInteractionLegend function");
+    $("#" + divId).append(html);
+
+    return "#" + id;
 };
 
 /**
@@ -2005,6 +2059,7 @@ NetworkSbgnVis.prototype.hideDialogs = function (evt, ui)
     $(this.settingsDialogSelector).dialog("close");
     $(this.nodeLegendSelector).dialog("close");
     $(this.interactionLegendSelector).dialog("close");
+    $(this.genomicsLegendSelector).dialog("close");
 };
 
 NetworkSbgnVis.prototype.handleMenuEvent = function(command)
@@ -2042,6 +2097,7 @@ NetworkSbgnVis.prototype._setVisibility = function(visible)
             $(this.networkTabsSelector).removeClass("hidden-network-ui");
             $(this.nodeLegendSelector).removeClass("hidden-network-ui");
             $(this.interactionLegendSelector).removeClass("hidden-network-ui");
+            $(this.genomicsLegendSelector).removeClass("hidden-network-ui");
             $(this.settingsDialogSelector).removeClass("hidden-network-ui");
         }
     }
@@ -2054,6 +2110,7 @@ NetworkSbgnVis.prototype._setVisibility = function(visible)
             $(this.networkTabsSelector).addClass("hidden-network-ui");
             $(this.nodeLegendSelector).addClass("hidden-network-ui");
             $(this.interactionLegendSelector).addClass("hidden-network-ui");
+            $(this.genomicsLegendSelector).addClass("hidden-network-ui");
             $(this.settingsDialogSelector).addClass("hidden-network-ui");
         }
     }
@@ -2079,7 +2136,12 @@ NetworkSbgnVis.prototype._initDialogs = function()
     // adjust edge legend
     $(this.interactionLegendSelector).dialog({autoOpen: false,
                                  resizable: false,
-                                 width: 280,
+                                 width: 500,
+                                 height: 210});
+    // adjust genomics legend
+    $(this.genomicsLegendSelector).dialog({autoOpen: false,
+                                 resizable: false,
+                                 width: 500,
                                  height: 152});
 };
 
@@ -2119,7 +2181,9 @@ NetworkSbgnVis.prototype._initMainMenu = function()
     $(this.mainMenuSelector + " #auto_layout").addClass(this.LAST_CLASS);
 
     $(this.mainMenuSelector + " #show_node_legend").addClass(this.FIRST_CLASS);
-    $(this.mainMenuSelector + " #show_interaction_legend").addClass(this.LAST_CLASS);
+    //$(this.mainMenuSelector + " #show_interaction_legend").addClass(this.MENU_CLASS);
+	$(this.mainMenuSelector + " #show_genomics_legend").addClass(this.LAST_CLASS);
+
 
     // init check icons for checkable menu items
     this._updateMenuCheckIcons();

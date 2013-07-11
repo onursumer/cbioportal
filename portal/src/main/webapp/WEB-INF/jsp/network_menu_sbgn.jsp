@@ -112,7 +112,12 @@ if (includeNetLegend==null) {
 	    		</li>
 	    		<li>
 	    			<a id="show_interaction_legend">
-	    				Interaction Legend
+	    				Edge Legend
+	    			</a>
+	    		</li>
+	    		<li>
+	    			<a id="show_genomics_legend">
+	    				Genomic Data Legend
 	    			</a>
 	    		</li>
 	    	</ul>
