@@ -203,7 +203,7 @@ function send2cytoscapeweb(graphml, cwDivId, networkDivId)
     vis.draw(draw_options);
 }
 
-function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annotationData)
+function send2cytoscapewebSbgn(data, cwDivId, networkDivId, genomicData)
 {
     var paddingOffset = 5;
     var visualStyle =
@@ -219,14 +219,14 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 		        color: "#FFFFFF",
 		        labelVerticalAnchor: "middle",
 		        labelHorizontalAnchor: "center",
-		        //labelYOffset: {customMapper: {functionName: "labelYOffsetFunction"}},
+		        labelYOffset: { passthroughMapper: { attrName: "labelOffset" } },
 		        compoundLabelVerticalAnchor: "top",
 		        compoundLabelHorizontalAnchor: "center",
 		        compoundLabelYOffset: 0.0,
 		        compoundPaddingLeft: paddingOffset,
-			compoundPaddingRight: paddingOffset,
-			compoundPaddingTop: paddingOffset,
-			compoundPaddingBottom: paddingOffset,
+				compoundPaddingRight: paddingOffset,
+				compoundPaddingTop: paddingOffset,
+				compoundPaddingBottom: paddingOffset,
 		        labelFontSize:{customMapper: {functionName: "labelSizeFunction"}}
 		},
 
@@ -274,22 +274,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
     // Visualization object refactored for SBGN tab. Cytoscape.js, javascript API is changed 
     // to support latest version of cytoscape web and not to cause errors on simple view tab
     // now we create visualization objects as follows.
-    var vis = new org.cytoscapeweb.VisualizationSBGN(cwDivId, options);
-
-	vis["labelYOffsetFunction"] = function (data)
-	{
-		var retValue = 0;
-		if(data["has_state"] == true && data["has_info"] == false)
-		{
-			retValue = -2.0;
-		}
-		else if(data["has_state"] == false && data["has_info"] == true)
-		{
-			retValue = 2.0;
-		}
-
-		return retValue;        
-	}    
+    var vis = new org.cytoscapeweb.VisualizationSBGN(cwDivId, options);  
 		   
 	vis["labelSizeFunction"] = function (data)
 	{
@@ -353,7 +338,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
         var netVis = new NetworkSbgnVis(networkDivId);
 
         // init UI of the network tab
-        netVis.initNetworkUI(vis, genomicData, annotationData);
+        netVis.initNetworkUI(vis, genomicData, data.attributes);
 
 	// set the style programmatically
 	document.getElementById("color").onclick = function(){
@@ -363,7 +348,7 @@ function send2cytoscapewebSbgn(sbgnml, cwDivId, networkDivId, genomicData, annot
 
     var draw_options = {
         // your data goes here
-        network: sbgnml,
+        network: data.sbgn,
         //edgeLabelsVisible: false,
         //edgesMerged: true,
         layout: "Preset",
