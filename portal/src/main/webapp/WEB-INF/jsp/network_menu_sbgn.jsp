@@ -112,7 +112,7 @@ if (includeNetLegend==null) {
 	    		</li>
 	    		<li>
 	    			<a id="show_interaction_legend">
-	    				Edge Legend
+	    				Interaction Legend
 	    			</a>
 	    		</li>
 	    		<li>

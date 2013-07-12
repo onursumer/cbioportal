@@ -139,14 +139,23 @@ function _applyHighlight(neighbors, edges, self)
             if( !bypass.nodes[n.data.id] ){
                 bypass.nodes[n.data.id] = {};
             }
-            bypass.nodes[n.data.id].opacity = 0.25;
+            if(n.data.glyph_class == "compartment" ||
+                n.data.glyph_class == "complex")
+                bypass.nodes[n.data.id].compoundOpacity = 0.25;
+            else
+                bypass.nodes[n.data.id].opacity = 0.25;
+
         });
 
         $.each(neighbors, function(i, n) {
             if( !bypass.nodes[n.data.id] ){
                 bypass.nodes[n.data.id] = {};
             }
-            bypass.nodes[n.data.id].opacity = 1;
+            if(n.data.glyph_class == "compartment" ||
+                n.data.glyph_class == "complex")
+                bypass.nodes[n.data.id].compoundOpacity = 1;
+            else
+                bypass.nodes[n.data.id].opacity = 1;
         });
 
         var opacity;
@@ -214,6 +223,7 @@ function _removeHighlights(self)
     {
         var styles = nodes[id];
         delete styles["opacity"];
+        delete styles["compoundOpacity"];
         delete styles["mergeOpacity"];
     }
 

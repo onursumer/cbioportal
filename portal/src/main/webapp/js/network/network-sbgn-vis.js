@@ -2012,7 +2012,7 @@ NetworkSbgnVis.prototype._createInteractionLegend = function(divId)
 	var id = "interaction_legend_" + divId;
 
     var html =
-        '<div id="' + id + '" class="network_interaction_legend hidden-network-ui" title="Edge Legend">' +
+        '<div id="' + id + '" class="network_interaction_legend hidden-network-ui" title="Interaction Legend">' +
             '<div id="interaction_legend_content" class="content ui-widget-content">' +
                 '<img src="images/network/sbgn-interaction-legend.png"/>' +
             '</div>' +
