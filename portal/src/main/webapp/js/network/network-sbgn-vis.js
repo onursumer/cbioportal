@@ -1850,6 +1850,145 @@ NetworkSbgnVis.prototype._showInteractionLegend = function()
 
 NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
 {
+	var id = "settings_dialog_" + divId;
+
+    var html =
+        '<div id="' + id + '" class="settings_dialog hidden-network-ui" title="Layout Properties">' +
+            '<div id="fd_layout_settings" class="content ui-widget-content">' +
+                '<table>' +
+                    
+                    '<tr title="The gravitational constant. Negative values produce a repulsive force.">' +
+                        '<td align="right">' +
+                            '<label>Gravitation</label>' +
+                        '</td>' +
+                        '<td>' +
+                            '<input type="text" id="gravitation" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="All nodes are assumed to be pulled slightly towards the center of the network by a central gravitational force (gravitational constant) during layout.">' +
+                        '<td align="right">' +
+                            '<label>Central gravitation</label>' +
+                        '</td>' +
+                        '<td>' +
+                            '<input type="text" id="centralGravitation" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="The radius of the region in the center of the drawing, in which central gravitation is not exerted.">' +
+                        '<td align="right">' +
+                            '<label>Central gravity distance</label>' +
+                        '</td>' +
+                        '<td>' +
+                            '<input type="text" id="centralGrDistance" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="The central gravitational constant for compound nodes.">' +
+                        '<td align="right">' +
+                            '<label>Compound central gravitation</label>' +
+                        '</td>' +
+                        '<td>' +
+                            '<input type="text" id="compoundCentGra" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="The central gravitational constant for compound nodes.">' +
+                        '<td align="right">' +
+                            '<label>Compound central gravity distance</label>' +
+                        '</td>' +
+                        '<td>' +
+                            '<input type="text" id="centGraDist" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="The default spring tension for edges.">' +
+                        '<td align="right">' +
+                            '<label>Edge tension</label>' +
+                        '</td>' +
+                        '<td>' +
+                            '<input type="text" id="edgeTension" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="The default spring rest length for edges.">' +
+                        '<td align="right">' +
+                            '<label>Edge rest length</label>' +
+                        '</td>' +
+                        '<td>' +
+                            '<input type="text" id="restLength" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="Whether or not smart calculation of ideal rest length should be performed for inter-graph edges.">' +
+                        '<td align="right">' +
+                            '<label>Smart rest length</label>' +
+                        '</td>' +
+                        '<td>' +
+                            '<input type="text" id="smartRestLength" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="A better quality layout requires more iterations, taking longer.">' +
+                        '<td align="right">' +
+                            '<label>Layout quality</label>' +
+                        '</td>' +
+                        '<td>' +
+                       		'<select id="layoutQuality" size="1">' +
+                       			'<option value="default">default</option>' +
+                       			'<option value="default">draft</option>' +
+                       			'<option value="default">proof</option>' +
+                       		+ '</select>' +
+                        '</td>' +
+                    '</tr>' +
+                    
+                    '<tr title="If true, layout is applied incrementally by taking current positions of nodes into account.">' +
+                        '<td align="right">' +
+                            '<label>Incremental</label>' +
+                        '</td>' +
+                        '<td align="left">' +
+                            '<input type="checkbox" id="incremental" value="true" checked="checked"/>' +
+                        '</td>' +
+                    '</tr>' +
+
+                    '<tr title="If true, leaf (non-compound or simple) node dimensions are assumed to be uniform, resulting in faster layout.">' +
+                        '<td align="right">' +
+                            '<label>Uniform leaf node size</label>' +
+                        '</td>' +
+                        '<td align="left">' +
+                            '<input type="checkbox" id="uniformLeaf" value="true" checked="checked"/>' +
+                        '</td>' +
+                    '</tr>' +
+
+                    '<tr title="If true, gravitational repulsion forces are calculated only when node pairs are in a certain range, resulting in faster layout at the relatively minimum cost of layout quality.">' +
+                        '<td align="right">' +
+                            '<label>Smart distance</label>' +
+                        '</td>' +
+                        '<td align="left">' +
+                            '<input type="checkbox" id="smartDistance" value="true" checked="checked"/>' +
+                        '</td>' +
+                    '</tr>' +
+
+                    '<tr title="If true, multi-level scaling algorithm is applied both to better capture the overall structure of the network and to save time on large networks.">' +
+                        '<td align="right">' +
+                            '<label>Multi level scaling</label>' +
+                        '</td>' +
+                        '<td align="left">' +
+                            '<input type="checkbox" id="multiLevelScaling" value="true" checked="checked"/>' +
+                        '</td>' +
+                    '</tr>' +
+                
+                '</table>' +
+            '</div>' +
+            '<div class="footer">' +
+                '<input type="button" id="save_layout_settings" value="Save"/>' +
+                '<input type="button" id="default_layout_settings" value="Default"/>' +
+            '</div>' +
+        '</div>';
+
+    $("#" + divId).append(html);
+
+    return "#" + id;
 };
 
 /**
