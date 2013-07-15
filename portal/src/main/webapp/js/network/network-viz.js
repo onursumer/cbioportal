@@ -203,8 +203,24 @@ function send2cytoscapeweb(graphml, cwDivId, networkDivId)
     vis.draw(draw_options);
 }
 
-function send2cytoscapewebSbgn(data, cwDivId, networkDivId, genomicData)
+function send2cytoscapewebSbgn(data, cwDivId, networkDivId, geneDataQuery)
 {
+	var seedNodes = geneDataQuery["genes"];
+	var sbgnGenes = "";
+	var sbgnGenomicData = {};
+	for (var i = 0; i < data.genes.length; i++)
+	{
+		sbgnGenes += data.genes[i] + " ";
+	}
+	sbgnGenes = $.trim(sbgnGenes);
+	// Send genomic data query again
+	geneDataQuery["genes"] = sbgnGenes;
+	
+	$.post(DataManagerFactory.getGeneDataJsonUrl(), geneDataQuery, function(genData) {
+		sbgnGenomicData = genData;
+		});
+
+
     var paddingOffset = 5;
     var visualStyle =
     {
@@ -336,9 +352,9 @@ function send2cytoscapewebSbgn(data, cwDivId, networkDivId, genomicData)
 
     vis.ready(function() {
         var netVis = new NetworkSbgnVis(networkDivId);
-
+		  
         // init UI of the network tab
-        netVis.initNetworkUI(vis, genomicData, data.attributes);
+        netVis.initNetworkUI(vis, sbgnGenomicData, data.attributes, seedNodes);
 
 	// set the style programmatically
 	document.getElementById("color").onclick = function(){
@@ -358,3 +374,4 @@ function send2cytoscapewebSbgn(data, cwDivId, networkDivId, genomicData)
 
     vis.draw(draw_options);
 }
+

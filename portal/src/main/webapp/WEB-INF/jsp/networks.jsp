@@ -50,7 +50,6 @@
 <script type="text/javascript" src="js/d3.v2.min.js"></script>
 
 <script type="text/javascript">
-
 			var genomicData = {};
 			// Send genomic data query again
 		    var geneDataQuery = {
@@ -133,7 +132,7 @@
                            // All genes coming from SBGN view are in graphData.sbgn
                            // All attributes can be accessed via: graphData.attributes[rdfid]
                            // Corresponding BioPAX IDs can be accessed via graphData.sbgn2BPMap[sbgnID]
-		                   send2cytoscapewebSbgn(graphData, "cytoscapeweb_sbgn", "network_sbgn", genomicData);
+		                   send2cytoscapewebSbgn(graphData, "cytoscapeweb_sbgn", "network_sbgn", geneDataQuery);
 		                   // TODO these methods do not work with sbgnml
 		                   //showXDebug(sbgnml);
 		                   //showNetworkMessage(sbgnml, "#network_sbgn #netmsg");

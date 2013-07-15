@@ -121,8 +121,9 @@ function NetworkSbgnVis(divId)
  *
  * @param vis	CytoscapeWeb.Visualization instance associated with this UI
  */
-NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationData)
+NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationData, seedNodes)
 {
+
 	var self = this;
 	this._vis = vis;
 
@@ -130,7 +131,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	// delete this later because it os not used anymore
 	this._alreadyFiltered = new Array();
 	// parse and add genomic data to cytoscape nodes
-	this.parseGenomicData(genomicData,annotationData);
+	this.parseGenomicData(genomicData,annotationData, seedNodes);
 	//for once only, get all the process sources and updates _sourceVisibility array
 	this._sourceVisibility = this._initSourceArray(); 
 	var weights = this.initializeWeights();
@@ -272,7 +273,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 //TODO override necessary methods (filters, inspectors, initializers, etc.) to have a proper UI.
 
 //Genomic data parser method
-NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData)
+NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData, seedNodes)
 {
 	var hugoToGene 		= "hugo_to_gene_index";
 	var geneData   		= "gene_data";
@@ -285,6 +286,20 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 	var attributes		= "attributes";
 
 	var nodes = this._vis.nodes();
+	var targetNodes = new Array();
+	var seedNodeList = seedNodes.split(" ");
+	for(var i = 0; i < seedNodeList.length; i++)
+	{
+		var sameNodes = findNodes(seedNodeList[i], nodes);
+		for(var j = 0; j < sameNodes.length; j++)
+		{
+			targetNodes.push(sameNodes[j]);
+		}
+	}
+	if (targetNodes.length > 0)
+	{
+		this._vis.updateData("nodes",targetNodes, {IN_QUERY: true});
+	}
 	// iterate for every hugo gene symbol in incoming data
 	for(var hugoSymbol in genomicData[hugoToGene])
 	{
@@ -299,7 +314,7 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 		var percentAltered 	= _geneData[percent_altered];
 		
 		// Corresponding cytoscape web nodes
-		var targetNodes = findNode(hugoSymbol, nodes);
+		targetNodes = findNodes(hugoSymbol, nodes);
 		var cnaData = this.calcCNAPercents(cnaArray);
 		var mutationPercent = this.calcMutationPercent(mutationsArray);
 		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray);
@@ -317,22 +332,28 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 			{
 				alterationPercent++;
 			}
-		}	
+		}
+		
 		alterationPercent = alterationPercent / cnaArray.length;
-		var genomicsData = 
+		if (alterationPercent > 0)
 		{
-			IN_QUERY: true, 
-			PERCENT_ALTERED: alterationPercent, 
-			PERCENT_MUTATED: mutationPercent, 
-			PERCENT_CNA_AMPLIFIED: cnaData["AMPLIFIED"],
-			PERCENT_CNA_HEMIZYGOUSLY_DELETED: cnaData["HEMIZYGOUSLY_DELETED"],
-			PERCENT_CNA_HOMOZYGOUSLY_DELETED: cnaData["HOMOZYGOUSLY_DELETED"],
-			PERCENT_MRNA_WAY_UP: mrnaData["UPREGULATED"],
-			PERCENT_MRNA_WAY_DOWN: mrnaData["DOWNREGULATED"],
-			PERCENT_RPPA_WAY_UP: rppaData["UPREGULATED"],
-			PERCENT_RPPA_WAY_DOWN: rppaData["DOWNREGULATED"]
-		};
-		this._vis.updateData("nodes",targetNodes, genomicsData);
+			var genomicsData = 
+			{
+				PERCENT_ALTERED: alterationPercent, 
+				PERCENT_MUTATED: mutationPercent, 
+				PERCENT_CNA_AMPLIFIED: cnaData["AMPLIFIED"],
+				PERCENT_CNA_HEMIZYGOUSLY_DELETED: cnaData["HEMIZYGOUSLY_DELETED"],
+				PERCENT_CNA_HOMOZYGOUSLY_DELETED: cnaData["HOMOZYGOUSLY_DELETED"],
+				PERCENT_MRNA_WAY_UP: mrnaData["UPREGULATED"],
+				PERCENT_MRNA_WAY_DOWN: mrnaData["DOWNREGULATED"],
+				PERCENT_RPPA_WAY_UP: rppaData["UPREGULATED"],
+				PERCENT_RPPA_WAY_DOWN: rppaData["DOWNREGULATED"]
+			};
+			if (targetNodes.length > 0)
+			{
+				this._vis.updateData("nodes",targetNodes, genomicsData);
+			}
+		}
 	}
 
 	// Lastly parse annotation data and add "dataSource" fields
@@ -361,7 +382,7 @@ NetworkSbgnVis.prototype.parseDataSource = function(annotationData)
  * TODO what happens if the hugoSymbol is empty?
  * Is there any unknown gene label?
 **/
-function findNode(label, nodes)
+function findNodes(label, nodes)
 {
 	var sameNodes = new Array();
 	for ( var i = 0; i < nodes.length; i++) 
@@ -523,8 +544,16 @@ NetworkSbgnVis.prototype.multiSelectNodes = function(event)
 		}
 	}
 	// also update Re-submit button
-	$(this.genesTabSelector + " #re-submit_query").button("enable");
-
+	if (selected.length > 0)
+	{
+		// enable the button
+		$(this.genesTabSelector + " #re-submit_query").button("enable");
+	}
+	else
+	{
+		// disable the button
+		$(this.genesTabSelector + " #re-submit_query").button("disable");
+	}
 };
 
 /*
@@ -849,7 +878,7 @@ NetworkSbgnVis.prototype.updateGenesTab = function(evt)
 		}
 	}
 	// also update Re-submit button
-	if (this._selectFromTab)
+	if (selected.length > 0)
 	{
 		// enable the button
 		$(this.genesTabSelector + " #re-submit_query").button("enable");
@@ -2279,7 +2308,7 @@ NetworkSbgnVis.prototype._initDialogs = function()
     // adjust edge legend
     $(this.interactionLegendSelector).dialog({autoOpen: false,
                                  resizable: false,
-                                 width: 430,
+                                 width: 500,
                                  height: 210});
     // adjust genomics legend
     $(this.genomicsLegendSelector).dialog({autoOpen: false,
