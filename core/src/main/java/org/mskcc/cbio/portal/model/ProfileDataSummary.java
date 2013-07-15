@@ -252,7 +252,37 @@ public class ProfileDataSummary {
         }
         return false;
     }
-    
+
+	/**
+	 * Determines if the RPPA way up for gene X in case Y.
+	 *
+	 * @param gene   gene symbol.
+	 * @param caseId case Id.
+	 * @return true or false.
+	 */
+	public boolean isRPPAWayUp(String gene, String caseId) {
+		ValueParser parser = getValueParser(gene, caseId);
+		if( null != parser ){
+			return parser.isRPPAWayUp();
+		}
+		return false;
+	}
+
+	/**
+	 * Determines if the RPPA way down for gene X in case Y.
+	 *
+	 * @param gene   gene symbol.
+	 * @param caseId case Id.
+	 * @return true or false.
+	 */
+	public boolean isRPPAWayDown(String gene, String caseId) {
+		ValueParser parser = getValueParser(gene, caseId);
+		if( null != parser ){
+			return parser.isRPPAWayDown();
+		}
+		return false;
+	}
+
     /**
      * Gene percentage of cases where gene X is at a certain CNA level.
      *
