@@ -82,7 +82,7 @@ function _toggleAutoLayout(self)
 
     // update check icon of the corresponding menu item
 
-    var item = $(self.settingsDialogSelector + " #auto_layout");
+    var item = $(self.mainMenuSelector + " #auto_layout");
 
     if (self._autoLayout)
     {
