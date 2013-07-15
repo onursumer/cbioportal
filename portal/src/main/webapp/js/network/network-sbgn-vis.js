@@ -304,9 +304,21 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 		var mutationPercent = this.calcMutationPercent(mutationsArray);
 		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray);
 		var rppaData = this.calcRPPAorMRNAPercent(rppaArray);
-
+		var alterationPercent = 0;
 		// Calculate alteration percent and add them to the corresponding nodes.
-		var alterationPercent = parseInt(percentAltered.split('%'),10)/100;		
+		// TODO this part will be deleted after the new data is given
+		// we do not use the percent altered given by the server because it has less percision
+		for (var i = 0; i < cnaArray.length; i++)
+		{
+			if(cnaArray[i] != null || 
+				mutationsArray[i] != null || 
+				mrnaArray[i] != null || 
+				rppaArray[i] != null)
+			{
+				alterationPercent++;
+			}
+		}	
+		alterationPercent = alterationPercent / cnaArray.length;
 		var genomicsData = 
 		{
 			IN_QUERY: true, 
