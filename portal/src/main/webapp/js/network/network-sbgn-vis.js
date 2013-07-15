@@ -304,9 +304,21 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 		var mutationPercent = this.calcMutationPercent(mutationsArray);
 		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray);
 		var rppaData = this.calcRPPAorMRNAPercent(rppaArray);
-
+		var alterationPercent = 0;
 		// Calculate alteration percent and add them to the corresponding nodes.
-		var alterationPercent = parseInt(percentAltered.split('%'),10)/100;		
+		// TODO this part will be deleted after the new data is given
+		// we do not use the percent altered given by the server because it has less percision
+		for (var i = 0; i < cnaArray.length; i++)
+		{
+			if(cnaArray[i] != null || 
+				mutationsArray[i] != null || 
+				mrnaArray[i] != null || 
+				rppaArray[i] != null)
+			{
+				alterationPercent++;
+			}
+		}	
+		alterationPercent = alterationPercent / cnaArray.length;
 		var genomicsData = 
 		{
 			IN_QUERY: true, 
@@ -510,7 +522,7 @@ NetworkSbgnVis.prototype.multiSelectNodes = function(event)
 		    _setComponentVis($(this.geneListAreaSelector + " select"), true);
 		}
 	}
-
+	// also update Re-submit button
 	$(this.genesTabSelector + " #re-submit_query").button("enable");
 
 };
@@ -2177,7 +2189,7 @@ NetworkSbgnVis.prototype._openProperties = function()
 {
     _updatePropsUI(this);
     $(this.settingsDialogSelector).dialog("open").height("auto");
-    //alert("fill _createSettingsDialog function");
+    alert("fill _createSettingsDialog function");
 
 };
 
@@ -2207,34 +2219,8 @@ NetworkSbgnVis.prototype.handleMenuEvent = function(command)
 
 NetworkSbgnVis.prototype.reRunQuery = function()
 {
-    var nodeIds = new Array();
-    var currentGenes = "";
-
-    $(this.geneListAreaSelector + " select option").each(
-        function(index)
-        {
-            if ($(this).is(":selected"))
-            {
-                var nodeId = $(this).val();
-                nodeIds.push(nodeId);
-            }
-        });
-
-    for (var i = 0 ; i < nodeIds.length ;i++)
-    {
-        currentGenes += nodeIds[i] + " ";
-    }
-
-    if (currentGenes.length > 0)
-    {
-        // update the list of seed genes for the query
-        $("#main_form #gene_list").val(currentGenes);
-
-        // re-run query by performing click action on the submit button
-        $("#main_form #main_submit").click();
-    }
-
-
+    // TODO get the list of currently interested genes
+        alert("fill reRunQuery function");
 
 };
 
@@ -2282,8 +2268,7 @@ NetworkSbgnVis.prototype._initDialogs = function()
     // adjust settings panel
     $(this.settingsDialogSelector).dialog({autoOpen: false,
                                      resizable: false,
-                                     width: 500,
-                                 	 height: 500});
+                                     width: 333});
 
     // adjust node legend
     $(this.nodeLegendSelector).dialog({autoOpen: false,
@@ -2294,7 +2279,7 @@ NetworkSbgnVis.prototype._initDialogs = function()
     // adjust edge legend
     $(this.interactionLegendSelector).dialog({autoOpen: false,
                                  resizable: false,
-                                 width: 400,
+                                 width: 430,
                                  height: 210});
     // adjust genomics legend
     $(this.genomicsLegendSelector).dialog({autoOpen: false,
