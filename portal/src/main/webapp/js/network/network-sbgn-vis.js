@@ -544,16 +544,8 @@ NetworkSbgnVis.prototype.multiSelectNodes = function(event)
 		}
 	}
 	// also update Re-submit button
-	if (selected.length > 0)
-	{
-		// enable the button
-		$(this.genesTabSelector + " #re-submit_query").button("enable");
-	}
-	else
-	{
-		// disable the button
-		$(this.genesTabSelector + " #re-submit_query").button("disable");
-	}
+
+	$(this.genesTabSelector + " #re-submit_query").button("enable");
 };
 
 /*
@@ -878,7 +870,7 @@ NetworkSbgnVis.prototype.updateGenesTab = function(evt)
 		}
 	}
 	// also update Re-submit button
-	if (selected.length > 0)
+	if (this._selectFromTab)
 	{
 		// enable the button
 		$(this.genesTabSelector + " #re-submit_query").button("enable");
@@ -2241,7 +2233,32 @@ NetworkSbgnVis.prototype.handleMenuEvent = function(command)
 
 NetworkSbgnVis.prototype.reRunQuery = function()
 {
-    // TODO get the list of currently interested genes
+    var nodeIds = new Array();
+    var currentGenes = "";
+
+    $(this.geneListAreaSelector + " select option").each(
+        function(index)
+        {
+            if ($(this).is(":selected"))
+            {
+                var nodeId = $(this).val();
+                nodeIds.push(nodeId);
+            }
+        });
+
+    for (var i = 0 ; i < nodeIds.length ;i++)
+    {
+        currentGenes += nodeIds[i] + " ";
+    }
+
+    if (currentGenes.length > 0)
+    {
+        // update the list of seed genes for the query
+        $("#main_form #gene_list").val(currentGenes);
+
+        // re-run query by performing click action on the submit button
+        $("#main_form #main_submit").click();
+    }
 };
 
 /**
