@@ -1044,7 +1044,8 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 	$(self.detailsTabSelector + " .error").hide();
 	var glyph0 = selected[0].data.glyph_class;
 	// if there is more than one node selected and the first is a macromolecule or nucleic acide
-	if (selected.length > 1 && 
+
+	if (selected.length >= 1 && 
 		(glyph0 == this.MACROMOLECULE || glyph0 == this.NUCLEIC_ACID))
 	{
 		var allMacro = 1;
@@ -1057,6 +1058,7 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 				break;
 			}
 		}
+
 		// if so, retrieve information for the first one
 		if(allMacro == 1)
 		{
@@ -1120,12 +1122,11 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 			var genomicProfileViewSbgn = new GenomicProfileView(
 			    {el: self.detailsTabSelector + " .genomic-profile-content",
 				data: data,
-				flag: "sbgn"});
-			// very important to return to avoid unpredictable delays
-			return;
+				flag: "sbgn"});			
 		    }
 		});	
-
+		// very important to return to avoid unpredictable delays
+		return;
 	}
 	else
 	{
@@ -1353,13 +1354,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 	}
 	else if (selected.length > 1)
 	{
-		// no nodes were selected
-		$(self.detailsTabSelector + " div").empty();
-		$(self.detailsTabSelector + " .error").append(
-		    "Currently more than one node is selected." +
-		    "Please, select one node to see details or double click on a gene.");
-		    $(self.detailsTabSelector + " .error").show();
-		return;
+		this.multiUpdateDetailsTab(evt);
 	}
 	else
 	{
@@ -2218,8 +2213,6 @@ NetworkSbgnVis.prototype._openProperties = function()
 {
     _updatePropsUI(this);
     $(this.settingsDialogSelector).dialog("open").height("auto");
-    alert("fill _createSettingsDialog function");
-
 };
 
 /**
@@ -2249,8 +2242,6 @@ NetworkSbgnVis.prototype.handleMenuEvent = function(command)
 NetworkSbgnVis.prototype.reRunQuery = function()
 {
     // TODO get the list of currently interested genes
-        alert("fill reRunQuery function");
-
 };
 
 /**
