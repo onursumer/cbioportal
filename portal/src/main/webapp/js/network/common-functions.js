@@ -120,6 +120,30 @@ function _toggleProfileData(self)
     }
 }
 
+/**
+ * Toggle "remove disconnected on hide" option on or off. If this option is
+ * active, then any disconnected node will also be hidden after the hide action.
+ */
+function _toggleRemoveDisconnected(self)
+{
+    // toggle removeDisconnected option
+
+    self._removeDisconnected = !self._removeDisconnected;
+
+    // update check icon of the corresponding menu item
+
+    var item = $(self.mainMenuSelector + " #remove_disconnected");
+
+    if (self._removeDisconnected)
+    {
+        item.addClass(self.CHECKED_CLASS);
+    }
+    else
+    {
+        item.removeClass(self.CHECKED_CLASS);
+    }
+}
+
 function _applyHighlight(neighbors, edges, self)
 {
         var bypass = self._vis.visualStyleBypass() || {};
@@ -291,114 +315,6 @@ function _updateLayoutOptions(self)
 }
 
 /**
- * Creates an array containing default option values for the ForceDirected
- * layout.
- *
- * @return  an array of default layout options
- */
-function _defaultOptsArray()
-{
-    var defaultOpts =
-        [ { id: "gravitation", label: "Gravitation",       value: -350,   tip: "The gravitational constant. Negative values produce a repulsive force." },
-            { id: "mass",        label: "Node mass",         value: 3,      tip: "The default mass value for nodes." },
-            { id: "tension",     label: "Edge tension",      value: 0.1,    tip: "The default spring tension for edges." },
-            { id: "restLength",  label: "Edge rest length",  value: "auto", tip: "The default spring rest length for edges." },
-            { id: "drag",        label: "Drag co-efficient", value: 0.4,    tip: "The co-efficient for frictional drag forces." },
-            { id: "minDistance", label: "Minimum distance",  value: 1,      tip: "The minimum effective distance over which forces are exerted." },
-            { id: "maxDistance", label: "Maximum distance",  value: 10000,  tip: "The maximum distance over which forces are exerted." },
-            { id: "iterations",  label: "Iterations",        value: 400,    tip: "The number of iterations to run the simulation." },
-            { id: "maxTime",     label: "Maximum time",      value: 30000,  tip: "The maximum time to run the simulation, in milliseconds." },
-            { id: "autoStabilize", label: "Auto stabilize",  value: true,   tip: "If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations." } ];
-
-    return defaultOpts;
-};
-
-/**
- * Saves layout settings when clicked on the "Save" button of the
- * "Layout Options" panel.
- */
-function _saveSettings(self)
-{
-    // update layout option values
-
-    for (var i=0; i < (self._layoutOptions).length; i++)
-    {
-
-        if (self._layoutOptions[i].id == "autoStabilize")
-        {
-            // check if the auto stabilize box is checked
-
-            if($(self.settingsDialogSelector + " #autoStabilize").is(":checked"))
-            {
-                self._layoutOptions[i].value = true;
-                $(self.settingsDialogSelector + " #autoStabilize").val(true);
-            }
-            else
-            {
-                self._layoutOptions[i].value = false;
-                $(self.settingsDialogSelector + " #autoStabilize").val(false);
-            }
-        }
-        else
-        {
-            // simply copy the text field value
-            self._layoutOptions[i].value =
-                $(self.settingsDialogSelector + " #" + self._layoutOptions[i].id).val();
-        }
-    }
-
-    // update graphLayout options
-    _updateLayoutOptions(self);
-
-    // close the settings panel
-    $(self.settingsDialogSelector).dialog("close");
-}
-
-/**
- * Updates the contents of the layout properties panel.
- */
-function _updatePropsUI(self)
-{
-    // update settings panel UI
-
-    for (var i=0; i < self._layoutOptions.length; i++)
-    {
-
-        if (self._layoutOptions[i].id == "autoStabilize")
-        {
-            if (self._layoutOptions[i].value == true)
-            {
-                // check the box
-                $(self.settingsDialogSelector + " #autoStabilize").attr("checked", true);
-                $(self.settingsDialogSelector + " #autoStabilize").val(true);
-            }
-            else
-            {
-                // uncheck the box
-                $(self.settingsDialogSelector + " #autoStabilize").attr("checked", false);
-                $(self.settingsDialogSelector + " #autoStabilize").val(false);
-            }
-        }
-        else
-        {
-            $(self.settingsDialogSelector + " #" + self._layoutOptions[i].id).val(
-                self._layoutOptions[i].value);
-        }
-    }
-}
-
-/**
- * Reverts to default layout settings when clicked on "Default" button of the
- * "Layout Options" panel.
- */
-function _defaultSettings(self)
-{
-    self._layoutOptions = _defaultOptsArray();
-    _updateLayoutOptions(self);
-    _updatePropsUI(self);
-}
-
-/**
  * Sets visibility of the given UI component.
  *
  * @param component an html UI component
@@ -422,16 +338,6 @@ function _setComponentVis(component, visible)
             component.addClass("hidden-network-ui");
         }
     }
-}
-
-/**
- * Initializes the layout options by default values and updates the
- * corresponding UI content.
- */
-function _initLayoutOptions(self)
-{
-    self._layoutOptions = _defaultOptsArray();
-    _updateLayoutOptions(self);
 }
 
 /**

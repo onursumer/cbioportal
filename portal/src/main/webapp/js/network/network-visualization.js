@@ -148,7 +148,7 @@ NetworkVis.prototype.initNetworkUI = function(vis)
     this._resetFlags();
 
     this._initControlFunctions();
-    _initLayoutOptions(this);
+    this._initLayoutOptions();
 
     this._initMainMenu();
 
@@ -2428,11 +2428,11 @@ NetworkVis.prototype._initControlFunctions = function()
     };
 
     var saveSettings = function() {
-        _saveSettings(self);
+        self_saveSettings();
     };
 
     var defaultSettings = function() {
-        _defaultSettings(self);
+        self._defaultSettings();
     };
 
     var searchGene = function() {
@@ -2689,7 +2689,7 @@ NetworkVis.prototype._saveAsSvg = function()
  */
 NetworkVis.prototype._openProperties = function()
 {
-    _updatePropsUI(this);
+    this._updatePropsUI();
     $(this.settingsDialogSelector).dialog("open").height("auto");
 };
 
@@ -2865,26 +2865,123 @@ NetworkVis.prototype.geneLabel = function(data)
 {
 	return data.label;
 };
+
+
+
 /**
- * Toggle "remove disconnected on hide" option on or off. If this option is
- * active, then any disconnected node will also be hidden after the hide action.
+ * Initializes the layout options by default values and updates the
+ * corresponding UI content.
  */
-function _toggleRemoveDisconnected(self)
+NetworkVis.prototype._initLayoutOptions = function()
 {
-    // toggle removeDisconnected option
+    this._layoutOptions = this._defaultOptsArray();
+    _updateLayoutOptions(this);
+}
 
-    self._removeDisconnected = !self._removeDisconnected;
+/**
+ * Saves layout settings when clicked on the "Save" button of the
+ * "Layout Options" panel.
+ */
+NetworkVis.prototype._saveSettings = function()
+{
+    // update layout option values
 
-    // update check icon of the corresponding menu item
-
-    var item = $(self.mainMenuSelector + " #remove_disconnected");
-
-    if (self._removeDisconnected)
+    for (var i=0; i < (this._layoutOptions).length; i++)
     {
-        item.addClass(self.CHECKED_CLASS);
+
+        if (this._layoutOptions[i].id == "autoStabilize")
+        {
+            // check if the auto stabilize box is checked
+
+            if($(this.settingsDialogSelector + " #autoStabilize").is(":checked"))
+            {
+                this._layoutOptions[i].value = true;
+                $(this.settingsDialogSelector + " #autoStabilize").val(true);
+            }
+            else
+            {
+                this._layoutOptions[i].value = false;
+                $(this.settingsDialogSelector + " #autoStabilize").val(false);
+            }
+        }
+        else
+        {
+            // simply copy the text field value
+            this._layoutOptions[i].value =
+                $(this.settingsDialogSelector + " #" + this._layoutOptions[i].id).val();
+        }
     }
-    else
+
+    // update graphLayout options
+    _updateLayoutOptions(this);
+
+    // close the settings panel
+    $(this.settingsDialogSelector).dialog("close");
+}
+
+/**
+ * Updates the contents of the layout properties panel.
+ */
+NetworkVis.prototype._updatePropsUI = function()
+{
+    // update settings panel UI
+
+    for (var i=0; i < this._layoutOptions.length; i++)
     {
-        item.removeClass(self.CHECKED_CLASS);
+
+        if (this._layoutOptions[i].id == "autoStabilize")
+        {
+            if (this._layoutOptions[i].value == true)
+            {
+                // check the box
+                $(this.settingsDialogSelector + " #autoStabilize").attr("checked", true);
+                $(this.settingsDialogSelector + " #autoStabilize").val(true);
+            }
+            else
+            {
+                // uncheck the box
+                $(this.settingsDialogSelector + " #autoStabilize").attr("checked", false);
+                $(this.settingsDialogSelector + " #autoStabilize").val(false);
+            }
+        }
+        else
+        {
+            $(this.settingsDialogSelector + " #" + this._layoutOptions[i].id).val(
+                this._layoutOptions[i].value);
+        }
     }
 }
+
+/**
+ * Reverts to default layout settings when clicked on "Default" button of the
+ * "Layout Options" panel.
+ */
+NetworkVis.prototype._defaultSettings = function()
+{
+    this._layoutOptions = this._defaultOptsArray();
+    _updateLayoutOptions(this);
+    this._updatePropsUI();
+}
+
+/**
+ * Creates an array containing default option values for the ForceDirected
+ * layout.
+ *
+ * @return  an array of default layout options
+ */
+NetworkVis.prototype._defaultOptsArray = function()
+{
+    var defaultOpts =
+        [ { id: "gravitation", label: "Gravitation",       value: -350,   tip: "The gravitational constant. Negative values produce a repulsive force." },
+            { id: "mass",        label: "Node mass",         value: 3,      tip: "The default mass value for nodes." },
+            { id: "tension",     label: "Edge tension",      value: 0.1,    tip: "The default spring tension for edges." },
+            { id: "restLength",  label: "Edge rest length",  value: "auto", tip: "The default spring rest length for edges." },
+            { id: "drag",        label: "Drag co-efficient", value: 0.4,    tip: "The co-efficient for frictional drag forces." },
+            { id: "minDistance", label: "Minimum distance",  value: 1,      tip: "The minimum effective distance over which forces are exerted." },
+            { id: "maxDistance", label: "Maximum distance",  value: 10000,  tip: "The maximum distance over which forces are exerted." },
+            { id: "iterations",  label: "Iterations",        value: 400,    tip: "The number of iterations to run the simulation." },
+            { id: "maxTime",     label: "Maximum time",      value: 30000,  tip: "The maximum time to run the simulation, in milliseconds." },
+            { id: "autoStabilize", label: "Auto stabilize",  value: true,   tip: "If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations." } ];
+
+    return defaultOpts;
+};

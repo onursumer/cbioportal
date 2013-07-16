@@ -220,7 +220,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	$(this.filteringTabSelector + " #update_source").click(updateSource);
 
 	//$(' #vis_content').dblclick(dblClickSelect);
-	_initLayoutOptions(this);
+	this._initLayoutOptions();
 
 	// initializing the tabs and UIs
 	this._initMainMenu();
@@ -1759,11 +1759,11 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     };
 
     var saveSettings = function() {
-        _saveSettings(self);
+        self._saveSettings();
     };
 
     var defaultSettings = function() {
-        _defaultSettings(self);
+        self._defaultSettings();
     };
 
     var searchGene = function() {
@@ -1918,7 +1918,7 @@ NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
                             '<label>Compound central gravity distance</label>' +
                         '</td>' +
                         '<td>' +
-                            '<input type="text" id="centGraDist" value=""/>' +
+                            '<input type="text" id="compCentGraDist" value=""/>' +
                         '</td>' +
                     '</tr>' +
                     
@@ -1944,8 +1944,8 @@ NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
                         '<td align="right">' +
                             '<label>Smart rest length</label>' +
                         '</td>' +
-                        '<td>' +
-                            '<input type="text" id="smartRestLength" value=""/>' +
+                        '<td align="left">' +
+                            '<input type="checkbox" id="smartRestLength" value="true" checked="checked"/>' +
                         '</td>' +
                     '</tr>' +
                     
@@ -1953,7 +1953,7 @@ NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
                         '<td align="right">' +
                             '<label>Layout quality</label>' +
                         '</td>' +
-                        '<td>' +
+                        '<td align="left">' +
                        		'<select id="layoutQuality" size="1">' +
                        			'<option value="default">default</option>' +
                        			'<option value="default">draft</option>' +
@@ -2203,7 +2203,7 @@ NetworkSbgnVis.prototype._createGenomicDataLegend = function(divId)
  */
 NetworkSbgnVis.prototype._openProperties = function()
 {
-    _updatePropsUI(this);
+    this._updatePropsUI();
     $(this.settingsDialogSelector).dialog("open").height("auto");
 };
 
@@ -2305,7 +2305,7 @@ NetworkSbgnVis.prototype._initDialogs = function()
     // adjust settings panel
     $(this.settingsDialogSelector).dialog({autoOpen: false,
                                      resizable: false,
-                                     width: 333});
+                                     width: 430});
 
     // adjust node legend
     $(this.nodeLegendSelector).dialog({autoOpen: false,
@@ -2500,29 +2500,7 @@ function _toggleShowCompartments(self)
 	}
     
 }
-/**
- * Toggle "remove disconnected on hide" option on or off. If this option is
- * active, then any disconnected node will also be hidden after the hide action.
- */
-function _toggleRemoveDisconnected(self)
-{
-    // toggle removeDisconnected option
 
-    self._removeDisconnected = !self._removeDisconnected;
-
-    // update check icon of the corresponding menu item
-
-    var item = $(self.mainMenuSelector + " #remove_disconnected");
-
-    if (self._removeDisconnected)
-    {
-        item.addClass(self.CHECKED_CLASS);
-    }
-    else
-    {
-        item.removeClass(self.CHECKED_CLASS);
-    }
-}
 /**
  * Sets the arrays for compartments for nodes and edges of compartments
  */
@@ -2606,3 +2584,129 @@ NetworkSbgnVis.prototype._highlightProcesses = function()
 
 	_applyHighlight(nodesToHighlight, edgesToHighlight, self);
 };
+
+/**
+ * Creates an array containing default option values for the Sbgn-pd
+ * layout.
+ *
+ * @return  an array of default layout options
+ */
+NetworkSbgnVis.prototype._defaultOptsArray = function()
+{
+    var defaultOpts =
+        [ { id: "gravitation",          label: "Gravitation",                       value: -50,     tip: "The gravitational constant. Negative values produce a repulsive force." },
+            { id: "centralGravitation", label: "Central gravitation",               value: 50,      tip: "All nodes are assumed to be pulled slightly towards the center of the network by a central gravitational force (gravitational constant) during layout." },
+            { id: "centralGrDistance",  label: "Central gravity distance",          value: 50,      tip: "The radius of the region in the center of the drawing, in which central gravitation is not exerted." },
+            { id: "compoundCentGra",    label: "Compound central gravitation",      value: 50,      tip: "The central gravitational constant for compound nodes." },
+            { id: "compCentGraDist",    label: "Compound central gravity distance", value: 50,      tip: "The central gravitational constant for compound nodes." },
+            { id: "edgeTension",        label: "Edge tension",                      value: 50,      tip: "The default spring tension for edges." },
+            { id: "restLength",         label: "Edge rest length",                  value: 50,      tip: "The default spring rest length for edges." },
+            { id: "smartRestLength",    label: "Smart rest length",                 value: true,   tip: "Whether or not smart calculation of ideal rest length should be performed for inter-graph edges." },
+            { id: "layoutQuality",      label: "Layout quality",                    value: "default",tip: "A better quality layout requires more iterations, taking longer." },
+            { id: "incremental",        label: "Incremental",                       value: false,   tip: "If true, layout is applied incrementally by taking current positions of nodes into account." },
+            { id: "uniformLeaf",        label: "Uniform leaf node size",            value: false,   tip: "If true, leaf (non-compound or simple) node dimensions are assumed to be uniform, resulting in faster layout." },
+            { id: "smartDistance",      label: "Smart distance",                    value: true,    tip: "If true, gravitational repulsion forces are calculated only when node pairs are in a certain range, resulting in faster layout at the relatively minimum cost of layout quality." },
+            { id: "multiLevelScaling",  label: "Multi level scaling",               value: false,   tip: "If true, multi-level scaling algorithm is applied both to better capture the overall structure of the network and to save time on large networks." } ];
+
+    return defaultOpts;
+};
+
+/**
+ * Reverts to default layout settings when clicked on "Default" button of the
+ * "Layout Options" panel.
+ */
+NetworkSbgnVis.prototype._defaultSettings = function()
+{
+    this._layoutOptions = this._defaultOptsArray();
+    _updateLayoutOptions(this);
+    this._updatePropsUI();
+}
+
+/**
+ * Updates the contents of the layout properties panel.
+ */
+NetworkSbgnVis.prototype._updatePropsUI = function()
+{
+    // update settings panel UI
+
+    for (var i=0; i < this._layoutOptions.length; i++)
+    {
+
+        if (this._layoutOptions[i].id == "smartRestLength" || this._layoutOptions[i].id == "incremental" ||
+            this._layoutOptions[i].id == "uniformLeaf" || this._layoutOptions[i].id == "smartDistance" ||
+            this._layoutOptions[i].id == "multiLevelScaling")
+        {
+            if (this._layoutOptions[i].value == true)
+            {
+                // check the box
+                $(this.settingsDialogSelector + " #"+this._layoutOptions[i].id).attr("checked", true);
+                $(this.settingsDialogSelector + " #"+this._layoutOptions[i].id).val(true);
+            }
+            else
+            {
+                // uncheck the box
+                $(this.settingsDialogSelector + " #"+this._layoutOptions[i].id).attr("checked", false);
+                $(this.settingsDialogSelector + " #"+this._layoutOptions[i].id).val(false);
+            }
+        }
+        else
+        {
+            $(this.settingsDialogSelector + " #" + this._layoutOptions[i].id).val(
+                this._layoutOptions[i].value);
+        }
+    }
+}
+
+/**
+ * Saves layout settings when clicked on the "Save" button of the
+ * "Layout Options" panel.
+ */
+ 
+NetworkSbgnVis.prototype._saveSettings = function()
+{
+    // update layout option values
+
+    for (var i=0; i < (this._layoutOptions).length; i++)
+    {
+
+        if (this._layoutOptions[i].id == "smartRestLength" || this._layoutOptions[i].id == "incremental" ||
+            this._layoutOptions[i].id == "uniformLeaf" || this._layoutOptions[i].id == "smartDistance" ||
+            this._layoutOptions[i].id == "multiLevelScaling")
+        {
+            // check if the auto stabilize box is checked
+
+            if($(this.settingsDialogSelector + " #"+this._layoutOptions[i].id).is(":checked"))
+            {
+                this._layoutOptions[i].value = true;
+                $(this.settingsDialogSelector + " #"+this._layoutOptions[i].id).val(true);
+            }
+            else
+            {
+                this._layoutOptions[i].value = false;
+                $(this.settingsDialogSelector + " #"+this._layoutOptions[i].id).val(false);
+            }
+        }
+        else
+        {
+            // simply copy the text field value
+            this._layoutOptions[i].value =
+                $(this.settingsDialogSelector + " #" + this._layoutOptions[i].id).val();
+        }
+    }
+
+    // update graphLayout options
+    _updateLayoutOptions(this);
+
+    // close the settings panel
+    $(this.settingsDialogSelector).dialog("close");
+}
+
+/**
+ * Initializes the layout options by default values and updates the
+ * corresponding UI content.
+ */
+NetworkSbgnVis.prototype._initLayoutOptions = function()
+{
+    this._layoutOptions = this._defaultOptsArray();
+    _updateLayoutOptions(this);
+}
