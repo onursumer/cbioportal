@@ -79,7 +79,8 @@ if (cancerStudyViewError!=null) {
 <div id="study-tabs">
     <ul>
         
-    <li><a href='#clinical' class='study-tab' title='Events of Interest'>Clinical Data</a></li>
+    <li><a href='#clinical-plots' class='study-tab' title='Plots'>Study Summary</a></li>
+    <li><a href='#clinical' class='study-tab' title='Clinical Data'>Clinical Data</a></li>
     
     <%if(showMutationsTab){%>
     <li><a href='#mutations' class='study-tab' title='Mutations'>Mutated Genes</a></li>
@@ -90,6 +91,10 @@ if (cancerStudyViewError!=null) {
     <%}%>
     
     </ul>
+
+    <div class="study-section" id="clinical-plots">
+        <%@ include file="plots.jsp" %>
+    </div>
 
     <div class="study-section" id="clinical">
         <%@ include file="clinical.jsp" %>
@@ -157,7 +162,7 @@ if (cancerStudyViewError!=null) {
         }
 </style>
 
-<script type="text/javascript" src="js/cancer-study-view/load-clinical-data.js"></script>
+<script type="text/javascript" src="js/src/cancer-study-view/load-clinical-data.js"></script>
 
 <script type="text/javascript">
 var cancerStudyId = '<%=cancerStudy.getCancerStudyStableId()%>';

@@ -32,22 +32,21 @@
 <link href="css/network/network_ui.css" type="text/css" rel="stylesheet"/>
 <link href="css/network/network_sbgn_ui.css" type="text/css" rel="stylesheet"/>
 
-<!-- json2 is now a global library! -->
-<script type="text/javascript" src="js/json2.js"></script>
-<script type="text/javascript" src="js/cytoscape_web/AC_OETags.min.js"></script>
-<script type="text/javascript" src="js/cytoscape_web/cytoscapeweb.min.js"></script>
-<script type="text/javascript" src="js/cytoscape_web/cytoscapewebSBGN.min.js"></script>
+<script type="text/javascript" src="js/lib/json2.js"></script>
+<script type="text/javascript" src="js/lib/cytoscape_web/AC_OETags.min.js"></script>
+<script type="text/javascript" src="js/lib/cytoscape_web/cytoscapeweb.min.js"></script>
+<script type="text/javascript" src="js/lib/cytoscape_web/cytoscapewebSBGN.min.js"></script>
 
-<!-- <script type="text/javascript" src="js/network/network-ui.js"></script> -->
-<script type="text/javascript" src="js/network/utility-functions.js"></script>
-<script type="text/javascript" src="js/network/common-functions.js"></script>
-<script type="text/javascript" src="js/network/network-visualization.js"></script>
-<script type="text/javascript" src="js/network/network-sbgn-vis.js"></script>
-<script type="text/javascript" src="js/network/network-viz.js"></script>
+<!-- <script type="text/javascript" src="js/src/network/network-ui.js"></script> -->
+<script type="text/javascript" src="js/src/network/utility-functions.js"></script>
+<script type="text/javascript" src="js/src/network/common-functions.js"></script>
+<script type="text/javascript" src="js/src/network/network-visualization.js"></script>
+<script type="text/javascript" src="js/src/network/network-sbgn-vis.js"></script>
+<script type="text/javascript" src="js/src/network/network-viz.js"></script>
+
 
 <!-- for genomic data post request -->
-<script type="text/javascript" src="js/oncoprint.js"></script>
-<script type="text/javascript" src="js/d3.v2.min.js"></script>
+<script type="text/javascript" src="js/lib/d3.min.js"></script>
 
 <script type="text/javascript">
 			var genomicData = {};
@@ -114,8 +113,7 @@
                     function(graphml){
                         if (typeof graphml !== "string") {
                             if (window.ActiveXObject) { // IE 
-                                    // graphml = graphml.xml; 
-				    graphml = (new XMLSerializer()).serializeToString(graphml);
+                                    graphml = (new XMLSerializer()).serializeToString(graphml); 
                             } else { // Other browsers 
                                     graphml = (new XMLSerializer()).serializeToString(graphml); 
                             } 

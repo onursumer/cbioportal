@@ -286,7 +286,7 @@ if (patientViewError!=null) {
         }
 </style>
 
-<script type="text/javascript" src="js/patient-view/genomic-event-observer.js"></script>
+<script type="text/javascript" src="js/src/patient-view/genomic-event-observer.js"></script>
 <script type="text/javascript">
 
 var print = <%=print%>;
@@ -297,7 +297,7 @@ var mrnaProfileId = <%=mrnaProfileStableId==null%>?null:'<%=mrnaProfileStableId%
 var hasCnaSegmentData = <%=hasCnaSegmentData%>;
 var showGenomicOverview = <%=showGenomicOverview%>;
 var caseId = '<%=patient%>';
-var cancerStudyName = '<%=cancerStudy.getName()%>';
+var cancerStudyName = "<%=cancerStudy.getName()%>";
 var cancerStudyId = '<%=cancerStudy.getCancerStudyStableId()%>';
 var genomicEventObs =  new GenomicEventObserver(<%=showMutations%>,<%=showCNA%>, hasCnaSegmentData);
 var drugType = drugType?'<%=drugType%>':null;
