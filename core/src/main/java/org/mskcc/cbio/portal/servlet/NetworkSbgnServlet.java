@@ -39,6 +39,7 @@ import org.biopax.paxtools.io.sbgn.idmapping.HGNC;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.json.simple.JSONValue;
 import org.mskcc.cbio.cgds.dao.DaoException;
 import org.mskcc.cbio.cgds.dao.DaoGeneOptimized;
@@ -150,7 +151,7 @@ public class NetworkSbgnServlet extends HttpServlet
     private Map<String, List<String>> extractAttributes(BioPAXElement bpe) {
     	//Get the custom editor map that is customized with the file in the following url
     	InputStream in = this.getClass().getResourceAsStream(L3EDITOR_PROPERTIES_URL);
-        EditorMap editorMap = SimpleEditorMap.buildCustomEditorMap(SimpleEditorMap.L3, in);
+        EditorMap editorMap = SimpleEditorMap.buildCustomEditorMap(BioPAXLevel.L3, in);
         Set<org.biopax.paxtools.controller.PropertyEditor> editors = editorMap.getEditorsOf(bpe);
 
         Map<String, List<String>> attributes = new HashMap<String, List<String>>();
