@@ -150,7 +150,7 @@ public class NetworkSbgnServlet extends HttpServlet
     private Map<String, List<String>> extractAttributes(BioPAXElement bpe) {
     	//Get the custom editor map that is customized with the file in the following url
     	InputStream in = this.getClass().getResourceAsStream(L3EDITOR_PROPERTIES_URL);
-        EditorMap editorMap = buildCustomEditorMap(SimpleEditorMap.L3, in);
+        EditorMap editorMap = SimpleEditorMap.buildCustomEditorMap(SimpleEditorMap.L3, in);
         Set<org.biopax.paxtools.controller.PropertyEditor> editors = editorMap.getEditorsOf(bpe);
 
         Map<String, List<String>> attributes = new HashMap<String, List<String>>();
