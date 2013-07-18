@@ -54,6 +54,17 @@ import java.util.*;
  */
 public class GeneAlterationPercentJSON extends HttpServlet
 {
+	protected  static final String PERCENT_CNA_AMPLIFIED = "PERCENT_CNA_AMPLIFIED";
+	protected  static final String PERCENT_CNA_GAINED = "PERCENT_CNA_GAINED";
+	protected  static final String PERCENT_CNA_HOMOZYGOUSLY_DELETED = "PERCENT_CNA_HOMOZYGOUSLY_DELETED";
+	protected  static final String PERCENT_CNA_HEMIZYGOUSLY_DELETED = "PERCENT_CNA_HEMIZYGOUSLY_DELETED";
+	protected  static final String PERCENT_MRNA_WAY_UP = "PERCENT_MRNA_WAY_UP";
+	protected  static final String PERCENT_MRNA_WAY_DOWN = "PERCENT_MRNA_WAY_DOWN";	
+	protected  static final String PERCENT_RPPA_WAY_UP = "PERCENT_RPPA_WAY_UP";
+	protected  static final String PERCENT_RPPA_WAY_DOWN = "PERCENT_RPPA_WAY_DOWN";
+	protected  static final String PERCENT_MUTATED = "PERCENT_MUTATED";
+	protected  static final String PERCENT_ALTERED = "PERCENT_ALTERED";
+	
 	public void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException
 	{
@@ -145,15 +156,15 @@ public class GeneAlterationPercentJSON extends HttpServlet
 			// create a mapping for each gene
 			JSONObject geneAlteration = new JSONObject();
 
-			geneAlteration.put("percentAltered", percentAltered);
-			geneAlteration.put("percentMutated", percentMutated);
-			geneAlteration.put("percentCnaAmplified", percentCnaAmplified);
-			geneAlteration.put("percentCnaHemizygouslyDeleted", percentCnaHemizygouslyDeleted);
-			geneAlteration.put("percentCnaHomozygouslyDeleted", percentCnaHomozygouslyDeleted);
-			geneAlteration.put("percentMrnaWayUp", percentMrnaWayUp);
-			geneAlteration.put("percentMrnaWayDown", percentMrnaWayDown);
-			geneAlteration.put("percentRppaWayUp", percentRppaWayUp);
-			geneAlteration.put("percentRppaWayDown", percentRppaWayDown);
+			geneAlteration.put(PERCENT_ALTERED, percentAltered);
+			geneAlteration.put(PERCENT_MUTATED, percentMutated);
+			geneAlteration.put(PERCENT_CNA_AMPLIFIED, percentCnaAmplified);
+			geneAlteration.put(PERCENT_CNA_HEMIZYGOUSLY_DELETED, percentCnaHemizygouslyDeleted);
+			geneAlteration.put(PERCENT_CNA_HOMOZYGOUSLY_DELETED, percentCnaHomozygouslyDeleted);
+			geneAlteration.put(PERCENT_MRNA_WAY_UP, percentMrnaWayUp);
+			geneAlteration.put(PERCENT_MRNA_WAY_DOWN, percentMrnaWayDown);
+			geneAlteration.put(PERCENT_RPPA_WAY_UP, percentRppaWayUp);
+			geneAlteration.put(PERCENT_RPPA_WAY_DOWN, percentRppaWayDown);
 
 			geneAlterations.put(gene, geneAlteration);
 		}

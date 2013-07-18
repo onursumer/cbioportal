@@ -121,7 +121,7 @@ function NetworkSbgnVis(divId)
  *
  * @param vis	CytoscapeWeb.Visualization instance associated with this UI
  */
-NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationData, seedNodes)
+NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, seedNodes)
 {
 
 	var self = this;
@@ -131,7 +131,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 	// delete this later because it os not used anymore
 	this._alreadyFiltered = new Array();
 	// parse and add genomic data to cytoscape nodes
-	this.parseGenomicData(genomicData,annotationData, seedNodes);
+	this.addExtensionFields(attributeMap, seedNodes);
 	//for once only, get all the process sources and updates _sourceVisibility array
 	this._sourceVisibility = this._initSourceArray(); 
 	var weights = this.initializeWeights();
@@ -273,21 +273,12 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, genomicData, annotationDa
 //TODO override necessary methods (filters, inspectors, initializers, etc.) to have a proper UI.
 
 //Genomic data parser method
-NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData, seedNodes)
+NetworkSbgnVis.prototype.addExtensionFields = function(attributeMap, seedNodes)
 {
-	var hugoToGene 		= "hugo_to_gene_index";
-	var geneData   		= "gene_data";
-	var cna 	   	= "cna";
-	var hugo 	   	= "hugo";
-	var mrna	   	= "mrna";
-	var mutations  		= "mutations";
-	var rppa	   	= "rppa";
-	var percent_altered 	= "percent_altered";
-	var attributes		= "attributes";
-
 	var nodes = this._vis.nodes();
 	var targetNodes = new Array();
 	var seedNodeList = seedNodes.split(" ");
+
 	for(var i = 0; i < seedNodeList.length; i++)
 	{
 		var sameNodes = findNodes(seedNodeList[i], nodes);
@@ -296,72 +287,18 @@ NetworkSbgnVis.prototype.parseGenomicData = function(genomicData, annotationData
 			targetNodes.push(sameNodes[j]);
 		}
 	}
+
 	if (targetNodes.length > 0)
 	{
 		this._vis.updateData("nodes",targetNodes, {IN_QUERY: true});
 	}
-	// iterate for every hugo gene symbol in incoming data
-	for(var hugoSymbol in genomicData[hugoToGene])
-	{
-		var geneDataIndex 	= genomicData[hugoToGene][hugoSymbol];		// gene data index for hugo gene symbol
-		var _geneData 		= genomicData[geneData][geneDataIndex];		// corresponding gene data
-
-		// Arrays and percent altered data 
-		var cnaArray   		= _geneData[cna];
-		var mrnaArray  		= _geneData[mrna];
-		var mutationsArray 	= _geneData[mutations];
-		var rppaArray	  	= _geneData[rppa];
-		var percentAltered 	= _geneData[percent_altered];
-		
-		// Corresponding cytoscape web nodes
-		targetNodes = findNodes(hugoSymbol, nodes);
-		var cnaData = this.calcCNAPercents(cnaArray);
-		var mutationPercent = this.calcMutationPercent(mutationsArray);
-		var mrnaData = this.calcRPPAorMRNAPercent(mrnaArray);
-		var rppaData = this.calcRPPAorMRNAPercent(rppaArray);
-		var alterationPercent = 0;
-		// Calculate alteration percent and add them to the corresponding nodes.
-		// TODO this part will be deleted after the new data is given
-		// we do not use the percent altered given by the server because it has less percision
-		for (var i = 0; i < cnaArray.length; i++)
-		{
-			if(cnaArray[i] != null || 
-				mutationsArray[i] != null || 
-				mrnaArray[i] != null || 
-				rppaArray[i] != null)
-			{
-				alterationPercent++;
-			}
-		}
-		
-		alterationPercent = alterationPercent / cnaArray.length;
-		if (alterationPercent > 0)
-		{
-			var genomicsData = 
-			{
-				PERCENT_ALTERED: alterationPercent, 
-				PERCENT_MUTATED: mutationPercent, 
-				PERCENT_CNA_AMPLIFIED: cnaData["AMPLIFIED"],
-				PERCENT_CNA_HEMIZYGOUSLY_DELETED: cnaData["HEMIZYGOUSLY_DELETED"],
-				PERCENT_CNA_HOMOZYGOUSLY_DELETED: cnaData["HOMOZYGOUSLY_DELETED"],
-				PERCENT_MRNA_WAY_UP: mrnaData["UPREGULATED"],
-				PERCENT_MRNA_WAY_DOWN: mrnaData["DOWNREGULATED"],
-				PERCENT_RPPA_WAY_UP: rppaData["UPREGULATED"],
-				PERCENT_RPPA_WAY_DOWN: rppaData["DOWNREGULATED"]
-			};
-			if (targetNodes.length > 0)
-			{
-				this._vis.updateData("nodes",targetNodes, genomicsData);
-			}
-		}
-	}
 
 	// Lastly parse annotation data and add "dataSource" fields
-	this.parseDataSource(annotationData);
+	this.parseDataSource(attributeMap);
 };
 
 
-NetworkSbgnVis.prototype.parseDataSource = function(annotationData)
+NetworkSbgnVis.prototype.parseDataSource = function(attributeMap)
 {
 	var nodeArray = this._vis.nodes();
 	for ( var i = 0; i < nodeArray.length; i++) 
@@ -370,7 +307,7 @@ NetworkSbgnVis.prototype.parseDataSource = function(annotationData)
 		{
                         //Temporary hack to get rid of id extensions of glyphs.
                         var glyphID = ((nodeArray[i].data.id).replace("LEFT_TO_RIGHT", "")).replace("RIGHT_TO_LEFT", "");
-                        var annData = annotationData[glyphID];
+                        var annData = attributeMap[glyphID];
                         var parsedData = _safeProperty(annData.dataSource[0].split(";")[0]);
 			this.idToDataSource[nodeArray[i].data.id] = parsedData;
 		}
@@ -394,112 +331,6 @@ function findNodes(label, nodes)
 	}
 	return sameNodes;
 }
-
-/** 
- * calculates cna percents ands adds them to target node
-**/
-NetworkSbgnVis.prototype.calcCNAPercents = function(cnaArray)
-{  
-	var amplified	= "AMPLIFIED";
-	var gained    	= "GAINED";
-	var hemiDeleted = "HEMIZYGOUSLY_DELETED";
-	var homoDeleted	= "HOMOZYGOUSLY_DELETED";
-
-	var percents = {};
-	percents[amplified] = 0;
-	percents[gained] = 0;
-	percents[hemiDeleted] = 0;
-	percents[homoDeleted] = 0;
-	
-	var amplifiedNo	  = 0;
-	var gainedNo   	  = 0;
-	var hemiDeletedNo = 0;
-	var homoDeletedNo = 0;
-
-	for(var i = 0; i < cnaArray.length; i++)
-	{
-		if(cnaArray[i] == amplified)
-		{
-			amplifiedNo++; 
-		}
-		else if(cnaArray[i] == gained)
-		{
-			gainedNo++; 
-		}
-		else if(cnaArray[i] == hemiDeleted || cnaArray[i] == "HEMIDELETED" || cnaArray[i] == "HEMIZYGOUSLYDELETED")
-		{
-			hemiDeletedNo++; 
-		}
-		else if(cnaArray[i] == homoDeleted || cnaArray[i] == "HOMODELETED" || cnaArray[i] == "HOMOZYGOUSLYDELETED")
-		{
-			homoDeletedNo++; 
-		}
-	}
-	
-
-	percents[amplified] 	= (amplifiedNo > 0) ? (amplifiedNo/cnaArray.length):null;
-	percents[gained] 	= (gainedNo > 0) ? (gainedNo/cnaArray.length):null;
-	percents[hemiDeleted] 	= (hemiDeletedNo > 0) ? (hemiDeletedNo/cnaArray.length):null;
-	percents[homoDeleted] 	= (homoDeletedNo > 0) ? (homoDeletedNo/cnaArray.length):null;
-	
-	return percents;
-
-};
-
-/** 
- * calculates rppa or mrna percents ands adds them to target node, data indicator determines which data will be set
-**/
-NetworkSbgnVis.prototype.calcRPPAorMRNAPercent = function(dataArray)
-{  
-	var up		= "UPREGULATED";
-	var down   	= "DOWNREGULATED";
-
-	var percents = {};
-	percents[up] = 0;
-	percents[down] = 0;
-
-	var upNo = 0;
-	var downNo = 0;
-	for(var i = 0; i < dataArray.length; i++)
-	{
-		if(dataArray[i] == up)
-		{
-			upNo++;
-		}
-		else if(dataArray[i] == down)
-		{
-			downNo++;
-		}
-	}
-
-	percents[up] 	= (upNo > 0) ? (upNo / dataArray.length):null;
-	percents[down] 	= (downNo > 0) ? (downNo / dataArray.length):null;
-	
-	return percents;
-};
-
-/**
- * calculates mutation percents ands adds them to target node
-**/
-NetworkSbgnVis.prototype.calcMutationPercent = function(mutationArray)
-{  
-	var percent = 0;
-	var sampleNo = 0;
-	for(var i = 0; i < mutationArray.length; i++)
-	{
-		if(mutationArray[i] != null)
-		{
-			sampleNo++;
-		}
-	}
-	
-	if(sampleNo > 0)
-	{
-		return (sampleNo / mutationArray.length);
-	}
-	else 
-		return null;
-};
 
 /**
  * Select multiple nodes by glyph label
@@ -1956,8 +1787,8 @@ NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
                         '<td align="left">' +
                        		'<select id="layoutQuality" size="1">' +
                        			'<option value="default">default</option>' +
-                       			'<option value="draft">draft</option>' +
-                       			'<option value="proof">proof</option>' +
+                       			'<option value="default">draft</option>' +
+                       			'<option value="default">proof</option>' +
                        		+ '</select>' +
                         '</td>' +
                     '</tr>' +
@@ -2316,7 +2147,7 @@ NetworkSbgnVis.prototype._initDialogs = function()
     // adjust edge legend
     $(this.interactionLegendSelector).dialog({autoOpen: false,
                                  resizable: false,
-                                 width: 430,
+                                 width: 500,
                                  height: 210});
     // adjust genomics legend
     $(this.genomicsLegendSelector).dialog({autoOpen: false,

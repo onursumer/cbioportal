@@ -205,6 +205,7 @@ function send2cytoscapeweb(graphml, cwDivId, networkDivId)
 
 function send2cytoscapewebSbgn(data, cwDivId, networkDivId, geneDataQuery)
 {
+	var genomicDataServletURL = 'geneAlterationPercent.json';
 	var seedNodes = geneDataQuery["genes"];
 	var sbgnGenes = "";
 	var sbgnGenomicData = {};
@@ -216,10 +217,22 @@ function send2cytoscapewebSbgn(data, cwDivId, networkDivId, geneDataQuery)
 	// Send genomic data query again
 	geneDataQuery["genes"] = sbgnGenes;
 	
-	$.post(DataManagerFactory.getGeneDataJsonUrl(), geneDataQuery, function(genData) {
+/*	$.post(genomicDataServletURL, geneDataQuery, function(genData) 
+	{
 		sbgnGenomicData = genData;
-		});
+	});*/
 
+	$.ajax({
+		type: "POST",
+		url: genomicDataServletURL,
+		async: false,
+		timeout: 3000,
+		data: geneDataQuery,
+		success: function(queryResult) 
+		{
+			sbgnGenomicData = queryResult;
+		}
+	});
 
     var paddingOffset = 5;
     var visualStyle =
@@ -354,7 +367,7 @@ function send2cytoscapewebSbgn(data, cwDivId, networkDivId, geneDataQuery)
         var netVis = new NetworkSbgnVis(networkDivId);
 		  
         // init UI of the network tab
-        netVis.initNetworkUI(vis, sbgnGenomicData, data.attributes, seedNodes);
+        netVis.initNetworkUI(vis, data.attributes, seedNodes);
 
 	// set the style programmatically
 	document.getElementById("color").onclick = function(){
@@ -369,7 +382,8 @@ function send2cytoscapewebSbgn(data, cwDivId, networkDivId, geneDataQuery)
         //edgesMerged: true,
         layout: "Preset",
         visualStyle: visualStyle,
-        panZoomControlVisible: true
+        panZoomControlVisible: true,
+	genomicData:sbgnGenomicData
     };
 
     vis.draw(draw_options);

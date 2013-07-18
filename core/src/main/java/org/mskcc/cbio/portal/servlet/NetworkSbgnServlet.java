@@ -58,6 +58,8 @@ import java.util.*;
  */
 public class NetworkSbgnServlet extends HttpServlet
 {
+	public final static String L3EDITOR_PROPERTIES_URL = "/L3EditorForSBGNViewer.properties";
+	
     private final static Log log = LogFactory.getLog(NetworkSbgnServlet.class);
 
 	public final static String CPATH_SERVICE = "http://www.pathwaycommons.org/pc2/";
@@ -146,7 +148,9 @@ public class NetworkSbgnServlet extends HttpServlet
     }
 
     private Map<String, List<String>> extractAttributes(BioPAXElement bpe) {
-        EditorMap editorMap = SimpleEditorMap.L3;
+    	//Get the custom editor map that is customized with the file in the following url
+    	InputStream in = this.getClass().getResourceAsStream(L3EDITOR_PROPERTIES_URL);
+        EditorMap editorMap = buildCustomEditorMap(SimpleEditorMap.L3, in);
         Set<org.biopax.paxtools.controller.PropertyEditor> editors = editorMap.getEditorsOf(bpe);
 
         Map<String, List<String>> attributes = new HashMap<String, List<String>>();
