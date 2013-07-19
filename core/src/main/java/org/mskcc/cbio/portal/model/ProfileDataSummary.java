@@ -293,17 +293,30 @@ public class ProfileDataSummary {
         EnumMap<GeneticTypeLevel,Double> map = geneCNALevelMap.get(gene);
         if (map == null) {
             map = new EnumMap<GeneticTypeLevel,Double>(GeneticTypeLevel.class);
+	    int levelsCount = 0;
             for (GeneticTypeLevel level : GeneticTypeLevel.values()) {
                 map.put(level, 0.0);
+		levelsCount++;
             }
             
             ArrayList<String> caseList = profileData.getCaseIdList();
-            double delta = 1.0 / caseList.size();
+          
             for (String caseId : caseList) {
                  GeneticTypeLevel level = getCNALevel(gene, caseId);
                  if (level!=null) {
-                    map.put(level, map.get(level)+delta);
+                    map.put(level, map.get(level) + 1);
+		
                  }
+            }
+
+	    for (GeneticTypeLevel level : GeneticTypeLevel.values()) {
+                if (map.get(level) > 0) {
+                    map.put(level, map.get(level) / caseList.size());
+                }
+		else
+		{
+		    map.put(level, -0.01);
+		}
             }
         }
         
@@ -350,11 +363,25 @@ public class ProfileDataSummary {
                     numSamplesWhereGeneIsDownRegulated++;
                 }
             }
-            geneMRNAUpDownMap.put(gene, new double[]{
-                1.0*numSamplesWhereGeneIsUpRegulated/caseList.size(),
-                1.0*numSamplesWhereGeneIsDownRegulated/caseList.size()
-                }
-            );
+	    double [] percents = new double[2];
+	    if (numSamplesWhereGeneIsUpRegulated > 0)
+	    {
+		percents[0] = 1.0*numSamplesWhereGeneIsUpRegulated/caseList.size();
+	    }
+	    else
+	    {
+		percents[0] = -0.01;
+	    }
+	    if (numSamplesWhereGeneIsDownRegulated > 0)
+	    {
+		percents[1] = 1.0*numSamplesWhereGeneIsDownRegulated/caseList.size();
+	    }
+	    else
+	    {
+		percents[1] = -0.01;
+	    }
+
+            geneMRNAUpDownMap.put(gene, percents);
         }
         
         double[] percs = geneMRNAUpDownMap.get(gene);
@@ -377,7 +404,13 @@ public class ProfileDataSummary {
                     numSamplesWhereGeneIsMutated++;
                 }
             }
-            geneMutatedMap.put(gene, 1.0*numSamplesWhereGeneIsMutated/caseList.size());
+	    double percent = -0.01;
+	    if (numSamplesWhereGeneIsMutated > 0)
+	    {
+		percent = 1.0 * numSamplesWhereGeneIsMutated/caseList.size();
+	    }
+	    
+            geneMutatedMap.put(gene, percent);
         }
         
         return geneMutatedMap.get(gene);
@@ -406,7 +439,11 @@ public class ProfileDataSummary {
                     numSamplesWhereGeneIsAltered++;
                 }
             }
-            double percent = numSamplesWhereGeneIsAltered / (double) caseList.size();
+            double percent = -0.01;
+	    if (numSamplesWhereGeneIsAltered > 0)
+	    {
+		percent = numSamplesWhereGeneIsAltered / (double) caseList.size();
+	    }
             geneAlteredMap.put(gene, percent);
             numCasesAlteredMap.put(gene, numSamplesWhereGeneIsAltered);
             GeneWithScore geneWithScore = new GeneWithScore();
@@ -460,9 +497,12 @@ public class ProfileDataSummary {
             }
             caseAlteredMap.put(caseId, caseIsAltered);
         }
-        
-        percentOfCasesWithAlteredPathway = numCasesAffected
-                / (double) caseList.size();
+        percentOfCasesWithAlteredPathway = -0.01;
+	if (numCasesAffected > 0)
+	{
+        	percentOfCasesWithAlteredPathway = numCasesAffected
+        	        / (double) caseList.size();
+	}
     }
 }
 

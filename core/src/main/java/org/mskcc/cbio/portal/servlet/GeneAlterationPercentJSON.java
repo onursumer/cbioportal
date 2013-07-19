@@ -188,8 +188,11 @@ public class GeneAlterationPercentJSON extends HttpServlet
 
 			total++;
 		}
-
-		return (double)wayUp / (double)total;
+		if (wayUp > 0)
+		{
+			return (double)wayUp / (double)total;
+		}
+		return -0.01;
 	}
 
 	private double calcPercentRppaWayDown(String gene,
@@ -208,8 +211,11 @@ public class GeneAlterationPercentJSON extends HttpServlet
 
 			total++;
 		}
-
-		return (double)wayDown / (double)total;
+		if (wayDown > 0)
+		{
+			return (double)wayDown / (double)total;
+		}
+		return -0.01;
 	}
 
 	protected ArrayList<GeneticProfile> getGeneticProfileList(HashSet<String> geneticProfileIdSet)
