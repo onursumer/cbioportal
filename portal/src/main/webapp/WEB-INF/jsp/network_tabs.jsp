@@ -162,10 +162,10 @@ if (includeHelpTab==null) {
 	        		</td>
 	        	</tr>
 	        </table>
-	        <table id="source_filter">
-	        	<tr class="source-header">
+	        <table id="edge_source_filter">
+	        	<tr class="edge-source-header">
 	        		<td>
-	        			<label class="heading">Edge Source:</label>
+	        			<label class="heading">Source:</label>
 	        		</td>
 	        	</tr>
 	        </table>
@@ -177,7 +177,7 @@ if (includeHelpTab==null) {
         				<label class="button-text">Update</label>
         			</td>
         			<td> 
-        				<button id="update_source" class="tabs-button" title="Update"></button>
+        				<button id="update_edges" class="tabs-button" title="Update"></button>
         			</td>
         		</tr>
         	</table>
