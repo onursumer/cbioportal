@@ -36,7 +36,8 @@ package org.cytoscapeweb.util {
     import org.cytoscapeweb.model.ConfigProxy;
     import org.cytoscapeweb.model.data.VisualStyleBypassVO;
     import org.cytoscapeweb.model.data.VisualStyleVO;
-    import org.cytoscapeweb.view.render.CBioNodeRenderer;
+    import org.cytoscapeweb.view.render.NodeRenderer;
+	import org.cytoscapeweb.view.render.CBioNodeRenderer;
     
     
     public class Nodes {
@@ -77,11 +78,14 @@ package org.cytoscapeweb.util {
             if (_properties == null) {
                 _properties = {
                     shape: shape,
+                    "props.width": width,
+                    "props.height": height,
                     size: size,
                     fillColor: fillColor,
                     lineColor: lineColor, 
                     lineWidth: lineWidth,
                     alpha: alpha,
+                    "props.transparent": transparent,
                     "props.imageUrl": imageUrl,
                     visible: visible,
                     buttonMode: true,
@@ -100,9 +104,19 @@ package org.cytoscapeweb.util {
         }
         
         public static function size(n:NodeSprite):Number {
-            var size:Number = style.getValue(VisualProperties.NODE_SIZE, n.data);
+            var size:* = style.getValue(VisualProperties.NODE_SIZE, n.data);
             // Flare size is a relative value:
-            return size / _properties.renderer.defaultSize;
+            return size < 0 ? SizePolicies.AUTO : size/_properties.renderer.defaultSize;
+        }
+        
+        public static function width(n:NodeSprite):Number {
+            var w:Number = style.getValue(VisualProperties.NODE_WIDTH, n.data);
+            return w;
+        }
+        
+        public static function height(n:NodeSprite):Number {
+            var h:Number = style.getValue(VisualProperties.NODE_HEIGHT, n.data);
+            return h;
         }
         
         public static function fillColor(n:NodeSprite):uint {
@@ -157,6 +171,15 @@ package org.cytoscapeweb.util {
 
             return style.getValue(propName, n.data);
         }
+        
+        public static function transparent(n:NodeSprite):Boolean {
+            var propName:String = VisualProperties.NODE_COLOR;
+            
+            if (n.props.$selected && style.hasVisualProperty(VisualProperties.NODE_SELECTION_COLOR))
+                propName = VisualProperties.NODE_SELECTION_COLOR;
+            
+            return style.getValue(propName, n.data) < 0;
+        }
 
         public static function imageUrl(n:NodeSprite):String {
             var propName:String = VisualProperties.NODE_IMAGE;
@@ -173,7 +196,7 @@ package org.cytoscapeweb.util {
         }
         
         public static function visible(n:NodeSprite):Boolean {
-            return !n.props.$filteredOut;
+            return !GraphUtils.isFilteredOut(n);
         }
         
         public static function filters(n:NodeSprite, selectNow:Boolean=false):Array {

@@ -48,10 +48,10 @@ package org.cytoscapeweb.controller {
         override public function execute(notification:INotification):void {
             var list:* = notification.getBody();
             
-            if (list != null && list.length > 0) {
-                // Separate nodes and edges:
-                var nodes:Array = [], edges:Array = [];
-                for each (var ds:DataSprite in list) {
+			if (list != null && list.length > 0) {
+				// Separate nodes and edges:
+				var nodes:Array = [], edges:Array = [];
+				for each (var ds:DataSprite in list) {
 					if(ds is NodeSprite){
 						ds.props.detailFlag = true; // MODIFY to show details of nodes added prop.detailFlag
 						NodeSprite(ds).visitEdges(function(e:EdgeSprite):Boolean {
@@ -60,10 +60,10 @@ package org.cytoscapeweb.controller {
 						}); // MODIFY to recalculate edges for the detailed nodes	
 					}
 					
-                    if (ds is NodeSprite) nodes.push(ds);
-                    else edges.push(ds);
+					if (ds is NodeSprite) nodes.push(ds);
+					else edges.push(ds);
 					
-                }
+				}
  
                 // First add the information to the model:
                 if (nodes.length > 0) nodes = graphProxy.changeNodesSelection(nodes, true);
@@ -73,13 +73,11 @@ package org.cytoscapeweb.controller {
                 if (nodes.length > 0) graphMediator.selectNodes(nodes);
                 if (edges.length > 0) graphMediator.selectEdges(edges);
 
-				graphMediator.updateLabels();
-				
                 // Call external listeners:
                 var objs:Array, body:Object, type:String = "select";
                 
                 if (nodes.length > 0 && extMediator.hasListener(type, Groups.NODES)) {
-                    objs = ExternalObjectConverter.toExtElementsArray(nodes);
+                    objs = ExternalObjectConverter.toExtElementsArray(nodes, graphProxy.zoom);
                     body = { functionName: ExternalFunctions.INVOKE_LISTENERS, 
                              argument: { type: type, group: Groups.NODES, target: objs } };
                     
@@ -87,7 +85,7 @@ package org.cytoscapeweb.controller {
                 }
                 
                 if (edges.length > 0 && extMediator.hasListener(type, Groups.EDGES)) {
-                    objs = ExternalObjectConverter.toExtElementsArray(edges);
+                    objs = ExternalObjectConverter.toExtElementsArray(edges, graphProxy.zoom);
                     body = { functionName: ExternalFunctions.INVOKE_LISTENERS, 
                              argument: { type: type, group: Groups.EDGES, target: objs } };
 
@@ -98,7 +96,7 @@ package org.cytoscapeweb.controller {
                     var all:Array = [];
                     all = all.concat(nodes).concat(edges);
 
-                    objs = ExternalObjectConverter.toExtElementsArray(all);
+                    objs = ExternalObjectConverter.toExtElementsArray(all, graphProxy.zoom);
                     body = { functionName: ExternalFunctions.INVOKE_LISTENERS, 
                              argument: { type: type, group: Groups.NONE, target: objs } };
 
