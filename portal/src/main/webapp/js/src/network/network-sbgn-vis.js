@@ -1787,8 +1787,8 @@ NetworkSbgnVis.prototype._createSettingsDialog = function(divId)
                         '<td align="left">' +
                        		'<select id="layoutQuality" size="1">' +
                        			'<option value="default">default</option>' +
-                       			'<option value="default">draft</option>' +
-                       			'<option value="default">proof</option>' +
+                       			'<option value="draft">draft</option>' +
+                       			'<option value="proof">proof</option>' +
                        		+ '</select>' +
                         '</td>' +
                     '</tr>' +
