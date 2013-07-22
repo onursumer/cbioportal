@@ -24,3 +24,7 @@
 2013-07-19 15:19:13 [main] INFO  org.mskcc.cbio.cgds.scripts.drug.internal.PiHelperImporter - Number of drug-targets imported: 16
 2013-07-19 15:19:40 [main] WARN  org.mskcc.cbio.portal.mut_diagram.Pileup - ignoring extended mutation missense, no location information
 2013-07-19 15:19:42 [main] ERROR org.mskcc.cbio.portal.html.MutationAssessorHtmlUtil - Could not parse OMA Functional Impact Score Keyword:  null
+2013-07-22 15:05:41 [main] INFO  org.mskcc.cbio.cgds.scripts.drug.internal.PiHelperImporter - Number of drugs imported: 7
+2013-07-22 15:05:41 [main] INFO  org.mskcc.cbio.cgds.scripts.drug.internal.PiHelperImporter - Number of drug-targets imported: 16
+2013-07-22 15:06:11 [main] WARN  org.mskcc.cbio.portal.mut_diagram.Pileup - ignoring extended mutation missense, no location information
+2013-07-22 15:06:14 [main] ERROR org.mskcc.cbio.portal.html.MutationAssessorHtmlUtil - Could not parse OMA Functional Impact Score Keyword:  null

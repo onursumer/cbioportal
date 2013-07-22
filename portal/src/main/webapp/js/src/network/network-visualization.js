@@ -300,6 +300,21 @@ NetworkVis.prototype.saveSettings = function()
                 $(this.settingsDialogSelector + " #autoStabilize").val(false);
             }
         }
+	else if (this._layoutOptions[i].id == "incremental")
+        {
+            // check if the incremental box is checked
+
+            if($(this.settingsDialogSelector + " #incremental").is(":checked"))
+            {
+                this._layoutOptions[i].value = true;
+                $(this.settingsDialogSelector + " #incremental").val(true);
+            }
+            else
+            {
+                this._layoutOptions[i].value = false;
+                $(this.settingsDialogSelector + " #incremental").val(false);
+            }
+        }
         else
         {
             // simply copy the text field value
@@ -1619,7 +1634,8 @@ NetworkVis.prototype._defaultOptsArray = function()
             { id: "maxDistance", label: "Maximum distance",  value: 10000,  tip: "The maximum distance over which forces are exerted." },
             { id: "iterations",  label: "Iterations",        value: 400,    tip: "The number of iterations to run the simulation." },
             { id: "maxTime",     label: "Maximum time",      value: 30000,  tip: "The maximum time to run the simulation, in milliseconds." },
-            { id: "autoStabilize", label: "Auto stabilize",  value: true,   tip: "If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations." } ];
+            { id: "incremental", label: "Incremental",  value: "false",   tip: "If checked, will be performed incremently according to the current position of the nodes." },
+	    { id: "autoStabilize", label: "Auto stabilize",  value: true,   tip: "If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations." } ];
 
     return defaultOpts;
 };
@@ -3210,6 +3226,21 @@ NetworkVis.prototype._updatePropsUI = function()
                 $(this.settingsDialogSelector + " #autoStabilize").val(false);
             }
         }
+	else if (this._layoutOptions[i].id == "incremental")
+        {
+            if (this._layoutOptions[i].value == true)
+            {
+                // check the box
+                $(this.settingsDialogSelector + " #incremental").attr("checked", true);
+                $(this.settingsDialogSelector + " #incremental").val(true);
+            }
+            else
+            {
+                // uncheck the box
+                $(this.settingsDialogSelector + " #incremental").attr("checked", false);
+                $(this.settingsDialogSelector + " #incremental").val(false);
+            }
+        }
         else
         {
             $(this.settingsDialogSelector + " #" + this._layoutOptions[i].id).val(
@@ -3229,10 +3260,14 @@ NetworkVis.prototype._updateLayoutOptions = function()
 
     for (var i=0; i < this._layoutOptions.length; i++)
     {
-        options[this._layoutOptions[i].id] = this._layoutOptions[i].value;
+	options[this._layoutOptions[i].id] = this._layoutOptions[i].value; 
     }
-
+    if (this._autoLayout)
+    {
+	options["incremental"] = true;
+    }
     this._graphLayout.options = options;
+    
 };
 
 NetworkVis.prototype._createEdgeInspector = function(divId)
@@ -3378,6 +3413,14 @@ NetworkVis.prototype._createSettingsDialog = function(divId)
                         '</td>' +
                         '<td>' +
                             '<input type="text" id="maxTime" value=""/>' +
+                        '</td>' +
+                    '</tr>' +
+		    '<tr title="If checked, will be performed incremently according to the current position of the nodes.">' +
+                        '<td align="right">' +
+                            '<label>Incremental</label>' +
+                        '</td>' +
+                        '<td align="left">' +
+                            '<input type="checkbox" id="incremental" value="false" />' +
                         '</td>' +
                     '</tr>' +
                     '<tr title="If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations.">' +
