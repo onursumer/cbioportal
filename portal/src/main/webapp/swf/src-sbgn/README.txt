@@ -14,11 +14,10 @@ Modified classes
 
 /html-template/js/cytoscapeweb.js
 - method profileDataAlwaysShown added
-
 - all org.cytoscapeweb.Visualization strings replaced with org.cytoscapeweb.VisualizationSBGN
 in order to use two different API's in portal and create  visualization objects which supports
-31140 version of cytoscapeweb. In this way we use different API's for simple view tab and sbgn view
-tab of network view.
+31140 version of cytoscapeweb. In this way we use different API's for simple view  and sbgn view
+ of network view.
 
 /org/cytoscapeweb/view/ExternalMediator.as
 - wiring necessary to toggle whether or not profile data should always be shown.
@@ -29,17 +28,29 @@ Modification is done on
 - use ShowProfileDataCommand to toggle whether or not profile data should always be shown.
 
 /src/org/cytoscapeweb/controller/SelectCommand.as
-Modification is done between lines 55~60 & 76 gives support to show detail discs of the selected nodes.
+- Modification is done between lines 55~60 & 76 gives support to show detail discs of the selected nodes.
 
 /src/org/cytoscapeweb/controller/DeselectCommand.as
-Modification is done between lines 55~60 & 76 gives support to hide detail discs of the deselected nodes.
+- Modification is done between lines 55~60 & 76 gives support to hide detail discs of the deselected nodes.
 
 /src/org/cytoscapeweb/util/Nodes.as
-Line 39 - CBioNodeRenderer is imported. Line 90 - CBioSBGNNodeRenderer is set.
+- Line 39 - CBioNodeRenderer is imported. Line 90 - CBioSBGNNodeRenderer is set.
 
+/src/org/cytoscapeweb/controller/DrawGraphCommand.as
+- Line 73 - Genomic data is passed to the graphProxy.
 
+/src/org.cytoscapeweb/model/GraphProxy.as
+- Between lines 813-828 genomic data is passed to the parser.
+
+/src/org.cytoscapeweb/model/SBGNMLConverter.as
+- Some methods are refactored for passing genomic data by the child class CbioSBGNMLConverter.as.
+  -parseGlyphData and parse methods are changed.
+  
 New classes
 -----------
+
+/src/org.cytoscapeweb/model/CbioSBGNMLConverter.as
+Extends SBGNMLconverter and it is capable of creating and parsing data fields for genomic data.
 
 /src/org/cytoscapeweb/view/render/CBioSBGNNodeRenderer.as
 Extends SBGNNodeRenderer, changes render method to be able to draw the detail discs.
