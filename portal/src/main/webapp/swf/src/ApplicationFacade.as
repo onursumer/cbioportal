@@ -65,10 +65,7 @@ package org.cytoscapeweb {
         
         /** To export the network as an image or an XML. */
         public static const EXPORT_NETWORK:String = "export_network";
-
-		/** CBio Modification: To decide whether profile data should always be shown. */
-		public static const SHOW_PROFILE_DATA:String = "show_profile_data";
-
+        
         /** Ask to show or hide node/edge labels, according to the boolean value sent as the body of the notification. */
         public static const SHOW_LABELS:String = "show_labels";
         /** Ask to show or hide the pan-zoom control, according to the boolean value sent as the body of the notification. */
@@ -109,6 +106,9 @@ package org.cytoscapeweb {
         public static const ROLLOUT_EVENT:String = "rollout_event";
         public static const ACTIVATE_EVENT:String = "activate_event";
         public static const DEACTIVATE_EVENT:String = "deactivate_event";
+        public static const DRAG_START_EVENT:String = "drag_start_event";
+        public static const DRAG_EVENT:String = "drag_event";
+        public static const DRAG_STOP_EVENT:String = "drag_stop_event";
         
         public static const GRAPH_DRAWN:String = "graph_drawn";
         public static const GRAPH_DATA_CHANGED:String = "graph_data_changed";
@@ -119,6 +119,9 @@ package org.cytoscapeweb {
         
         public static const EXT_INTERFACE_NOT_AVAILABLE:String = "ext_interface_not_available";
         public static const ADD_CALLBACK_ERROR:String = "add_callbacks_error";
+		
+		/** CBio Modification: To decide whether profile data should always be shown. */
+		public static const SHOW_PROFILE_DATA:String = "show_profile_data";
 
         // ========[ PRIVATE PROPERTIES ]===========================================================
         
@@ -151,10 +154,13 @@ package org.cytoscapeweb {
             registerCommand(ZOOM_GRAPH_TO_FIT, ZoomGraphToFitCommand);
             registerCommand(SHOW_LABELS, ShowLabelsCommand);
             registerCommand(MERGE_EDGES, MergeEdgesCommand);
-            registerCommand(ROLLOVER_EVENT, CBioHandleHoverCommand); // CBio Modification
-            registerCommand(ROLLOUT_EVENT, CBioHandleHoverCommand); // CBio Modification
+            registerCommand(ROLLOVER_EVENT, HandleHoverCommand);
+            registerCommand(ROLLOUT_EVENT, HandleHoverCommand);
             registerCommand(CLICK_EVENT, HandleClickCommand);
             registerCommand(DOUBLE_CLICK_EVENT, HandleClickCommand);
+            registerCommand(DRAG_START_EVENT, HandleDragCommand);
+            registerCommand(DRAG_EVENT, HandleDragCommand);
+            registerCommand(DRAG_STOP_EVENT, HandleDragCommand);
             registerCommand(SELECT, SelectCommand);
             registerCommand(SELECT_ALL, SelectAllCommand);
             registerCommand(DESELECT, DeselectCommand);
@@ -169,7 +175,9 @@ package org.cytoscapeweb {
             registerCommand(SET_VISUAL_STYLE, SetVisualStyleCommand);
             registerCommand(SET_VISUAL_STYLE_BYPASS, SetVisualStyleBypassCommand);
             registerCommand(APPLY_LAYOUT, ApplyLayoutCommand);
-			registerCommand(EXPORT_NETWORK, ExportNetworkCommand);
+            registerCommand(EXPORT_NETWORK, ExportNetworkCommand);
+			registerCommand(ROLLOVER_EVENT, CBioHandleHoverCommand); // CBio Modification
+			registerCommand(ROLLOUT_EVENT, CBioHandleHoverCommand); // CBio Modification
 			registerCommand(SHOW_PROFILE_DATA, ShowProfileDataCommand); // CBio Modification
         }
         
@@ -178,7 +186,7 @@ package org.cytoscapeweb {
         public function ApplicationFacade(lock:SingletonLock) {
         	super();
             if (lock == null)
-                throw new Error( "Invalid Singleton access. Use ApplicationFacade.instance().");
+                throw new Error("Invalid Singleton access. Use ApplicationFacade.getInstance().");
         }
         
         public static function getInstance():ApplicationFacade {
