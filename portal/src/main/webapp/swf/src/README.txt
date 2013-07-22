@@ -12,7 +12,7 @@ Modified classes
 /html-template/js/cytoscapeweb.js
 - method profileDataAlwaysShown added
 
-/org/cytoscapeweb/view/ExternalMediator.as
+/src/org/cytoscapeweb/view/ExternalMediator.as
 - wiring necessary to toggle whether or not profile data should always be shown.
 
 /src/org/cytoscapeweb/ApplicationFacade.as
@@ -31,6 +31,11 @@ Line 39 - CBioNodeRenderer is imported. Line 90 - CBioNodeRenderer is set.
 
 /src/org/cytoscapeweb/util/Edges.as
 Line 41 - CBioEdgeRenderer is imported. Line 78 - CBioEdgeRenderer is set.
+
+/src/org/cytoscapeweb/view/components/GraphVis.as
+Line 229 - an option has been added for incremental layout of force directed
+Line 309 - checking options for force directed layout, position of nodes should be randomized only if not incremental
+
 
 New classes
 -----------
