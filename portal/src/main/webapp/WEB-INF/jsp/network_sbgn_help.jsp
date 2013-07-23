@@ -78,11 +78,11 @@
 
 </p>
 <p class="regular">
-	For example, TP53 is frequently altered in glibolastoma:<br></br>
+	For example, TP53 is frequently altered in glibolastoma:<br />
 	<img class="sbgn_high_altered_node_img" src="images/network/sbgn_high_altered_node.png"></img>
 </p>
 <p class="regular">
-	For example, TP53 is frequently altered in glibolastoma:<br></br>
+	For example, TP53 is frequently altered in glibolastoma:<br />
 	<img class="sbgn_low_altered_node_img" src="images/network/sbgn_low_altered_node.png"></img>
 
 </p>
