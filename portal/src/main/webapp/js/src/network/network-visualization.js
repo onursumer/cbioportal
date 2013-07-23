@@ -1250,7 +1250,7 @@ NetworkVis.prototype._visChanged = function()
     if (this._autoLayout)
     {
         // re-apply layout
-        this._performLayout();
+        this._performAutoLayout();
     }
 };
 
@@ -2960,6 +2960,17 @@ NetworkVis.prototype._visibleGenes = function()
 };
 
 /**
+ * Performs the incremental layout on changes to the graph.
+ */
+NetworkVis.prototype._performAutoLayout = function()
+{
+    // make it incremental then change it back
+    this._graphLayout.options["incremental"] = true;
+    this._performLayout();
+    this._graphLayout.options["incremental"] = this._layoutOptions["incremental"].value;
+};
+
+/**
  * Performs the current layout on the graph.
  */
 NetworkVis.prototype._performLayout = function()
@@ -3261,10 +3272,6 @@ NetworkVis.prototype._updateLayoutOptions = function()
     for (var i=0; i < this._layoutOptions.length; i++)
     {
 	options[this._layoutOptions[i].id] = this._layoutOptions[i].value; 
-    }
-    if (this._autoLayout)
-    {
-	options["incremental"] = true;
     }
     this._graphLayout.options = options;
     
