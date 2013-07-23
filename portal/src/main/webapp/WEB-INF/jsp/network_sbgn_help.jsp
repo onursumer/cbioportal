@@ -35,7 +35,7 @@
 	For instance, each rounded rectangle is a macromolecule, a distinct state of a biological entity such as phosphorylated state of TP53. 
 	A process represents group additions or removals, complex formations, and disassociations as well as transportations and other cellular events. 
 	This model is very similar to the chemical equations of the form <br /><br />
-	<img class="network_notation" src="images/network/network_sbgn_help_pic1.png"></img> <br /><br />
+	<img class="network_notation" src="images/network/network_sbgn_help_pic1.png"></img> <br />
 	where A is a substrate, B is a product and C is an effector. 
 	The states associated with a process are connected to the corresponding process box through substrate, product and effector edges, respectively.
 </p>
