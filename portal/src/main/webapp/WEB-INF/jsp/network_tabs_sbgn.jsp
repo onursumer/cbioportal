@@ -109,7 +109,7 @@ if (includeHelpTab==null) {
 
     <%if(includeHelpTab){%>
     <div id="help_tab">
-        <jsp:include page="network_help.jsp"></jsp:include>
+        <jsp:include page="network_sbgn_help.jsp"></jsp:include>
     </div>
     <%}%>
 </div>
