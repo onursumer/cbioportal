@@ -57,11 +57,11 @@
 	A <span class="italic">linker node</span> represents a gene that connects to one or more of your seed genes.
 </p>
 <p class="regular">
-	<span class="italic">Seed nodes</span> are represented with a thick border:<br /><br />
+	<span class="italic">Seed nodes</span> are represented with a thick border:<br />
 	<img class="sbgn_seed_node_img" src="images/network/sbgn_seed_node.png"></img>
 </p>
 <p class="regular">
-	<span class="italic">Linker nodes</span> are represented with a thin border:<br></br>
+	<span class="italic">Linker nodes</span> are represented with a thin border:<br />
 	<img class="sbgn_linker_node_img" src="images/network/sbgn_linker_node.png"></img>
 </p>
 
