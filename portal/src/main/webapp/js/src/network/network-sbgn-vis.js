@@ -1317,8 +1317,13 @@ NetworkSbgnVis.prototype.updateVisibility = function()
         for(var i = 0; i < nodes.length; i++)
         {
                 var data = nodes[i].data;
+		// if the node is in query (seed macromolecule) do not filter it out
+		if (data.IN_QUERY)
+		{
+			weights[data.id] = 1;
+		}
                 //check if it should be shown according to alteration frequency
-                if(this._geneWeightMap[data.id] >= threshold)
+                else if(this._geneWeightMap[data.id] >= threshold)
                 {
                         // if so, check the source and set weight accordingly.
                         //notice, only processes have data sources.
