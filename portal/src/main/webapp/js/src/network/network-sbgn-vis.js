@@ -743,7 +743,8 @@ function _labelSort (node1, node2)
 **/
 function _geneLabel(data)
 {
-	return _safeProperty(data.glyph_label_text);
+	var label = _safeProperty(data.glyph_label_text);
+	return label.toUpperCase();
 }
 /**
  * Filters out all non-selected nodes by the adjust weights (filtering algorithm)
