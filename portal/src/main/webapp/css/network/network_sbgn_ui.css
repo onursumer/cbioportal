@@ -693,32 +693,44 @@
 
 #help_tab p
 {
-	margin-bottom: 15px;
+    margin-bottom: 15px;
     margin-top: 15px;
     text-align: left;
 }
 
-#help_tab .seed_node_img
+#help_tab .network_notation
 {
-	/* actual [width,height] : [96px,139px] */	
+	/* actual [width,height] : [66px,41px] */	
 	width: auto;
-	height: 72px;
+	height: 50px;
 }
 
-#help_tab .linker_node_img
+#help_tab .sbgn_seed_node_img
 {
-	/* actual [width,height] : [93px,121px] */
+	/* actual [width,height] : [127px,64px] */	
 	width: auto;
-	height: 64px;
+	height: 45px;
 }
 
-#help_tab .altered_node_img
+#help_tab .sbgn_linker_node_img
 {
-	/* actual [width,height] : [111px,125px] */
+	/* actual [width,height] : [123px,56px] */
+	width: auto;
+	height: 40px;
+}
+
+#help_tab .sbgn_high_altered_node_img
+{
+	/* actual [width,height] : [202px,132px] */
 	width: auto;
 	height: 90px;
 }
-
+#help_tab .sbgn_low_altered_node_img
+{
+	/* actual [width,height] : [202px,120px] */
+	width: auto;
+	height: 90px;
+}
 #help_tab .not_altered_node_img
 {
 	/* actual [width,height] : [108px,124px] */
