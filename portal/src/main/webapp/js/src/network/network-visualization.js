@@ -1634,7 +1634,7 @@ NetworkVis.prototype._defaultOptsArray = function()
             { id: "maxDistance", label: "Maximum distance",  value: 10000,  tip: "The maximum distance over which forces are exerted." },
             { id: "iterations",  label: "Iterations",        value: 400,    tip: "The number of iterations to run the simulation." },
             { id: "maxTime",     label: "Maximum time",      value: 30000,  tip: "The maximum time to run the simulation, in milliseconds." },
-            { id: "incremental", label: "Incremental",  value: "false",   tip: "If checked, will be performed incremently according to the current position of the nodes." },
+            { id: "incremental", label: "Incremental",  value: false,   tip: "If checked, will be performed incremently according to the current position of the nodes." },
 	    { id: "autoStabilize", label: "Auto stabilize",  value: true,   tip: "If checked, layout automatically tries to stabilize results that seems unstable after running the regular iterations." } ];
 
     return defaultOpts;
