@@ -755,7 +755,7 @@ NetworkVis.prototype.filterSelectedGenes = function()
     this._selectedElements = this._selectedElementsMap("nodes");
 
     // filter out selected elements
-    this._vis.filter("nodes", selectionVisibility);
+    this._vis.filter("nodes", selectionVisibility, false);
 
     // also, filter disconnected nodes if necessary
     this._filterDisconnected();
@@ -783,7 +783,7 @@ NetworkVis.prototype.filterNonSelected = function()
     this._selectedElements = this._selectedElementsMap("nodes");
 
     // filter out non-selected elements
-    this._vis.filter('nodes', geneVisibility);
+    this._vis.filter('nodes', geneVisibility, false);
 
     // also, filter disconnected nodes if necessary
     this._filterDisconnected();
@@ -848,13 +848,13 @@ NetworkVis.prototype.updateEdges = function()
 
     // re-apply filter to update nodes
     //_vis.removeFilter("nodes", false);
-    this._vis.filter("nodes", showAllNodeVisibility);
+    this._vis.filter("nodes", showAllNodeVisibility, false);
 
     // remove current edge filters
     //_vis.removeFilter("edges", false);
 
     // filter selected types
-    this._vis.filter("edges", edgeVisibility);
+    this._vis.filter("edges", edgeVisibility, false);
 
     // remove previous filters due to disconnection
     for (var key in this._filteredByIsolation)
@@ -1274,7 +1274,7 @@ NetworkVis.prototype._filterDisconnected = function()
         };
 
         // filter disconnected
-        this._vis.filter('nodes', isolation);
+        this._vis.filter('nodes', isolation, false);
     }
 };
 
@@ -2187,7 +2187,7 @@ NetworkVis.prototype._filterByDropDown = function()
     };
 
     // filter with new drop down selection
-    this._vis.filter("nodes", dropDownVisibility);
+    this._vis.filter("nodes", dropDownVisibility, false);
 
     // also, filter disconnected nodes if necessary
     this._filterDisconnected();
@@ -2229,7 +2229,7 @@ NetworkVis.prototype._filterBySlider = function()
     };
 
     // filter with new slider value
-    this._vis.filter("nodes", sliderVisibility);
+    this._vis.filter("nodes", sliderVisibility, false);
 
     // also, filter disconnected nodes if necessary
     this._filterDisconnected();
@@ -2901,7 +2901,7 @@ NetworkVis.prototype._hideSelected = function()
     };
 
     // filter out selected elements
-    this._vis.filter('all', selectionVisibility);
+    this._vis.filter('all', selectionVisibility, false);
 
     // also, filter disconnected nodes if necessary
     this._filterDisconnected();

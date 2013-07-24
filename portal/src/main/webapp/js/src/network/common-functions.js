@@ -36,6 +36,7 @@ function _visChanged(self)
         // re-apply layout
         _performLayout(self);
     }
+    
 }
 
 /**
