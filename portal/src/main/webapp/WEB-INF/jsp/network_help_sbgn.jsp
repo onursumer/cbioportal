@@ -114,8 +114,7 @@
 			<span class="bold">Filter by Total Alteration:</span>
 			Networks can be filtered based on alteration frequencies of individual nodes 
 			using a slider under the "Filtering" tab. You can specify a threshold of total alteration frequency 
-			- nodes with alteration frequencies below the threshold will be filtered out, 
-			but seed nodes are always kept in the network.
+			- nodes with alteration frequencies below the threshold will be filtered out.
 		</li>
 		<li>
 			<span class="bold">Filter by Process Source:</span>
