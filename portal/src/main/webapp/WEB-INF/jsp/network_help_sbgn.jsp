@@ -35,15 +35,15 @@
 	For instance, each rounded rectangle is a macromolecule, a distinct state of a biological entity such as phosphorylated state of TP53. 
 	A process represents group additions or removals, complex formations, and disassociations as well as transportations and other cellular events. 
 	This model is very similar to the chemical equations of the form <br /><br />
-	<img class="network_notation" src="images/network/network_sbgn_help_pic1.png"></img> <br />
+	<img class="network_notation" src="images/network/network_help_sbgn_pic1.png"></img> <br />
 	where A is a substrate, B is a product and C is an effector. 
 	The states associated with a process are connected to the corresponding process box through substrate, product and effector edges, respectively.
 </p>
 <p class="regular">
-	Click <a id="show_node_legend" onclick="handleMenuEvent('node_legend');"> here </a> to see the <span class="italic">node legend</span>. 
+	Click <a id="show_node_legend" onclick="handleMenuEvent('show_node_legend');"> here </a> to see the <span class="italic">node legend</span>. 
 </p>
 <p class="regular">
-	Click <a id="show_interaction_legend" onclick="handleMenuEvent('interaction_legend');"> here </a> to see the <span class="italic">interaction legend</span>. 
+	Click <a id="show_interaction_legend" onclick="handleMenuEvent('show_interaction_legend');"> here </a> to see the <span class="italic">interaction legend</span>. 
 </p>
 
 <p class="heading">
@@ -58,11 +58,11 @@
 </p>
 <p class="regular">
 	<span class="italic">Seed nodes</span> are represented with a thick border:<br />
-	<img class="sbgn_seed_node_img" src="images/network/sbgn_seed_node.png"></img>
+	<img class="seed_node_img_sbgn" src="images/network/seed_node_sbgn.png"></img>
 </p>
 <p class="regular">
 	<span class="italic">Linker nodes</span> are represented with a thin border:<br />
-	<img class="sbgn_linker_node_img" src="images/network/sbgn_linker_node.png"></img>
+	<img class="linker_node_img_sbgn" src="images/network/linker_node_sbgn.png"></img>
 </p>
 
 <p class="heading">
@@ -79,11 +79,11 @@
 </p>
 <p class="regular">
 	For example, TP53 is frequently altered in glibolastoma:<br />
-	<img class="sbgn_high_altered_node_img" src="images/network/sbgn_high_altered_node.png"></img>
+	<img class="high_altered_node_img_sbgn" src="images/network/high_altered_node_sbgn.png"></img>
 </p>
 <p class="regular">
 	By contrast, YY1 is not as frequently altered in glioblastoma:<br />
-	<img class="sbgn_low_altered_node_img" src="images/network/sbgn_low_altered_node.png"></img>
+	<img class="low_altered_node_img_sbgn" src="images/network/low_altered_node_sbgn.png"></img>
 
 </p>
 <p class="regular">
@@ -93,7 +93,7 @@
 	data affecting the associated gene across all cases. 
 </p>
 <p class="regular">
-	Click <a id="show_genomics_legend" onclick="handleMenuEvent('genomics_legend');"> here </a> to see the genomic data legend.
+	Click <a id="show_genomics_legend" onclick="handleMenuEvent('show_genomics_legend');"> here </a> to see the genomic data legend.
 </p>
 
 <p class="heading">

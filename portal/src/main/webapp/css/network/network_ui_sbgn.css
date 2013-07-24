@@ -587,7 +587,7 @@
 	white-space: nowrap;
 }
 
-#filtering_tab_sbgn, #genes_tab_sbgn, #help_tab, #element_details_tab
+#filtering_tab_sbgn, #genes_tab_sbgn, #help_tab_sbgn, #element_details_tab
 {
 	height: 575px;
 	width: 245px;
@@ -682,63 +682,63 @@
 
 /*
  * ######################################################## 
- * ####################### Help Tab #######################
+ * ####################### Help Tab SBGN #######################
  * ########################################################
  */
  
-#help_tab
+#help_tab_sbgn
 {
 	overflow-y: auto;
 }
 
-#help_tab p
+#help_tab_sbgn p
 {
     margin-bottom: 15px;
     margin-top: 15px;
     text-align: left;
 }
 
-#help_tab .network_notation
+#help_tab_sbgn .network_notation
 {
 	/* actual [width,height] : [66px,41px] */	
 	width: auto;
 	height: 50px;
 }
 
-#help_tab .sbgn_seed_node_img
+#help_tab_sbgn .seed_node_img_sbgn
 {
 	/* actual [width,height] : [127px,64px] */	
 	width: auto;
 	height: 45px;
 }
 
-#help_tab .sbgn_linker_node_img
+#help_tab_sbgn .linker_node_img_sbgn
 {
 	/* actual [width,height] : [123px,56px] */
 	width: auto;
 	height: 40px;
 }
 
-#help_tab .sbgn_high_altered_node_img
+#help_tab_sbgn .high_altered_node_img_sbgn
 {
 	/* actual [width,height] : [202px,132px] */
 	width: auto;
 	height: 90px;
 }
-#help_tab .sbgn_low_altered_node_img
+#help_tab_sbgn .low_altered_node_img_sbgn
 {
 	/* actual [width,height] : [202px,120px] */
 	width: auto;
 	height: 90px;
 }
-#help_tab .not_altered_node_img
+#help_tab_sbgn .not_altered_node_img
 {
 	/* actual [width,height] : [108px,124px] */
 	width: auto;
 	height: 90px;
 }
 
-#help_tab img
+#help_tab_sbgn img
 {
 	display: block;
 	
@@ -747,31 +747,31 @@
 	margin-right: auto;
 }
 
-#help_tab ul, #help_tab p
+#help_tab_sbgn ul, #help_tab_sbgn p
 {
 	color: #666666;
     font-family: verdana,arial,sans-serif;
     font-size: 11px;
 }
 
-#help_tab ul li
+#help_tab_sbgn ul li
 {
 	margin-left: -15px;
 	text-align: left;
 }
 
-#help_tab a
+#help_tab_sbgn a
 {
 	cursor:pointer;
 	color:#1974B8;
 }
 
-#help_tab .italic
+#help_tab_sbgn .italic
 {
 	font-style: italic;
 }
 
-#help_tab .bold
+#help_tab_sbgn .bold
 {
 	font-weight: bold;
 }
