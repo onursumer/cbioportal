@@ -30,7 +30,7 @@
 %>
 
 <link href="css/network/network_ui.css" type="text/css" rel="stylesheet"/>
-<link href="css/network/network_sbgn_ui.css" type="text/css" rel="stylesheet"/>
+<link href="css/network/network_ui_sbgn.css" type="text/css" rel="stylesheet"/>
 
 <script type="text/javascript" src="js/lib/json2.js"></script>
 <script type="text/javascript" src="js/lib/cytoscape_web/AC_OETags.min.js"></script>
@@ -131,4 +131,4 @@
 
 <jsp:include page="network_views.jsp"/>
 <jsp:include page="network_div.jsp"/>
-<jsp:include page="network_sbgn_div.jsp"/>
+<jsp:include page="network_div_sbgn.jsp"/>

@@ -1648,7 +1648,7 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     // add menu listeners
     $(this.mainMenuSelector + " #network_menu_sbgn a").unbind(); // TODO temporary workaround (there is listener attaching itself to every 'a's)
     $(this.mainMenuSelector + " #network_menu_sbgn a").click(handleMenuEvent);
-    $("#help_tab a").click(handleMenuEvent);
+    $("#help_tab_sbgn a").click(handleMenuEvent);
 
     // add button listeners
 
@@ -1993,7 +1993,7 @@ NetworkSbgnVis.prototype._createNodeLegend = function(divId)
     var html =
         '<div id="' + id + '" class="network_node_legend hidden-network-ui" title="Node Legend">' +
             '<div id="node_legend_content" class="content ui-widget-content">' +
-                '<img src="images/network/sbgn-node-legend.png"/>' +
+                '<img src="images/network/node_legend_sbgn.png"/>' +
             '</div>' +
         '</div>';
 
@@ -2010,7 +2010,7 @@ NetworkSbgnVis.prototype._createInteractionLegend = function(divId)
     var html =
         '<div id="' + id + '" class="network_interaction_legend hidden-network-ui" title="Interaction Legend">' +
             '<div id="interaction_legend_content" class="content ui-widget-content">' +
-                '<img src="images/network/sbgn-interaction-legend.png"/>' +
+                '<img src="images/network/interaction_legend_sbgn.png"/>' +
             '</div>' +
         '</div>';
 
@@ -2026,7 +2026,7 @@ NetworkSbgnVis.prototype._createGenomicDataLegend = function(divId)
     var html =
         '<div id="' + id + '" class="network_genomics_legend hidden-network-ui" title="Genomics Data Legend">' +
             '<div id="genomic_data_legend_content" class="content ui-widget-content">' +
-                '<img src="images/network/sbgn-genomics-legend.png"/>' +
+                '<img src="images/network/genomics_legend_sbgn.png"/>' +
             '</div>' +
         '</div>';
 

@@ -13,7 +13,7 @@ if (includeHelpTab==null) {
 	    <li><a href="#element_details_tab_sbgn" class="network-tab-ref"
 	           title="Node details"><span>Details</span></a></li>
         <%if(includeHelpTab){%>
-        <li><a href="#help_tab" class="network-tab-ref" title="About & Help"><span>Help</span></a></li>
+        <li><a href="#help_tab_sbgn" class="network-tab-ref" title="About & Help"><span>Help</span></a></li>
         <%}%>
     </ul>
     <div id="genes_tab_sbgn">
@@ -108,8 +108,8 @@ if (includeHelpTab==null) {
 	</div>
 
     <%if(includeHelpTab){%>
-    <div id="help_tab">
-        <jsp:include page="network_sbgn_help.jsp"></jsp:include>
+    <div id="help_tab_sbgn">
+        <jsp:include page="network_help_sbgn.jsp"></jsp:include>
     </div>
     <%}%>
 </div>
