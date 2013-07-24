@@ -40,10 +40,10 @@
 	The states associated with a process are connected to the corresponding process box through substrate, product and effector edges, respectively.
 </p>
 <p class="regular">
-	Click <a href="images/network/sbgn-node-legend.png" target="_blank"> here </a> to see the <span class="italic">node legend</span>. 
+	Click <a id="show_node_legend" onclick="handleMenuEvent('node_legend');"> here </a> to see the <span class="italic">node legend</span>. 
 </p>
 <p class="regular">
-	Click <a href="images/network/interaction_legend.png" target="_blank"> here </a> to see the <span class="italic">interaction legend</span>. 
+	Click <a id="show_interaction_legend" onclick="handleMenuEvent('interaction_legend');"> here </a> to see the <span class="italic">interaction legend</span>. 
 </p>
 
 <p class="heading">
@@ -93,7 +93,7 @@
 	data affecting the associated gene across all cases. 
 </p>
 <p class="regular">
-	Click <a href="images/network/sbgn-genomics-legend.png" target="_blank">here</a> to see the genomic data legend.
+	Click <a id="show_genomics_legend" onclick="handleMenuEvent('genomics_legend');"> here </a> to see the genomic data legend.
 </p>
 
 <p class="heading">

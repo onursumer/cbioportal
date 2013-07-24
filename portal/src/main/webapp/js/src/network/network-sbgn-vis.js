@@ -1648,6 +1648,7 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     // add menu listeners
     $(this.mainMenuSelector + " #network_menu_sbgn a").unbind(); // TODO temporary workaround (there is listener attaching itself to every 'a's)
     $(this.mainMenuSelector + " #network_menu_sbgn a").click(handleMenuEvent);
+    $("#help_tab a").click(handleMenuEvent);
 
     // add button listeners
 
