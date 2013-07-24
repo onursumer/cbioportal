@@ -795,15 +795,18 @@
 .header .title 
 {
 	text-align: center;
+	color:#000000;
 }
 #element_details_tab_sbgn .title label
 {
 	font-weight: bold;
+	color:#000000;
 }
 #element_details_tab_sbgn label
 {
 	font-weight: bold;
 	text-align: left;
+	color:#000000;
 }
 #element_details_tab_sbgn .header
 {
