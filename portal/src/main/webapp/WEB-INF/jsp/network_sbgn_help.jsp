@@ -70,7 +70,7 @@
 </p>
 <p class="regular">
 	The exact genomic data displayed on the network depends on the genomic profiles you have selected. 
-	For example, you can choose to include mutation, copy number and mRNA expression profiles. 
+	You can choose to include mutation, copy number and mRNA expression profiles. 
 </p>
 <p class="regular">
 	By default, each node is color coded along a white to red color gradient, 
@@ -82,7 +82,7 @@
 	<img class="sbgn_high_altered_node_img" src="images/network/sbgn_high_altered_node.png"></img>
 </p>
 <p class="regular">
-	For example, TP53 is frequently altered in glibolastoma:<br />
+	By contrast, YY1 is not as frequently altered in glioblastoma:<br />
 	<img class="sbgn_low_altered_node_img" src="images/network/sbgn_low_altered_node.png"></img>
 
 </p>
