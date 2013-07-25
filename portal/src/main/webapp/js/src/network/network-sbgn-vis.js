@@ -869,7 +869,7 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 	var glyph0 = selected[0].data.glyph_class;
 	// if there is more than one node selected and the first is a macromolecule or nucleic acide
 
-	if (selected.length >= 1 && 
+	if (selected.length > 1 && 
 		(glyph0 == this.MACROMOLECULE || glyph0 == this.NUCLEIC_ACID))
 	{
 		var allMacro = 1;
@@ -952,7 +952,7 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 		// very important to return to avoid unpredictable delays
 		return;
 	}
-	else
+	if(selected.length == 1)
 	{
 		// if this is not the case, go to the normal updateDetailsTab function 
 		// that accepts only one node at a time
