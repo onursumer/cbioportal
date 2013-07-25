@@ -316,8 +316,8 @@ package org.cytoscapeweb.view.render
 			if (cns.data.PERCENT_MRNA_WAY_UP != null ||
 				cns.data.PERCENT_MRNA_WAY_DOWN != null)
 			{
-				var mrnaUpRegulation:Number = Number(cns.data.PERCENT_MRNA_UP);
-				var mrnaDownRegulation:Number = Number(cns.data.PERCENT_MRNA_DOWN);
+				var mrnaUpRegulation:Number = Number(cns.data.PERCENT_MRNA_WAY_UP);
+				var mrnaDownRegulation:Number = Number(cns.data.PERCENT_MRNA_WAY_DOWN);
 				leftFlag = true;
 			}
 			
@@ -325,8 +325,8 @@ package org.cytoscapeweb.view.render
 			if (cns.data.PERCENT_RPPA_WAY_UP != null ||
 				cns.data.PERCENT_RPPA_WAY_DOWN != null)
 			{
-				var rppaUpRegulation:Number = Number(cns.data.PERCENT_RPPA_UP);
-				var rppaDownRegulation:Number = Number(cns.data.PERCENT_RPPA_DOWN);
+				var rppaUpRegulation:Number = Number(cns.data.PERCENT_RPPA_WAY_UP);
+				var rppaDownRegulation:Number = Number(cns.data.PERCENT_RPPA_WAY_DOWN);
 				bottomFlag = true;
 			}
 			

@@ -76,7 +76,7 @@ function NetworkSbgnVis(divId)
 
 
 	// name of the graph layout
-	this._graphLayout = {name: "CompoundSpringEmbedder"};
+	this._graphLayout = {name: "SbgnPDLayout"};
 	//var _graphLayout = {name: "ForceDirected", options:{weightAttr: "weight"}};
 
 	// force directed layout options
