@@ -1403,7 +1403,7 @@ NetworkVis.prototype._removeHighlights = function()
 /**
  * Displays the gene legend in a separate panel.
  */
-NetworkVis.prototype._showNodeLegend = function()
+NetworkVis.prototype._showGeneLegend = function()
 {
     // open legend panel
     $(this.geneLegendSelector).dialog("open").height("auto");
@@ -1973,7 +1973,7 @@ NetworkVis.prototype._initDialogs = function()
                                     width: 366,
                                     maxHeight: 300});
 
-    // adjust node legend
+    // adjust gene legend
     $(this.geneLegendSelector).dialog({autoOpen: false,
                                  resizable: false,
                                  width: 440});
@@ -2770,8 +2770,8 @@ NetworkVis.prototype._initControlFunctions = function()
         self.filterNonSelected();
     };
 
-    var showNodeLegend = function() {
-        self._showNodeLegend();
+    var showGeneLegend = function() {
+        self._showGeneLegend();
     };
 
     var showDrugLegend = function() {
@@ -2829,7 +2829,7 @@ NetworkVis.prototype._initControlFunctions = function()
     this._controlFunctions["highlight_neighbors"] = highlightNeighbors;
     this._controlFunctions["remove_highlights"] = removeHighlights;
     this._controlFunctions["hide_non_selected"] = filterNonSelected;
-    this._controlFunctions["show_gene_legend"] = showNodeLegend;
+    this._controlFunctions["show_gene_legend"] = showGeneLegend;
     this._controlFunctions["show_drug_legend"] = showDrugLegend;
     this._controlFunctions["show_edge_legend"] = showEdgeLegend;
 
@@ -2968,7 +2968,7 @@ NetworkVis.prototype._performAutoLayout = function()
     // make it incremental then change it back
     this._graphLayout.options["incremental"] = true;
     this._performLayout();
-    this._graphLayout.options["incremental"] = this._layoutOptions["incremental"].value;
+    this._graphLayout.options["incremental"] = this._layoutOptions[9].value;
 };
 
 /**
@@ -3300,8 +3300,8 @@ NetworkVis.prototype._createGeneLegend = function(divId)
     var id = "node_legend_" + divId;
 
     var html =
-        '<div id="' + id + '" class="network_node_legend hidden-network-ui" title="Gene Legend">' +
-            '<div id="node_legend_content" class="content ui-widget-content">' +
+        '<div id="' + id + '" class="network_gene_legend hidden-network-ui" title="Gene Legend">' +
+            '<div id="gene_legend_content" class="content ui-widget-content">' +
                 '<img src="images/network/gene_legend.png"/>' +
             '</div>' +
         '</div>';
