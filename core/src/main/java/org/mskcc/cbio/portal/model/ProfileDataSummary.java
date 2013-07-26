@@ -315,7 +315,7 @@ public class ProfileDataSummary {
                 }
 		else
 		{
-		    map.put(level, 0);
+		    map.put(level, 0.0);
 		}
             }
         }
@@ -370,7 +370,7 @@ public class ProfileDataSummary {
 	    }
 	    else
 	    {
-		percents[0] = 0;
+		percents[0] = 0.0;
 	    }
 	    if (numSamplesWhereGeneIsDownRegulated > 0)
 	    {
@@ -378,7 +378,7 @@ public class ProfileDataSummary {
 	    }
 	    else
 	    {
-		percents[1] = 0;
+		percents[1] = 0.0;
 	    }
 
             geneMRNAUpDownMap.put(gene, percents);
@@ -404,7 +404,7 @@ public class ProfileDataSummary {
                     numSamplesWhereGeneIsMutated++;
                 }
             }
-	    double percent = 0;
+	    double percent = 0.0;
 	    if (numSamplesWhereGeneIsMutated > 0)
 	    {
 		percent = 1.0 * numSamplesWhereGeneIsMutated/caseList.size();
@@ -439,7 +439,7 @@ public class ProfileDataSummary {
                     numSamplesWhereGeneIsAltered++;
                 }
             }
-            double percent = 0;
+            double percent = 0.0;
 	    if (numSamplesWhereGeneIsAltered > 0)
 	    {
 		percent = numSamplesWhereGeneIsAltered / (double) caseList.size();
@@ -497,7 +497,7 @@ public class ProfileDataSummary {
             }
             caseAlteredMap.put(caseId, caseIsAltered);
         }
-        percentOfCasesWithAlteredPathway = 0;
+        percentOfCasesWithAlteredPathway = 0.0;
 	if (numCasesAffected > 0)
 	{
         	percentOfCasesWithAlteredPathway = numCasesAffected
