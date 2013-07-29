@@ -39,9 +39,9 @@ function NetworkSbgnVis(divId)
 	this._selectFromTab = false;
 	
 	// for show and hide compartments
-	this.nodesOfCompartments = new Array();
-	this.edgedOfCompartments = new Array();
-	this.compartments = new Array();
+	//this.nodesOfCompartments = new Array();
+	//this.edgedOfCompartments = new Array();
+	//this.compartments = new Array();
 
 	// array of control functions
 	this._controlFunctions = null;
@@ -138,7 +138,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, seedNodes)
 	this._geneWeightMap = this.adjustWeights(weights);
 	this._geneWeightThreshold = this.ALTERATION_PERCENT;
 	this._maxAlterationPercent = _maxAlterValNonSeed(this, this._geneWeightMap);
-	this.setCompartmentElements();
+	//this.setCompartmentElements();
 	this._resetFlags();
 
 	this._initControlFunctions();
@@ -277,11 +277,10 @@ NetworkSbgnVis.prototype.addExtensionFields = function(attributeMap, seedNodes)
 {
 	var nodes = this._vis.nodes();
 	var targetNodes = new Array();
-	var seedNodeList = seedNodes.split(" ");
 
-	for(var i = 0; i < seedNodeList.length; i++)
+	for(var i = 0; i < seedNodes.length; i++)
 	{
-		var sameNodes = findNodes(seedNodeList[i], nodes);
+		var sameNodes = findNodes(seedNodes[i], nodes);
 		for(var j = 0; j < sameNodes.length; j++)
 		{
 			targetNodes.push(sameNodes[j]);
@@ -443,23 +442,16 @@ NetworkSbgnVis.prototype.adjustWeights = function(w)
 			processes.push(nodes[i]);
 		}
 		// initialize the parent ID
-		pId[nodes[i].data.id] = -1;
-		
-		// update leaves array
-		if ( this._vis.childNodes(nodes[i].data.id).length == 0)
-		{				
-			leaves.push(nodes[i]);
-		}
-		
+		pId[nodes[i].data.id] = -1;		
 	}
 	
 	// update parents array
 	var k = 0;
 	for (var i = 0; i < nodes.length; i++)
 	{
-		if ( this._vis.childNodes(nodes[i]).length > 0)
+		if ( this._vis.childNodes(nodes[i].data.id).length > 0)
 		{
-			var children = this._vis.childNodes(nodes[i]);
+			var children = this._vis.childNodes(nodes[i].data.id);
 			for (var j = 0; j < children.length; j++)
 			{
 				pId[children[j].data.id] = k;
@@ -467,6 +459,10 @@ NetworkSbgnVis.prototype.adjustWeights = function(w)
 			}
 			parents[k] = nodes[i].data.id;
 			k++;
+		}
+		else // its a leave, update leaves array
+		{
+			leaves.push(nodes[i]);
 		}
 	}
 	
@@ -490,7 +486,7 @@ NetworkSbgnVis.prototype.adjustWeights = function(w)
 		}
 	}
 	
-	// update all neighbors of processes to have the weight of the process
+	// A2: update all neighbors of processes to have the weight of the process
 	for (var i = 0; i < processes.length; i++)
 	{
 		var w = weights[processes[i].data.id] ;
@@ -504,66 +500,50 @@ NetworkSbgnVis.prototype.adjustWeights = function(w)
 			}
 		}
 	}
-	
-	// make the parent nodes hold the maximum weight of its children
-	for (var i = 0; i < leaves.length; i++)
-	{
-		var node = leaves[i];
-		
-		while (true)
-		{
-			// see if we can go higher one level
-			if (pId[node.data.id] == -1)
-				break;
-			var parentID = parents[pId[node.data.id]];
-			// if the weight of the parent is less than the child, update its weight by the child
-			if (weights[node.data.id] > weights[parentID] )
-			{
-				 weights[parentID]  = weights[node.data.id];
-			}
-			else
-			{
-				// if the parent is higher than the child what should be done?
-				// by default it breaks
-				// in our case else will never happen
-				// kept for debugging or future changes
-				break;
-			}
-			// go up one level
-			node = this._vis.node(parentID);
-		}
-	}
 
 	// A3: propogate max values to parents from leaves to root
 	for (var i = 0; i < leaves.length; i++)
 	{
-		var node = leaves[i];
-		var nodeID = node.data.id;
-		var pCheck= pId[nodeID];
+		var nodeID = leaves[i].data.id;
+		var pCheck = pId[nodeID];
 		while (pCheck > -1)
 		{
-			var parent = this._vis.node(parents[pCheck]);
-			var parentID = parent.data.id;
+			var parentID = parents[pCheck];
 			if (weights[parentID] < weights[nodeID])
 			{
-				weights[parentID]  = weights[nodeID];
+				weights[parentID] = weights[nodeID];
 			}
 			pCheck = pId[parentID];
-			node = parent;
+			nodeID = parentID;
 		}
 	}
 	
 	// make sure all complex nodes 
 	// A4: propogate max values of complex hierarchies down to leaves
-	for (var i = 0; i < nodes.length; i++)
+	var topComplexParents = new Array();
+	var complexParents = new Array();
+	var parentNodes = this._vis.parentNodes();
+	for (var i = 0; i < parentNodes.length; i++)
 	{
-		var n = nodes[i];
-		if (n.data.glyph_class == this.COMPLEX && weights[n.data.id] > 0)
+		if (parentNodes[i].data.glyph_class == this.COMPLEX)
 		{
-			var children = this._vis.childNodes(n);
-			while (children.length > 0)
-			{
-				var nextGeneration = new Array();
+			var parentID = pId[parentNodes[i].data.id];
+			if (parentID == -1 || 
+			    this._vis.node(parents[parentID]).data.glyph_class != this.COMPLEX)
+			topComplexParents.push(parentNodes[i]);
+			
+		}
+	}
+
+	while (topComplexParents.length > 0) 
+	{
+		var nextGeneration = new Array();
+		for(var i = 0; i < topComplexParents.length; i++)
+		{
+			var n = topComplexParents[i];
+			if (this._vis.childNodes(n.data.id).length > 0)
+			{ // strange situation
+				var children = this._vis.childNodes(n.data.id);
 				for(var j = 0; j < children.length; j++)
 				{
 					weights[children[j].data.id] = weights[n.data.id];
@@ -572,11 +552,19 @@ NetworkSbgnVis.prototype.adjustWeights = function(w)
 						nextGeneration.push(children[j]);
 					}
 				}
-				children = nextGeneration;
-			}	
+			}
+			
+		}
+		if (nextGeneration.length > 0)
+		{
+			topComplexParents = nextGeneration.slice(0);
+		}
+		else
+		{
+			break;
 		}
 	}
-	
+
 	return weights;
 };
 
@@ -859,6 +847,12 @@ NetworkSbgnVis.prototype._initSliders = function()
 NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 {
 	var selected = this._vis.selected("nodes");
+	if (selected.length <= 1)
+	{
+		// if this is not the case, go to the normal updateDetailsTab function 
+		// that accepts only one node at a time
+		this.updateDetailsTab(evt);
+	}
 	var data;
 	var self = this;
 	// empty everything and make the error div and hide it
@@ -868,11 +862,13 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 	$(self.detailsTabSelector + " .error").hide();
 	var glyph0 = selected[0].data.glyph_class;
 	// if there is more than one node selected and the first is a macromolecule or nucleic acide
-
-	if (selected.length >= 1 && 
-		(glyph0 == this.MACROMOLECULE || glyph0 == this.NUCLEIC_ACID))
+	if (selected.length > 1)
 	{
-		var allMacro = 1;
+		var allMacro = 0;
+		if (glyph0 == this.MACROMOLECULE || glyph0 == this.NUCLEIC_ACID)
+		{
+			allMacro = 1;
+		}
 		// check if all of them have the same glyph_label_text
 		for(var i=1; i < selected.length; i++)
 		{
@@ -951,12 +947,6 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 		});	
 		// very important to return to avoid unpredictable delays
 		return;
-	}
-	else
-	{
-		// if this is not the case, go to the normal updateDetailsTab function 
-		// that accepts only one node at a time
-		this.updateDetailsTab(evt);
 	}
 };
 
