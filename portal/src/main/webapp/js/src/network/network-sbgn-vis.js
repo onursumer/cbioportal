@@ -277,10 +277,11 @@ NetworkSbgnVis.prototype.addExtensionFields = function(attributeMap, seedNodes)
 {
 	var nodes = this._vis.nodes();
 	var targetNodes = new Array();
+	var seedNodeList = seedNodes.split(" ");
 
-	for(var i = 0; i < seedNodes.length; i++)
+	for(var i = 0; i < seedNodeList.length; i++)
 	{
-		var sameNodes = findNodes(seedNodes[i], nodes);
+		var sameNodes = findNodes(seedNodeList[i], nodes);
 		for(var j = 0; j < sameNodes.length; j++)
 		{
 			targetNodes.push(sameNodes[j]);
