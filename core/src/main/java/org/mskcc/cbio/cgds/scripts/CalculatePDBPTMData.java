@@ -55,7 +55,7 @@ import org.biojava3.protmod.structure.StructureGroup;
  *
  * @author jgao
  */
-public class PrepareProteinContactMap {
+public class CalculatePDBPTMData {
 
     /**
      * 
@@ -63,21 +63,42 @@ public class PrepareProteinContactMap {
      * @throws Exception 
      */
     public static void main(String[] args) throws Exception {
-        String dirPdbUniProtMappingFile = args[0];
-        String dirOutputFile = args[1];
-        String dirCache = args[2];
+        String cmd = args[0];
+        String dirPdbUniProtMappingFile = args[1];
+        String dirOutputFile = args[2];
+        String dirCache = args[3];
         double lengthTolerance = 4.0;
-        if (args.length==4) {
-            lengthTolerance = Double.parseDouble(args[3]);
+        if (args.length==5) {
+            lengthTolerance = Double.parseDouble(args[4]);
         }
+
+        Map<String,Set<String>> pdbEntries = getPdbEntries(dirPdbUniProtMappingFile);
         
-        PrepareProteinContactMap prepareProteinContactMap = new PrepareProteinContactMap(dirCache, lengthTolerance);
-        
-        Map<String,Set<String>> pdbEntries = prepareProteinContactMap.getPdbEntries(dirPdbUniProtMappingFile);
-        prepareProteinContactMap.calculateContactMap(pdbEntries, dirOutputFile);
+        if (cmd.equalsIgnoreCase("contact-map")) {
+            Set<ProteinModification> ptms = new HashSet<ProteinModification>();
+            for (ProteinModification ptm : ProteinModificationRegistry
+                    .getByCategory(ModificationCategory.CROSS_LINK_2)) {
+                if (ptm.getCondition().getLinkages().size()==1) {
+                    // for now we are only interested in direct contact between two amino acid.
+                    // let's work on other links later such as metal coordinated cross links.
+                    // not sure if other ptms such as phoshorylation sites would be useful.
+                    ptms.add(ptm);
+                }
+            }
+            CalculatePDBPTMData prepareProteinContactMap
+                    = new CalculatePDBPTMData(dirCache, ptms, lengthTolerance);
+            prepareProteinContactMap.calculateContactMap(pdbEntries, dirOutputFile);
+        } else if (cmd.equalsIgnoreCase("ptm")) {
+            Set<ProteinModification> ptms = ProteinModificationRegistry.allModifications();
+            CalculatePDBPTMData prepareProteinContactMap
+                    = new CalculatePDBPTMData(dirCache, ptms, lengthTolerance);
+            prepareProteinContactMap.calculatePTMs(pdbEntries, dirOutputFile);
+        } else {
+            System.err.println("unknown command: "+cmd);
+        }
     }
     
-    private Map<String,Set<String>> getPdbEntries(String dirPdbUniProtMappingFile) throws IOException {
+    private static Map<String,Set<String>> getPdbEntries(String dirPdbUniProtMappingFile) throws IOException {
         Map<String,Set<String>> map = new TreeMap<String,Set<String>>(); // sorted treemap so that we know the progress later
         FileReader reader = new FileReader(dirPdbUniProtMappingFile);
         BufferedReader buf = new BufferedReader(reader);
@@ -106,7 +127,10 @@ public class PrepareProteinContactMap {
     private ProteinModificationIdentifier ptmParser;
     private Set<ProteinModification> ptms;
     
-    private PrepareProteinContactMap(String dirCache, double lengthTolerance) {
+    private CalculatePDBPTMData(String dirCache,
+            Set<ProteinModification> ptms,
+            double lengthTolerance) {
+        this.ptms = ptms;
         atomCache = new AtomCache(dirCache, true);
         FileParsingParameters params = new FileParsingParameters();
         params.setLoadChemCompInfo(true);
@@ -120,19 +144,53 @@ public class PrepareProteinContactMap {
         ptmParser.setRecordAdditionalAttachments(false);
         ptmParser.setRecordUnidentifiableCompounds(true);
         ptmParser.setbondLengthTolerance(lengthTolerance);
-        
-        ptms = new HashSet<ProteinModification>();
-        for (ProteinModification ptm : ProteinModificationRegistry
-                .getByCategory(ModificationCategory.CROSS_LINK_2)) {
-            if (ptm.getCondition().getLinkages().size()==1) {
-                // for now we are only interested in direct contact between two amino acid.
-                // let's work on other links later such as metal coordinated cross links.
-                // not sure if other ptms such as phoshorylation sites would be useful.
-                ptms.add(ptm);
-            }
-        }
     }
     
+    private void calculatePTMs(Map<String,Set<String>> pdbEntries, String dirOutputFile)
+            throws IOException {
+        FileWriter writer = new FileWriter(dirOutputFile);
+        BufferedWriter buf = new BufferedWriter(writer);
+        buf.write("#PDB_ID\tChain\tPTM\tResidues\n");
+        
+        for (Map.Entry<String,Set<String>> entry : pdbEntries.entrySet()) {
+            String pdbId = entry.getKey();
+            System.out.println("Get PDB structure "+pdbId);
+            Structure struc = null;
+            try {
+                struc = atomCache.getStructure(pdbId);
+            } catch (StructureException ex) {
+                ex.printStackTrace();
+            }
+            if (struc==null) {
+                System.err.println("Error: No PDB structure "+pdbId);
+                continue;
+            }
+            
+            Set<String> chains = entry.getValue();
+            for (String chainId : chains) {
+                Chain chain = null;
+                try {
+                    chain = struc.getChainByPDB(chainId);
+                } catch (StructureException ex) {
+                    ex.printStackTrace();
+                }
+                if (chain==null) {
+                    System.err.println("Error: No chain "+chainId+" in PDB structure "+pdbId);
+                    continue;
+                }
+                System.out.println("\tIdentify PTMs from chain "+chainId);
+                ptmParser.identify(chain,ptms);
+                
+                // known ptms
+                Set<ModifiedCompound> mcs = ptmParser.getIdentifiedModifiedCompound();
+                for (ModifiedCompound mc : mcs) {
+                    writeModifiedCompound(pdbId, chainId,  mc, buf);
+                }
+            }
+        }
+        buf.close();
+        writer.close();
+    }    
     
     private void calculateContactMap(Map<String,Set<String>> pdbEntries, String dirOutputFile)
             throws IOException {
@@ -211,6 +269,32 @@ public class PrepareProteinContactMap {
         writer.close();
     }
     
+    private void writeModifiedCompound(String pdbId, String chainId, ModifiedCompound mc,
+            BufferedWriter buf) throws IOException {
+        ProteinModification ptm = mc.getModification();
+        buf.write(pdbId);
+        buf.write("\t");
+        buf.write(chainId);
+        buf.write("\t");
+        
+        buf.write(ptm.getId());
+        if (ptm.getPsimodId()!=null) {
+            buf.write(";");
+            buf.write(ptm.getPsimodId());
+            buf.write(";");
+            buf.write(ptm.getPsimodName());
+        }
+        buf.write("\t");
+        
+        Set<StructureGroup> groups = mc.getGroups(true);
+        for (StructureGroup group : groups) {
+            if (group.isAminoAcid()) {
+                writeGroup(group, buf,",");
+            }
+        }
+        buf.write("\n");
+    }
+    
     private boolean filterLinkage(StructureAtomLinkage linkage) {
         StructureGroup group1 = linkage.getAtom1().getGroup();
         StructureGroup group2 = linkage.getAtom2().getGroup();
@@ -239,8 +323,8 @@ public class PrepareProteinContactMap {
         buf.write(chainId);
         buf.write("\t");
         
-        writeAtom(linkage.getAtom1(), buf);
-        writeAtom(linkage.getAtom2(), buf);
+        writeAtom(linkage.getAtom1(), buf, "\t");
+        writeAtom(linkage.getAtom2(), buf, "\t");
         
         buf.write(Double.toString(linkage.getDistance()));
         buf.write("\t");
@@ -258,16 +342,19 @@ public class PrepareProteinContactMap {
         buf.write("\n");
     }
     
-    private void writeAtom(StructureAtom atom, BufferedWriter buf) throws IOException {
-        StructureGroup group = atom.getGroup();
+    private void writeAtom(StructureAtom atom, BufferedWriter buf, String sep) throws IOException {
+        writeGroup(atom.getGroup(), buf, sep);
+        buf.write(atom.getAtomName());
+        buf.write(sep);
+    }
+    
+    private void writeGroup(StructureGroup group, BufferedWriter buf, String sep) throws IOException {
         buf.write(group.getPDBName()+":");
         Character insCode = group.getInsCode();
         if (insCode!=null) {
             buf.write(insCode);
         }
         buf.write(Integer.toString(group.getResidueNumber()));
-        buf.write("\t");
-        buf.write(atom.getAtomName());
-        buf.write("\t");
+        buf.write(sep);
     }
 }
