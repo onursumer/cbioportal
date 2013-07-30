@@ -460,8 +460,44 @@ function _nodeDetails(node)
 
     return str;
 }
+function alphanumeric(str)
+{
+	return str.replace(/[^a-zA-Z0-9]/, ""); 
+}
 //** UTILITY FUNCTIONS FOR SBGN **/
 /**
  *
  * 
 **/
+/**
+ *  returns the glyph label which is the name of the macromolecule
+**/
+function _geneLabel(data)
+{
+	var label = alphanumeric(data.glyph_label_text);
+	return label.toUpperCase();
+}
+/**
+ * Comparison function to sort genes alphabetically.
+ * overwritten to check againsts glyph_label
+ * @param node1	node to compare to node2
+ * @param node2 node to compare to node1
+ * @return 		positive integer if node1 is alphabetically greater than node2
+ * 				negative integer if node2 is alphabetically greater than node1
+ * 				zero if node1 and node2 are alphabetically equal
+ */
+function _labelSort (node1, node2)
+{
+    if (_geneLabel(node1.data) > _geneLabel(node2.data))
+    {
+        return 1;
+    }
+    else if (_geneLabel(node1.data) < _geneLabel(node2.data))
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}

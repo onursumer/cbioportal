@@ -702,43 +702,6 @@ NetworkSbgnVis.prototype.updateGenesTab = function(evt)
 };
 
 /**
- * Comparison function to sort genes alphabetically.
- * overwritten to check againsts glyph_label
- * @param node1	node to compare to node2
- * @param node2 node to compare to node1
- * @return 		positive integer if node1 is alphabetically greater than node2
- * 				negative integer if node2 is alphabetically greater than node1
- * 				zero if node1 and node2 are alphabetically equal
- */
-function _labelSort (node1, node2)
-{
-    if (_geneLabel(node1.data) > _geneLabel(node2.data))
-    {
-        return 1;
-    }
-    else if (_geneLabel(node1.data) < _geneLabel(node2.data))
-    {
-        return -1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-/**
- *  returns the glyph label which is the name of the macromolecule
-**/
-function _geneLabel(data)
-{
-	var label = alphanumeric(data.glyph_label_text);
-	return label.toUpperCase();
-}
-function alphanumeric(str)
-{
-	return str.replace(/[^a-zA-Z0-9]/, ""); 
-}
-/**
  * Filters out all non-selected nodes by the adjust weights (filtering algorithm)
  * First, we get the selected nodes
  * Second, by calling adjustWeights, we get weights of nodes to be filtered. 
@@ -850,31 +813,27 @@ NetworkSbgnVis.prototype._initSliders = function()
  */
 NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 {
-	var selected = this._vis.selected("nodes");
-	if (selected.length <= 1)
+	var selected = this._vis.selected("nodes");	
+	
+	// if some node are selected 
+	if (selected.length > 0)
 	{
-		// if this is not the case, go to the normal updateDetailsTab function 
-		// that accepts only one node at a time
-		this.updateDetailsTab(evt);
-	}
-	var data;
-	var self = this;
-	// empty everything and make the error div and hide it
-	$(self.detailsTabSelector).empty();
-	jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
-	$(self.detailsTabSelector + " .error").empty();
-	$(self.detailsTabSelector + " .error").hide();
-	var glyph0 = selected[0].data.glyph_class;
-	// if there is more than one node selected and the first is a macromolecule or nucleic acide
-	if (selected.length > 1)
-	{
+		// empty everything and make the error div and hide it
+		$(this.detailsTabSelector).empty();
+		jQuery('<div />' , {class: 'error'}).appendTo(this.detailsTabSelector);
+		$(this.detailsTabSelector + " .error").empty();
+		$(this.detailsTabSelector + " .error").hide();
+
+		var data;
+		var glyph0 = selected[0].data.glyph_class;
+		
 		var allMacro = 0;
 		if (glyph0 == this.MACROMOLECULE || glyph0 == this.NUCLEIC_ACID)
 		{
 			allMacro = 1;
 		}
 		// check if all of them have the same glyph_label_text
-		for(var i=1; i < selected.length; i++)
+		for(var i = 1; i < selected.length; i++)
 		{
 			if(_geneLabel(selected[i].data) != _geneLabel(selected[i-1].data))
 			{
@@ -890,14 +849,14 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 		}
 		else
 		{
-			$(self.detailsTabSelector + " .error").html(
+			$(this.detailsTabSelector + " .error").html(
 			    "Currently more than one node is selected. Please, select only one node to see details.");
-			$(self.detailsTabSelector + " .error").show();
+			$(this.detailsTabSelector + " .error").show();
 			return;
 		}
 		// right the glyph_class and the glyph_label of the gene 
 		var label = _geneLabel(data);
-		$(self.detailsTabSelector + " div").empty();
+		$(this.detailsTabSelector + " div").empty();
 		var text = '<div class="header"><span class="title"><label>';
 		text +=  _toTitleCase(data.glyph_class) + ' Properties';
 		text += '</label></span></div>';
@@ -905,28 +864,37 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 		text += '<div class="genomic-profile-content"></div>';
 		text += '<div class="biogene-content"></div>';
 
-		$(self.detailsTabSelector).html(text);
+		$(this.detailsTabSelector).html(text);
 		// send AJAX request to retrieve information
 		var queryParams = {"query": label,
 			"org": "human",
 			"format": "json",
 			"timeout": 5000};
 		
-		$(self.detailsTabSelector + " .biogene-content").append(
+		$(this.detailsTabSelector + " .biogene-content").append(
 			'<img src="images/ajax-loader.gif">');
-		// the ajax request expires in 5 seconds, can be reduced
+		var self = this;
+		// send request to biogene
 		$.ajax({
 		    type: "POST",
 		    url: "bioGeneQuery.do",
 		    async: true,
 		    data: queryParams,
 		    error: function(queryResult){
+				var errorMessage;
+				if (queryResult == undefined)
+				{
+					errorMessage = "Time out error: Request failed to respond in time.";
+				}
+				else
+				{
+					errorMessage = queryResult.returnCode;
+				}
 				$(self.detailsTabSelector).empty();
 				jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
 				$(self.detailsTabSelector + " .error").append(
-				    "Error retrieving data: " + queryResult.returnCode);
+				    "Error retrieving data: " + errorMessage);
 				$(self.detailsTabSelector + " .error").show();
-				return;
 			},
 		    success: function(queryResult) {
 			if(queryResult.count > 0)
@@ -948,9 +916,13 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 				data: data,
 				flag: "sbgn"});			
 		    }
-		});	
-		// very important to return to avoid unpredictable delays
-		return;
+		});
+	}
+	else
+	{
+		// if this is not the case, go to the normal updateDetailsTab function 
+		// that accepts only one node at a time
+		this.updateDetailsTab(evt);
 	}
 };
 
@@ -1018,16 +990,27 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 			    timeout: 5000,
 			    data: queryParams,
 			    // if the response fails write an error message
-			    error: function(){
-					$(self.detailsTabSelector).empty();
-					jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
-					$(self.detailsTabSelector + " .error").append(
-					    "Error retrieving data: " + queryResult.returnCode);
-					$(self.detailsTabSelector + " .error").show();
-					return;
-				},
+			    error: function()
+			    {
+				var errorMessage;
+				if (queryResult == undefined)
+				{
+					errorMessage = "Time out error: Request failed to respond in time.";
+				}
+				else
+				{
+					errorMessage = queryResult.returnCode;
+				}
+				$(self.detailsTabSelector).empty();
+				jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
+				$(self.detailsTabSelector + " .error").append(
+				    "Error retrieving data: " + errorMessage);
+				$(self.detailsTabSelector + " .error").show();
+
+			    },
 			    // if success code is returned write the given data in the divs with jSon
-			    success: function(queryResult) {
+			    success: function(queryResult) 
+			    {
 				if(queryResult.count > 0)
 				{
 					// generate the view by using backbone
@@ -1046,7 +1029,6 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 				    {el: self.detailsTabSelector + " .genomic-profile-content",
 					data: data,
 					flag: "sbgn"});
-				return;
 			    }
 			});
 		}
@@ -1134,11 +1116,19 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 				    timeout: 5000,
 				    data: queryParams,
 				    error: function(){
+						var errorMessage;
+						if (queryResult == undefined)
+						{
+							errorMessage = "Time out error: Request failed to respond in time.";
+						}
+						else
+						{
+							errorMessage = queryResult.returnCode;
+						}
 						$(divName + " .genomic-profile-content").empty();
 						$(divName + " .genomic-profile-content").append(
-						    "Error retrieving data: " + queryResult.returnCode);
+						    "Error retrieving data: " + errorMessage);
 						$(divName + " .genomic-profile-content").show();
-						return;
 					},
 				    success: function(queryResult) {
 					if(queryResult.count > 0)
@@ -1883,15 +1873,25 @@ NetworkSbgnVis.prototype.getVisibleNodes = function()
 
     return this.visibleNodes;
 };
-
+/**
+ * Checks the visbility of genes and returns a map of
+ * gene -> boolean
+ * indicating the gene has at least one state on the canvas or not
+ * used in refresh gene list
+ * @params : Array of gene labels (glyph_label_text)
+ * (this geneList is found from the geneList on the geneTab 
+ * in the refreshGeneList method)
+ */
 NetworkSbgnVis.prototype.getMapOfVisibleNodes = function(geneList)
 {
-
+	// visibleMap is the map mentioned
 	var visibleMap = new Array();
-
+	// get visible nodes
 	var visNodes = (this.visibleNodes == null) ? this._vis.nodes() : this.visibleNodes;
+	// sort the arrays to make it more efficient
 	visNodes.sort(_labelSort);
 	geneList.sort();
+	// in O(visNodes.length) = O(|nodes|) update the visibileMap
 	var j = 0;
 	for(var i = 0 ; i < geneList.length ; i++)
 	{
@@ -1914,99 +1914,24 @@ NetworkSbgnVis.prototype.getMapOfVisibleNodes = function(geneList)
 			break;
 		}
 	}
+	
 	return visibleMap;
 };
 
 /**
- * Initializes the content of the genes tab, by populating the list with visible
- * (i.e. non-filtered) genes.
- */
-NetworkSbgnVis.prototype._initGenesList = function(seedNodes, sbgnGenes)
-{
-	
-    var geneListOptions = new Array();
-    // clear old content
-    $(this.geneListAreaSelector + " select").remove();
-
-    $(this.geneListAreaSelector).append('<select multiple></select>');
-
-    // add new content
-    for (var i = 0; i < sbgnGenes.length; i++)
-    {
-	geneListOptions[alphanumeric(sbgnGenes[i])] = false;
-    }
-    for (var i = 0; i < seedNodes.length; i++)
-    {
-	geneListOptions[alphanumeric(seedNodes[i])] = true;
-    }
-    for (var i = 0; i < sbgnGenes.length; i++)
-    {
-	var key = alphanumeric(sbgnGenes[i]);
-        var classContent;
-
-        if (geneListOptions[key] )
-        {
-            classContent = 'class="in-query" ';
-        }
-        else
-        {
-            classContent = 'class="not-in-query" ';
-        }
-
-        $(this.geneListAreaSelector + " select").append(
-            '<option id="' + key + '" ' +
-            classContent +
-            'value="' + key + '">' +
-            '<label>' + key + '</label>' +
-            '</option>');
-
-        // add double click listener for each gene
-        //TODO: that must go to details tab on double click
-        $(this.genesTabSelector + " #" + key).dblclick(showGeneDetails);
-
-    }
-
-    var updateSelectedGenes = function(evt){
-        self.updateSelectedGenes(evt);
-    };
-    // (this is required to pass "this" instance to the listener functions)
-	var self = this;
-
-	var showGeneDetails = function(evt) 
-	{
-		self.multiSelectNodes(evt);
-		self.multiUpdateDetailsTab(evt);
-		$(self.networkTabsSelector).tabs("select", 2);
-
-	};
-
-    // add change listener to the select box
-    $(this.geneListAreaSelector + " select").change(updateSelectedGenes);
-
-    if (_isIE())
-    {
-        // listeners on <option> elements do not work in IE, therefore add
-        // double click listener to the select box
-       	//TODO: that must go to details tab on double click
-        $(this.geneListAreaSelector + " select").dblclick(showGeneDetails);
-
-        // TODO if multiple genes are selected, double click always shows
-        // the first selected gene's details in IE
-    }
-};
-/**
  * Refreshes the content of the genes tab, by populating the list with visible
- * (i.e. non-filtered) genes.
+ * (i.e. non-filtered) genes. So if all states of a genes are hidden on the canvas
+ * the gene will not be shown in the geneList.
  */
 NetworkSbgnVis.prototype._refreshGenesTab = function()
 {
-
+    // first get all the options (genes)
     var sbgnGeneLabels = new Array();
     $(this.geneListAreaSelector + " option").each(function(){ sbgnGeneLabels.push($(this).val()); });
+    // make a map of gene (option) -> boolean indicating the gene has a visible state or not
     var visibleMap = this.getMapOfVisibleNodes(sbgnGeneLabels);
 
-    // update visibility of each option
-
+    // update visibility class of each option (hidden or not)
     for (var key in visibleMap)
     {
 	if (visibleMap[key])
@@ -2022,6 +1947,92 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
 
 };
 
+/**
+ * Initializes the content of the genes list, by populating the list with sbgnGenes
+ * we get from the sbgn.do query. the seed nodes get class in-query to be bolden. 
+ * This funtion is called only once of initialization.
+ */
+NetworkSbgnVis.prototype._initGenesList = function(seedNodes, sbgnGenes)
+{
+	// for each option we have a true/false value 
+	//indicating if its a seed (in query) or not
+	var geneListOptions = new Array();
+	// sort the genes in alphabetic order
+	sbgnGenes.sort();
+	// clear old content just in case
+	$(this.geneListAreaSelector + " select").remove();
+	// initialize again
+	$(this.geneListAreaSelector).append('<select multiple></select>');
+
+	// add update geneListOptions
+	for (var i = 0; i < sbgnGenes.length; i++)
+	{
+		geneListOptions[alphanumeric(sbgnGenes[i])] = false;
+	}
+	for (var i = 0; i < seedNodes.length; i++)
+	{
+		geneListOptions[alphanumeric(seedNodes[i])] = true;
+	}
+
+	// (this is required to pass "this" instance to the listener functions)
+	var self = this;
+	// function to redirect to details tab on double click
+	// will be asigned to each option
+	var showGeneDetails = function(evt) 
+	{
+		self.multiSelectNodes(evt);
+		self.multiUpdateDetailsTab(evt);
+		$(self.networkTabsSelector).tabs("select", 2);
+
+	};
+
+	// add each option one by one
+	for (var i = 0; i < sbgnGenes.length; i++)
+	{
+		var key = alphanumeric(sbgnGenes[i]);
+		var classContent;
+
+		if (geneListOptions[key] )
+		{
+		    classContent = 'class="in-query" ';
+		}
+		else
+		{
+		    classContent = 'class="not-in-query" ';
+		}
+
+		$(this.geneListAreaSelector + " select").append(
+		    '<option id="' + key + '" ' +
+		    classContent +
+		    'value="' + key + '">' +
+		    '<label>' + key + '</label>' +
+		    '</option>');
+
+		// add double click listener for each gene
+		//TODO: that must go to details tab on double click
+		$(this.genesTabSelector + " #" + key).dblclick(showGeneDetails);
+
+	}
+	// on changing the selected options, call updateSelectedGenes
+	var updateSelectedGenes = function(evt)
+	{
+		self.updateSelectedGenes(evt);
+	};
+
+	// apend listener to the gene list
+	$(this.geneListAreaSelector + " select").change(updateSelectedGenes);
+
+	if (_isIE())
+	{
+	// listeners on <option> elements do not work in IE, therefore add
+	// double click listener to the select box
+	//TODO: that must go to details tab on double click
+	$(this.geneListAreaSelector + " select").dblclick(showGeneDetails);
+
+	// TODO if multiple genes are selected, double click always shows
+	// the first selected gene's details in IE
+	}
+};
 NetworkSbgnVis.prototype._createNodeLegend = function(divId)
 {
 	var id = "node_legend_" + divId;
