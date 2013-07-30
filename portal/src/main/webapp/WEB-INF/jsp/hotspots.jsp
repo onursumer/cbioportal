@@ -138,8 +138,8 @@ String jsonStudies = JSONValue.toJSONString(studies);
 
 </style>
 
-<script type="text/javascript" src="js/d3.min.js"></script>
-<script type="text/javascript" src="js/heatmap.js"></script>
+<script type="text/javascript" src="js/lib/d3.min.js"></script>
+<script type="text/javascript" src="js/src/heatmap.js"></script>
 
 <script type="text/javascript">
 var jsonStudies = <%=jsonStudies%>;
