@@ -636,14 +636,11 @@ CREATE TABLE `protein_contact_map` (
   KEY (`PDB_ID`,`CHAIN`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
-drop table if EXISTS mutation_contact_map;
-CREATE TABLE `mutation_contact_map` (
+drop table if EXISTS pdb_ptm_data;
+CREATE TABLE `pdb_ptm_data` (
   `PDB_ID` char(4) NOT NULL,
   `CHAIN` char(1) NOT NULL,
-  `MUTATION_EVENT_ID1` int(255) NOT NULL,
-  `MUTATION_EVENT_ID2` int(255) NOT NULL,
-  `DISTANCE` int(5) NOT NULL,
-  PRIMARY KEY (`PDB_ID`,`CHAIN`,`MUTATION_EVENT_ID1`,`MUTATION_EVENT_ID2`),
-  FOREIGN KEY (`MUTATION_EVENT_ID1`) REFERENCES `mutation_event` (`MUTATION_EVENT_ID`),
-  FOREIGN KEY (`MUTATION_EVENT_ID2`) REFERENCES `mutation_event` (`MUTATION_EVENT_ID`)
+  `PTM` varchar(200) NOT NULL,
+  `RESIDUES` varchar(200) NOT NULL,
+  KEY (`PDB_ID`, `CHAIN`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;

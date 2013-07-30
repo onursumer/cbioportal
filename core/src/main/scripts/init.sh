@@ -31,7 +31,8 @@
 ./importPdbUniprotResidueMapping.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
 
 # ptm in 3D structures
-./calculatePDBPTMData.pl ptm $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
+# ./calculatePDBPTMData.pl ptm $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
+./importPdbPtmData.pl $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt
 
 # Protein contact map
 ## ./calculatePDBPTMData.pl contact-map $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
