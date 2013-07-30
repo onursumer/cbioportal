@@ -121,7 +121,7 @@ function NetworkSbgnVis(divId)
  *
  * @param vis	CytoscapeWeb.Visualization instance associated with this UI
  */
-NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, seedNodes)
+NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, seedNodes, sbgnGenes)
 {
 
 	var self = this;
@@ -247,7 +247,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, seedNodes)
 		{defaultPosition: "top", delay:"100", edgeOffset: 10, maxWidth: 200});
 
 	this._initGenesTab();
-	this._refreshGenesTab();
+	this._initGenesList(seedNodes, sbgnGenes);
 	    
 	// add node source filtering checkboxes
 	for (var key in this._sourceVisibility)
@@ -273,11 +273,10 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, seedNodes)
 //TODO override necessary methods (filters, inspectors, initializers, etc.) to have a proper UI.
 
 //Genomic data parser method
-NetworkSbgnVis.prototype.addExtensionFields = function(attributeMap, seedNodes)
+NetworkSbgnVis.prototype.addExtensionFields = function(attributeMap, seedNodeList)
 {
 	var nodes = this._vis.nodes();
 	var targetNodes = new Array();
-	var seedNodeList = seedNodes.split(" ");
 
 	for(var i = 0; i < seedNodeList.length; i++)
 	{
@@ -732,8 +731,12 @@ function _labelSort (node1, node2)
 **/
 function _geneLabel(data)
 {
-	var label = _safeProperty(data.glyph_label_text);
+	var label = alphanumeric(data.glyph_label_text);
 	return label.toUpperCase();
+}
+function alphanumeric(str)
+{
+	return str.replace(/[^a-zA-Z0-9]/, ""); 
 }
 /**
  * Filters out all non-selected nodes by the adjust weights (filtering algorithm)
@@ -1881,58 +1884,67 @@ NetworkSbgnVis.prototype.getVisibleNodes = function()
     return this.visibleNodes;
 };
 
-NetworkSbgnVis.prototype.getMapOfVisibleNodes = function()
+NetworkSbgnVis.prototype.getMapOfVisibleNodes = function(geneList)
 {
 
 	var visibleMap = new Array();
 
 	var visNodes = (this.visibleNodes == null) ? this._vis.nodes() : this.visibleNodes;
 	visNodes.sort(_labelSort);
-	for(var i = 0 ; i < visNodes.length ; i++)
+	geneList.sort();
+	var j = 0;
+	for(var i = 0 ; i < geneList.length ; i++)
 	{
-		if(visNodes[i].data.glyph_class == this.MACROMOLECULE
-			|| visNodes[i].data.glyph_class == this.NUCLEIC_ACID)
+		while(j < visNodes.length && 
+			_geneLabel(visNodes[j].data) <= _safeProperty(geneList[i]))
 		{
-			if(visNodes[i].data.IN_QUERY == true)
-				visibleMap[_geneLabel(visNodes[i].data)] = true;
-			else
-				visibleMap[_geneLabel(visNodes[i].data)] = false;
+			j++;			
+		}
+		if ( j > 0 && 
+		     _geneLabel(visNodes[j-1].data) == _safeProperty(geneList[i]))
+		{
+			visibleMap[_safeProperty(geneList[i])] = true;
+		}
+		else 
+		{
+			visibleMap[_safeProperty(geneList[i])] = false;
+		}		
+		if (j == visNodes.length)
+		{
+			break;
 		}
 	}
 	return visibleMap;
 };
 
 /**
- * Refreshes the content of the genes tab, by populating the list with visible
+ * Initializes the content of the genes tab, by populating the list with visible
  * (i.e. non-filtered) genes.
  */
-NetworkSbgnVis.prototype._refreshGenesTab = function()
+NetworkSbgnVis.prototype._initGenesList = function(seedNodes, sbgnGenes)
 {
-	// (this is required to pass "this" instance to the listener functions)
-	var self = this;
-
- 	var showGeneDetails = function(evt) 
-	{
-		self.multiSelectNodes(evt);
-		self.multiUpdateDetailsTab(evt);
-		$(self.networkTabsSelector).tabs("select", 2);
-
-	};
-
-    var visibleMap = this.getMapOfVisibleNodes();
+	
+    var geneListOptions = new Array();
     // clear old content
     $(this.geneListAreaSelector + " select").remove();
 
     $(this.geneListAreaSelector).append('<select multiple></select>');
 
     // add new content
-
-    for (var key in visibleMap)
+    for (var i = 0; i < sbgnGenes.length; i++)
     {
-    
+	geneListOptions[alphanumeric(sbgnGenes[i])] = false;
+    }
+    for (var i = 0; i < seedNodes.length; i++)
+    {
+	geneListOptions[alphanumeric(seedNodes[i])] = true;
+    }
+    for (var i = 0; i < sbgnGenes.length; i++)
+    {
+	var key = alphanumeric(sbgnGenes[i]);
         var classContent;
 
-        if (visibleMap[key] == true)
+        if (geneListOptions[key] )
         {
             classContent = 'class="in-query" ';
         }
@@ -1957,6 +1969,16 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
     var updateSelectedGenes = function(evt){
         self.updateSelectedGenes(evt);
     };
+    // (this is required to pass "this" instance to the listener functions)
+	var self = this;
+
+	var showGeneDetails = function(evt) 
+	{
+		self.multiSelectNodes(evt);
+		self.multiUpdateDetailsTab(evt);
+		$(self.networkTabsSelector).tabs("select", 2);
+
+	};
 
     // add change listener to the select box
     $(this.geneListAreaSelector + " select").change(updateSelectedGenes);
@@ -1971,6 +1993,33 @@ NetworkSbgnVis.prototype._refreshGenesTab = function()
         // TODO if multiple genes are selected, double click always shows
         // the first selected gene's details in IE
     }
+};
+/**
+ * Refreshes the content of the genes tab, by populating the list with visible
+ * (i.e. non-filtered) genes.
+ */
+NetworkSbgnVis.prototype._refreshGenesTab = function()
+{
+
+    var sbgnGeneLabels = new Array();
+    $(this.geneListAreaSelector + " option").each(function(){ sbgnGeneLabels.push($(this).val()); });
+    var visibleMap = this.getMapOfVisibleNodes(sbgnGeneLabels);
+
+    // update visibility of each option
+
+    for (var key in visibleMap)
+    {
+	if (visibleMap[key])
+	{
+		$(this.geneListAreaSelector + " #" + key).removeClass('hidden');
+	}
+	else
+	{
+		$(this.geneListAreaSelector + " #" + key).addClass('hidden');
+	}
+
+    }
+
 };
 
 NetworkSbgnVis.prototype._createNodeLegend = function(divId)
@@ -2534,3 +2583,4 @@ NetworkSbgnVis.prototype._initLayoutOptions = function()
     this._layoutOptions = this._defaultOptsArray();
     _updateLayoutOptions(this);
 }
+

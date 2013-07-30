@@ -3,7 +3,14 @@
 	position:relative;
 	left: auto;
 }
-
+.hidden
+{
+	display: none;
+}
+.block
+{
+	display: block;
+}
 /* CytoscapeWeb dimensions */
 
 #cytoscapeweb_sbgn
@@ -500,7 +507,7 @@
 
 #genes_tab_sbgn .in-query
 {
-	color: #000000;
+	color: #000;
 }
 
 #genes_tab_sbgn .not-in-query
