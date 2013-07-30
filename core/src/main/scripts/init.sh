@@ -31,10 +31,10 @@
 ./importPdbUniprotResidueMapping.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
 
 # ptm in 3D structures
-./CalculatePDBPTMData.pl ptm $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
+./calculatePDBPTMData.pl ptm $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
 
 # Protein contact map
-## ./CalculatePDBPTMData.pl contact-map $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
+## ./calculatePDBPTMData.pl contact-map $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 4.0
 ./importProteinContactMap.pl $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt
 
 # just keeping track... this should run post-import
