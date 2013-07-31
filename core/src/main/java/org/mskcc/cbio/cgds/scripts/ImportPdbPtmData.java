@@ -84,8 +84,6 @@ public class ImportPdbPtmData {
     }
     
     public static void main(String[] args) throws Exception {
-        args = new String[] {"/Users/jj/projects/cbio-portal-data/reference-data/pdb-ptms.txt"};
-        
         if (args.length == 0) {
             System.out.println("command line usage:  ImportPdbPtmData.pl <pdb-ptms.txt>");
             System.exit(1);
