@@ -59,14 +59,20 @@ public class ImportPdbPtmData {
                 ConsoleUtil.showProgress(pMonitor);
             }
             if (!line.startsWith("#")) {
-                String parts[] = line.split("\t");
+                String parts[] = line.split("\t",-1);
+                
+                
                 String pdbId = parts[0];
                 String chainId = parts[1];
                 String ptm = parts[2];
+                String resStr = parts[3];
+                if (resStr.isEmpty()) {
+                    continue;
+                }
                 
                 // residues
                 TreeSet<Integer> residues = new TreeSet<Integer>();
-                for (String res : parts[3].split(",")) {
+                for (String res : resStr.split(",")) {
                     Matcher m = patternRes.matcher(res);
                     if (!m.matches()) {
                         continue;
