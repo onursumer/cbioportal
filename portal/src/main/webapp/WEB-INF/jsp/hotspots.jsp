@@ -62,7 +62,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
 
 <script type="text/template" id="form-template">
     <div>
-        <label><b>Cancer studies:</b></label></br>
+        <label><b>Cancer studies (<i>x</i> sequenced cases):</b></label></br>
         <div id="cancer-study-selection"></div>
     </div>
     <br/>
@@ -97,7 +97,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
 </script>
     
 <script type="text/template" id="cancer-study-template">
-    &nbsp;&nbsp;<input type="checkbox" name="{{ id }}" value="{{ id }}">{{ name }} (<b>{{ sequenced }}</b> sequenced cases)
+    <option value="{{ id }}">{{ id }} ({{ sequenced }})</option>
 </script>
 
 <script type="text/template" id="datatables-template">
@@ -182,10 +182,9 @@ AlteredGene.Form = Backbone.View.extend({
     submit: function(event) {
         event.preventDefault();
         var studies = [];
-        var studyCheckBoxes = this.$('#cancer-study-selection input:checkbox:checked');
-        for (var i=0, len=studyCheckBoxes.length; i<len; i++) {
-            studies.push(studyCheckBoxes[i].value);
-        }
+        this.$('#cancer-study-select').val().forEach(function(selected){
+            studies.push(selected);
+        });
         var type = this.$('#data-type').val();
         var threshold = this.$('#threshold-number-samples').val();
         router.navigate("submit/"+type+"/"+threshold+"/"+studies.join(","), {trigger: true});
@@ -203,11 +202,13 @@ AlteredGene.CancerStudies.View = Backbone.View.extend({
         if (this.cancerStudies.length===0)
             this.$el.html("<img src=\"images/ajax-loader.gif\"/>");
         else
-            this.$el.html("");
+            this.$el.html('<select id="cancer-study-select" data-placeholder="Choose cancer studies..." style="width:500px;" multiple></select>');
         this.cancerStudies.each(function(cancerStudy){
             var view = new AlteredGene.CancerStudy.View({model: cancerStudy});
-            this.$el.append(view.render().$el);
+            this.$("select").append(view.render().$el.html());
         }, this);
+        this.$("select").chosen({width: "95%"});
+        
         return this;
     }
 });
@@ -219,8 +220,8 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
             
         var id = this.model.get('id');
         var sequencedCases = this.model.get('sequenced');
-        if (sequencedCases>0 && id.search(/(merged)|(ccle)|(_pub)/)===-1)
-            this.$('input').prop('checked',true);
+        if (sequencedCases>0 && id.search(/(merged)|(ccle)|(_tcga_pub)/)===-1)
+            this.$('option').attr('selected','selected');
             
         return this;
     }
