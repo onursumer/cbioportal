@@ -1269,7 +1269,7 @@ public final class DaoMutation {
      * @return Map<keyword, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatationStatistics(String concatCancerStudyIds,
-            String[] types, int thresholdSamples) throws DaoException {
+            String[] types, int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1281,8 +1281,11 @@ public final class DaoMutation {
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
-                    + "AND " + keywords
-                    + "ORDER BY `KEYWORD` ASC"; // to filter and save memories
+                    + "AND " + keywords;
+            if (concatEntrezGeneIds!=null) {
+                sql += "AND me.`ENTREZ_GENE_ID` IN("+concatEntrezGeneIds+") ";
+            }
+            sql += "ORDER BY `KEYWORD` ASC"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             

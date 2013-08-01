@@ -8,6 +8,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.mskcc.cbio.cgds.dao.*;
@@ -32,6 +33,7 @@ public class MutationsJSON extends HttpServlet {
     
     public static final String GET_STATISTICS_CMD = "statistics";
     public static final String MUTATION_TYPE = "type";
+    public static final String GENES = "genes";
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
     public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
     public static final String LINEAR_HOTSPOT_WINDOW = "window";
@@ -72,6 +74,21 @@ public class MutationsJSON extends HttpServlet {
         String studyStableIds = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
         String type = request.getParameter(MUTATION_TYPE);
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
+        String genes = request.getParameter(GENES);
+        String concatEntrezGeneIds = null;
+        if (genes!=null) {
+            Set<Long> entrezGeneIds = new HashSet<Long>();
+            DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
+            for (String gene : genes.split("[, ]+")) {
+                CanonicalGene canonicalGene = daoGeneOptimized.getGene(gene);
+                if (canonicalGene!=null) {
+                    entrezGeneIds.add(canonicalGene.getEntrezGeneId());
+                }
+            }
+            if (!entrezGeneIds.isEmpty()) {
+                concatEntrezGeneIds = StringUtils.join(entrezGeneIds, ",");
+            }
+        }
         
         Map<String,Map<Integer, Map<String,Set<String>>>> mapKeywordStudyCaseMut = Collections.emptyMap();
         Map<Integer,String> cancerStudyIdMapping = new HashMap<Integer,String>();
@@ -104,8 +121,9 @@ public class MutationsJSON extends HttpServlet {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatation3DStatistics(
                         studyIds.toString(), threshold);
             } else {
+                
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationStatistics(
-                        studyIds.toString(), type.split("[, ]+"), threshold);
+                        studyIds.toString(), type.split("[, ]+"), threshold, concatEntrezGeneIds);
             }
         } catch (DaoException ex) {
             throw new ServletException(ex);

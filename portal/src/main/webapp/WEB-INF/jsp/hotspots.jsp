@@ -67,6 +67,11 @@ String jsonStudies = JSONValue.toJSONString(studies);
     </div>
     <br/>
     <div>
+        <label><b>Genes (space delimited; empty to search all genes)</b></label</br>
+        <textarea id="gene-textarea" rows="4"></textarea>
+    </div>
+    <br/>
+    <div>
         <label><b>Data type:</b></label>
         <select id="data-type">
             <option selected="selected" value="missense">Missense and In-frame Mutations</option>
@@ -185,9 +190,12 @@ AlteredGene.Form = Backbone.View.extend({
         this.$('#cancer-study-select').val().forEach(function(selected){
             studies.push(selected);
         });
+        var genes = $.trim(this.$('#gene-textarea').val()).split("\\s+").join(",");
         var type = this.$('#data-type').val();
         var threshold = this.$('#threshold-number-samples').val();
-        router.navigate("submit/"+type+"/"+threshold+"/"+studies.join(","), {trigger: true});
+        var rounterTo = "submit/"+type+"/"+threshold+"/"+studies.join(",");
+        if (genes) rounterTo += "/"+genes;
+        router.navigate(rounterTo, {trigger: true});
     }
 });
 
@@ -207,7 +215,7 @@ AlteredGene.CancerStudies.View = Backbone.View.extend({
             var view = new AlteredGene.CancerStudy.View({model: cancerStudy});
             this.$("select").append(view.render().$el.html());
         }, this);
-        this.$("select").chosen({width: "95%"});
+        this.$("select").chosen({width: "100%"});
         
         return this;
     }
@@ -527,7 +535,8 @@ AlteredGene.Router = Backbone.Router.extend({
     },
     routes: {
         "": "form",
-        "submit/:type/:threshold/:studies": "submit"
+        "submit/:type/:threshold/:studies": "submitWoGenes",
+        "submit/:type/:threshold/:studies/:genes": "submit"
     },
     form: function() {
         var view = new AlteredGene.Form();
@@ -535,7 +544,10 @@ AlteredGene.Router = Backbone.Router.extend({
         this.el.empty();
         this.el.append(view.el);
     },
-    submit: function(type, threshold, studies) {
+    submitWoGenes: function(type, threshold, studies) {
+        this.submit(type, threshold, studies, null);
+    },
+    submit: function(type, threshold, studies, genes) {
         $('#merge-alterations').prop('checked',type==="truncating");
         $('#merge-alterations').prop('disabled',type==="truncating");
     
@@ -559,6 +571,10 @@ AlteredGene.Router = Backbone.Router.extend({
                     'threshold_samples': threshold
                 };
                 
+            if (genes) {
+                options['genes'] = genes;
+            }
+                
             if(type.indexOf('ptm-effect-')===0) {
                 options['threshold_distance'] = parseInt(type.replace('ptm-effect-',''));
             }
@@ -568,7 +584,7 @@ AlteredGene.Router = Backbone.Router.extend({
             }
             
             // alteration view
-            var alterations = new AlteredGene.Alterations([],options);
+            var alterations = new AlteredGene.Alterations([]);
             var altView = new AlteredGene.Alterations.MissenseHeatmap(
                 {
                     'cancer_study_id': studies,
@@ -636,7 +652,7 @@ AlteredGene.boot = function(container) {
     container = $(container);
     router = new AlteredGene.Router({el: container});
     Backbone.history.start();
-}
+};
 
 function addCancerStudyFrequencyTooltip() {
     $(".frequency-tip").qtip({
