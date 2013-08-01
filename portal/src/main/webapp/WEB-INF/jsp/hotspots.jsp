@@ -67,7 +67,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
     </div>
     <br/>
     <div>
-        <label><b>Genes (space delimited; empty to search all genes)</b></label</br>
+        <label><b>Genes (one gene per line; empty to search all genes)</b></label</br>
         <textarea id="gene-textarea" rows="4"></textarea>
     </div>
     <br/>
@@ -190,7 +190,7 @@ AlteredGene.Form = Backbone.View.extend({
         this.$('#cancer-study-select').val().forEach(function(selected){
             studies.push(selected);
         });
-        var genes = $.trim(this.$('#gene-textarea').val()).split("\\s+").join(",");
+        var genes = $.trim(this.$('#gene-textarea').val()).split(/\s+/).join(",");
         var type = this.$('#data-type').val();
         var threshold = this.$('#threshold-number-samples').val();
         var rounterTo = "submit/"+type+"/"+threshold+"/"+studies.join(",");
@@ -228,7 +228,7 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
             
         var id = this.model.get('id');
         var sequencedCases = this.model.get('sequenced');
-        if (sequencedCases>0 && id.search(/(merged)|(ccle)|(_tcga_pub)/)===-1)
+        if (sequencedCases>0 && id.search(/(merged)|(ccle)|(cclp)|(_tcga_pub)/)===-1)
             this.$('option').attr('selected','selected');
             
         return this;
