@@ -109,17 +109,18 @@ public class MutationsJSON extends HttpServlet {
             if (type.startsWith("ptm-effect")) {
                 int thresholdDis = Integer.parseInt(request.getParameter(THRESHOLD_DISTANCE_PTM_MUTATION));
                 mapKeywordStudyCaseMut = DaoMutation.getPtmEffectStatistics(
-                    studyIds.toString(), type.replace("ptm-effect,", "").split("[, ]+"), thresholdDis, threshold);
+                    studyIds.toString(), type.replace("ptm-effect,", "").split("[, ]+"),
+                    thresholdDis, threshold, concatEntrezGeneIds);
             } else if (type.equalsIgnoreCase("truncating-sep")) {
                  mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
-                    studyIds.toString(), threshold);
+                    studyIds.toString(), threshold, concatEntrezGeneIds);
             } else if (type.equalsIgnoreCase("linear")) {
                 int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationLinearStatistics(
-                        studyIds.toString(), window, threshold);
+                        studyIds.toString(), window, threshold, concatEntrezGeneIds);
             } else if (type.equalsIgnoreCase("3d")) {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatation3DStatistics(
-                        studyIds.toString(), threshold);
+                        studyIds.toString(), threshold, concatEntrezGeneIds);
             } else {
                 
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationStatistics(
