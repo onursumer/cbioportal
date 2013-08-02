@@ -80,8 +80,10 @@ public class ImportPdbPtmData {
                     residues.add(Integer.parseInt(m.group(1)));
                 }
                 
-                DaoPdbPtmData.addPdbPdbData(pdbId, chainId, ptm,
-                        StringUtils.join(residues, ","));
+                if (!residues.isEmpty()) {
+                    DaoPdbPtmData.addPdbPdbData(pdbId, chainId, ptm,
+                            StringUtils.join(residues, ","));
+                }
             }
         }
         if (MySQLbulkLoader.isBulkLoad()) {
