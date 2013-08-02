@@ -118,7 +118,7 @@ function initNetworkUI(vis)
 	
 	_geneWeightMap = _geneWeightArray(WEIGHT_COEFF);
 	_geneWeightThreshold = ALTERATION_PERCENT;
-	_maxAlterationPercent = _maxAlterValNonSeed(_geneWeightMap);
+	_maxAlterationPercent = _maxAlterValue(_geneWeightMap);
 	
 	_resetFlags();
 	
@@ -2055,39 +2055,6 @@ function _geneWeightArray(coeff)
 	}
 	
 	return weightArray;
-}
-
-/**
- * Finds the non-seed gene having the maximum alteration percent in
- * the network, and returns the maximum alteration percent value.
- * 
- * @param map	weight map for the genes in the network
- * @return		max alteration percent of non-seed genes
- */
-function _maxAlterValNonSeed(map)
-{
-	var max = 0.0;
-	
-	for (var key in map)
-	{
-		// skip seed genes
-		
-		var node = _vis.node(key);
-		
-		if (node != null &&
-			node.data["IN_QUERY"] == "true")
-		{
-			continue;
-		}
-		
-		// update max value if necessary
-		if (map[key] > max)
-		{
-			max = map[key];
-		}
-	}
-	
-	return max;
 }
 
 /**

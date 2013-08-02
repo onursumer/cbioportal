@@ -128,7 +128,8 @@
 	            );
             }
         </script>
-
 <jsp:include page="network_views.jsp"/>
+<jsp:include page="network_views_sbgn.jsp"/>
 <jsp:include page="network_div.jsp"/>
 <jsp:include page="network_div_sbgn.jsp"/>
+

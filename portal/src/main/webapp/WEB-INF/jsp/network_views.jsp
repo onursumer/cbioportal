@@ -1,7 +1,7 @@
 <script type="text/template" id="drug_info_template">
 	<table class="drug-data">
 		<tr align="left" class="targets-data-row">
-			<td>
+			<td> 
 				<strong>Drug Name: </strong>
 				{{drugName}}
 				<br><br>
@@ -171,35 +171,6 @@
 			</td>
 		</tr>
 		<tr class="section-separator mrna-section-separator">
-			<td></td>
-			<td></td>
-			<td></td>
-		</tr>
-		<tr class="rppa-way-up percent-row">
-			<td class="label-cell">
-				<div class="percent-label">RPPA Up-regulation</div>
-			</td>
-			<td class="percent-cell">
-				<div class="percent-bar"
-				     style="width: {{rppaUpRegulationWidth}}%; background-color: #FFACA9;"></div>
-			</td>
-			<td>
-				<div class="percent-value">{{rppaUpRegulationPercent}}%</div>
-			</td>
-		</tr>
-		<tr class="rppa-way-down percent-row">
-			<td class="label-cell">
-				<div class="percent-label">RPPA Down-regulation</div>
-			</td>
-			<td class="percent-cell">
-				<div class="percent-bar"
-				     style="width: {{rppaDownRegulationWidth}}%; background-color: #78AAD6;"></div>
-			</td>
-			<td>
-				<div class="percent-value">{{rppaDownRegulationPercent}}%</div>
-			</td>
-		</tr>
-		<tr class="section-separator rppa-section-separator">
 			<td></td>
 			<td></td>
 			<td></td>
@@ -459,12 +430,7 @@
 		},
 		render: function(options){
 			var data = options.data;
-			var sbgnFlag;
 			var checks = options.check;
-			if(options.flag == "sbgn")
-				sbgnFlag = true;
-			else
-				sbgnFlag = false;
 			var cnaDataAvailable = !(data["PERCENT_CNA_AMPLIFIED"] == null &&
 			                         data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] == null &&
 			                         data["PERCENT_CNA_GAINED"] == null &&
@@ -472,21 +438,11 @@
 
 			var mrnaDataAvailable = !(data["PERCENT_MRNA_WAY_UP"] == null &&
 			                          data["PERCENT_MRNA_WAY_DOWN"] == null);
-			
-			var rppaDataAvailable;
-			if(sbgnFlag)
-			{
-				rppaDataAvailable = !(data["PERCENT_RPPA_WAY_UP"] == null &&
-			                          data["PERCENT_RPPA_WAY_DOWN"] == null);
-			}
-			else
-			{
-				rppaDataAvailable = false;
-			}
-			var mutationDataAvailable = (data["PERCENT_MUTATED"] != null);
+
+			var mutationDataAvailable = !(data["PERCENT_MUTATED"] == null);
 			
 			// if no genomic data available at all, do not render anything
-			if (!cnaDataAvailable && !mrnaDataAvailable && !rppaDataAvailable && !mutationDataAvailable)
+			if (!cnaDataAvailable && !mrnaDataAvailable && !mutationDataAvailable)
 			{
 				return;
 			}
@@ -506,20 +462,6 @@
 				mrnaDownRegulationWidth: Math.ceil(data["PERCENT_MRNA_WAY_DOWN"] * 100),
 				mutationPercent: (data["PERCENT_MUTATED"] * 100).toFixed(1),
 				mutationWidth: Math.ceil(data["PERCENT_MUTATED"] * 100)};
-			if(sbgnFlag)
-			{
-				variables["rppaUpRegulationPercent"] = (data["PERCENT_RPPA_WAY_UP"] * 100).toFixed(1);
-				variables["rppaUpRegulationWidth"] = Math.ceil(data["PERCENT_RPPA_WAY_UP"] * 100);
-				variables["rppaDownRegulationPercent"] = (data["PERCENT_RPPA_WAY_DOWN"] * 100).toFixed(1);
-				variables["rppaDownRegulationWidth"] = Math.ceil(data["PERCENT_RPPA_WAY_DOWN"] * 100);
-			}
-			else
-			{
-				variables["rppaUpRegulationPercent"] = 0;
-				variables["rppaUpRegulationWidth"] = 0;
-				variables["rppaDownRegulationPercent"] = 0;
-				variables["rppaDownRegulationWidth"] = 0;
-			}
 
 			// compile the template using underscore
 			var template = _.template( $("#genomic_profile_template").html(), variables);
@@ -531,11 +473,6 @@
 		},
 		format: function(options, variables) {
 			var data = options.data;
-			var sbgnFlag;
-			if(options.flag == "sbgn")
-				sbgnFlag = true;
-			else
-				sbgnFlag = false;
 			var cnaDataAvailable = !(data["PERCENT_CNA_AMPLIFIED"] == null &&
 			                         data["PERCENT_CNA_HOMOZYGOUSLY_DELETED"] == null &&
 			                         data["PERCENT_CNA_GAINED"] == null &&
@@ -543,16 +480,6 @@
 
 			var mrnaDataAvailable = !(data["PERCENT_MRNA_WAY_UP"] == null &&
 			                          data["PERCENT_MRNA_WAY_DOWN"] == null);
-			var rppaDataAvailable;
-			if(sbgnFlag)
-			{
-				var rppaDataAvailable = !(data["PERCENT_RPPA_WAY_UP"] == null &&
-	                	          data["PERCENT_RPPA_WAY_DOWN"] == null);
-			}
-			else
-			{
-				rppaDataAvailable = false;
-			}
 			// hide data rows with no information
 
 			if (data["PERCENT_CNA_AMPLIFIED"] == null)
@@ -572,12 +499,6 @@
 
 			if (data["PERCENT_MRNA_WAY_DOWN"] == null)
 				$(options.el + " .mrna-way-down").hide();
-			
-			if(!sbgnFlag || (data["PERCENT_RPPA_WAY_UP"] == null))
-				$(options.el + " .rppa-way-up").hide();
-
-			if(!sbgnFlag || (data["PERCENT_RPPA_WAY_DOWN"] == null))
-				$(options.el + " .rppa-way-down").hide();
 
 			if (data["PERCENT_MUTATED"] == null)
 				$(options.el + " .mutated").hide();
@@ -590,9 +511,6 @@
 
 			if (!mrnaDataAvailable)
 				$(options.el + " .mrna-section-separator").hide();
-
-			if (!rppaDataAvailable)
-				$(options.el + " .rppa-section-separator").hide();
 		}
 	});
 

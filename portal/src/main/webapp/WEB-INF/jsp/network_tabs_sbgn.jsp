@@ -102,9 +102,9 @@ if (includeHelpTab==null) {
 		<div class="error">
 			Currently there is no selected node. Please, select a node to see details.
 		</div>
+		<div class="state-specific-content"></div>
 		<div class="genomic-profile-content"></div>
 		<div class="biogene-content"></div>
-		<div class="drug-info-content"></div>
 	</div>
 
     <%if(includeHelpTab){%>

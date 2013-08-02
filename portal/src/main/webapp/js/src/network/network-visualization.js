@@ -142,7 +142,7 @@ NetworkVis.prototype.initNetworkUI = function(vis)
 
     this._geneWeightMap = this._geneWeightArray(this.WEIGHT_COEFF);
     this._geneWeightThreshold = this.ALTERATION_PERCENT;
-    this._maxAlterationPercent = this._maxAlterValNonSeed(this._geneWeightMap);
+    this._maxAlterationPercent = _maxAlterValue(this._geneWeightMap);
 
     this._resetFlags();
 
@@ -854,7 +854,7 @@ NetworkVis.prototype.updateEdges = function()
     //_vis.removeFilter("edges", false);
 
     // filter selected types
-    this._vis.filter("edges", edgeVisibility, false);
+    this._vis.filter("edges", edgeVisibility, true);
 
     // remove previous filters due to disconnection
     for (var key in this._filteredByIsolation)
@@ -1809,39 +1809,6 @@ NetworkVis.prototype._geneWeightArray = function(coeff)
     }
 
     return weightArray;
-};
-
-/**
- * Finds the non-seed gene having the maximum alteration percent in
- * the network, and returns the maximum alteration percent value.
- *
- * @param map   weight map for the genes in the network
- * @return      max alteration percent of non-seed genes
- */
-NetworkVis.prototype._maxAlterValNonSeed = function(map)
-{
-    var max = 0.0;
-
-    for (var key in map)
-    {
-        // skip seed genes
-
-        var node = this._vis.node(key);
-
-        if (node != null &&
-            node.data["IN_QUERY"] == "true")
-        {
-            continue;
-        }
-
-        // update max value if necessary
-        if (map[key] > max)
-        {
-            max = map[key];
-        }
-    }
-
-    return max;
 };
 
 /**
@@ -2902,7 +2869,7 @@ NetworkVis.prototype._hideSelected = function()
 
     // filter out selected elements
     this._vis.filter('all', selectionVisibility, false);
-
+update
     // also, filter disconnected nodes if necessary
     this._filterDisconnected();
 

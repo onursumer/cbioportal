@@ -886,6 +886,24 @@
 {
 	border-collapse:collapse;
 }
+
+#element_details_tab_sbgn .node-state-info
+{
+	padding-bottom: 10px;
+}
+
+#element_details_tab_sbgn .node-state-info .key-value
+{
+	margin-top: 2px;
+}
+
+#element_details_tab_sbgn .node-state-info .state-header
+{
+	font-weight: bold;
+}
+
+
+
 /*
  * ######################################################## 
  * ###################### Legends #########################

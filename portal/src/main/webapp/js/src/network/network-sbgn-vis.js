@@ -137,78 +137,11 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, seedNodes, 
 	var weights = this.initializeWeights();
 	this._geneWeightMap = this.adjustWeights(weights);
 	this._geneWeightThreshold = this.ALTERATION_PERCENT;
-	this._maxAlterationPercent = _maxAlterValNonSeed(this, this._geneWeightMap);
+	this._maxAlterationPercent = _maxAlterValue(this._geneWeightMap);
 	//this.setCompartmentElements();
 	this._resetFlags();
 
 	this._initControlFunctions();
-
-	/**
-	* handlers for selecting nodes
-	* for more information see visialization in cytoscape website
-	**/
-	// first one chooses all nodes with same glyph label
-	// and updates the details tab accordingly
-	var handleMultiNodeSelect = function(evt) 
-	{
-		self.multiSelectNodes(evt);
-		self.multiUpdateDetailsTab(evt);
-	};
-	// normal select which just chooses one node
-	// the details update will only accept one node
-	var handleNodeSelect = function(evt) 
-	{
-		self.updateGenesTab(evt);
-		self.updateDetailsTab(evt);
-	};
-
-	// if to choose multiple nodes by glyph labels we need to add and remove listeners
-	// on CTRL key down and keyup (now dblClick is also doing this, we might remove this)
-	var keyDownSelect = function(evt) 
-	{
-		if(evt.keyCode == self.CTRL_KEYCODE)
-		{
-		    self._vis.removeListener("select",
-		     "nodes", 
-		     handleNodeSelect);
-
-	    	     self._vis.removeListener("deselect",
-		     "nodes", 
-		     handleNodeSelect);
-
-		    self._vis.addListener("select",
-		     "nodes", 
-		     handleMultiNodeSelect);
-		    self._vis.addListener("deselect",
-		     "nodes", 
-		     handleMultiNodeSelect);
-		}
-	
-    	};
-	var keyUpSelect = function(evt) 
-	{
-		self._vis.removeListener("select",
-		     "nodes", 
-		     handleMultiNodeSelect);
-		self._vis.removeListener("deselect",
-		     "nodes", 
-		     handleMultiNodeSelect);
-
-		self._vis.addListener("select",
-		     "nodes", 
-		     handleNodeSelect);
-
-		self._vis.addListener("deselect",
-		     "nodes", 
-		     handleNodeSelect);
-	};
-	// add jquery listeners
-	$(' #vis_content').keydown(keyDownSelect);
-	$(' #vis_content').keyup(keyUpSelect);
-	// dblclick event listener to select multi nodes by glyph label
-	self._vis.addListener("dblclick",
-	     "nodes", 
-	     handleMultiNodeSelect);
 
 	// because here the update source is in a different div 
 	// than the SIF we have to change the jquery listener
@@ -312,24 +245,6 @@ NetworkSbgnVis.prototype.parseDataSource = function(attributeMap)
 		}
 	}
 };
-
-/** 
- * Searches an sbgn node whose label fits with parameter hugoSymbol
- * TODO what happens if the hugoSymbol is empty?
- * Is there any unknown gene label?
-**/
-function findNodes(label, nodes)
-{
-	var sameNodes = new Array();
-	for ( var i = 0; i < nodes.length; i++) 
-	{
-		if(_geneLabel(nodes[i].data) == label)
-		{
-			sameNodes.push(nodes[i].data.id);
-		}
-	}
-	return sameNodes;
-}
 
 /**
  * Select multiple nodes by glyph label
@@ -802,130 +717,6 @@ NetworkSbgnVis.prototype._initSliders = function()
 		    slide: weightSliderMove});
 
 };
-
-/**
- * Updates the contents of the details tab according to
- * the currently selected elements.
- * used for multiple selecting of nodes
- * so multiple nodes of glyph_class = macromolecule || nucleic acid feature
- * are acceptable if all of them have the same glyph_label_text
- * @param evt
- */
-NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
-{
-	var selected = this._vis.selected("nodes");	
-	
-	// if some node are selected 
-	if (selected.length > 0)
-	{
-		// empty everything and make the error div and hide it
-		$(this.detailsTabSelector).empty();
-		jQuery('<div />' , {class: 'error'}).appendTo(this.detailsTabSelector);
-		$(this.detailsTabSelector + " .error").empty();
-		$(this.detailsTabSelector + " .error").hide();
-
-		var data;
-		var glyph0 = selected[0].data.glyph_class;
-		
-		var allMacro = 0;
-		if (glyph0 == this.MACROMOLECULE || glyph0 == this.NUCLEIC_ACID)
-		{
-			allMacro = 1;
-		}
-		// check if all of them have the same glyph_label_text
-		for(var i = 1; i < selected.length; i++)
-		{
-			if(_geneLabel(selected[i].data) != _geneLabel(selected[i-1].data))
-			{
-				allMacro = 0;
-				break;
-			}
-		}
-
-		// if so, retrieve information for the first one
-		if(allMacro == 1)
-		{
-			data = selected[0].data;
-		}
-		else
-		{
-			$(this.detailsTabSelector + " .error").html(
-			    "Currently more than one node is selected. Please, select only one node to see details.");
-			$(this.detailsTabSelector + " .error").show();
-			return;
-		}
-		// right the glyph_class and the glyph_label of the gene 
-		var label = _geneLabel(data);
-		$(this.detailsTabSelector + " div").empty();
-		var text = '<div class="header"><span class="title"><label>';
-		text +=  _toTitleCase(data.glyph_class) + ' Properties';
-		text += '</label></span></div>';
-		text += '<div class="name"><label>Name: </label>' + label + '</div>';
-		text += '<div class="genomic-profile-content"></div>';
-		text += '<div class="biogene-content"></div>';
-
-		$(this.detailsTabSelector).html(text);
-		// send AJAX request to retrieve information
-		var queryParams = {"query": label,
-			"org": "human",
-			"format": "json",
-			"timeout": 5000};
-		
-		$(this.detailsTabSelector + " .biogene-content").append(
-			'<img src="images/ajax-loader.gif">');
-		var self = this;
-		// send request to biogene
-		$.ajax({
-		    type: "POST",
-		    url: "bioGeneQuery.do",
-		    async: true,
-		    data: queryParams,
-		    error: function(queryResult){
-				var errorMessage;
-				if (queryResult == undefined)
-				{
-					errorMessage = "Time out error: Request failed to respond in time.";
-				}
-				else
-				{
-					errorMessage = queryResult.returnCode;
-				}
-				$(self.detailsTabSelector).empty();
-				jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
-				$(self.detailsTabSelector + " .error").append(
-				    "Error retrieving data: " + errorMessage);
-				$(self.detailsTabSelector + " .error").show();
-			},
-		    success: function(queryResult) {
-			if(queryResult.count > 0)
-			{
-				// generate the view by using backbone
-				var biogeneView = new BioGeneView(
-					{el: self.detailsTabSelector + " .biogene-content",
-					data: queryResult.geneInfo[0]});
-			}
-			else
-			{
-				$(self.detailsTabSelector + " .biogene-content").html(
-					"<p>No additional information available for the selected node.</p>");
-			}
-	
-			// generate view for genomic profile data
-			var genomicProfileViewSbgn = new GenomicProfileView(
-			    {el: self.detailsTabSelector + " .genomic-profile-content",
-				data: data,
-				flag: "sbgn"});			
-		    }
-		});
-	}
-	else
-	{
-		// if this is not the case, go to the normal updateDetailsTab function 
-		// that accepts only one node at a time
-		this.updateDetailsTab(evt);
-	}
-};
-
 /**
  * Updates the contents of the details tab according to
  * the currently selected elements.
@@ -936,106 +727,49 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 {
 	var selected = this._vis.selected("nodes");
 	var data;
-	var self = this;
 	// empty everything and make the error div and hide it
-	$(self.detailsTabSelector).empty();
-	jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
-	$(self.detailsTabSelector + " .error").empty();
-	$(self.detailsTabSelector + " .error").hide();
+	$(this.detailsTabSelector).empty();
+	jQuery('<div />' , {class: 'error'}).appendTo(this.detailsTabSelector);
+	$(this.detailsTabSelector + " .error").empty();
+	$(this.detailsTabSelector + " .error").hide();
 	// only one node should be selected at a time
 	if(selected.length == 1)
 	{
-
 		data = selected[0].data;
-		// first show the glyph_class
-		var text = '<div class="header"><span class="title"><label>';
-		text +=  _toTitleCase(data.glyph_class) + ' Properties';
-		text += '</label></span></div>';
-		// compartment and simple chemicals just have a name
+		
 		if(data.glyph_class == this.COMPARTMENT 
-			|| data.glyph_class == this.SIMPLE_CHEMICAL)
+			|| data.glyph_class == this.SIMPLE_CHEMICAL
+			|| data.glyph_class == this.PROCESS)
 		{
-			text += '<div class="name"><label>Name: </label>' + _geneLabel(data) + "</div>";
-		}
-		// processes have data source
-		else if (data.glyph_class == this.PROCESS)
-		{
-			text += '<div class="name"><label>Data Source: </label>' + this.idToDataSource[data.id] + "</div>";
+			// first show the glyph_class
+			var text = '<div class="header"><span class="title"><label>';
+			text +=  _toTitleCase(data.glyph_class) + ' Properties';
+			text += '</label></span></div>';
+			if (data.glyph_class == this.PROCESS)
+			{ // processes have data source
+				text += '<div class="name"><label>Data Source: </label>' + this.idToDataSource[data.id] + "</div>";
+			}
+			else 
+			{ // compartment and simple chemicals just have a name
+				text += '<div class="name"><label>Name: </label>' + _geneLabel(data) + "</div>";
+			}
+			// update the div with jquery
+			$(this.detailsTabSelector).html(text);
 		}
 		// for macromolecules and nucleic acids we have to write the name and then send a query to get the information
 		else if (data.glyph_class == this.MACROMOLECULE 
 			|| data.glyph_class == this.NUCLEIC_ACID)
 		{
-			// get the label and make it safe to avoid characters that might cause errorous html code
-			var label = _geneLabel(data);
-			text += '<div class="name"><label>Name: </label>' + label + '</div>';
-			// make two areas for genomic data (in the element.data)
-			text += '<div class="genomic-profile-content"></div>';
-			// and biogene content which comes from the ajax query
-			text += '<div class="biogene-content"></div>';
-			// flush this html by jquery (jSON) to update the data later
-			$(self.detailsTabSelector).html(text);
-			// make the ajax query in json format
-			var queryParams = {"query": label,
-				"org": "human",
-				"format": "json"};
-			// put the wait sign
-			$(self.detailsTabSelector + " .biogene-content").append(
-				'<img src="images/ajax-loader.gif">');
-			// send ajax request with async = true and timeout is 5"
-			$.ajax({
-			    type: "POST",
-			    url: "bioGeneQuery.do",
-			    async: true,
-			    timeout: 5000,
-			    data: queryParams,
-			    // if the response fails write an error message
-			    error: function()
-			    {
-				var errorMessage;
-				if (queryResult == undefined)
-				{
-					errorMessage = "Time out error: Request failed to respond in time.";
-				}
-				else
-				{
-					errorMessage = queryResult.returnCode;
-				}
-				$(self.detailsTabSelector).empty();
-				jQuery('<div />' , {class: 'error'}).appendTo(self.detailsTabSelector);
-				$(self.detailsTabSelector + " .error").append(
-				    "Error retrieving data: " + errorMessage);
-				$(self.detailsTabSelector + " .error").show();
-
-			    },
-			    // if success code is returned write the given data in the divs with jSon
-			    success: function(queryResult) 
-			    {
-				if(queryResult.count > 0)
-				{
-					// generate the view by using backbone
-					var biogeneView = new BioGeneView(
-						{el: self.detailsTabSelector + " .biogene-content",
-						data: queryResult.geneInfo[0]});
-				}
-				else
-				{
-					$(self.detailsTabSelector + " .biogene-content").html(
-						"<p>No additional information available for the selected node.</p>");
-				}
-	
-				// generate view for genomic profile data
-				var genomicProfileViewSbgn = new GenomicProfileView(
-				    {el: self.detailsTabSelector + " .genomic-profile-content",
-					data: data,
-					flag: "sbgn"});
-			    }
-			});
+			var divName = this.detailsTabSelector;
+			// only one node is chosen so we should show its state info
+			var showState = true;
+			// load the data
+			_queryGenomicData(data, divName, showState);
 		}
 		// complexes are different. all macromolecule or nuleic acid children should be listed
 		else if (data.glyph_class == this.COMPLEX)
 		{
-			text += '<div class="complexProperty">';
+			var text = '<div class="complexProperty">';
 			// get the children
 			var children = this._vis.childNodes(selected[0].data.id);
 			// holds data of children
@@ -1079,19 +813,16 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 					text += "$('#gene" + label + "Show').hide();" + '"><span class="title"><label> + ' + _geneLabel(data);
 					text += '</label></span></div>';
 
-					text += '<div class="geneProperty" style="display:none;" id="gene' + label + '">';
-					text += '<div class="genomic-profile-content"></div>';
-					text += '<div class="biogene-content"></div>';
-					text += '</div><br />';
+					text += '<div class="geneProperty" style="display:none;" id="gene' + label + '"></div><br />';
 					// check the element to not write it again
-					check[label] = 1;
+					check[label] ++;
 					dataList[cnt] = data;
 					cnt ++;
 				}
 			}
 			text += "</div>";
 			// flush the html5 code to the details tab
-			$(self.detailsTabSelector).html(text);
+			$(this.detailsTabSelector).html(text);
 			// make the mouse waiting TODO
 
 			// for each macromolecule send an ajax request
@@ -1100,65 +831,23 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 				// for each data send an ajax request as done before 
 				// for macromolecules and nucleic acid features
 				data = dataList[i];
-				var label = _geneLabel(data);
-				var queryParams = {"query": label,
-					"org": "human",
-					"format": "json",};
-				// the div to update the data with jSon
-				var divName = self.detailsTabSelector + " #gene" + label;
-				$(divName + " .biogene-content").append(
-				'<img src="images/ajax-loader.gif">');
-				// for each request waits 3" to avoid unresponsiveness
-				$.ajax({
-				    type: "POST",
-				    url: "bioGeneQuery.do",
-				    async: false,
-				    timeout: 5000,
-				    data: queryParams,
-				    error: function(){
-						var errorMessage;
-						if (queryResult == undefined)
-						{
-							errorMessage = "Time out error: Request failed to respond in time.";
-						}
-						else
-						{
-							errorMessage = queryResult.returnCode;
-						}
-						$(divName + " .genomic-profile-content").empty();
-						$(divName + " .genomic-profile-content").append(
-						    "Error retrieving data: " + errorMessage);
-						$(divName + " .genomic-profile-content").show();
-					},
-				    success: function(queryResult) {
-					if(queryResult.count > 0)
-					{
-						// generate the view by using backbone
-						var biogeneView = new BioGeneView(
-							{el: divName + " .biogene-content",
-							data: queryResult.geneInfo[0]});
-					}
-					else
-					{
-						$(divName + " .biogene-content").html(
-							"<p>No additional information available for the selected node.</p>");
-					}
-	
-					// generate view for genomic profile data
-					var genomicProfileViewSbgn = new GenomicProfileView(
-					    {el: divName + " .genomic-profile-content",
-					    data: data,
-					    flag: "sbgn"});
-				    }
-				});
+				var divName = this.detailsTabSelector + " #gene" + _geneLabel(data);
+				// only one node of this macro is available show state info
+				var showState;
+				if (check[_geneLabel(data)] > 1)
+				{
+					showState = false;
+				}
+				else
+				{
+					showState = true;
+				}
+				// load the data
+				_queryGenomicData(data, divName, showState);
 			}
 			// make the mouse normal TODO
 
-			// makle sure for complexes we do not continue
-			return;
 		}
-		// update the div with jquery
-		$(self.detailsTabSelector).html(text);
 	}
 	else if (selected.length > 1)
 	{
@@ -1167,14 +856,87 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 	else
 	{
 		// no nodes were selected
-		$(self.detailsTabSelector + " div").empty();
-		$(self.detailsTabSelector + " .error").append(
+		$(this.detailsTabSelector + " div").empty();
+		$(this.detailsTabSelector + " .error").append(
 		    "Currently there is no selected node. Please, select a node to see details.");
-		    $(self.detailsTabSelector + " .error").show();
+		    $(this.detailsTabSelector + " .error").show();
 		return;
 	}	
 	
 };
+/**
+ * Updates the contents of the details tab according to
+ * the currently selected elements.
+ * used for multiple selecting of nodes
+ * so multiple nodes of glyph_class = macromolecule || nucleic acid feature
+ * are acceptable if all of them have the same glyph_label_text
+ * @param evt
+ */
+NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
+{
+	var selected = this._vis.selected("nodes");	
+	
+	// if some node are selected 
+	if (selected.length > 0)
+	{
+		// empty everything and make the error div and hide it
+		$(this.detailsTabSelector).empty();
+		jQuery('<div />' , {class: 'error'}).appendTo(this.detailsTabSelector);
+		$(this.detailsTabSelector + " .error").empty();
+		$(this.detailsTabSelector + " .error").hide();
+
+		var data;
+		var glyph0 = selected[0].data.glyph_class;
+		
+		var allMacro = 0;
+		if (glyph0 == this.MACROMOLECULE || glyph0 == this.NUCLEIC_ACID)
+		{
+			allMacro = 1;
+		}
+		// check if all of them have the same glyph_label_text
+		for(var i = 1; i < selected.length; i++)
+		{
+			if(_geneLabel(selected[i].data) != _geneLabel(selected[i-1].data))
+			{
+				allMacro = 0;
+				break;
+			}
+		}
+
+		// if so, retrieve information for the first one
+		if(allMacro == 1)
+		{
+			data = selected[0].data;
+			var divName = this.detailsTabSelector;
+			var showState;
+			// show state only if one node is selected, 
+			// multiple nodes have not one state
+			if (selected.length == 1)
+			{
+				showState = true;
+			}
+			else
+			{
+				showState = false;
+			}
+			_queryGenomicData(data, divName, showState);
+
+		}
+		else
+		{
+			$(this.detailsTabSelector + " .error").html(
+			    "Currently more than one state of " + label + " selected.");
+			$(this.detailsTabSelector + " .error").show();
+		}
+	}
+	else
+	{
+		// if this is not the case, go to the normal updateDetailsTab function 
+		// that accepts only one node at a time
+		this.updateDetailsTab(evt);
+	}
+};
+
 
 /**
  * Initializes Genes tab.
@@ -1487,20 +1249,32 @@ NetworkSbgnVis.prototype._keyPressListener = function(event)
  */
 NetworkSbgnVis.prototype._initControlFunctions = function()
 {
-    var self = this;
+	var self = this;
 
-    // define listeners as local variables
-    // (this is required to pass "this" instance to the listener functions)
+	// define listeners as local variables
+	// (this is required to pass "this" instance to the listener functions)
 
-    var showNodeDetails = function(evt) {
-	    // open details tab instead
-	    $(self.networkTabsSelector).tabs("select", 2);
-    };
+	var handleDblClick = function(evt) {
+		// open details tab instead
+		$(self.networkTabsSelector).tabs("select", 2);
+		self.multiSelectNodes(evt);
+		self.updateGenesTab(evt);
+		self.updateDetailsTab(evt);
+	};
 
-    var handleNodeSelect = function(evt) {
-        self.updateGenesTab(evt);
-        self.updateDetailsTab(evt);
-    };
+	var handleOnClick = function(evt) {
+		self.updateDetailsTab(evt);
+	};
+
+	var handleNodeSelect = function(evt) {
+		self.updateGenesTab(evt);
+		self.updateDetailsTab(evt);
+	};
+
+	var handleNodeDeselect = function(evt) {
+		self.updateGenesTab(evt);
+		self.updateDetailsTab(evt);
+	};
 
     var filterSelectedGenes = function() {
         self.filterSelectedGenes();
@@ -1642,21 +1416,25 @@ NetworkSbgnVis.prototype._initControlFunctions = function()
     $(this.genesTabSelector + " #unhide_genes").click(unhideAll);
     $(this.genesTabSelector + " #re-submit_query").click(reRunQuery);
 
-	// add listener for double click action
-    this._vis.addListener("dblclick",
-                     "nodes",
-                     showNodeDetails);
-
     // add listener for node select & deselect actions
 
     this._vis.addListener("select",
-                     "nodes", 
-                     handleNodeSelect);
+		"nodes", 
+		handleNodeSelect);
 
     this._vis.addListener("deselect",
-                     "nodes", 
-                     handleNodeSelect);
+		"nodes", 
+		handleNodeDeselect);
 
+    // add listener for double click action
+    this._vis.addListener("dblclick",
+		"nodes",
+		handleDblClick);
+
+    // dblclick event listener to select multi nodes by glyph label
+    this._vis.addListener("onclick",
+		"nodes", 
+		handleOnClick);
 };
 
 /**
@@ -1967,11 +1745,11 @@ NetworkSbgnVis.prototype._initGenesList = function(seedNodes, sbgnGenes)
 	// add update geneListOptions
 	for (var i = 0; i < sbgnGenes.length; i++)
 	{
-		geneListOptions[alphanumeric(sbgnGenes[i])] = false;
+		geneListOptions[_alphanumeric(sbgnGenes[i])] = false;
 	}
 	for (var i = 0; i < seedNodes.length; i++)
 	{
-		geneListOptions[alphanumeric(seedNodes[i])] = true;
+		geneListOptions[_alphanumeric(seedNodes[i])] = true;
 	}
 
 	// (this is required to pass "this" instance to the listener functions)
@@ -1989,7 +1767,7 @@ NetworkSbgnVis.prototype._initGenesList = function(seedNodes, sbgnGenes)
 	// add each option one by one
 	for (var i = 0; i < sbgnGenes.length; i++)
 	{
-		var key = alphanumeric(sbgnGenes[i]);
+		var key = _alphanumeric(sbgnGenes[i]);
 		var classContent;
 
 		if (geneListOptions[key] )
@@ -2504,7 +2282,7 @@ NetworkSbgnVis.prototype._defaultSettings = function()
     this._layoutOptions = this._defaultOptsArray();
     _updateLayoutOptions(this);
     this._updatePropsUI();
-}
+};
 
 /**
  * Updates the contents of the layout properties panel.
@@ -2539,7 +2317,7 @@ NetworkSbgnVis.prototype._updatePropsUI = function()
                 this._layoutOptions[i].value);
         }
     }
-}
+};
 
 /**
  * Saves layout settings when clicked on the "Save" button of the
@@ -2583,7 +2361,7 @@ NetworkSbgnVis.prototype._saveSettings = function()
 
     // close the settings panel
     $(this.settingsDialogSelector).dialog("close");
-}
+};
 
 /**
  * Initializes the layout options by default values and updates the
@@ -2593,5 +2371,160 @@ NetworkSbgnVis.prototype._initLayoutOptions = function()
 {
     this._layoutOptions = this._defaultOptsArray();
     _updateLayoutOptions(this);
+};
+//** UTILITY FUNCTIONS FOR SBGN **/
+/**
+ *
+ * 
+**/
+/**
+ *  returns the glyph label which is the name of the macromolecule
+**/
+function _geneLabel(data)
+{
+	var label = _alphanumeric(data.glyph_label_text);
+	return label.toUpperCase();
 }
+/**
+ * Comparison function to sort genes alphabetically.
+ * overwritten to check againsts glyph_label
+ * @param node1	node to compare to node2
+ * @param node2 node to compare to node1
+ * @return 		positive integer if node1 is alphabetically greater than node2
+ * 				negative integer if node2 is alphabetically greater than node1
+ * 				zero if node1 and node2 are alphabetically equal
+ */
+function _labelSort (node1, node2)
+{
+    if (_geneLabel(node1.data) > _geneLabel(node2.data))
+    {
+        return 1;
+    }
+    else if (_geneLabel(node1.data) < _geneLabel(node2.data))
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+/**
+ * Sends AJAX request to retrieve information about a gene
+ * and updates the details tab via backbone classes
+ * @params: 
+ * 	data		: data field of the node (gene)
+ * 	divName		: div to fill up (gene)
+ * 	hasState	: whether the state information should be displayed or not
+**/
 
+_queryGenomicData = function(data, divName, hasState)
+{
+	var label = _geneLabel(data);
+	// make the required div
+	$(divName + " div").empty();
+	var text = '<div class="header"><span class="title"><label>';
+	text +=  _toTitleCase(data.glyph_class) + ' Properties';
+	text += '</label></span></div>';
+	text += '<div class="name"><label>Name: </label>' + label + '</div>';
+	text += '<div class="state-specific-content"></div>';
+	text += '<div class="genomic-profile-content"></div>';
+	text += '<div class="biogene-content"></div>';
+
+	$(divName).html(text);
+
+	$(divName + " .biogene-content").append(
+			'<img src="images/ajax-loader.gif">');
+	
+	// get the state data
+	/* var stateData;
+	if (hasState) TODO
+	{
+		stateData = { availability: "test-availability",
+				cellularLocation: "test-cellularLocation",
+				comment: "test-comment",
+				dataSource: "test-dataSource",
+				displayName: "test-displayName",
+				name: "test-name",
+				notFeature: "test-notFeature",
+				standardName: "test-standardName",
+				type: "test-type",
+				xref: "test-xref"};
+	}*/
+
+	// set the query parameters
+	var queryParams = {"query": label,
+		"org": "human",
+		"format": "json",
+		"timeout": 3000};
+	// send request to biogene
+	$.ajax({
+	    type: "POST",
+	    url: "bioGeneQuery.do",
+	    async: true,
+	    data: queryParams,
+	    error: function(queryResult){
+			var errorMessage;
+			if (queryResult == undefined)
+			{
+				errorMessage = "Time out error: Request failed to respond in time.";
+			}
+			else
+			{
+				errorMessage = "Error occured: " +  queryResult.returnCode;
+			}
+			$(divName).empty();
+			jQuery('<div />' , {class: 'error'}).appendTo(divName);
+			$(divName + " .error").append(
+			    "Error retrieving data: " + errorMessage);
+			$(divName + " .error").show();
+		},
+	    success: function(queryResult) {
+		if(queryResult.count > 0)
+		{
+			// generate the view by using backbone
+			var biogeneViewSbgn = new BioGeneViewSbgn(
+				{el: divName + " .biogene-content",
+				data: queryResult.geneInfo[0]});
+		}
+		else
+		{
+			$(divName + " .biogene-content").html(
+				"<p>No additional information available for the selected node.</p>");
+		}
+
+		// generate view for genomic profile data
+		var genomicProfileViewSbgn = new GenomicProfileViewSbgn(
+		    {el: divName + " .genomic-profile-content",
+			data: data});	
+		/*if (hasState) TODO
+		{
+			var nodeStateViewSbgn = new NodeStateViewSbgn(
+			    {el: divName + " .state-specific-content",
+				data: stateData});	
+		}
+		else
+		{
+			$(divName + " .state-specific-content").html(
+				"<p>More than one node selected.</p>");			
+		}*/
+	    }
+	});
+}
+/** 
+ * Searches an sbgn node whose label fits with parameter hugoSymbol
+ * TODO what happens if the hugoSymbol is empty?
+ * Is there any unknown gene label?
+**/
+function findNodes(label, nodes)
+{
+	var sameNodes = new Array();
+	for ( var i = 0; i < nodes.length; i++) 
+	{
+		if(_geneLabel(nodes[i].data) == label)
+		{
+			sameNodes.push(nodes[i].data.id);
+		}
+	}
+	return sameNodes;
+}

@@ -256,28 +256,18 @@ function _removeHighlights(self)
 }
 
 /**
- * Finds the non-seed gene having the maximum alteration percent in
+ * Finds the gene having the maximum alteration percent in
  * the network, and returns the maximum alteration percent value.
  *
  * @param map   weight map for the genes in the network
- * @return      max alteration percent of non-seed genes
+ * @return      max alteration percent of all genes
  */
-function _maxAlterValNonSeed(self, map)
+function _maxAlterValue(map)
 {
     var max = 0.0;
 
     for (var key in map)
     {
-        // skip seed genes
-
-        var node = self._vis.node(key);
-
-        if (node != null &&
-            node.data["IN_QUERY"] == "true")
-        {
-            continue;
-        }
-
         // update max value if necessary
         if (map[key] > max)
         {
@@ -285,7 +275,7 @@ function _maxAlterValNonSeed(self, map)
         }
     }
 
-    return max+1;
+    return max;
 }
 
 function _adjustIE()
