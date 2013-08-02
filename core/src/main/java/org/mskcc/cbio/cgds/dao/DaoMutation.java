@@ -1329,16 +1329,169 @@ public final class DaoMutation {
         }
     }
     
+    /**
+     * class to store hotspots
+     */
+    private static class Hotspot {
+        private Set<Integer> residues;
+        private String label;
+
+        public Hotspot(Set<Integer> residues) {
+            this.residues = residues;
+        }
+
+        public Hotspot(Set<Integer> residues, String label) {
+            this.residues = residues;
+            this.label = label;
+        }
+
+        public Set<Integer> getResidues() {
+            return residues;
+        }
+
+        public void setResidues(Set<Integer> residues) {
+            this.residues = residues;
+        }
+
+        public String getLabel() {
+            if (label == null) {
+                return StringUtils.join(residues,",");
+            }
+            return label;
+        }
+
+        public void setLabel(String label) {
+            this.label = label;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 79 * hash + (this.residues != null ? this.residues.hashCode() : 0);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Hotspot other = (Hotspot) obj;
+            if (this.residues != other.residues && (this.residues == null || !this.residues.equals(other.residues))) {
+                return false;
+            }
+            return true;
+        }
+    }
     
+    /**
+     * A private interface to defined the way to get hotspots in 3D given mutations.
+     */
+    private static interface Find3DHotspots {
+        /**
+         * 
+         * @param mapPositionSamples
+         * @param thresholdSamples
+         * @param pdbId
+         * @param chainId
+         * @return
+         * @throws DaoException 
+         */
+        Set<Hotspot> find3DHotspots(Map<Integer,Integer> mapPositionSamples,
+            int thresholdSamples, String pdbId, String chainId) throws DaoException;
+    }
     
     /**
      * @param concatCancerStudyIds cancerStudyIds concatenated by comma (,)
      * @param thresholdSamples threshold of number of samples
      * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
-     * TODO: should allow multiple aa changes per case
+     */
+    public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatationPdbPTMStatistics(
+            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
+        return getMutation3DHotspots(concatCancerStudyIds, thresholdSamples, concatEntrezGeneIds,
+                new Find3DHotspots() {
+                    @Override
+                    public Set<Hotspot> find3DHotspots(Map<Integer,Integer> mapPositionSamples,
+                        int thresholdSamples, String pdbId, String chainId) throws DaoException {
+                        Set<Hotspot> hotspots = new HashSet<Hotspot>();
+                        Map<Set<Integer>,String> ptmModules = DaoPdbPtmData.getPdbPtmModules(pdbId, chainId);
+                        for (Map.Entry<Set<Integer>,String> entry : ptmModules.entrySet()) {
+                            Set<Integer> residues = entry.getKey();
+                            int samples = 0;
+                            for (Integer res : residues) {
+                                Integer i = mapPositionSamples.get(res);
+                                if (i!=null) {
+                                    samples += i;
+                                    if (samples >= thresholdSamples) {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (samples >= thresholdSamples) {
+                                String label = entry.getValue()+"-"+StringUtils.join(residues, ",");
+                                hotspots.add(new Hotspot(residues, label));
+                            }
+                        }
+                        return hotspots;
+                    }
+                });
+    }
+    
+    /**
+     * @param concatCancerStudyIds cancerStudyIds concatenated by comma (,)
+     * @param thresholdSamples threshold of number of samples
+     * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatation3DStatistics(
             String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
+        return getMutation3DHotspots(concatCancerStudyIds, thresholdSamples, concatEntrezGeneIds,
+                new Find3DHotspots() {
+                    @Override
+                    public Set<Hotspot> find3DHotspots(Map<Integer,Integer> mapPositionSamples,
+                        int thresholdSamples, String pdbId, String chainId) throws DaoException {
+                        Set<Hotspot> hotspots = new HashSet<Hotspot>();
+                        Map<Integer, Set<Integer>> proteinContactMap = DaoProteinContactMap.getProteinContactMap(
+                                pdbId, chainId, mapPositionSamples.keySet());
+                        for (Map.Entry<Integer, Set<Integer>> entry : proteinContactMap.entrySet()) {
+                            Integer res1 = entry.getKey();
+                            Set<Integer> neighbors = entry.getValue();
+                            neighbors.add(res1);
+                            int samples = 0;
+                            for (Integer res2 : entry.getValue()) {
+                                samples += mapPositionSamples.get(res2);
+                            }
+                            if (samples >= thresholdSamples) {
+                                boolean newSpots = true;
+                                for (Hotspot hotspot : hotspots) {
+                                    Set<Integer> residues = hotspot.getResidues();
+                                    if (residues.containsAll(neighbors)) {
+                                        // if this set of residues have been added
+                                        newSpots = false;
+                                        break;
+                                    }
+                                    if (hotspots.containsAll(residues)) {
+                                        // if subset has been added
+                                        residues.addAll(neighbors);
+                                        newSpots = false;
+                                        break;
+                                    }
+                                }
+                                if (newSpots) {
+                                    hotspots.add(new Hotspot(neighbors));
+                                }
+                            }
+                        }
+                        return hotspots;
+                    }
+                });
+    }
+    
+    private static Map<String,Map<Integer, Map<String,Set<String>>>> getMutation3DHotspots(
+            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds,
+            Find3DHotspots find3DHotspots) throws DaoException {
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -1403,14 +1556,12 @@ public final class DaoMutation {
                         
                         String symbol = daoGeneOptimized.getGene(currentGene).getHugoGeneSymbolAllCaps();
                         if (totalSamples>=thresholdSamples) {
-                            Map<Integer, Set<Integer>> hotspots = find3DHotspots(mapPositionSamples, thresholdSamples, pdbId, chainId);
+                            Set<Hotspot> hotspots = find3DHotspots.find3DHotspots(mapPositionSamples, thresholdSamples, pdbId, chainId);
 
-                            for (Map.Entry<Integer, Set<Integer>> entryHs : hotspots.entrySet()) {
-                                int hs = entryHs.getKey();
-                                
+                            for (Hotspot hotspot : hotspots) {
                                 Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
-                                for (int neighbor : entryHs.getValue()) {
-                                    Map<Integer, Map<String,String>> mapPosition = mapProtein.get(neighbor);
+                                for (int res : hotspot.getResidues()) {
+                                    Map<Integer, Map<String,String>> mapPosition = mapProtein.get(res);
                                     if (mapPosition!=null) {
                                         for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
                                             int pos = entry.getKey();
@@ -1433,7 +1584,7 @@ public final class DaoMutation {
                                         }
                                     }
                                 }
-                                map.put(symbol+"_"+currentPdb+"."+chainId+" [~"+hs+"]", m);
+                                map.put(symbol+"_"+currentPdb+"."+chainId+" "+hotspot.getLabel(), m);
                             }
                         }
                     }
@@ -1466,26 +1617,6 @@ public final class DaoMutation {
         } finally {
             JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
         }
-    }
-    
-    private static Map<Integer, Set<Integer>> find3DHotspots(Map<Integer,Integer> mapPositionSamples,
-            int thresholdSamples, String pdbId, String chainId) throws DaoException {
-        Map<Integer, Set<Integer>> map = new HashMap<Integer, Set<Integer>>();
-        Map<Integer, Set<Integer>> proteinContactMap = DaoProteinContactMap.getProteinContactMap(
-                pdbId, chainId, mapPositionSamples.keySet());
-        for (Map.Entry<Integer, Set<Integer>> entry : proteinContactMap.entrySet()) {
-            Integer res1 = entry.getKey();
-            Set<Integer> neibors = entry.getValue();
-            neibors.add(res1);
-            int samples = 0;
-            for (Integer res2 : entry.getValue()) {
-                samples += mapPositionSamples.get(res2);
-            }
-            if (samples >= thresholdSamples) {
-                map.put(res1, neibors);
-            }
-        }
-        return map;
     }
     
     /**

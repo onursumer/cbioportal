@@ -82,12 +82,13 @@ String jsonStudies = JSONValue.toJSONString(studies);
             <option value="linear-3">Linear hotspots (d<=4)</option>
             <option value="linear-4">Linear hotspots (d<=8)</option>
             <option value="3d">3D hotspots</option>
+            <option value="pdb-ptm">3D PTM hotspots</option>
             <option value="ptm-effect-0">Mutations of PTM sites</option>
             <option value="ptm-effect-1">Mutations of PTM site neighbors (d<=1)</option>
             <option value="ptm-effect-2">Mutations of PTM site neighbors (d<=2)</option>
             <option value="ptm-effect-3">Mutations of PTM site neighbors (d<=4)</option>
             <option value="ptm-effect-4">Mutations of PTM site neighbors (d<=8)</option>
-            <option value="cna">Copy Number Alterations (under development)</option>
+            <!--option value="cna">Copy Number Alterations (under development)</option-->
         </select>
     </div>
     <br/>
@@ -551,99 +552,92 @@ AlteredGene.Router = Backbone.Router.extend({
         $('#merge-alterations').prop('checked',type==="truncating");
         $('#merge-alterations').prop('disabled',type==="truncating");
     
-        if (type==="missense" || type==="truncating" || type==="truncating-sep"
-            || type.indexOf('ptm-effect-')===0 || type.indexOf('linear-')===0
-            || type==="3d") {
-    
-            var option_type = type;
-            if (type==='missense') {
-                option_type = 'missense,ins,del';
-            } else if (type.indexOf('ptm-effect-')===0) {
-                option_type = 'ptm-effect,PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
-            } else if (type.indexOf('linear-')===0) {
-                option_type = 'linear';
-            }
-            
-            var options = {
-                    'cmd': 'statistics',
-                    'cancer_study_id': studies,
-                    'type': option_type,
-                    'threshold_samples': threshold
-                };
-                
-            if (genes) {
-                options['genes'] = genes;
-            }
-                
-            if(type.indexOf('ptm-effect-')===0) {
-                options['threshold_distance'] = parseInt(type.replace('ptm-effect-',''));
-            }
-                
-            if(type.indexOf('linear-')===0) {
-                options['window'] = parseInt(type.replace('linear-',''));
-            }
-            
-            // alteration view
-            var alterations = new AlteredGene.Alterations([]);
-            var altView = new AlteredGene.Alterations.MissenseHeatmap(
-                {
-                    'cancer_study_id': studies,
-                    'alterations': alterations
-                });
-            altView.render();
-            this.el.html(altView.el); // by default
-            
-            // gene view
-            var alterationsByGene = new AlteredGene.Alterations();
-            var geneView = new AlteredGene.Alterations.MissenseHeatmap(
-                {
-                    'cancer_study_id': studies,
-                    'alterations': alterationsByGene
-                });
-            alterations.on('sync', function(){
-                mergeAlterationsByGene(alterations,alterationsByGene);
-                //geneView.render();
-                $('#side-menu').show();
-            });
-            
-            alterations.fetch({data:options});
-            
-            var updateQtips = function() {
-                $(".cell").qtip({
-                    content: {
-                        attr: 'alt'
-                    },
-                    hide: { fixed: true, delay: 100 },
-                    style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
-                    position: {my:'top left',at:'bottom right'}
-                  });
-            };
-            
-            // handling merge alterations
-            var this_el = this.el;
-            var updateView = function() {
-                if($('#merge-alterations').prop('checked')) {
-                    geneView.render();
-                    this_el.html(geneView.el);
-                } else {
-                    altView.render();
-                    this_el.html(altView.el);
-                }
-                
-                // hacky
-                updateQtips();
-            };
-            
-            $('#merge-alterations').change(function() {
-                updateView();
-            });
-            
-            $('#use-fraction').change(function() {
-                updateView();
-            });
-        } else {
-            alert("This is underdevelopment and currently unsupported.");
+        var option_type = type;
+        if (type==='missense') {
+            option_type = 'missense,ins,del';
+        } else if (type.indexOf('ptm-effect-')===0) {
+            option_type = 'ptm-effect,PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
+        } else if (type.indexOf('linear-')===0) {
+            option_type = 'linear';
         }
+
+        var options = {
+                'cmd': 'statistics',
+                'cancer_study_id': studies,
+                'type': option_type,
+                'threshold_samples': threshold
+            };
+
+        if (genes) {
+            options['genes'] = genes;
+        }
+
+        if(type.indexOf('ptm-effect-')===0) {
+            options['threshold_distance'] = parseInt(type.replace('ptm-effect-',''));
+        }
+
+        if(type.indexOf('linear-')===0) {
+            options['window'] = parseInt(type.replace('linear-',''));
+        }
+
+        // alteration view
+        var alterations = new AlteredGene.Alterations([]);
+        var altView = new AlteredGene.Alterations.MissenseHeatmap(
+            {
+                'cancer_study_id': studies,
+                'alterations': alterations
+            });
+        altView.render();
+        this.el.html(altView.el); // by default
+
+        // gene view
+        var alterationsByGene = new AlteredGene.Alterations();
+        var geneView = new AlteredGene.Alterations.MissenseHeatmap(
+            {
+                'cancer_study_id': studies,
+                'alterations': alterationsByGene
+            });
+        alterations.on('sync', function(){
+            mergeAlterationsByGene(alterations,alterationsByGene);
+            //geneView.render();
+            $('#side-menu').show();
+        });
+
+        alterations.fetch({data:options});
+
+        var updateQtips = function() {
+            $(".cell").qtip({
+                content: {
+                    attr: 'alt'
+                },
+                hide: { fixed: true, delay: 100 },
+                style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tootip-small-font' },
+                position: {my:'top left',at:'bottom right'}
+              });
+        };
+
+        // handling merge alterations
+        var this_el = this.el;
+        var updateView = function() {
+            if($('#merge-alterations').prop('checked')) {
+                geneView.render();
+                this_el.html(geneView.el);
+            } else {
+                altView.render();
+                this_el.html(altView.el);
+            }
+
+            // hacky
+            updateQtips();
+        };
+
+        $('#merge-alterations').change(function() {
+            updateView();
+        });
+
+        $('#use-fraction').change(function() {
+            updateView();
+        });
     }
 });
 

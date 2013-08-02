@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.mskcc.cbio.cgds.dao.*;
 import org.mskcc.cbio.cgds.model.*;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -120,6 +119,9 @@ public class MutationsJSON extends HttpServlet {
                         studyIds.toString(), window, threshold, concatEntrezGeneIds);
             } else if (type.equalsIgnoreCase("3d")) {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatation3DStatistics(
+                        studyIds.toString(), threshold, concatEntrezGeneIds);
+            } else if (type.equalsIgnoreCase("pdb-ptm")) {
+                mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
                         studyIds.toString(), threshold, concatEntrezGeneIds);
             } else {
                 

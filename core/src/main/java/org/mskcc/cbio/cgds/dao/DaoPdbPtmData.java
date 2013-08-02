@@ -66,7 +66,7 @@ public class DaoPdbPtmData {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            con = JdbcUtil.getDbConnection(DaoProteinContactMap.class);
+            con = JdbcUtil.getDbConnection(DaoPdbPtmData.class);
             String sql = "SELECT  `RESIDUES`, `PTM` "
                     + "FROM  `pdb_ptm_data` "
                     + "WHERE `PDB_ID`='" + pdbId + "' "
