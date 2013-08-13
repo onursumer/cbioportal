@@ -70,7 +70,7 @@ public class MutationsJSON extends HttpServlet {
     private void processStatisticsRequest(HttpServletRequest request,
             HttpServletResponse response)
             throws ServletException, IOException {
-        String studyStableIds = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
+        String studyStableIdsStr = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
         String type = request.getParameter(MUTATION_TYPE);
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
         String genes = request.getParameter(GENES);
@@ -101,10 +101,11 @@ public class MutationsJSON extends HttpServlet {
         
         Map<String,Map<Integer, Map<String,Set<String>>>> mapKeywordStudyCaseMut = Collections.emptyMap();
         Map<Integer,String> cancerStudyIdMapping = new HashMap<Integer,String>();
+        String[] studyStableIds = studyStableIdsStr.split("[, ]+");
         
         try {
             StringBuilder studyIds = new StringBuilder();
-            for (String stableId : studyStableIds.split("[, ]+")) {
+            for (String stableId : studyStableIds) {
                 CancerStudy study = DaoCancerStudy.getCancerStudyByStableId(stableId);
                 if (study!=null) {
                     studyIds.append(study.getInternalId()).append(",");
@@ -154,12 +155,33 @@ public class MutationsJSON extends HttpServlet {
             map.put(keyword, map1);
         }
 
-        response.setContentType("application/json");
+        String format = request.getParameter("format");
         
         PrintWriter out = response.getWriter();
-        ObjectMapper mapper = new ObjectMapper();
         try {
-            out.write(mapper.writeValueAsString(map));
+            if (format==null || format.equalsIgnoreCase("json")) {
+                response.setContentType("application/json");
+
+                ObjectMapper mapper = new ObjectMapper();
+                out.write(mapper.writeValueAsString(map));
+            } else if (format.equalsIgnoreCase("text")) {
+                out.write("Alteration\t");
+                out.write(StringUtils.join(studyStableIds,"\t"));
+                out.write("\n");
+                for (Map.Entry<String,Map<String, Map<String,Set<String>>>> entry : map.entrySet()) {
+                    String keyword = entry.getKey();
+                    out.write(keyword);
+                    Map<String, Map<String,Set<String>>> mapStudyCaseMut = entry.getValue();
+                    for (String study : studyStableIds) {
+                        Map<String,Set<String>> mapCaseMut = mapStudyCaseMut.get(study);
+                        out.write("\t");
+                        if (mapCaseMut!=null || !mapCaseMut.isEmpty()) {
+                            out.write(mapCaseMut.size());
+                        }
+                    }
+                    out.write("\n");
+                }
+            }
         } finally {            
             out.close();
         }
