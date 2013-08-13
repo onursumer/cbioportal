@@ -1269,7 +1269,7 @@ public final class DaoMutation {
      * @return Map<keyword, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatationStatistics(String concatCancerStudyIds,
-            String[] types, int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
+            String[] types, int thresholdSamples, String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1284,6 +1284,9 @@ public final class DaoMutation {
                     + "AND " + keywords;
             if (concatEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` IN("+concatEntrezGeneIds+") ";
+            }
+            if (concatExcludeEntrezGeneIds!=null) {
+                sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
             sql += "ORDER BY `KEYWORD` ASC"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
@@ -1410,8 +1413,8 @@ public final class DaoMutation {
      * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatationPdbPTMStatistics(
-            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
-        return getMutation3DHotspots(concatCancerStudyIds, thresholdSamples, concatEntrezGeneIds,
+            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
+        return getMutation3DHotspots(concatCancerStudyIds, thresholdSamples, concatEntrezGeneIds, concatExcludeEntrezGeneIds, 
                 new Find3DHotspots() {
                     @Override
                     public Set<Hotspot> find3DHotspots(Map<Integer,Integer> mapPositionSamples,
@@ -1446,8 +1449,8 @@ public final class DaoMutation {
      * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatation3DStatistics(
-            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
-        return getMutation3DHotspots(concatCancerStudyIds, thresholdSamples, concatEntrezGeneIds,
+            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
+        return getMutation3DHotspots(concatCancerStudyIds, thresholdSamples, concatEntrezGeneIds, concatExcludeEntrezGeneIds,
                 new Find3DHotspots() {
                     @Override
                     public Set<Hotspot> find3DHotspots(Map<Integer,Integer> mapPositionSamples,
@@ -1490,7 +1493,7 @@ public final class DaoMutation {
     }
     
     private static Map<String,Map<Integer, Map<String,Set<String>>>> getMutation3DHotspots(
-            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds,
+            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds, String concatExcludeEntrezGeneIds,
             Find3DHotspots find3DHotspots) throws DaoException {
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
         Connection con = null;
@@ -1508,6 +1511,9 @@ public final class DaoMutation {
                     + "AND me.`MUTATION_TYPE`='Missense_Mutation' ";
             if (concatEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` IN("+concatEntrezGeneIds+") ";
+            }
+            if (concatExcludeEntrezGeneIds!=null) {
+                sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
             sql += "ORDER BY `PDB_ID` ASC, `CHAIN` ASC"; // to filter and save memories
             
@@ -1626,7 +1632,7 @@ public final class DaoMutation {
      * TODO: should allow multiple aa changes per case
      */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatationLinearStatistics(String concatCancerStudyIds, int window,
-            int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
+            int thresholdSamples, String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -1641,6 +1647,9 @@ public final class DaoMutation {
                     + "AND me.`MUTATION_TYPE`='Missense_Mutation' ";
             if (concatEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` IN("+concatEntrezGeneIds+") ";
+            }
+            if (concatExcludeEntrezGeneIds!=null) {
+                sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
             sql += "ORDER BY me.`ENTREZ_GENE_ID` ASC"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
@@ -1823,7 +1832,7 @@ public final class DaoMutation {
     }
     
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getTruncatingMutatationStatistics(
-            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
+            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1838,6 +1847,9 @@ public final class DaoMutation {
                     + "AND " + keywords;
             if (concatEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` IN("+concatEntrezGeneIds+") ";
+            }
+            if (concatExcludeEntrezGeneIds!=null) {
+                sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
             sql += "ORDER BY me.`ENTREZ_GENE_ID` ASC, `PROTEIN_CHANGE`"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
@@ -1896,7 +1908,7 @@ public final class DaoMutation {
      * @throws DaoException 
      */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getPtmEffectStatistics(String concatCancerStudyIds,
-            String[] ptmTypes, int thresholdDistance, int thresholdSamples, String concatEntrezGeneIds) throws DaoException {
+            String[] ptmTypes, int thresholdDistance, int thresholdSamples, String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1913,6 +1925,9 @@ public final class DaoMutation {
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") ";
             if (concatEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` IN("+concatEntrezGeneIds+") ";
+            }
+            if (concatExcludeEntrezGeneIds!=null) {
+                sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
             sql += "ORDER BY pa.`TYPE` ASC, `RESIDUE`"; // to filter and save memories
             System.out.println(sql);

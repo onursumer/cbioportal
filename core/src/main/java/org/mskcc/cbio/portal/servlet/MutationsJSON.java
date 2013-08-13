@@ -75,17 +75,27 @@ public class MutationsJSON extends HttpServlet {
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
         String genes = request.getParameter(GENES);
         String concatEntrezGeneIds = null;
+        String concatExcludeEntrezGeneIds = null;
         if (genes!=null) {
             Set<Long> entrezGeneIds = new HashSet<Long>();
+            Set<Long> excludeEntrezGeneIds = new HashSet<Long>();
             DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
             for (String gene : genes.split("[, ]+")) {
                 CanonicalGene canonicalGene = daoGeneOptimized.getGene(gene);
                 if (canonicalGene!=null) {
                     entrezGeneIds.add(canonicalGene.getEntrezGeneId());
+                } else if (gene.startsWith("-")) {
+                    canonicalGene = daoGeneOptimized.getGene(gene.substring(1));
+                    if (canonicalGene!=null) {
+                        excludeEntrezGeneIds.add(canonicalGene.getEntrezGeneId());
+                    }
                 }
             }
             if (!entrezGeneIds.isEmpty()) {
                 concatEntrezGeneIds = StringUtils.join(entrezGeneIds, ",");
+            }
+            if (!excludeEntrezGeneIds.isEmpty()) {
+                concatExcludeEntrezGeneIds = StringUtils.join(excludeEntrezGeneIds, ",");
             }
         }
         
@@ -109,24 +119,24 @@ public class MutationsJSON extends HttpServlet {
                 int thresholdDis = Integer.parseInt(request.getParameter(THRESHOLD_DISTANCE_PTM_MUTATION));
                 mapKeywordStudyCaseMut = DaoMutation.getPtmEffectStatistics(
                     studyIds.toString(), type.replace("ptm-effect,", "").split("[, ]+"),
-                    thresholdDis, threshold, concatEntrezGeneIds);
+                    thresholdDis, threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else if (type.equalsIgnoreCase("truncating-sep")) {
                  mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
-                    studyIds.toString(), threshold, concatEntrezGeneIds);
+                    studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else if (type.equalsIgnoreCase("linear")) {
                 int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationLinearStatistics(
-                        studyIds.toString(), window, threshold, concatEntrezGeneIds);
+                        studyIds.toString(), window, threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else if (type.equalsIgnoreCase("3d")) {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatation3DStatistics(
-                        studyIds.toString(), threshold, concatEntrezGeneIds);
+                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else if (type.equalsIgnoreCase("pdb-ptm")) {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
-                        studyIds.toString(), threshold, concatEntrezGeneIds);
+                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else {
                 
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationStatistics(
-                        studyIds.toString(), type.split("[, ]+"), threshold, concatEntrezGeneIds);
+                        studyIds.toString(), type.split("[, ]+"), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             }
         } catch (DaoException ex) {
             throw new ServletException(ex);
