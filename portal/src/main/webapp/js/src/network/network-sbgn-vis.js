@@ -113,6 +113,8 @@ function NetworkSbgnVis(divId)
 	this.visibleNodes = null;
 
 	this.idToDataSource = {};
+
+	this.sbgn2BPMap = {};
 }
 
 /**
@@ -121,12 +123,13 @@ function NetworkSbgnVis(divId)
  *
  * @param vis	CytoscapeWeb.Visualization instance associated with this UI
  */
-NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, seedNodes, sbgnGenes)
+NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, sbgn2BPMap ,seedNodes, sbgnGenes)
 {
 
 	var self = this;
 	this._vis = vis;
-
+	this.sbgn2BPMap = sbgn2BPMap;
+	
 	// init filter arrays
 	// delete this later because it os not used anymore
 	this._alreadyFiltered = new Array();

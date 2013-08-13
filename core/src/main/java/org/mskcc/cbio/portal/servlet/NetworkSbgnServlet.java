@@ -69,6 +69,7 @@ public class NetworkSbgnServlet extends HttpServlet
     public final static String ATTRIBUTES_FIELD = "attributes";
     public final static String SBGN_FIELD = "sbgn";
     public final static String GENES_FIELD = "genes";
+    public final static String SBGN2BPMAP_FIELD = "sbgn2BPmap";
 
     private static ArrayList<String> convert(String[] geneList) {
 		ArrayList<String> convertedList = new ArrayList<String>();
@@ -129,11 +130,38 @@ public class NetworkSbgnServlet extends HttpServlet
         for (BioPAXElement bpe : model.getObjects())
             attrMap.put(bpe.getRDFId(), extractAttributes(bpe));
         outputMap.put(ATTRIBUTES_FIELD, attrMap);
+        
+        //Send sbgn2bp map also
+        outputMap.put(SBGN2BPMAP_FIELD, this.extractSBGN2BPMap((HashMap)converter.getSbgn2BPMap()));
 
         httpServletResponse.setContentType("application/json");
 		JSONValue.writeJSONString(outputMap, out);
 	}
 
+	private Map<String, List<String>> extractSBGN2BPMap(HashMap sbgn2BPMap)
+	{
+		Map<String, List<String>> outputMap = new HashMap<String, List<String>>();
+		
+		
+		Iterator it = sbgn2BPMap.keySet().iterator();
+	    while (it.hasNext()) 
+	    {        
+	    	 String key = it.next().toString();
+			 ArrayList<String> ids = new ArrayList<String>();
+			 Iterator idIterator = ((Set)sbgn2BPMap.get(key)).iterator();
+			 
+			 while (idIterator.hasNext()) 
+			 {
+				  ids.add((String)idIterator.next());
+			 }
+			 
+			 outputMap.put(key, ids);
+	    }
+		 
+		 return outputMap;	
+	}
+
+	
     private List<String> extractGenes(Model model) {
         HashSet<String> genes = new HashSet<String>();
 

@@ -367,7 +367,7 @@ function send2cytoscapewebSbgn(data, cwDivId, networkDivId, geneDataQuery)
         var netVis = new NetworkSbgnVis(networkDivId);
 		  
         // init UI of the network tab
-        netVis.initNetworkUI(vis, data.attributes, seedNodes.trim().split(" "), data.genes);
+        netVis.initNetworkUI(vis, data.attributes, data.sbgn2BPmap ,seedNodes.trim().split(" "), data.genes);
 
 	// set the style programmatically
 	document.getElementById("color").onclick = function(){
