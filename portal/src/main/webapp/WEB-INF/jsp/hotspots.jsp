@@ -37,10 +37,13 @@ String jsonStudies = JSONValue.toJSONString(studies);
             &nbsp;<br/>
             <div id="side-menu" style="display: none">
                 <div id="use-fraction-div">
-                    <input type="checkbox" id="use-fraction" checked="checked">&nbsp;Use fraction of altered cases for coloring
+                    <input type="checkbox" class="update" id="use-fraction" checked="checked">&nbsp;Use fraction of altered cases for coloring
                 </div>
                 <div id="merge-alterations-div">
-                    <input type="checkbox" id="merge-alterations">&nbsp;Merge alterations for each gene
+                    <input type="checkbox" class="update" id="merge-alterations">&nbsp;Merge alterations for each gene
+                </div>
+                <div>
+                    <input type="checkbox" class="update" id="text-format">&nbsp;Show table
                 </div>
             </div>
         </td>
@@ -416,17 +419,15 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
             ret = d3.descending(alta.get('samples'), altb.get('samples'));
 
             return ret;
-        }
+        };
 
-        var heatmapData = {'rowNodes':rowNodes, 'colNodes':colNodes, 'links':links};
-        heatmap(
-            heatmapData,
-            this.el,
-            {
-                zDomain:[0,useFraction ? 0.1 : 20],
-                rowSorting: alterationSorting
-            }
-        );
+        var options = {
+            zDomain:[0,useFraction ? 0.1 : 20],
+            rowSorting: alterationSorting,
+            type: $('#text-format').prop('checked') ? "text" : "heatmap"
+        };
+        AlteredGene.Alterations.heatmap = Heatmap({'rowNodes':rowNodes, 'colNodes':colNodes, 'links':links});
+        AlteredGene.Alterations.heatmap.draw(this.el, options);
     }
 });
 
@@ -631,11 +632,7 @@ AlteredGene.Router = Backbone.Router.extend({
             updateQtips();
         };
 
-        $('#merge-alterations').change(function() {
-            updateView();
-        });
-
-        $('#use-fraction').change(function() {
+        $('.update').change(function() {
             updateView();
         });
     }
