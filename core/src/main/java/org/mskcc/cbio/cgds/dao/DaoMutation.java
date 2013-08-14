@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
@@ -1358,7 +1358,7 @@ public final class DaoMutation {
 
         public String getLabel() {
             if (label == null) {
-                return StringUtils.join(residues,",");
+                return StringUtils.join(new TreeSet<Integer>(residues),",");
             }
             return label;
         }
