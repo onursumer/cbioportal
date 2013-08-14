@@ -175,8 +175,8 @@ public class MutationsJSON extends HttpServlet {
                     for (String study : studyStableIds) {
                         Map<String,Set<String>> mapCaseMut = mapStudyCaseMut.get(study);
                         out.write("\t");
-                        if (mapCaseMut!=null || !mapCaseMut.isEmpty()) {
-                            out.write(mapCaseMut.size());
+                        if (mapCaseMut!=null && !mapCaseMut.isEmpty()) {
+                            out.write(Integer.toString(mapCaseMut.size()));
                         }
                     }
                     out.write("\n");

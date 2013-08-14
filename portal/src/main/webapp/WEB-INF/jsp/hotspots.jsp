@@ -82,15 +82,15 @@ String jsonStudies = JSONValue.toJSONString(studies);
             <option value="truncating">Truncating Mutations (merge by gene)</option>
             <option value="linear-1">Linear hotspots (d<=1)</option>
             <option value="linear-2">Linear hotspots (d<=2)</option>
-            <option value="linear-3">Linear hotspots (d<=4)</option>
-            <option value="linear-4">Linear hotspots (d<=8)</option>
+            <option value="linear-4">Linear hotspots (d<=4)</option>
+            <option value="linear-8">Linear hotspots (d<=8)</option>
             <option value="3d">3D hotspots</option>
             <option value="pdb-ptm">3D PTM hotspots</option>
             <option value="ptm-effect-0">Mutations of PTM sites</option>
             <option value="ptm-effect-1">Mutations of PTM site neighbors (d<=1)</option>
             <option value="ptm-effect-2">Mutations of PTM site neighbors (d<=2)</option>
-            <option value="ptm-effect-3">Mutations of PTM site neighbors (d<=4)</option>
-            <option value="ptm-effect-4">Mutations of PTM site neighbors (d<=8)</option>
+            <option value="ptm-effect-4">Mutations of PTM site neighbors (d<=4)</option>
+            <option value="ptm-effect-8">Mutations of PTM site neighbors (d<=8)</option>
             <!--option value="cna">Copy Number Alterations (under development)</option-->
         </select>
     </div>
