@@ -43,7 +43,6 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1700,10 +1699,12 @@ public final class DaoMutation {
                             List<Integer> hotspots = findLocalMaximum(mapPositionSamples, lenProtein+2, window, thresholdSamples);
 
                             for (int hs : hotspots) {
-                                Map<Integer, Map<String,Set<String>>> m = new TreeMap<Integer, Map<String,Set<String>>>();
+                                Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
+                                Set<Integer> residues = new TreeSet<Integer>();
                                 for (int offset=-window; offset<=window; offset++) {
                                     Map<Integer, Map<String,String>> mapPosition = mapProtein.get(hs+offset);
                                     if (mapPosition!=null) {
+                                        residues.add(hs+offset);
                                         for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
                                             int pos = entry.getKey();
                                             Map<String,Set<String>> mapCaseAA = m.get(pos);
@@ -1725,7 +1726,7 @@ public final class DaoMutation {
                                         }
                                     }
                                 }
-                                map.put(symbol+" "+StringUtils.join(m.keySet(),";"), m);
+                                map.put(symbol+" "+StringUtils.join(residues,";"), m);
                             }
                         }
                     }
