@@ -374,7 +374,7 @@ AlteredGene.Alterations.MissenseHeatmap = Backbone.View.extend({
                 return ret;
             });
             return "&nbsp;"+ret.join("<br>&nbsp;");
-        }
+        };
         
         var useFraction = true;
         if (!$('#use-fraction').prop('checked'))
