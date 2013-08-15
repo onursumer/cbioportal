@@ -1434,7 +1434,7 @@ public final class DaoMutation {
                                 }
                             }
                             if (samples >= thresholdSamples) {
-                                String label = entry.getValue()+"-"+StringUtils.join(residues, ",");
+                                String label = entry.getValue().replaceAll(" ", "-")+" "+StringUtils.join(residues, ";");
                                 hotspots.add(new Hotspot(residues, label));
                             }
                         }
@@ -1916,7 +1916,6 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String type = "(`TYPE` ') ";
             String sql = "SELECT  gp.`CANCER_STUDY_ID`, pa.`SYMBOL`, pa.`TYPE`, `RESIDUE`, `CASE_ID`, `PROTEIN_CHANGE` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp, mutation_effect_on_ptm meop, ptm_annotation pa "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
