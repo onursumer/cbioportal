@@ -309,7 +309,7 @@ function send2cytoscapewebSbgn(data, cwDivId, networkDivId, geneDataQuery)
 	{
 		var retValue = 11;
 
-		if(data["clone_marker"] == true)
+		if(data["glyph_class"] == "simple chemical")
 		{
 			retValue = 9;
 		}

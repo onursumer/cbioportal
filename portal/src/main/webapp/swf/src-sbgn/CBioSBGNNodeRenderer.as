@@ -92,22 +92,22 @@ package org.cytoscapeweb.view.render
 			var rect:Rectangle = cns.bounds;
 			var stateAndInfoGlyphs:Array = cns.data.stateAndInfoGlyphs as Array;
 			var g:Graphics = cns.graphics;
-			var isMultimer = false;
+			var isMultimer:Boolean = false;
 			var isClone:Boolean = cns.data.clone_marker;
-			var multimerOffset = 5;
-			
-			trace("Node: " + cns.data.id + " x: " + cns.x + " y: " + cns.y);
+			var multimerOffset:Number = 5;		
 			
 			// if any multimer occurs
 			if (glyphClass.indexOf(MULTIMER) > 0)
 			{       
-				var str = glyphClass.substr(0, glyphClass.indexOf(MULTIMER)-1);
+				var str:String = glyphClass.substr(0, glyphClass.indexOf(MULTIMER)-1);
 				glyphClass = str;
 				isMultimer = true;
 			}
 			
-			if (glyphClass == MACROMOLECULE || glyphClass == SIMPLE_CHEMICAL) 
-			{       
+			if (glyphClass == MACROMOLECULE  ) 
+			{   
+				var cornerOffset:Number = 10;
+				
 				// Details
 				if (this._detailFlag || Boolean(cns.props.detailFlag))
 				{       
@@ -135,15 +135,21 @@ package org.cytoscapeweb.view.render
 					g.lineStyle(3, 0x000000, 1);
 				}
 				
+				
+				g.beginFill(getNodeColorRW(total), 50);
+				drawMolecule(cns,cns.graphics,-cns.bounds.width/2, -cns.bounds.height/2, cns.bounds.width, cns.bounds.height,isClone,cornerOffset);
+				g.endFill();
+				
 				if (isMultimer) 
 				{
 					g.beginFill(getNodeColorRW(total), 50);
-					drawMolecule(cns,rect, multimerOffset,isClone,glyphClass);
-					g.endFill();
+					drawMolecule(cns,cns.graphics,-cns.bounds.width/2+multimerOffset, -cns.bounds.height/2+multimerOffset, cns.bounds.width, cns.bounds.height,isClone,cornerOffset); 
 				}
-				g.beginFill(getNodeColorRW(total), 50);
-				drawMolecule(cns,rect, 0,isClone,glyphClass);
-				g.endFill();
+				
+			}
+			else if (glyphClass == SIMPLE_CHEMICAL)
+			{
+				drawStadiumNode(cns.graphics,-cns.bounds.width/2, -cns.bounds.height/2, cns.bounds.width, cns.bounds.height,isClone);
 			}
 			else if (glyphClass == SOURCE_AND_SINK || glyphClass == AND ) 
 			{
@@ -176,15 +182,17 @@ package org.cytoscapeweb.view.render
 				g.drawRect(-rect.width/2, -rect.height/2, rect.width, rect.height);
 				g.endFill();
 			}
-			else if ( glyphClass == UNSPECIFIED_ENTITY  ) 
+			else if (glyphClass == UNSPECIFIED_ENTITY  ) 
 			{
+				g.beginFill(0xffffff & fillColor, 1.0);
+				drawEllipse(cns.graphics,-cns.bounds.width/2,-cns.bounds.height/2, cns.bounds.width,cns.bounds.height,isClone);
+				g.endFill();
+				
 				if (isMultimer) 
 				{
-					drawEllyptics(cns,multimerOffset,isClone);
-				}
-				
-				drawEllyptics(cns,0,isClone);
-				
+					drawEllipse(cns.graphics,-cns.bounds.width/2+multimerOffset,-cns.bounds.height/2+multimerOffset
+						,cns.bounds.width,cns.bounds.height,isClone);
+				}	
 			}
 			else if (glyphClass == PHENOTYPE ) 
 			{
@@ -210,12 +218,10 @@ package org.cytoscapeweb.view.render
 			}
 			else if (glyphClass == COMPARTMENT) 
 			{
-				g.beginFill(0xffffff & fillColor, 0.0);
-				g.drawRoundRect(-rect.width/2, -rect.height/2, rect.width, rect.height, 5, 5);
-				g.endFill();
+				// dummy 
 			}
 			
-			g.lineStyle(1, 0x000000, 1);
+			//finally render state and info glyphs
 			renderStateAndInfoGlyphs(stateAndInfoGlyphs,cns,fillColor);
 			
 		}
@@ -267,9 +273,9 @@ package org.cytoscapeweb.view.render
 		protected function drawDetails(cns:CompoundNodeSprite, multimerOffset: Number):void
 		{
 			var g:Graphics = cns.graphics;
-			var w = cns.bounds.width;
-			var h = cns.bounds.height;
-			var borderThickness: Number = 4;
+			var w:Number = cns.bounds.width;
+			var h:Number = cns.bounds.height;
+			var borderThickness: Number = 3;
 			var genomicBoxLength: Number = 10;
 			var topGenomicBoxLength:Number = (cns.data.has_info == false) ? genomicBoxLength:genomicBoxLength+5;
 			var bottomGenomicBoxLength:Number = (cns.data.has_state == false) ? genomicBoxLength:genomicBoxLength+5;
@@ -350,25 +356,25 @@ package org.cytoscapeweb.view.render
 				g.lineStyle(0, 0xFFFFFF, 0);
 				
 				// Amplification rect
-				var amplificationWidth:int = 3*w/4 * (amplification);
+				var amplificationWidth:Number = 3*w/4 * (amplification);
 				g.beginFill(0xFF2500, 50);
 				g.drawRect(xOffset,yOffset,amplificationWidth,topGenomicBoxLength);
 				xOffset += amplificationWidth;
 				
 				// Homozygous Deletion rect
-				var homozygousDeletionWidth:int = 3*w/4 * (homozygousDeletion);
+				var homozygousDeletionWidth:Number = 3*w/4 * (homozygousDeletion);
 				g.beginFill(0x0332FF, 50);
 				g.drawRect(xOffset,yOffset,homozygousDeletionWidth,topGenomicBoxLength);
 				xOffset += homozygousDeletionWidth;
 				
 				// Gain  rect
-				var gainWidth:int = 3*w/4 *gain;
+				var gainWidth:Number = 3*w/4 *gain;
 				g.beginFill(0xFFC5CC, 50);
 				g.drawRect(xOffset,yOffset,gainWidth,topGenomicBoxLength);
 				xOffset += gainWidth;
 				
 				// Hemizygous Deletion
-				var hemizygousDeletionWidth:int = hemizygousDeletion;
+				var hemizygousDeletionWidth:Number = hemizygousDeletion;
 				g.beginFill(0x9EDFE0, 50);
 				g.drawRect(xOffset,yOffset,hemizygousDeletionWidth,topGenomicBoxLength);
 				
@@ -397,7 +403,7 @@ package org.cytoscapeweb.view.render
 				g.lineStyle(0, 0xFFFFFF, 0);
 				
 				// Up Regulation rect
-				var upRegulationWidth:int = 3*w/4 * (rppaUpRegulation);
+				var upRegulationWidth:Number = 3*w/4 * (rppaUpRegulation);
 				g.beginFill(0xFFACA9, 50);
 				g.drawRect(xOffset+multimerOffset,yOffset,upRegulationWidth,bottomGenomicBoxLength+multimerOffset);
 				xOffset += upRegulationWidth;
@@ -410,7 +416,7 @@ package org.cytoscapeweb.view.render
 				g.lineTo(-3*w/8+multimerOffset, h/2+multimerOffset+bottomGenomicBoxLength/2);
 				
 				// Down Regulation  rect
-				var downRegulationWidth:int = 3*w/4 * (rppaDownRegulation);
+				var downRegulationWidth:Number = 3*w/4 * (rppaDownRegulation);
 				g.beginFill(0x78AAD6, 50);
 				g.drawRect(xOffset+multimerOffset,yOffset,downRegulationWidth,bottomGenomicBoxLength+multimerOffset);
 				
@@ -446,7 +452,7 @@ package org.cytoscapeweb.view.render
 				g.lineStyle(0,0xDCDCDC,0);
 				
 				// Mutation rect
-				var mutationHeight:int = mutation*3*h/4;
+				var mutationHeight:Number = mutation*3*h/4;
 				g.beginFill(0x008F00, 50);
 				g.drawRect(xOffset,yOffset+multimerOffset,genomicBoxLength+multimerOffset,mutationHeight);
 				
@@ -474,12 +480,12 @@ package org.cytoscapeweb.view.render
 				g.lineStyle(0, 0xDCDCDC, 0);
 				
 				// Up regulation rect
-				var upRegulationHeight:int = mrnaUpRegulation*3*h/4;
+				var upRegulationHeight:Number = mrnaUpRegulation*3*h/4;
 				g.beginFill(0xFFACA9, 50);
 				g.drawRect(xOffset,yOffset,genomicBoxLength,upRegulationHeight);
 				
 				// Down regulation rect
-				var downRegulationHeight:int = mrnaDownRegulation*3*h/4;
+				var downRegulationHeight:Number = mrnaDownRegulation*3*h/4;
 				g.beginFill(0x78AAD6, 50);
 				g.drawRect(xOffset,yOffset+upRegulationHeight,genomicBoxLength,downRegulationHeight);
 				
