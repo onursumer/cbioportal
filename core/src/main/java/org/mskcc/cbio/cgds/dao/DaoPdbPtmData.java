@@ -30,10 +30,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  *
@@ -74,7 +74,7 @@ public class DaoPdbPtmData {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Map<Set<Integer>,String> map = new HashMap<Set<Integer>,String>();
+            Map<Set<Integer>,String> map = new TreeMap<Set<Integer>,String>();
             
             while (rs.next()) {
                 Set<Integer> residues = new HashSet<Integer>();
