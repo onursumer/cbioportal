@@ -1475,7 +1475,7 @@ public final class DaoMutation {
                                         newSpots = false;
                                         break;
                                     }
-                                    if (hotspots.containsAll(residues)) {
+                                    if (neighbors.containsAll(residues)) {
                                         // if subset has been added
                                         residues.addAll(neighbors);
                                         newSpots = false;
@@ -1538,9 +1538,6 @@ public final class DaoMutation {
                 String pdbId = rs.getString(6);
                 String chainId = rs.getString(7);
                 int pdbPosition = rs.getInt(8);
-                if (pdbId.equals("3c1c")) {
-                    System.err.println();
-                }
                 
                 if (!pdbId.equals(currentPdb) || !chainId.equals(currentChain)) {
                     if (mapProtein!=null) {
