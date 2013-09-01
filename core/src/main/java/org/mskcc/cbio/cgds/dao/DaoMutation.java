@@ -1538,6 +1538,9 @@ public final class DaoMutation {
                 String pdbId = rs.getString(6);
                 String chainId = rs.getString(7);
                 int pdbPosition = rs.getInt(8);
+                if (pdbId.equals("3c1c")) {
+                    System.err.println();
+                }
                 
                 if (!pdbId.equals(currentPdb) || !chainId.equals(currentChain)) {
                     if (mapProtein!=null) {
@@ -1562,7 +1565,7 @@ public final class DaoMutation {
                         
                         String symbol = daoGeneOptimized.getGene(currentGene).getHugoGeneSymbolAllCaps();
                         if (totalSamples>=thresholdSamples) {
-                            Set<Hotspot> hotspots = find3DHotspots.find3DHotspots(mapPositionSamples, thresholdSamples, pdbId, chainId);
+                            Set<Hotspot> hotspots = find3DHotspots.find3DHotspots(mapPositionSamples, thresholdSamples, currentPdb, currentChain);
 
                             for (Hotspot hotspot : hotspots) {
                                 Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
@@ -1590,7 +1593,7 @@ public final class DaoMutation {
                                         }
                                     }
                                 }
-                                map.put(symbol+"_"+currentPdb+"."+chainId+" "+hotspot.getLabel(), m);
+                                map.put(symbol+"_"+currentPdb+"."+currentChain+" "+hotspot.getLabel(), m);
                             }
                         }
                     }
