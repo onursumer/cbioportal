@@ -1501,7 +1501,7 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, me.`ENTREZ_GENE_ID`, `ONCOTATOR_PROTEIN_POS_START`, `CASE_ID`, `PROTEIN_CHANGE`, `PDB_ID`, `CHAIN`, `PDB_POSITION` "
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, me.`ENTREZ_GENE_ID`, `ONCOTATOR_PROTEIN_POS_START`, `CASE_ID`, `PROTEIN_CHANGE`, `PDB_ID`, `CHAIN` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp, `pdb_uniprot_residue_mapping` purm "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
@@ -1515,7 +1515,7 @@ public final class DaoMutation {
             if (concatExcludeEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
-            sql += "ORDER BY `PDB_ID` ASC, `CHAIN` ASC"; // to filter and save memories
+            sql += "ORDER BY me.`ENTREZ_GENE_ID` ASC,`PDB_ID` ASC, `CHAIN` ASC"; // to filter and save memories
             
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
@@ -1537,9 +1537,8 @@ public final class DaoMutation {
                 String aaChange = rs.getString(5);
                 String pdbId = rs.getString(6);
                 String chainId = rs.getString(7);
-                int pdbPosition = rs.getInt(8);
                 
-                if (!pdbId.equals(currentPdb) || !chainId.equals(currentChain)) {
+                if (gene!=currentGene || !pdbId.equals(currentPdb) || !chainId.equals(currentChain)) {
                     if (mapProtein!=null) {
                         Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
                         int totalSamples = 0;
@@ -1601,10 +1600,10 @@ public final class DaoMutation {
                     mapProtein = new HashMap<Integer, Map<Integer, Map<String,String>>>();
                 }
                 
-                Map<Integer, Map<String,String>> mapPosition = mapProtein.get(pdbPosition);
+                Map<Integer, Map<String,String>> mapPosition = mapProtein.get(residue);
                 if (mapPosition==null) {
                     mapPosition = new HashMap<Integer, Map<String,String>>();
-                    mapProtein.put(pdbPosition, mapPosition);
+                    mapProtein.put(residue, mapPosition);
                 }
                 
                 Map<String,String> mapCaseMut = mapPosition.get(cancerStudyId);
