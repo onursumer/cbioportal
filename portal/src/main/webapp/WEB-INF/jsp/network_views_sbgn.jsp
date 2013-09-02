@@ -178,7 +178,7 @@
 </script>
 <script type="text/template" id="state_template_sbgn">
 	<div class='node-state-info'>
-		<!--div class='state-header'>State Information: </div-->
+		<!-- div class='state-header'>State Information: </div -->
 		<div class='key-value state-availability'><b>Availability:</b> {{availability}}</div>
 		<div class='key-value state-cellularLocation'><b>Cellular Location:</b> {{cellularLocation}}</div>
 		<div class='key-value state-comment'><b>Comment:</b> {{comment}}</div>
@@ -463,7 +463,7 @@
 		},
 		render: function(options){
 			// pass variables in using Underscore.js template
-			var variables = { availability: options.data.availability,
+			var variables = {availability: options.data.availability,
 				cellularLocation: options.data.cellularLocation,
 				comment: options.data.comment,
 				dataSource: options.data.dataSource,
@@ -487,34 +487,34 @@
 		{
 			// hide rows with undefined data
 
-			if (options.data.availability == undefined || options.data.availability == null)
+			if (options.data.availability == undefined || options.data.availability.length == 0)
 				$(options.el + " .state-availability").hide();
 
-			if (options.data.cellularLocation == undefined || options.data.cellularLocation == null)
+			if (options.data.cellularLocation == undefined || options.data.cellularLocation.length == 0)
 				$(options.el + " .state-cellularLocation").hide();
 
-			if (options.data.comment == undefined || options.data.comment == null)
+			if (options.data.comment == undefined || options.data.comment.length == 0)
 				$(options.el + " .state-comment").hide();
 
-			if (options.data.dataSource == undefined || options.data.dataSource == null)
+			if (options.data.dataSource == undefined || options.data.dataSource.length == 0)
 				$(options.el + " .state-dataSource").hide();
 
-			if (options.data.displayName == undefined || options.data.displayName == null)
+			if (options.data.displayName == undefined || options.data.displayName.length == 0)
 				$(options.el + " .state-displayName").hide();
 
-			if (options.data.name == undefined || options.data.name == null)
+			if (options.data.name == undefined || options.data.name.length == 0)
 				$(options.el + " .state-name").hide();
 
-			if (options.data.notFeature == undefined || options.data.notFeature == null)
+			if (options.data.notFeature == undefined || options.data.notFeature.length == 0)
 				$(options.el + " .state-notFeature").hide();
 
-			if (options.data.standardName == undefined || options.data.standardName == null)
+			if (options.data.standardName == undefined || options.data.standardName.length == 0)
 				$(options.el + " .state-standardName").hide();
 
-			if (options.data.type == undefined || options.data.type == null)
+			if (options.data.type == undefined || options.data.type.length == 0)
 				$(options.el + " .state-type").hide();
 
-			if (options.data.xref == undefined || options.data.xref == null)
+			if (options.data.xref == undefined || options.data.xref.length == 0)
 				$(options.el + " .state-xref").hide();
 		}
 	});

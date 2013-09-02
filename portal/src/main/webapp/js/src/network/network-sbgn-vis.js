@@ -28,7 +28,8 @@ function NetworkSbgnVis(divId)
 	
 	//global array for manually filtered nodes
 	this._manuallyFiltered = new Array();
-
+	//global array for state information
+	this._geneStateInfo = new Array();
 	// flags
 	this._autoLayout = false;
 	this._removeDisconnected = false;
@@ -114,7 +115,7 @@ function NetworkSbgnVis(divId)
 
 	this.idToDataSource = {};
 
-	this.sbgn2BPMap = {};
+	this._geneStateInfo = {};
 }
 
 /**
@@ -128,7 +129,7 @@ NetworkSbgnVis.prototype.initNetworkUI = function(vis, attributeMap, sbgn2BPMap 
 
 	var self = this;
 	this._vis = vis;
-	this.sbgn2BPMap = sbgn2BPMap;
+	this._geneStateInfo = _updateGeneStateInfo(attributeMap, sbgn2BPMap);
 	
 	// init filter arrays
 	// delete this later because it os not used anymore
@@ -767,7 +768,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 			// only one node is chosen so we should show its state info
 			var showState = true;
 			// load the data
-			_queryGenomicData(data, divName, showState);
+			this._queryGenomicData(data, divName, showState);
 		}
 		// complexes are different. all macromolecule or nuleic acid children should be listed
 		else if (data.glyph_class == this.COMPLEX)
@@ -846,7 +847,7 @@ NetworkSbgnVis.prototype.updateDetailsTab = function(evt)
 					showState = true;
 				}
 				// load the data
-				_queryGenomicData(data, divName, showState);
+				this._queryGenomicData(data, divName, showState);
 			}
 			// make the mouse normal TODO
 
@@ -922,7 +923,7 @@ NetworkSbgnVis.prototype.multiUpdateDetailsTab = function(evt)
 			{
 				showState = false;
 			}
-			_queryGenomicData(data, divName, showState);
+			this._queryGenomicData(data, divName, showState);
 
 		}
 		else
@@ -2420,8 +2421,7 @@ function _labelSort (node1, node2)
  * 	divName		: div to fill up (gene)
  * 	hasState	: whether the state information should be displayed or not
 **/
-
-_queryGenomicData = function(data, divName, hasState)
+NetworkSbgnVis.prototype._queryGenomicData = function(data, divName, hasState)
 {
 	var label = _geneLabel(data);
 	// make the required div
@@ -2438,22 +2438,12 @@ _queryGenomicData = function(data, divName, hasState)
 
 	$(divName + " .biogene-content").append(
 			'<img src="images/ajax-loader.gif">');
-	
-	// get the state data
-	/* var stateData;
-	if (hasState) TODO
+	var stateData = {};
+	if ($.inArray(data.id, this._geneStateInfo))
 	{
-		stateData = { availability: "test-availability",
-				cellularLocation: "test-cellularLocation",
-				comment: "test-comment",
-				dataSource: "test-dataSource",
-				displayName: "test-displayName",
-				name: "test-name",
-				notFeature: "test-notFeature",
-				standardName: "test-standardName",
-				type: "test-type",
-				xref: "test-xref"};
-	}*/
+		// get the state data
+		stateData = this._geneStateInfo[data.id];
+	}
 
 	// set the query parameters
 	var queryParams = {"query": label,
@@ -2499,18 +2489,28 @@ _queryGenomicData = function(data, divName, hasState)
 		// generate view for genomic profile data
 		var genomicProfileViewSbgn = new GenomicProfileViewSbgn(
 		    {el: divName + " .genomic-profile-content",
-			data: data});	
-		/*if (hasState) TODO
+			data: data});
+		// generate view for state information
+		if (hasState)
 		{
-			var nodeStateViewSbgn = new NodeStateViewSbgn(
-			    {el: divName + " .state-specific-content",
-				data: stateData});	
+			if (stateData == {})
+			{
+				$(divName + " .state-specific-content").html(
+					"<p>State information is not available.</p>");
+			}
+			else
+			{
+				var nodeStateViewSbgn = new NodeStateViewSbgn(
+				    {el: divName + " .state-specific-content",
+					data: stateData});
+			}
+			
 		}
 		else
 		{
 			$(divName + " .state-specific-content").html(
 				"<p>More than one node selected.</p>");			
-		}*/
+		}
 	    }
 	});
 }
@@ -2530,4 +2530,17 @@ function findNodes(label, nodes)
 		}
 	}
 	return sameNodes;
+}
+function _updateGeneStateInfo(attributeMap, sbgn2BPMap)
+{
+	var geneStateInfo = new Array();
+	for (var key in sbgn2BPMap)
+	{
+		var bioPaxID = sbgn2BPMap[key];
+		if ($.inArray(bioPaxID, attributeMap))
+		{
+			geneStateInfo[key] = attributeMap[bioPaxID];
+		}
+	}
+	return geneStateInfo;
 }
