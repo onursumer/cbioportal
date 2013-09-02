@@ -1435,13 +1435,23 @@ public final class DaoMutation {
                                 }
                             }
                             if (samples >= thresholdSamples) {
-                                String label = entry.getValue().replaceAll(" ", "-")+" "+StringUtils.join(residues, ";");
+                                String label = entry.getValue().replaceAll(" ", "-")+" "+residueSampleMapToString(mapPositionSamples,new TreeSet<Integer>(residues));
                                 hotspots.add(new Hotspot(residues, label));
                             }
                         }
                         return hotspots;
                     }
                 });
+    }
+    
+    private static String residueSampleMapToString(Map<Integer,Integer> mapPositionSamples, TreeSet<Integer> residues) {
+        StringBuilder sb = new StringBuilder();
+        for (Integer r : residues) {
+            Integer s = mapPositionSamples.get(r);
+            sb.append(r.toString()).append("(").append(s.toString()).append(");");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        return sb.toString();
     }
     
     /**
@@ -1484,7 +1494,8 @@ public final class DaoMutation {
                                     }
                                 }
                                 if (newSpots) {
-                                    hotspots.add(new Hotspot(neighbors));
+                                    String label = residueSampleMapToString(mapPositionSamples,new TreeSet<Integer>(neighbors));
+                                    hotspots.add(new Hotspot(neighbors,label));
                                 }
                             }
                         }
@@ -1729,7 +1740,7 @@ public final class DaoMutation {
                                         }
                                     }
                                 }
-                                map.put(symbol+" "+StringUtils.join(residues,";"), m);
+                                map.put(symbol+" "+residueSampleMapToString(mapPositionSamples,new TreeSet<Integer>(residues)), m);
                             }
                         }
                     }
