@@ -1448,7 +1448,7 @@ public final class DaoMutation {
         StringBuilder sb = new StringBuilder();
         for (Integer r : residues) {
             Integer s = mapPositionSamples.get(r);
-            sb.append(r.toString()).append("(").append(s.toString()).append(");");
+            sb.append(r.toString()).append("(").append(s==null?0:s.toString()).append(");");
         }
         sb.deleteCharAt(sb.length()-1);
         return sb.toString();
