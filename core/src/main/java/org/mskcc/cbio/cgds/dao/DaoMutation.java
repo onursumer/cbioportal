@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -1540,6 +1541,7 @@ public final class DaoMutation {
                 
                 if (gene!=currentGene || !pdbId.equals(currentPdb) || !chainId.equals(currentChain)) {
                     if (mapProtein!=null) {
+                        removeBackgroundPositions(mapProtein);
                         Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
                         int totalSamples = 0;
                         for (Map.Entry<Integer, Map<Integer, Map<String,String>>> entry : mapProtein.entrySet()) {
@@ -1670,6 +1672,8 @@ public final class DaoMutation {
                 
                 if (gene != currentGene) {
                     if (mapProtein!=null) {
+                        removeBackgroundPositions(mapProtein);
+                        
                         int lenProtein = -1;
                         Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
                         int totalSamples = 0;
@@ -1754,6 +1758,26 @@ public final class DaoMutation {
             throw new DaoException(e);
         } finally {
             JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
+        }
+    }
+    
+    private static void removeBackgroundPositions(Map<Integer, Map<Integer, Map<String,String>>> mapProtein) {
+         // rm positions that only mutated in 1 case
+        int thresholdPositionBySamples = 1;// todo: change threshold based on gene
+        Iterator<Integer> itPosition = mapProtein.keySet().iterator();
+        while (itPosition.hasNext()) {
+            Integer pos = itPosition.next();
+            Map<Integer, Map<String,String>> mapPosition = mapProtein.get(pos);
+            int samples = 0;
+            for (Map<String,String> v : mapPosition.values()) {
+                samples += v.size();
+                if (samples>thresholdPositionBySamples) { 
+                    break;
+                }
+            }
+            if (samples<=thresholdPositionBySamples) {
+                itPosition.remove();
+            }
         }
     }
     
