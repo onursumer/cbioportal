@@ -1489,6 +1489,8 @@ public final class DaoMutation {
                                     if (neighbors.containsAll(residues)) {
                                         // if subset has been added
                                         residues.addAll(neighbors);
+                                        String label = residueSampleMapToString(mapPositionSamples,new TreeSet<Integer>(residues));
+                                        hotspot.setLabel(label);
                                         newSpots = false;
                                         break;
                                     }
@@ -1551,61 +1553,8 @@ public final class DaoMutation {
                 String chainId = rs.getString(7);
                 
                 if (gene!=currentGene || !pdbId.equals(currentPdb) || !chainId.equals(currentChain)) {
-                    if (mapProtein!=null) {
-                        removeBackgroundPositions(mapProtein);
-                        Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
-                        int totalSamples = 0;
-                        for (Map.Entry<Integer, Map<Integer, Map<String,String>>> entry : mapProtein.entrySet()) {
-                            int position = entry.getKey();
-                            
-                            int samples = 0;
-                            for (Map<String,String> v : entry.getValue().values()) {
-                                samples += v.size();
-                            }
-                            totalSamples += samples;
-                            mapPositionSamples.put(position, samples);
-                        }
-                        
-                        CanonicalGene canonicalGene = daoGeneOptimized.getGene(currentGene);
-                        if (canonicalGene==null) {
-                            System.err.println("No gene for entrez gene id: " + currentGene);
-                            continue;
-                        }
-                        
-                        String symbol = daoGeneOptimized.getGene(currentGene).getHugoGeneSymbolAllCaps();
-                        if (totalSamples>=thresholdSamples) {
-                            Set<Hotspot> hotspots = find3DHotspots.find3DHotspots(mapPositionSamples, thresholdSamples, currentPdb, currentChain);
-
-                            for (Hotspot hotspot : hotspots) {
-                                Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
-                                for (int res : hotspot.getResidues()) {
-                                    Map<Integer, Map<String,String>> mapPosition = mapProtein.get(res);
-                                    if (mapPosition!=null) {
-                                        for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
-                                            int pos = entry.getKey();
-                                            Map<String,Set<String>> mapCaseAA = m.get(pos);
-                                            if (mapCaseAA==null) {
-                                                mapCaseAA = new HashMap<String,Set<String>>();
-                                                m.put(pos, mapCaseAA);
-                                            }
-                                            
-                                            for (Map.Entry<String,String> mss : entry.getValue().entrySet()) {
-                                                String cid = mss.getKey();
-                                                String aa = mss.getValue();
-                                                Set<String> aas = mapCaseAA.get(cid);
-                                                if (aas==null) {
-                                                    aas = new HashSet<String>();
-                                                    mapCaseAA.put(cid, aas);
-                                                }
-                                                aas.add(aa);
-                                            }
-                                        }
-                                    }
-                                }
-                                map.put(symbol+"_"+currentPdb+"."+currentChain+" "+hotspot.getLabel(), m);
-                            }
-                        }
-                    }
+                    calculate3DHotSpotsInProtein(map, mapProtein, daoGeneOptimized,
+                            currentGene, currentPdb, currentChain, thresholdSamples, find3DHotspots);
                     
                     currentGene = gene;
                     currentPdb = pdbId;
@@ -1628,12 +1577,76 @@ public final class DaoMutation {
                 
             }
             
+            // for the last one
+            calculate3DHotSpotsInProtein(map, mapProtein, daoGeneOptimized,
+                            currentGene, currentPdb, currentChain, thresholdSamples, find3DHotspots);
             
             return map;
         } catch (SQLException e) {
             throw new DaoException(e);
         } finally {
             JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
+        }
+    }
+    
+    private static void calculate3DHotSpotsInProtein(Map<String, Map<Integer, Map<String,Set<String>>>> hotspotsMap,
+            Map<Integer, Map<Integer, Map<String,String>>> mapProtein, DaoGeneOptimized daoGeneOptimized,
+            long entrez, String pdb, String chain, int thresholdSamples, Find3DHotspots find3DHotspots) throws DaoException {
+        if (mapProtein==null) {
+            return;
+        }
+        
+        CanonicalGene canonicalGene = daoGeneOptimized.getGene(entrez);
+        if (canonicalGene==null) {
+            return;
+        }
+        String geneHugo = canonicalGene.getHugoGeneSymbolAllCaps();
+
+        removeBackgroundPositions(mapProtein);
+        Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
+        int totalSamples = 0;
+        for (Map.Entry<Integer, Map<Integer, Map<String,String>>> entry : mapProtein.entrySet()) {
+            int position = entry.getKey();
+
+            int samples = 0;
+            for (Map<String,String> v : entry.getValue().values()) {
+                samples += v.size();
+            }
+            totalSamples += samples;
+            mapPositionSamples.put(position, samples);
+        }
+
+        if (totalSamples>=thresholdSamples) {
+            Set<Hotspot> hotspots = find3DHotspots.find3DHotspots(mapPositionSamples, thresholdSamples, pdb, chain);
+
+            for (Hotspot hotspot : hotspots) {
+                Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
+                for (int res : hotspot.getResidues()) {
+                    Map<Integer, Map<String,String>> mapPosition = mapProtein.get(res);
+                    if (mapPosition!=null) {
+                        for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
+                            int pos = entry.getKey();
+                            Map<String,Set<String>> mapCaseAA = m.get(pos);
+                            if (mapCaseAA==null) {
+                                mapCaseAA = new HashMap<String,Set<String>>();
+                                m.put(pos, mapCaseAA);
+                            }
+
+                            for (Map.Entry<String,String> mss : entry.getValue().entrySet()) {
+                                String cid = mss.getKey();
+                                String aa = mss.getValue();
+                                Set<String> aas = mapCaseAA.get(cid);
+                                if (aas==null) {
+                                    aas = new HashSet<String>();
+                                    mapCaseAA.put(cid, aas);
+                                }
+                                aas.add(aa);
+                            }
+                        }
+                    }
+                }
+                hotspotsMap.put(geneHugo+"_"+pdb+"."+chain+" "+hotspot.getLabel(), m);
+            }
         }
     }
     
@@ -1682,68 +1695,8 @@ public final class DaoMutation {
                 String aaChange = rs.getString(5);
                 
                 if (gene != currentGene) {
-                    if (mapProtein!=null) {
-                        removeBackgroundPositions(mapProtein);
-                        
-                        int lenProtein = -1;
-                        Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
-                        int totalSamples = 0;
-                        for (Map.Entry<Integer, Map<Integer, Map<String,String>>> entry : mapProtein.entrySet()) {
-                            int position = entry.getKey();
-                            if (position>lenProtein) {
-                                lenProtein = position;
-                            }
-                            
-                            int samples = 0;
-                            for (Map<String,String> v : entry.getValue().values()) {
-                                samples += v.size();
-                            }
-                            totalSamples += samples;
-                            mapPositionSamples.put(position, samples);
-                        }
-                        
-                        CanonicalGene canonicalGene = daoGeneOptimized.getGene(currentGene);
-                        if (canonicalGene==null) {
-                            System.err.println("No gene for entrez gene id: " + currentGene);
-                            continue;
-                        }
-                        
-                        String symbol = daoGeneOptimized.getGene(currentGene).getHugoGeneSymbolAllCaps();
-                        if (totalSamples>=thresholdSamples) {
-                            List<Integer> hotspots = findLocalMaximum(mapPositionSamples, lenProtein+2, window, thresholdSamples);
-
-                            for (int hs : hotspots) {
-                                Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
-                                Set<Integer> residues = new TreeSet<Integer>();
-                                for (int offset=-window; offset<=window; offset++) {
-                                    Map<Integer, Map<String,String>> mapPosition = mapProtein.get(hs+offset);
-                                    if (mapPosition!=null) {
-                                        residues.add(hs+offset);
-                                        for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
-                                            int pos = entry.getKey();
-                                            Map<String,Set<String>> mapCaseAA = m.get(pos);
-                                            if (mapCaseAA==null) {
-                                                mapCaseAA = new HashMap<String,Set<String>>();
-                                                m.put(pos, mapCaseAA);
-                                            }
-                                            
-                                            for (Map.Entry<String,String> mss : entry.getValue().entrySet()) {
-                                                String cid = mss.getKey();
-                                                String aa = mss.getValue();
-                                                Set<String> aas = mapCaseAA.get(cid);
-                                                if (aas==null) {
-                                                    aas = new HashSet<String>();
-                                                    mapCaseAA.put(cid, aas);
-                                                }
-                                                aas.add(aa);
-                                            }
-                                        }
-                                    }
-                                }
-                                map.put(symbol+" "+residueSampleMapToString(mapPositionSamples,new TreeSet<Integer>(residues)), m);
-                            }
-                        }
-                    }
+                    calculateLinearHotSpotsInProtein(map, mapProtein, daoGeneOptimized,
+                            currentGene, thresholdSamples, window);
                     
                     currentGene = gene;
                     mapProtein = new HashMap<Integer, Map<Integer, Map<String,String>>>();
@@ -1763,6 +1716,9 @@ public final class DaoMutation {
                 mapCaseMut.put(caseId, aaChange);
             }
             
+            // for the last one
+            calculateLinearHotSpotsInProtein(map, mapProtein, daoGeneOptimized,
+                            currentGene, thresholdSamples, window);
             
             return map;
         } catch (SQLException e) {
@@ -1771,6 +1727,74 @@ public final class DaoMutation {
             JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
         }
     }
+    
+    private static void calculateLinearHotSpotsInProtein(Map<String, Map<Integer, Map<String,Set<String>>>> hotspotsMap,
+            Map<Integer, Map<Integer, Map<String,String>>> mapProtein, DaoGeneOptimized daoGeneOptimized,
+            long entrez, int thresholdSamples, int window) throws DaoException {
+        if (mapProtein==null) {
+            return;
+        }
+
+        CanonicalGene canonicalGene = daoGeneOptimized.getGene(entrez);
+        if (canonicalGene==null) {
+            return;
+        }
+        
+        removeBackgroundPositions(mapProtein);
+
+        int lenProtein = -1;
+        Map<Integer,Integer> mapPositionSamples = new HashMap<Integer,Integer>();
+        int totalSamples = 0;
+        for (Map.Entry<Integer, Map<Integer, Map<String,String>>> entry : mapProtein.entrySet()) {
+            int position = entry.getKey();
+            if (position>lenProtein) {
+                lenProtein = position;
+            }
+
+            int samples = 0;
+            for (Map<String,String> v : entry.getValue().values()) {
+                samples += v.size();
+            }
+            totalSamples += samples;
+            mapPositionSamples.put(position, samples);
+        }
+
+        String symbol = canonicalGene.getHugoGeneSymbolAllCaps();
+        if (totalSamples>=thresholdSamples) {
+            List<Integer> hotspots = findLocalMaximum(mapPositionSamples, lenProtein+2, window, thresholdSamples);
+
+            for (int hs : hotspots) {
+                Map<Integer, Map<String,Set<String>>> m = new HashMap<Integer, Map<String,Set<String>>>();
+                Set<Integer> residues = new TreeSet<Integer>();
+                for (int offset=-window; offset<=window; offset++) {
+                    Map<Integer, Map<String,String>> mapPosition = mapProtein.get(hs+offset);
+                    if (mapPosition!=null) {
+                        residues.add(hs+offset);
+                        for (Map.Entry<Integer, Map<String,String>> entry : mapPosition.entrySet()) {
+                            int pos = entry.getKey();
+                            Map<String,Set<String>> mapCaseAA = m.get(pos);
+                            if (mapCaseAA==null) {
+                                mapCaseAA = new HashMap<String,Set<String>>();
+                                m.put(pos, mapCaseAA);
+                            }
+
+                            for (Map.Entry<String,String> mss : entry.getValue().entrySet()) {
+                                String cid = mss.getKey();
+                                String aa = mss.getValue();
+                                Set<String> aas = mapCaseAA.get(cid);
+                                if (aas==null) {
+                                    aas = new HashSet<String>();
+                                    mapCaseAA.put(cid, aas);
+                                }
+                                aas.add(aa);
+                            }
+                        }
+                    }
+                }
+                hotspotsMap.put(symbol+" "+residueSampleMapToString(mapPositionSamples,new TreeSet<Integer>(residues)), m);
+            }
+        }
+    } 
     
     private static void removeBackgroundPositions(Map<Integer, Map<Integer, Map<String,String>>> mapProtein) {
          // rm positions that only mutated in 1 case
