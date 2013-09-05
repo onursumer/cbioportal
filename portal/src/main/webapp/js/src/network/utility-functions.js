@@ -466,7 +466,6 @@ function _alphanumeric(str)
 }
 function _setToCanvas(vis)
 {
-    vis.panToCenter();
-    vis.panBy(-30,-30);    
+    vis.panBy(-20,-20);   
     vis.zoomToFit();
 }
