@@ -464,5 +464,9 @@ function _alphanumeric(str)
 {
 	return str.replace(/[^a-zA-Z0-9]/, ""); 
 }
-
-
+function _setToCanvas(vis)
+{
+    vis.panToCenter();
+    vis.panBy(-30,-30);    
+    vis.zoomToFit();
+}

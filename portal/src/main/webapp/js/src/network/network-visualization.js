@@ -186,6 +186,10 @@ NetworkVis.prototype.initNetworkUI = function(vis)
 
     // make UI visible
     this._setVisibility(true);
+    
+    // fit network to canvas and centeralize it
+    _setToCanvas(this._vis);
+
 };
 
 /**
