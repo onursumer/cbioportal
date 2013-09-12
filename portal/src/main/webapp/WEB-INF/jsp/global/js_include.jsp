@@ -3,10 +3,10 @@
 <script type="text/javascript" src="js/lib/jquery.min.js"></script>
 <script type='text/javascript' src='https://www.google.com/jsapi'></script>
 <script type="text/javascript" src="js/lib/jquery.cookie.js"></script>
-<script type="text/javascript" src="js/lib/jquery.address-1.4.min.js"></script>
+<script type="text/javascript" src="js/lib/jquery.address.min.js"></script>
 <script type="text/javascript" src="js/lib/jquery.expander.min.js"></script>
 <script type="text/javascript" src="js/lib/jquery.tipTip.minified.js"></script>
-<script type="text/javascript" src="js/lib/jquery-ui-1.8.14.custom.min.js"></script>
+<script type="text/javascript" src="js/lib/jquery-ui.min.js"></script>
 <script type="text/javascript" src="js/lib/jquery.popeye-2.1.min.js"></script>
 <script type="text/javascript" src="js/lib/jquery.dataTables.min.js"></script>
 <script type="text/javascript" src="js/lib/jquery.quovolver.mini.js"></script>
@@ -22,6 +22,7 @@
 <script type="text/javascript" src="js/lib/underscore-min.js"></script>
 <script type="text/javascript" src="js/lib/backbone-min.js"></script>
 <script type="text/javascript" src="js/lib/d3.min.js"></script>
+<script type="text/javascript" src="js/lib/igv_webstart.js"></script>
 
 <script type="text/javascript">
     // This is for the moustache-like templates
@@ -31,6 +32,7 @@
     };
 </script>
 
+<script type="text/javascript" src="js/src/Models.js"></script>
 <script type="text/javascript" src="js/src/cgx_jquery.js"></script>
 <script type="text/javascript" src="js/src/dynamicQuery.js"></script>
 <script type="text/javascript" src="js/src/gene_set.js"></script>

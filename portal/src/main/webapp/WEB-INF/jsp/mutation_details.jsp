@@ -1,4 +1,16 @@
-<div class='section' id='mutation_details'></div>
+<!-- TODO include these js files in the global js include? -->
+<script type="text/javascript" src="js/src/mutation_histogram.js"></script>
+<!--script type="text/javascript" src="js/lib/jsmol/JSmol.min.nojq.js"></script-->
+<script type="text/javascript" src="js/lib/jmol/JmolCore.js"></script>
+<script type="text/javascript" src="js/lib/jmol/JmolApplet.js"></script>
+<script type="text/javascript" src="js/lib/jmol/JmolControls.js"></script>
+<script type="text/javascript" src="js/lib/jmol/JmolApi.js"></script>
+<script type="text/javascript" src="js/src/mutation_3d_viewer.js"></script>
+<script type="text/javascript" src="js/src/mutation_pdb_panel.js"></script>
+
+<div class='section' id='mutation_details'>
+	<img src='images/ajax-loader.gif'/>
+</div>
 
 <style type="text/css" title="currentStyle">
 	@import "css/data_table_jui.css";
@@ -47,6 +59,9 @@
 		vertical-align: bottom;
 		margin-left: 3px;
 	}
+	.diagram-lollipop-tip, .diagram-region-tip, .pdb-chain-tip {
+		font-size: 12px;
+	}
 	.mutation-details-tooltip {
 		font-size: 11px !important;
 	}
@@ -79,8 +94,18 @@
 		padding-top: 10px;
 		padding-left: 10px;
 	}
-	.mutation-diagram-container {
+	.mutation-details-filter-info {
+		font-size: 14px;
+		font-family: verdana,arial,sans-serif;
+		color: red;
 		margin-bottom: 10px;
+	}
+	.mutation-details-filter-reset {
+		color: #1974B8 !important;
+		cursor: pointer;
+	}
+	.mutation-table-highlight {
+		background-color: #E9E900 !important;
 	}
 	.mutation-table-container {
 		margin-bottom: 40px;
@@ -88,11 +113,33 @@
 	.mutation-table-header {
 		font-weight: bold !important;
 	}
-	.tooltip-table-container {
-		padding: 10px;
+	.mutation-3d-container {
+		position: fixed;
+		float: right;
+		right: 0;
+		top: 0;
+		z-index: 100;
+		border-style: outset;
+		border-color: #BABDB6;
+		background-color: #FFFFFF;
+		padding: 5px 10px 30px;
+	}
+	.mutation-3d-close {
+		float: right;
+		cursor: pointer;
+	}
+	.mutation-3d-vis img{
+		width: 24px;
+		height: 24px
 	}
 	.cosmic-details-tip-info {
 		padding-bottom: 5px;
+	}
+	.cosmic-details-table {
+		font-size: 11px !important;
+	}
+	.igv-link {
+		cursor: pointer;
 	}
 	.left-align-td {
 		text-align: left;
@@ -101,7 +148,12 @@
 </style>
 
 <script type="text/javascript">
-    
+
+// TODO 3d Visualizer should be initialized before document get ready
+// ...due to incompatible Jmol initialization behavior
+var _mut3dVis = new Mutation3dVis("default3dView", {});
+_mut3dVis.init();
+
 // Set up Mutation View
 $(document).ready(function(){
 	// TODO accessing global "samples" variable...
@@ -119,14 +171,15 @@ $(document).ready(function(){
 			sampleArray: sampleArray};
 
 		var defaultView = new MutationDetailsView(
-			{el: "#mutation_details", model: model});
+			{el: "#mutation_details", model: model, mut3dVis: _mut3dVis});
 
 		defaultView.render();
 	};
 
 	// TODO getting these params from global variables defined in visualize.jsp
 	// we should refactor/redefine these global variables in a better way
-	var params = {geneList: genes,
+
+	var params = {geneList: geneList,
 		geneticProfiles: geneticProfiles,
 		caseList: samples};
 

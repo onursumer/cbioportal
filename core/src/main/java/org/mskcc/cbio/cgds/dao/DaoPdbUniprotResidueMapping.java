@@ -31,10 +31,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  *
@@ -163,7 +160,133 @@ public final class DaoPdbUniprotResidueMapping {
      * @throws DaoException 
      */
     public static Map<Integer, Integer> mapToPdbChains(String uniprotId,
-            Set<Integer> uniprotPositions, String pdbId, String chainId) throws DaoException {
-        return null;
+            Set<Integer> uniprotPositions,
+		    String pdbId,
+		    String chainId) throws DaoException
+    {
+	    Connection con = null;
+	    PreparedStatement pstmt = null;
+	    ResultSet rs = null;
+
+	    try {
+		    con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
+		    pstmt = con.prepareStatement("SELECT PDB_POSITION, UNIPROT_POSITION " +
+		                                 "FROM pdb_uniprot_residue_mapping " +
+		                                 "WHERE PDB_ID=? AND CHAIN=? AND UNIPROT_ID=?");
+		    pstmt.setString(1, pdbId);
+		    pstmt.setString(2, chainId);
+		    pstmt.setString(3, uniprotId);
+
+		    rs = pstmt.executeQuery();
+		    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+
+		    while (rs.next())
+		    {
+			    Integer pdbPos = rs.getInt(1);
+			    Integer uniprotPos = rs.getInt(2);
+
+			    if (uniprotPositions.contains(uniprotPos))
+			    {
+				    map.put(uniprotPos, pdbPos);
+			    }
+		    }
+		    return map;
+	    } catch (SQLException e) {
+		    throw new DaoException(e);
+	    } finally {
+		    JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
+	    }
     }
+
+	/**
+	 *
+	 * @param uniprotId
+	 * @param pdbId
+	 * @param chainId
+	 * @return Array [start position, end position]
+	 * @throws DaoException
+	 */
+	public static Integer[] getEndPositions(String uniprotId,
+			String pdbId,
+			String chainId) throws DaoException
+	{
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+
+		try {
+			con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
+			pstmt = con.prepareStatement("SELECT MIN(`UNIPROT_POSITION`) AS MIN_POSITION, " +
+			                             "MAX(`UNIPROT_POSITION`) AS MAX_POSITION " +
+			                             "FROM pdb_uniprot_residue_mapping " +
+			                             "WHERE PDB_ID=? AND CHAIN=? AND UNIPROT_ID=?");
+			pstmt.setString(1, pdbId);
+			pstmt.setString(2, chainId);
+			pstmt.setString(3, uniprotId);
+
+			rs = pstmt.executeQuery();
+			Integer[] positions = new Integer[2];
+
+			if (rs.next())
+			{
+				Integer minPos = rs.getInt(1);
+				Integer maxPos = rs.getInt(2);
+
+				positions[0] = minPos;
+				positions[1] = maxPos;
+			}
+
+			return positions;
+		} catch (SQLException e) {
+			throw new DaoException(e);
+		} finally {
+			JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
+		}
+	}
+
+	/**
+	 *
+	 * @param uniprotId
+	 * @param pdbId
+	 * @param chainId
+	 * @return list of uniprot positions
+	 * @throws DaoException
+	 */
+	public static List<Integer> getAllPositions(String uniprotId,
+			String pdbId,
+			String chainId) throws DaoException
+	{
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+
+		try {
+			con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
+			pstmt = con.prepareStatement("SELECT PDB_POSITION, UNIPROT_POSITION " +
+			                             "FROM pdb_uniprot_residue_mapping " +
+			                             "WHERE PDB_ID=? AND CHAIN=? AND UNIPROT_ID=? " +
+			                             "ORDER BY UNIPROT_POSITION ASC");
+			pstmt.setString(1, pdbId);
+			pstmt.setString(2, chainId);
+			pstmt.setString(3, uniprotId);
+
+			rs = pstmt.executeQuery();
+
+			List<Integer> positions = new ArrayList<Integer>();
+
+			while (rs.next())
+			{
+				Integer pdbPos = rs.getInt(1);
+				Integer uniprotPos = rs.getInt(2);
+
+				positions.add(uniprotPos);
+			}
+
+			return positions;
+		} catch (SQLException e) {
+			throw new DaoException(e);
+		} finally {
+			JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
+		}
+	}
 }
