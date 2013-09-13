@@ -78,7 +78,7 @@ def main():
     db = MySQLdb.connect(host,user,passwd,db)
     cursor = db.cursor()
     cursor.execute("select distinct pp.pdbid, pp.chcode, mb.seqID, mb.mbegin, pmr.res, pp.query, pp.hit, pp.qfrom, pp.hfrom "+
-                   "from pdb_prot pp, msa_built mb, pdb_mol pm, pdb_molr pmr, up_seq "+
+                   "from pdb_prot pp, msa_built mb, pdb_mol pm, pdb_molr pmr "+
                    "where pp.msaid=mb.id and pp.pdbid=pm.pdbid and pp.chcode=pm.chain and "+
                    "pp.pdbid=pmr.pdbid and pm.molid=pmr.molid and pm.type='protein' and mb.seqID like '%_HUMAN' "+
                    "and pp.identp>="+identpThreshold+";")
