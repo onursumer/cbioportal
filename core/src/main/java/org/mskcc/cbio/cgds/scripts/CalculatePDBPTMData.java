@@ -351,7 +351,7 @@ public class CalculatePDBPTMData {
             double distance) throws StructureException {
        double r1 = chain.getGroupByPDB(atom1.getGroup().getPDBResidueNumber())
                .getAtom(atom1.getAtomName()).getElement().getCovalentRadius();
-       double r2 = chain.getGroupByPDB(atom1.getGroup().getPDBResidueNumber())
+       double r2 = chain.getGroupByPDB(atom2.getGroup().getPDBResidueNumber())
                .getAtom(atom2.getAtomName()).getElement().getCovalentRadius();
        return Math.abs(distance-r1-r2);
     }
