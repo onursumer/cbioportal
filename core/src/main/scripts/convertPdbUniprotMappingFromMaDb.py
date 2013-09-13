@@ -72,7 +72,7 @@ def main():
             db = a
         elif o == '--output':
             output = a
-    identpThreshold = 90
+    identpThreshold = '90'
         
     f = open(output, 'w')
     db = MySQLdb.connect(host,user,passwd,db)
