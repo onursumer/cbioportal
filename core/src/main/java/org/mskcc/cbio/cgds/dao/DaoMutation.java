@@ -1228,7 +1228,8 @@ public final class DaoMutation {
      * @return Map<uniprot-residue, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
     public static Map<String,Map<Integer, Map<String,Set<String>>>> getMutatation3DStatistics(
-            String concatCancerStudyIds, int thresholdSamples, String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
+            String concatCancerStudyIds, int thresholdSamples, final double thresholdDistanceError,
+            String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
         return getMutation3DHotspots(concatCancerStudyIds, thresholdSamples, concatEntrezGeneIds, concatExcludeEntrezGeneIds,
                 new Find3DHotspots() {
                     @Override
@@ -1236,7 +1237,7 @@ public final class DaoMutation {
                         int thresholdSamples, String pdbId, String chainId) throws DaoException {
                         Set<Hotspot> hotspots = new HashSet<Hotspot>();
                         Map<Integer, Set<Integer>> proteinContactMap = DaoProteinContactMap.getProteinContactMap(
-                                pdbId, chainId, mapPositionSamples.keySet());
+                                pdbId, chainId, mapPositionSamples.keySet(), thresholdDistanceError);
                         for (Map.Entry<Integer, Set<Integer>> entry : proteinContactMap.entrySet()) {
                             Integer res1 = entry.getKey();
                             Set<Integer> neighbors = entry.getValue();

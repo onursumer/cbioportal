@@ -637,7 +637,11 @@ CREATE TABLE `protein_contact_map` (
   `PDB_ID` char(4) NOT NULL,
   `CHAIN` char(1) NOT NULL,
   `RESIDUE1` int(11) NOT NULL,
+  `ATOM1` varchar(10) DEFAULT NULL,
   `RESIDUE2` int(11) NOT NULL,
+  `ATOM2` varchar(10) DEFAULT NULL,
+  `DISTANCE` float DEFAULT NULL,
+  `DISTANCE_ERROR` float DEFAULT NULL, # DISTANCE - Covalent bond length
   PRIMARY KEY (`PDB_ID`,`CHAIN`,`RESIDUE1`,`RESIDUE2`),
   KEY (`PDB_ID`,`CHAIN`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;

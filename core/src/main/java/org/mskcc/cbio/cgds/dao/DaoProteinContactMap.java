@@ -44,13 +44,21 @@ public class DaoProteinContactMap {
     private DaoProteinContactMap() {}
     
     public static int addProteinContactMap(String pdbId,
-            String chain, int residue1, int residue2) {
+            String chain, int residue1, String atom1, int residue2, String atom2,
+            double distance, double distanceError) {
         if (!MySQLbulkLoader.isBulkLoad()) {
             throw new IllegalStateException("only bulk load mode is supported ");
         } 
         //  write to the temp file maintained by the MySQLbulkLoader
-        MySQLbulkLoader.getMySQLbulkLoader("protein_contact_map").insertRecord(pdbId, chain, Integer.toString(residue1),
-                Integer.toString(residue2));
+        MySQLbulkLoader.getMySQLbulkLoader("protein_contact_map").insertRecord(
+                pdbId,
+                chain,
+                Integer.toString(residue1),
+                atom1,
+                Integer.toString(residue2),
+                atom2,
+                Double.toString(distance),
+                Double.toString(distanceError));
 
         // return 1 because normal insert will return 1 if no error occurs
         return 1;
@@ -61,9 +69,11 @@ public class DaoProteinContactMap {
      * @param pdbId
      * @param chain
      * @param residues
+     * @param distanceErrorThreshold 
      * @return Map<residue, set <contacting residues>>
      */
-    public static Map<Integer, Set<Integer>> getProteinContactMap(String pdbId, String chain, Set<Integer> residues) throws DaoException {
+    public static Map<Integer, Set<Integer>> getProteinContactMap(String pdbId, String chain,
+            Set<Integer> residues, double distanceErrorThreshold) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -75,7 +85,10 @@ public class DaoProteinContactMap {
                     + "WHERE `PDB_ID`='" + pdbId + "' "
                     + "AND `CHAIN`='" + chain + "' "
                     + "AND `RESIDUE1` IN (" + strResidues + ") "
-                    + "AND `RESIDUE2` IN (" + strResidues + ")"; 
+                    + "AND `RESIDUE2` IN (" + strResidues + ") ";
+            if (distanceErrorThreshold>=0) {
+                sql += "AND `DISTANCE_ERROR`<"+distanceErrorThreshold;
+            }
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             

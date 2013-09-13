@@ -36,6 +36,7 @@ public class MutationsJSON extends HttpServlet {
     public static final String GENES = "genes";
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
     public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
+    public static final String THRESHOLD_DISTANCE_ERROR_CONTACT_MAP = "threshold_distance_error";
     public static final String LINEAR_HOTSPOT_WINDOW = "window";
     
     /** 
@@ -135,8 +136,9 @@ public class MutationsJSON extends HttpServlet {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationLinearStatistics(
                         studyIds.toString(), window, threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else if (type.equalsIgnoreCase("3d")) {
+                double thresholdDisError = Double.parseDouble(request.getParameter(THRESHOLD_DISTANCE_ERROR_CONTACT_MAP));
                 mapKeywordStudyCaseMut = DaoMutation.getMutatation3DStatistics(
-                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
+                        studyIds.toString(), threshold, thresholdDisError, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else if (type.equalsIgnoreCase("pdb-ptm")) {
                 mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
                         studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);

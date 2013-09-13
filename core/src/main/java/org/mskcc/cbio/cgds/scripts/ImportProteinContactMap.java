@@ -68,6 +68,8 @@ public class ImportProteinContactMap {
                 }
                 int res1 = Integer.parseInt(m.group(1));
                 
+                String atom1 = parts[3];
+                
                 // residue 2
                 m = patternRes.matcher(parts[4]);
                 if (!m.matches()) {
@@ -75,7 +77,12 @@ public class ImportProteinContactMap {
                 }
                 int res2 = Integer.parseInt(m.group(1));
                 
-                DaoProteinContactMap.addProteinContactMap(pdbId, chainId, res1, res2);
+                String atom2 = parts[5];
+                
+                double distance = Double.parseDouble(parts[6]);
+                double error = Double.parseDouble(parts[7]);
+                
+                DaoProteinContactMap.addProteinContactMap(pdbId, chainId, res1, atom1, res2, atom2, distance, error);
             }
         }
         if (MySQLbulkLoader.isBulkLoad()) {

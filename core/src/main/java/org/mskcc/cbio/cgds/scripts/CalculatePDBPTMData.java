@@ -37,7 +37,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import org.biojava.bio.structure.Atom;
 import org.biojava.bio.structure.Chain;
+import org.biojava.bio.structure.ResidueNumber;
 import org.biojava.bio.structure.Structure;
 import org.biojava.bio.structure.StructureException;
 import org.biojava.bio.structure.align.util.AtomCache;
@@ -193,10 +195,10 @@ public class CalculatePDBPTMData {
     }    
     
     private void calculateContactMap(Map<String,Set<String>> pdbEntries, String dirOutputFile)
-            throws IOException {
+            throws IOException, StructureException {
         FileWriter writer = new FileWriter(dirOutputFile);
         BufferedWriter buf = new BufferedWriter(writer);
-        buf.write("#PDB_ID\tChain\tResidue1\tAtom1\tResidue2\tAtom2\tDistance\tName\n");
+        buf.write("#PDB_ID\tChain\tResidue1\tAtom1\tResidue2\tAtom2\tDistance\tError\tNote\n");
         
         for (Map.Entry<String,Set<String>> entry : pdbEntries.entrySet()) {
             String pdbId = entry.getKey();
@@ -237,7 +239,7 @@ public class CalculatePDBPTMData {
                                 + "Only crosslinks with 2 residues directly linked are possible.");
                     }
 
-                    writeLinkage(pdbId, chainId, mc.getModification(),
+                    writeLinkage(chain, mc.getModification(),
                             mc.getAtomLinkages().iterator().next(), buf);
                 }
                 
@@ -257,11 +259,11 @@ public class CalculatePDBPTMData {
                                 selectedLinkage = linkage;
                             }
                         } else {
-                            writeLinkage(pdbId, chainId, null, selectedLinkage, buf);
+                            writeLinkage(chain, null, selectedLinkage, buf);
                             selectedLinkage = linkage;
                         }
                     }
-                    writeLinkage(pdbId, chainId, null, selectedLinkage, buf);
+                    writeLinkage(chain, null, selectedLinkage, buf);
                 }
             }
         }
@@ -312,21 +314,24 @@ public class CalculatePDBPTMData {
         return true;
     }
     
-    private void writeLinkage(String pdbId, String chainId, ProteinModification ptm,
-            StructureAtomLinkage linkage, BufferedWriter buf) throws IOException {
+    private void writeLinkage(Chain chain, ProteinModification ptm,
+            StructureAtomLinkage linkage, BufferedWriter buf) throws IOException, StructureException {
         if (!filterLinkage(linkage)) {
             return;
         }
         
-        buf.write(pdbId);
+        buf.write(chain.getParent().getPDBCode());
         buf.write("\t");
-        buf.write(chainId);
+        buf.write(chain.getChainID());
         buf.write("\t");
         
         writeAtom(linkage.getAtom1(), buf, "\t");
         writeAtom(linkage.getAtom2(), buf, "\t");
         
         buf.write(Double.toString(linkage.getDistance()));
+        buf.write("\t");
+        
+        buf.write(Double.toString(getError(chain, linkage.getAtom1(), linkage.getAtom2(), linkage.getDistance())));
         buf.write("\t");
         
         if (ptm!=null) {
@@ -340,6 +345,15 @@ public class CalculatePDBPTMData {
         }
         
         buf.write("\n");
+    }
+    
+    private double getError(Chain chain, StructureAtom atom1, StructureAtom atom2,
+            double distance) throws StructureException {
+       double r1 = chain.getGroupByPDB(atom1.getGroup().getPDBResidueNumber())
+               .getAtom(atom1.getAtomName()).getElement().getCovalentRadius();
+       double r2 = chain.getGroupByPDB(atom1.getGroup().getPDBResidueNumber())
+               .getAtom(atom2.getAtomName()).getElement().getCovalentRadius();
+       return Math.abs(distance-r1-r2);
     }
     
     private void writeAtom(StructureAtom atom, BufferedWriter buf, String sep) throws IOException {
