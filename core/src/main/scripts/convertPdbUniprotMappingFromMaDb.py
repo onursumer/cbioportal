@@ -23,7 +23,28 @@ def range_to_list(range_str):
     return idx
 
 def export_row(row, f):
-    print >>f, "%s\t%s\t%i\t%s\t%i" % (row[0], row[1], range_to_list(row[5])[row[2]-1], row[3], row[4])
+    pdb_id = row[0]
+    pdb_ch = row[1]
+    uniprot_id = row[2]
+    mbegin = row[3]
+    pdb_res_map = row[4]
+    uniprot_align = row[5]
+    pdb_align = row[6]
+    uniprot_from = row[7]
+    pdb_from = row[8]
+
+    length_align = uniprot_align.__len__()
+    ix_uniprot = mbegin + uniprot_from -1
+    ix_pdb = pdb_from
+    for i in range(length_align):
+        if uniprot_align[i] == pdb_align[i]:
+            print >>f, "%s\t%s\t%i\t%s\t%i" % (pdb_id, pdb_ch, range_to_list(pdb_res_map)[ix_pdb-1], uniprot_id, ix_uniprot)
+        if uniprot_align[i] != '-':
+            ix_uniprot = ix_uniprot + 1
+        if pdb_align[i] != '-':
+            ix_pdb = ix_pdb + 1
+    
+    #print >>f, "%s\t%s\t%i\t%s\t%i" % (row[0], row[1], range_to_list(row[5])[row[2]-1], row[3], row[4])
     
 def main():
 
@@ -51,15 +72,16 @@ def main():
             db = a
         elif o == '--output':
             output = a
+    identpThreshold = 90
         
     f = open(output, 'w')
     db = MySQLdb.connect(host,user,passwd,db)
     cursor = db.cursor()
-    cursor.execute("select distinct pp.pdbid, pp.chcode, ppr.rpdb, mb.seqID, ppr.rprot+mb.mbegin-1, pmr.res "+
-                   "from pdb_protr ppr, pdb_prot pp, msa_built mb, pdb_mol pm, pdb_molr pmr "+
-                   "where ppr.ppid=pp.id and pp.msaid=mb.id and pp.pdbid=pm.pdbid and pp.chcode=pm.chain and "+
+    cursor.execute("select distinct pp.pdbid, pp.chcode, mb.seqID, mb.mbegin, pmr.res, pp.query, pp.hit, pp.qfrom, pp.hfrom "+
+                   "from pdb_prot pp, msa_built mb, pdb_mol pm, pdb_molr pmr, up_seq "+
+                   "where pp.msaid=mb.id and pp.pdbid=pm.pdbid and pp.chcode=pm.chain and "+
                    "pp.pdbid=pmr.pdbid and pm.molid=pmr.molid and pm.type='protein' and mb.seqID like '%_HUMAN' "+
-                   "and pp.identp=100;")
+                   "and pp.identp>="+identpThreshold+";")
     print >>f, "#pdb_id\tchain\tpdb_res\tuniprot_id\tuniprot_res"
     for row in cursor:
         export_row(row, f)
