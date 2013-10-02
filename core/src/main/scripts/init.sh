@@ -42,7 +42,6 @@
 ## ./calculatePDBPTMData.pl contact-map $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 5.0
 ./importProteinContactMap.pl $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt
 
-# just keeping track... this should run post-import
+# PTM data
 ## ./preparePhosphoSitePlusData.sh
-# ./importPhosphoSitePlusData.sh
-# ./calculateMutationEffectOnPTM.pl 10
+./importPhosphoSitePlusData.sh

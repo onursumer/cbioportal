@@ -1712,6 +1712,7 @@ public final class DaoMutation {
                 totalCountPerKeyword ++;
             }
             
+            // for the last one
             if (totalCountPerKeyword>=thresholdSamples) {
                 map.put(currentKeyword, mapStudyCaseMut);
             }
@@ -1744,12 +1745,13 @@ public final class DaoMutation {
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
             String sql = "SELECT  gp.`CANCER_STUDY_ID`, pa.`SYMBOL`, pa.`TYPE`, `RESIDUE`, `CASE_ID`, `PROTEIN_CHANGE` "
-                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp, mutation_effect_on_ptm meop, ptm_annotation pa "
+                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp, ptm_annotation pa "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
-                    + "AND me.MUTATION_EVENT_ID=meop.MUTATION_EVENT_ID "
-                    + "AND meop.PTM_ANNOTATION_ID=pa.PTM_ANNOTATION_ID "
-                    + "AND ABS(meop.distance)<="+thresholdDistance+" "
+                    + "AND me.`ONCOTATOR_UNIPROT_ACCESSION`=pa.`UNIPROT_ID` "
+                    + "AND (ABS(me.ONCOTATOR_PROTEIN_POS_START-pa.RESIDUE)<="+thresholdDistance
+                    + " OR ABS(pa.RESIDUE-me.ONCOTATOR_PROTEIN_POS_END)<="+thresholdDistance
+                    + " OR (me.ONCOTATOR_PROTEIN_POS_START<pa.RESIDUE AND pa.RESIDUE<me.ONCOTATOR_PROTEIN_POS_END)) "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") ";
             if (concatEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` IN("+concatEntrezGeneIds+") ";
@@ -1757,8 +1759,7 @@ public final class DaoMutation {
             if (concatExcludeEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
-            sql += "ORDER BY pa.`TYPE` ASC, `RESIDUE`"; // to filter and save memories
-            System.out.println(sql);
+            sql += "ORDER BY pa.`SYMBOL`, pa.`TYPE`, `RESIDUE`"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
@@ -1790,6 +1791,7 @@ public final class DaoMutation {
                 totalCountPerKeyword ++;
             }
             
+            // for the last one
             if (totalCountPerKeyword>=thresholdSamples) {
                 map.put(currentKeyword, mapStudyCaseMut);
             }
