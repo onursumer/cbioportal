@@ -37,6 +37,9 @@
 		font-size: 90%;
 		color: black;
 	}
+	#mutation_details .mutation_details_table td {
+		font-size: 100%;
+	}
 	/*
 	th.mutation-details-qtip-style {
 		/*font-size: 115%;
@@ -104,6 +107,9 @@
 		color: #1974B8 !important;
 		cursor: pointer;
 	}
+	.mutation-details-tabs-ref {
+		font-size: 11px !important;
+	}
 	.mutation-table-highlight {
 		background-color: #E9E900 !important;
 	}
@@ -122,11 +128,24 @@
 		border-style: outset;
 		border-color: #BABDB6;
 		background-color: #FFFFFF;
-		padding: 5px 10px 30px;
+		padding: 5px 10px 10px;
+	}
+	.mutation-3d-vis-header {
+		padding-bottom: 5px;
+	}
+	.mutation-3d-info {
+		font-size: 14px;
 	}
 	.mutation-3d-close {
 		float: right;
 		cursor: pointer;
+	}
+	.mutation-3d-pdb-id, .mutation-3d-chain-id {
+		font-weight: bold;
+		font-style: italic;
+	}
+	.mutation-3d-spin {
+		margin-left: 20px;
 	}
 	.mutation-3d-vis img{
 		width: 24px;
@@ -144,6 +163,24 @@
 	.left-align-td {
 		text-align: left;
 	}
+	/* This is to fix ui.tabs.paging plugin style,
+	we may need to remove this after updating jQuery */
+	.ui-tabs-paging-prev, .ui-tabs-paging-next {
+		background: none !important;
+		border: none !important;
+		line-height: 95%;
+	}
+	.ui-tabs-paging-next {
+		padding-right: 0 !important;
+	}
+	.ui-tabs-paging-disabled {
+		/* do not show button if no cycle */
+		display: none;
+	}
+	/* This is also to fix ui.tabs.paging behavior */
+	.mutation-details-content {
+		min-width: 480px;
+	}
 
 </style>
 
@@ -151,7 +188,8 @@
 
 // TODO 3d Visualizer should be initialized before document get ready
 // ...due to incompatible Jmol initialization behavior
-var _mut3dVis = new Mutation3dVis("default3dView", {});
+var _mut3dVis = null;
+_mut3dVis = new Mutation3dVis("default3dView", {});
 _mut3dVis.init();
 
 // Set up Mutation View
