@@ -1753,6 +1753,9 @@ public final class DaoMutation {
                     + " OR ABS(pa.RESIDUE-me.ONCOTATOR_PROTEIN_POS_END)<="+thresholdDistance
                     + " OR (me.ONCOTATOR_PROTEIN_POS_START<pa.RESIDUE AND pa.RESIDUE<me.ONCOTATOR_PROTEIN_POS_END)) "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") ";
+            if (ptmTypes!=null && ptmTypes.length>0) {
+                sql += "AND pa.`TYPE` IN ('" + StringUtils.join(ptmTypes,"','") + "') ";
+            }
             if (concatEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` IN("+concatEntrezGeneIds+") ";
             }

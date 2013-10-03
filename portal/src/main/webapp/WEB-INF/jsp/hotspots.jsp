@@ -558,7 +558,8 @@ AlteredGene.Router = Backbone.Router.extend({
         if (type==='missense') {
             option_type = 'missense,ins,del';
         } else if (type.indexOf('ptm-effect-')===0) {
-            option_type = 'ptm-effect,PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
+            option_type = 'ptm-effect';
+            //option_type = 'ptm-effect,PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
         } else if (type.indexOf('linear-')===0) {
             option_type = 'linear';
         } else if (type.indexOf('3d-')===0) {
@@ -577,6 +578,11 @@ AlteredGene.Router = Backbone.Router.extend({
         }
 
         if(type.indexOf('ptm-effect-')===0) {
+            var ix = type.indexOf(',');
+            if (ix!==-1) {
+                options['ptm_type'] = type.substring(ix);
+                type = type.substring(0,ix);
+            }
             options['threshold_distance'] = parseInt(type.replace('ptm-effect-',''));
         }
 

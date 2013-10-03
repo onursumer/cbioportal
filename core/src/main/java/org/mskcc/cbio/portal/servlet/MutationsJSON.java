@@ -33,6 +33,7 @@ public class MutationsJSON extends HttpServlet {
     
     public static final String GET_STATISTICS_CMD = "statistics";
     public static final String MUTATION_TYPE = "type";
+    public static final String PTM_TYPE = "ptm_type";
     public static final String GENES = "genes";
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
     public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
@@ -125,8 +126,9 @@ public class MutationsJSON extends HttpServlet {
             
             if (type.startsWith("ptm-effect")) {
                 int thresholdDis = Integer.parseInt(request.getParameter(THRESHOLD_DISTANCE_PTM_MUTATION));
+                String ptmType = request.getParameter(PTM_TYPE);
                 mapKeywordStudyCaseMut = DaoMutation.getPtmEffectStatistics(
-                    studyIds.toString(), type.replace("ptm-effect,", "").split("[, ]+"),
+                    studyIds.toString(), ptmType==null?null:ptmType.split("[, ]+"),
                     thresholdDis, threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else if (type.equalsIgnoreCase("truncating-sep")) {
                  mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
