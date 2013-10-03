@@ -608,16 +608,6 @@ CREATE TABLE `ptm_annotation` (
   UNIQUE (`UNIPROT_ID`,`RESIDUE`,`TYPE`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COMMENT='PTM annotations from public domain such as PhosphoSitePlus and UniProt';
 
-drop table IF EXISTS mutation_effect_on_ptm;
-CREATE TABLE `mutation_effect_on_ptm` (
-  `MUTATION_EVENT_ID` int(255) NOT NULL,
-  `PTM_ANNOTATION_ID` int(255) NOT NULL,
-  `DISTANCE` int(5) NOT NULL,
-  PRIMARY KEY (`MUTATION_EVENT_ID`,`PTM_ANNOTATION_ID`),
-  FOREIGN KEY (`MUTATION_EVENT_ID`) REFERENCES `mutation_event` (`MUTATION_EVENT_ID`),
-  FOREIGN KEY (`PTM_ANNOTATION_ID`) REFERENCES `ptm_annotation` (`PTM_ANNOTATION_ID`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
 drop table IF EXISTS pdb_uniprot_residue_mapping;
 CREATE TABLE `pdb_uniprot_residue_mapping` (
   `PDB_ID` char(4) NOT NULL,
