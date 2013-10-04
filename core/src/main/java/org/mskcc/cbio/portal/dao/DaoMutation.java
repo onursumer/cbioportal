@@ -1284,11 +1284,12 @@ public final class DaoMutation {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(DaoMutation.class);
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, me.`ENTREZ_GENE_ID`, `ONCOTATOR_PROTEIN_POS_START`, `CASE_ID`, `PROTEIN_CHANGE`, `PDB_ID`, `CHAIN` "
-                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp, `pdb_uniprot_residue_mapping` purm "
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, me.`ENTREZ_GENE_ID`, `PDB_POSITION`, `CASE_ID`, `PROTEIN_CHANGE`, `PDB_ID`, `CHAIN` "
+                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp, `pdb_uniprot_residue_mapping` purm, `pdb_uniprot_alignment` pua "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
-                    + "AND me.`ONCOTATOR_UNIPROT_ENTRY_NAME`=purm.`UNIPROT_ID` "
+                    + "AND purm.`ALIGNMENT_ID`=pua.`ALIGNMENT_ID` "
+                    + "AND me.`ONCOTATOR_UNIPROT_ENTRY_NAME`=pua.`UNIPROT_ID` "
                     + "AND me.`ONCOTATOR_PROTEIN_POS_START`=purm.`UNIPROT_POSITION` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
                     + "AND me.`MUTATION_TYPE`='Missense_Mutation' ";
@@ -1311,7 +1312,7 @@ public final class DaoMutation {
             while (rs.next()) {
                 int cancerStudyId = rs.getInt(1);
                 long gene = rs.getLong(2);
-                int residue = rs.getInt(3);
+                int residue = rs.getInt(3); // pdb residue
                 if (residue<=0) {
                     continue;
                 }
