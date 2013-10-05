@@ -96,6 +96,7 @@ public class ImportPdbPtmData {
             System.out.println("command line usage:  ImportPdbPtmData.pl <pdb-ptms.txt>");
             System.exit(1);
         }
+        DaoPdbPtmData.deleteAllRecords();
         ProgressMonitor pMonitor = new ProgressMonitor();
         pMonitor.setConsoleMode(true);
 

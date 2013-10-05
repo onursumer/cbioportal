@@ -111,4 +111,19 @@ public class DaoProteinContactMap {
             JdbcUtil.closeAll(DaoProteinContactMap.class, con, pstmt, rs);
         }
     }
+    
+    public static void deleteAllRecords() throws DaoException {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoProteinContactMap.class);
+            pstmt = con.prepareStatement("TRUNCATE TABLE protein_contact_map");
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoProteinContactMap.class, con, pstmt, rs);
+        }
+    }
 }

@@ -91,4 +91,19 @@ public class DaoPdbPtmData {
             JdbcUtil.closeAll(DaoPdbPtmData.class, con, pstmt, rs);
         }
     }
+    
+    public static void deleteAllRecords() throws DaoException {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoPdbPtmData.class);
+            pstmt = con.prepareStatement("TRUNCATE TABLE pdb_ptm_data");
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoPdbPtmData.class, con, pstmt, rs);
+        }
+    }
 }

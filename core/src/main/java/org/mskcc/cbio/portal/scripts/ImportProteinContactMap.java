@@ -95,6 +95,7 @@ public class ImportProteinContactMap {
             System.out.println("command line usage:  importPdbContactMap.pl <pdb-contact-map.txt>");
             System.exit(1);
         }
+        DaoProteinContactMap.deleteAllRecords();
         ProgressMonitor pMonitor = new ProgressMonitor();
         pMonitor.setConsoleMode(true);
 
