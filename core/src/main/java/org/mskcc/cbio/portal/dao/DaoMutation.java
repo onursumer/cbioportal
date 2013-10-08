@@ -1291,6 +1291,7 @@ public final class DaoMutation {
                     + "AND purm.`ALIGNMENT_ID`=pua.`ALIGNMENT_ID` "
                     + "AND me.`ONCOTATOR_UNIPROT_ENTRY_NAME`=pua.`UNIPROT_ID` "
                     + "AND me.`ONCOTATOR_PROTEIN_POS_START`=purm.`UNIPROT_POSITION` "
+                    + "AND purm.`MATCH`<>' ' AND purm.purm.`MATCH`<>'+' "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+concatCancerStudyIds+") "
                     + "AND me.`MUTATION_TYPE`='Missense_Mutation' ";
             if (concatEntrezGeneIds!=null) {
