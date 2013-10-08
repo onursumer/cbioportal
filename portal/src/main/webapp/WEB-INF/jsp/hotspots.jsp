@@ -1,6 +1,6 @@
 
 <%@ page import="org.mskcc.cbio.portal.servlet.QueryBuilder" %>
-<%@ page import="org.mskcc.cbio.cgds.model.CancerStudyStats" %>
+<%@ page import="org.mskcc.cbio.portal.model.CancerStudyStats" %>
 <%@ page import="org.mskcc.cbio.portal.util.DataSetsUtil" %> 
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.json.simple.JSONValue" %>
