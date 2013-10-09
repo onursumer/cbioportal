@@ -1,3 +1,5 @@
+nb-configuration.xml
+oncotator/src/main/resources/db.properties
 portal/Portal-Google-Code.ipr
 portal/Portal-Google-Code.iws
 portal/Portal.iml
@@ -59,4 +61,3 @@ mutation-assessor/target/*
 cbioportal-client/target/*
 mondrian-cy3-app/target/*
 nbactions.xml
-
