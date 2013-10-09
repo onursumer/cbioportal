@@ -27,6 +27,9 @@
 
 package org.mskcc.cbio.portal.dao;
 
+import org.mskcc.cbio.portal.model.PdbUniprotAlignment;
+import org.mskcc.cbio.portal.model.PdbUniprotResidueMapping;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -42,7 +45,8 @@ public final class DaoPdbUniprotResidueMapping {
     
     public static int addPdbUniprotAlignment(int alignId, String pdbId, String chain,
             String uniprotId, int pdbFrom, int pdbTo, int uniprotFrom, int uniprotTo,
-            double evalue, double identity, double identp) {
+            double evalue, double identity, double identp, String uniprotAlign,
+            String pdbAlign, String midline) {
         if (!MySQLbulkLoader.isBulkLoad()) {
             throw new IllegalStateException("only bulk load is supported");
         }
@@ -58,7 +62,10 @@ public final class DaoPdbUniprotResidueMapping {
                 Integer.toString(uniprotTo),
                 Double.toString(evalue),
                 Double.toString(identity),
-                Double.toString(identp));
+                Double.toString(identp),
+                uniprotAlign,
+                pdbAlign,
+                midline);
         return 1;
     }
     
@@ -77,143 +84,53 @@ public final class DaoPdbUniprotResidueMapping {
         // return 1 because normal insert will return 1 if no error occurs
         return 1;
     }
-    
-    /**
-     * 
-     * @param uniprotId
-     * @param uniprotPos
-     * @return Map<PdbId, Map<Chain, Position>>
-     * @throws DaoException 
-     */
-    public static Map<String, Map<String, Integer>> mapToPdbResidues(String uniprotId, int uniprotPos) throws DaoException {
-        Connection con = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
-            pstmt = con.prepareStatement("SELECT DISTINCT PDB_ID, CHAIN, PDB_POSITION "
-                    + "FROM pdb_uniprot_residue_mapping "
-                    + "WHERE UNIPROT_ID=? AND UNIPROT_POSITION=?");
-            pstmt.setString(1, uniprotId);
-            pstmt.setInt(2, uniprotPos);
-            rs = pstmt.executeQuery();
-            Map<String, Map<String, Integer>> map = new HashMap<String, Map<String, Integer>>();
-            while (rs.next()) {
-                String pdbId = rs.getString(1);
-                String chain = rs.getString(2);
-                int position = rs.getInt(3);
-                
-                Map<String, Integer> chains = map.get(pdbId);
-                if (chains==null) {
-                    chains = new HashMap<String, Integer>();
-                    map.put(pdbId, chains);
-                }
-                chains.put(chain, position);
-            }
-            return map;
-        } catch (SQLException e) {
-            throw new DaoException(e);
-        } finally {
-            JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
-        }
-    } 
-    
-    /**
-     * 
-     * @param uniprotId
-     * @return Map<PdbId, Set<Chain>>
-     * @throws DaoException 
-     */
-    public static Map<String, Set<String>> mapToPdbChains(String uniprotId) throws DaoException {
-        Connection con = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        try {
-            con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
-            pstmt = con.prepareStatement("SELECT DISTINCT PDB_ID, CHAIN "
-                    + "FROM pdb_uniprot_residue_mapping "
-                    + "WHERE UNIPROT_ID=?");
-            pstmt.setString(1, uniprotId);
-            rs = pstmt.executeQuery();
-            Map<String, Set<String>> map = new HashMap<String, Set<String>>();
-            while (rs.next()) {
-                String pdbId = rs.getString(1);
-                String chain = rs.getString(2);
-                
-                Set<String> chains = map.get(pdbId);
-                if (chains==null) {
-                    chains = new HashSet<String>();
-                    map.put(pdbId, chains);
-                }
-                chains.add(chain);
-            }
-            return map;
-        } catch (SQLException e) {
-            throw new DaoException(e);
-        } finally {
-            JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
-        }
-    }
-    
-    /**
-     * 
-     * @param uniprotId
-     * @param uniprotPositions
-     * @param pdbId
-     * @param chainId
-     * @return Map<Uniprot Position, PDB Chain Position>
-     * @throws DaoException 
-     */
-    public static Map<Integer, Integer> mapToPdbChains(String uniprotId,
-            Set<Integer> uniprotPositions,
-		    String pdbId,
-		    String chainId) throws DaoException
-    {
-	    Connection con = null;
-	    PreparedStatement pstmt = null;
-	    ResultSet rs = null;
-
-	    try {
-		    con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
-		    pstmt = con.prepareStatement("SELECT PDB_POSITION, UNIPROT_POSITION " +
-		                                 "FROM pdb_uniprot_residue_mapping " +
-		                                 "WHERE PDB_ID=? AND CHAIN=? AND UNIPROT_ID=?");
-		    pstmt.setString(1, pdbId);
-		    pstmt.setString(2, chainId);
-		    pstmt.setString(3, uniprotId);
-
-		    rs = pstmt.executeQuery();
-		    Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-
-		    while (rs.next())
-		    {
-			    Integer pdbPos = rs.getInt(1);
-			    Integer uniprotPos = rs.getInt(2);
-
-			    if (uniprotPositions.contains(uniprotPos))
-			    {
-				    map.put(uniprotPos, pdbPos);
-			    }
-		    }
-		    return map;
-	    } catch (SQLException e) {
-		    throw new DaoException(e);
-	    } finally {
-		    JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
-	    }
-    }
 
 	/**
+	 * Retrieves all alignments for the given Uniprot id.
 	 *
-	 * @param uniprotId
-	 * @param pdbId
-	 * @param chainId
-	 * @return Array [start position, end position]
+	 * @param uniprotId     uniprot id
+	 * @return  a list of PdbUniprotAlignment instances
 	 * @throws DaoException
 	 */
-	public static Integer[] getEndPositions(String uniprotId,
-			String pdbId,
-			String chainId) throws DaoException
+	public static List<PdbUniprotAlignment> getAlignments(String uniprotId) throws DaoException
+	{
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		try {
+			con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
+			pstmt = con.prepareStatement("SELECT * FROM pdb_uniprot_alignment " +
+			                             "WHERE UNIPROT_ID=?");
+			pstmt.setString(1, uniprotId);
+			rs = pstmt.executeQuery();
+
+			List<PdbUniprotAlignment> alignments = new ArrayList<PdbUniprotAlignment>();
+
+			while (rs.next())
+			{
+				alignments.add(extractAlignment(rs));
+			}
+
+			return alignments;
+		} catch (SQLException e) {
+			throw new DaoException(e);
+		} finally {
+			JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
+		}
+
+	}
+
+	/**
+	 * Maps the given Uniprot positions for the provided alignment id
+	 * to PDB positions (PdbUniprotResidueMapping instances).
+	 *
+	 * @param alignmentId       alignment id to match
+	 * @param uniprotPositions  set of uniprot positions
+	 * @return      a map of uniprot positions to pdb positions
+	 * @throws DaoException
+	 */
+	public static Map<Integer, PdbUniprotResidueMapping> mapToPdbResidues(int alignmentId,
+			Set<Integer> uniprotPositions) throws DaoException
 	{
 		Connection con = null;
 		PreparedStatement pstmt = null;
@@ -221,27 +138,26 @@ public final class DaoPdbUniprotResidueMapping {
 
 		try {
 			con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
-			pstmt = con.prepareStatement("SELECT MIN(`UNIPROT_POSITION`) AS MIN_POSITION, " +
-			                             "MAX(`UNIPROT_POSITION`) AS MAX_POSITION " +
-			                             "FROM pdb_uniprot_residue_mapping " +
-			                             "WHERE PDB_ID=? AND CHAIN=? AND UNIPROT_ID=?");
-			pstmt.setString(1, pdbId);
-			pstmt.setString(2, chainId);
-			pstmt.setString(3, uniprotId);
-
+			pstmt = con.prepareStatement("SELECT * FROM pdb_uniprot_residue_mapping " +
+			                             "WHERE ALIGNMENT_ID=? " +
+			                             "ORDER BY UNIPROT_POSITION ASC");
+			pstmt.setInt(1, alignmentId);
 			rs = pstmt.executeQuery();
-			Integer[] positions = new Integer[2];
 
-			if (rs.next())
+			Map<Integer, PdbUniprotResidueMapping> map = new HashMap<Integer, PdbUniprotResidueMapping>();
+
+			while (rs.next())
 			{
-				Integer minPos = rs.getInt(1);
-				Integer maxPos = rs.getInt(2);
+				PdbUniprotResidueMapping mapping = extractResidueMapping(rs);
 
-				positions[0] = minPos;
-				positions[1] = maxPos;
+				// only add positions matching the ones in the provided set
+				if (uniprotPositions.contains(mapping.getUniprotPos()))
+				{
+					map.put(mapping.getUniprotPos(), mapping);
+				}
 			}
 
-			return positions;
+			return map;
 		} catch (SQLException e) {
 			throw new DaoException(e);
 		} finally {
@@ -249,49 +165,78 @@ public final class DaoPdbUniprotResidueMapping {
 		}
 	}
 
+    public static void deleteAllRecords() throws DaoException {
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
+            pstmt = con.prepareStatement("TRUNCATE TABLE pdb_uniprot_alignment");
+            pstmt.executeUpdate();
+            pstmt = con.prepareStatement("TRUNCATE TABLE pdb_uniprot_residue_mapping");
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DaoException(e);
+        } finally {
+            JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
+        }
+    }
+
 	/**
+	 * Extracts a single result row into a PdbUniprotResidueMapping instance.
 	 *
-	 * @param uniprotId
-	 * @param pdbId
-	 * @param chainId
-	 * @return list of uniprot positions
-	 * @throws DaoException
+	 * @param rs    Result Set
+	 * @return      PdbUniprotResidueMapping instance
+	 * @throws SQLException
 	 */
-	public static List<Integer> getAllPositions(String uniprotId,
-			String pdbId,
-			String chainId) throws DaoException
+	private static PdbUniprotResidueMapping extractResidueMapping(ResultSet rs) throws SQLException
 	{
-		Connection con = null;
-		PreparedStatement pstmt = null;
-		ResultSet rs = null;
+		Integer alignmentId = rs.getInt(1);
+		Integer pdbPosition = rs.getInt(2);
+		Integer uniprotPosition = rs.getInt(3);
+		String match = rs.getString(4);
 
-		try {
-			con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
-			pstmt = con.prepareStatement("SELECT PDB_POSITION, UNIPROT_POSITION " +
-			                             "FROM pdb_uniprot_residue_mapping " +
-			                             "WHERE PDB_ID=? AND CHAIN=? AND UNIPROT_ID=? " +
-			                             "ORDER BY UNIPROT_POSITION ASC");
-			pstmt.setString(1, pdbId);
-			pstmt.setString(2, chainId);
-			pstmt.setString(3, uniprotId);
+		return new PdbUniprotResidueMapping(alignmentId,
+				pdbPosition,
+				uniprotPosition,
+				match);
+	}
 
-			rs = pstmt.executeQuery();
+	/**
+	 * Extracts a single result row into a PdbUniprotAlignment instance.
+	 *
+	 * @param rs    Result Set
+	 * @return      PdbUniprotAlignment instance
+	 * @throws SQLException
+	 */
+	private static PdbUniprotAlignment extractAlignment(ResultSet rs) throws SQLException
+	{
+		PdbUniprotAlignment alignment = new PdbUniprotAlignment();
 
-			List<Integer> positions = new ArrayList<Integer>();
+		Integer alignmentId = rs.getInt(1);
+		String pdbId = rs.getString(2);
+		String chain = rs.getString(3);
+		String uniprotId = rs.getString(4);
+		Integer pdbFrom = rs.getInt(5);
+		Integer pdbTo = rs.getInt(6);
+		Integer uniprotFrom = rs.getInt(7);
+		Integer uniprotTo = rs.getInt(8);
+		Float eValue = rs.getFloat(9);
+		Float identity = rs.getFloat(10);
+		Float identityProtein = rs.getFloat(11);
 
-			while (rs.next())
-			{
-				Integer pdbPos = rs.getInt(1);
-				Integer uniprotPos = rs.getInt(2);
+		alignment.setAlignmentId(alignmentId);
+		alignment.setPdbId(pdbId);
+		alignment.setChain(chain);
+		alignment.setUniprotId(uniprotId);
+		alignment.setUniprotFrom(uniprotFrom);
+		alignment.setUniprotTo(uniprotTo);
+		alignment.setPdbFrom(pdbFrom);
+		alignment.setPdbTo(pdbTo);
+		alignment.setEValue(eValue);
+		alignment.setIdentity(identity);
+		alignment.setIdentityProtein(identityProtein);
 
-				positions.add(uniprotPos);
-			}
-
-			return positions;
-		} catch (SQLException e) {
-			throw new DaoException(e);
-		} finally {
-			JdbcUtil.closeAll(DaoPdbUniprotResidueMapping.class, con, pstmt, rs);
-		}
+		return alignment;
 	}
 }
