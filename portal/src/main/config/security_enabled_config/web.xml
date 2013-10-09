@@ -408,12 +408,12 @@
     
     <servlet>
         <servlet-name>HotSpots</servlet-name>
-        <servlet-class>org.mskcc.cbio.portal.servlet.HotSpotsFinder</servlet-class>
+        <servlet-class>org.mskcc.cbio.portal.hotspots.HotspotsServlet</servlet-class>
     </servlet>
     
     <servlet-mapping>
         <servlet-name>HotSpots</servlet-name>
-        <url-pattern>/hotspots</url-pattern>
+        <url-pattern>/hotspots.do</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>

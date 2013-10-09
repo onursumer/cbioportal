@@ -18,7 +18,7 @@ for (CancerStudyStats stats : (new DataSetsUtil()).getCancerStudyStats()) {
 String jsonStudies = JSONValue.toJSONString(studies);
 %>
 
-<jsp:include page="global/header.jsp" flush="true" />
+<jsp:include page="WEB-INF/jsp/global/header.jsp" flush="true" />
 <table border="0px">
     <tr valign="top">
         <td>
@@ -54,14 +54,14 @@ String jsonStudies = JSONValue.toJSONString(studies);
   </tr>
   <tr>
     <td colspan="3">
-	<jsp:include page="global/footer.jsp" flush="true" />
+	<jsp:include page="WEB-INF/jsp/global/footer.jsp" flush="true" />
     </td>
   </tr>
 </table>
 </center>
 </div>
 </form>
-<jsp:include page="global/xdebug.jsp" flush="true" />
+<jsp:include page="WEB-INF/jsp/global/xdebug.jsp" flush="true" />
 
 <script type="text/template" id="form-template">
     <div>
@@ -79,7 +79,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
         <select id="data-type">
             <option selected="selected" value="missense">Missense and In-frame Mutations</option>
             <option value="truncating-sep">Truncating Mutations</option>
-            <option value="truncating">Truncating Mutations (merge by gene)</option>
+            <!--option value="truncating">Truncating Mutations (merge by gene)</option-->
             <option value="linear-1">Linear hotspots (d<=1)</option>
             <option value="linear-2">Linear hotspots (d<=2)</option>
             <option value="linear-4">Linear hotspots (d<=4)</option>
@@ -247,7 +247,7 @@ AlteredGene.Alterations = Backbone.Collection.extend({
     initialize: function(models, options) {
     },
     model: AlteredGene.Alteration,
-    url: 'mutations.json',
+    url: 'hotspots.do',
     parse: function(statistics) {
         var ret = [];
         var geneSampleMap = {}; //map<gene,samples>

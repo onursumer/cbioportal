@@ -96,7 +96,7 @@
       <intercept-url pattern="/clinicaltrials.json*" access="isAuthenticated()"/>
       <intercept-url pattern="/similar_patients.json*" access="isAuthenticated()"/>
       <intercept-url pattern="/GeneData.json*" access="isAuthenticated()"/>
-      <intercept-url pattern="/hotspots*" access="isAuthenticated()"/>
+      <intercept-url pattern="/hotspots.do*" access="isAuthenticated()"/>
       <intercept-url pattern="/clinical.json*" access="isAuthenticated()"/>
       <intercept-url pattern="/clinicalAttributes.json*" access="isAuthenticated()"/>
       <intercept-url pattern="/tools.jsp*" access="isAuthenticated()"/>
