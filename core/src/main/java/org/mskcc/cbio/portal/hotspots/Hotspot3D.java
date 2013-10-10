@@ -26,23 +26,19 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
-import org.apache.commons.lang.StringUtils;
-import org.mskcc.cbio.portal.model.CanonicalGene;
 
 /**
  *
  * @author jgao
  */
-public class Hotspot3D extends HotspotImpl{
+public class Hotspot3D extends HotspotImpl {
     protected String pdbId;
     protected String chain;
     
-    public Hotspot3D(CanonicalGene gene, Set<Integer> residues,
+    public Hotspot3D(Protein protein, Set<Integer> residues,
             String pdbId, String chain) {
-        super(gene, residues);
+        super(protein, residues);
         this.pdbId = pdbId;
         this.chain = chain;
     }
@@ -61,19 +57,5 @@ public class Hotspot3D extends HotspotImpl{
 
     public void setChain(String chain) {
         this.chain = chain;
-    }
-    
-    /**
-     * 
-     * @return 
-     */
-    @Override
-    public String getLabel() {
-        if (label != null) {
-            return label;
-        }
-
-        return gene.getHugoGeneSymbolAllCaps() + "_" + pdbId + "_"+ chain
-                +" "+StringUtils.join(new TreeSet<Integer>(residues),";");
     }
 }

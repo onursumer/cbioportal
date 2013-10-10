@@ -39,10 +39,10 @@ import org.mskcc.cbio.portal.model.CanonicalGene;
  * @author jgao
  */
 public class HotspotImpl implements Hotspot {
-    protected CanonicalGene gene;
-    protected Set<Integer> residues;
-    protected Map<Sample,Set<String>> samples; //Map<Sample, AA changes>
-    protected String label;
+    private Protein protein;
+    private Set<Integer> residues;
+    private Map<Sample,Set<String>> samples; //Map<Sample, AA changes>
+    private String label;
 
     /**
      * 
@@ -50,8 +50,8 @@ public class HotspotImpl implements Hotspot {
      * @param residues
      * @param label 
      */
-    public HotspotImpl(CanonicalGene gene, Set<Integer> residues) {
-        this.gene = gene;
+    public HotspotImpl(Protein protein, Set<Integer> residues) {
+        this.protein = protein;
         this.residues = residues;
         this.samples = new HashMap<Sample, Set<String>>();
     }
@@ -61,8 +61,8 @@ public class HotspotImpl implements Hotspot {
      * @return gene
      */
     @Override
-    public CanonicalGene getGene() {
-        return gene;
+    public Protein getProtein() {
+        return protein;
     }
     
     /**
@@ -108,15 +108,12 @@ public class HotspotImpl implements Hotspot {
             return label;
         }
 
-        return gene.getHugoGeneSymbolAllCaps()+" "+StringUtils.join(new TreeSet<Integer>(getResidues()),";");
+        return protein.toString()+" "+StringUtils.join(new TreeSet<Integer>(getResidues()),";");
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 67 * hash + (this.gene != null ? this.gene.hashCode() : 0);
-        hash = 67 * hash + (this.residues != null ? this.residues.hashCode() : 0);
-        return hash;
+        return getLabel().hashCode();
     }
 
     @Override
@@ -128,12 +125,6 @@ public class HotspotImpl implements Hotspot {
             return false;
         }
         final Hotspot other = (Hotspot) obj;
-        if (this.gene != other.getGene() && (this.gene == null || !this.gene.equals(other.getGene()))) {
-            return false;
-        }
-        if (this.residues != other.getResidues() && (this.residues == null || !this.residues.equals(other.getResidues()))) {
-            return false;
-        }
-        return true;
+        return getLabel().equals(other.getLabel());
     }
 }

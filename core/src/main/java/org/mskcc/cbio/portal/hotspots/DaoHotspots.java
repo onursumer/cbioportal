@@ -61,6 +61,20 @@ public class DaoHotspots {
             String[] types, int thresholdSamples, String concatEntrezGeneIds,
             String concatExcludeEntrezGeneIds) throws DaoException {
         HotspotTransformer transformer = new HotspotTransformer() {
+            @Override
+            public Set<Hotspot> transform(Set<Hotspot> hotspots) {
+                return hotspots;
+            }
+        };
+        return getHotspots(concatCancerStudyIds, types, thresholdSamples,
+                concatEntrezGeneIds, concatExcludeEntrezGeneIds, transformer);
+    }
+    
+    public static Set<Hotspot> get3DHotspots(String concatCancerStudyIds,
+            String[] types, int thresholdSamples, final double thresholdDistanceError,
+            String concatEntrezGeneIds, String concatExcludeEntrezGeneIds) throws DaoException {
+        HotspotTransformer transformer = new HotspotTransformer() {
+            @Override
             public Set<Hotspot> transform(Set<Hotspot> hotspots) {
                 return hotspots;
             }
@@ -75,7 +89,7 @@ public class DaoHotspots {
      * @param thresholdSamples threshold of number of samples
      * @return Map<hotspot, Map<CancerStudyId, Map<CaseId,AAchange>>>
      */
-    public static Set<Hotspot> getHotspots(String concatCancerStudyIds,
+    private static Set<Hotspot> getHotspots(String concatCancerStudyIds,
             String[] types, int thresholdSamples, String concatEntrezGeneIds,
             String concatExcludeEntrezGeneIds, HotspotTransformer transformer) throws DaoException {
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
@@ -85,7 +99,7 @@ public class DaoHotspots {
         try {
             con = JdbcUtil.getDbConnection(DaoHotspots.class);
             String keywords = "(`KEYWORD` LIKE '%"+StringUtils.join(types,"' OR `KEYWORD` LIKE '%") +"') ";
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `KEYWORD`, `CASE_ID`, `PROTEIN_CHANGE`, "
+            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `CASE_ID`, `PROTEIN_CHANGE`, "
                     + "`ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
@@ -98,16 +112,16 @@ public class DaoHotspots {
             if (concatExcludeEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
-            sql += "ORDER BY me.`ENTREZ_GENE_ID`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`"; // to filter and save memories
+            sql += "ORDER BY me.`ENTREZ_GENE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
             Set<Hotspot> hotspots = new HashSet<Hotspot>();
-            Set<Hotspot> hotspotsForAGene = new HashSet<Hotspot>();
-            Hotspot hotspot = new HotspotImpl(null, null);
+            Set<Hotspot> hotspotsForAProtein = new HashSet<Hotspot>();
+            Hotspot hotspot = new HotspotImpl(null, null); // just a dummy one to start with
             while (rs.next()) {
                 int cancerStudyId = rs.getInt(1);
-                String keyword = rs.getString(2);
+                String uniprotId = rs.getString(2);
                 String caseId = rs.getString(3);
                 Sample sample = new SampleImpl(caseId, DaoCancerStudy.getCancerStudyByInternalId(cancerStudyId));
                 String aaChange = rs.getString(4);
@@ -117,19 +131,20 @@ public class DaoHotspots {
                 for (int res=start; res<=end; res++) {
                     residues.add(res);
                 }
-                CanonicalGene gene = daoGeneOptimized.getGene(rs.getLong(7));
+                ProteinImpl protein = new ProteinImpl(daoGeneOptimized.getGene(rs.getLong(7)));
+                protein.setUniprotId(uniprotId);
                 
-                if (!gene.equals(hotspot.getGene()) || !residues.equals(hotspot.getResidues())) {
+                if (!protein.equals(hotspot.getProtein()) || !residues.equals(hotspot.getResidues())) {
                     // a new hotspot
                     if (hotspot.getSamples().size()>=thresholdSamples) {
-                        hotspotsForAGene.add(hotspot);
+                        hotspotsForAProtein.add(hotspot);
                     }
-                    hotspot = new HotspotImpl(gene, residues);
+                    hotspot = new HotspotImpl(protein, residues);
                 
-                    if (!gene.equals(hotspot.getGene())) {
+                    if (!protein.equals(hotspot.getProtein())) {
                         // a new gene
-                        hotspots.addAll(transformer.transform(hotspotsForAGene));
-                        hotspotsForAGene = new HashSet<Hotspot>();
+                        hotspots.addAll(transformer.transform(hotspotsForAProtein));
+                        hotspotsForAProtein = new HashSet<Hotspot>();
                     }
                 }
                 
@@ -138,11 +153,11 @@ public class DaoHotspots {
             
             // last hot spot 
             if (hotspot.getSamples().size()>=thresholdSamples) {
-                hotspotsForAGene.add(hotspot);
+                hotspotsForAProtein.add(hotspot);
             }
             
             // last gene
-            hotspots.addAll(transformer.transform(hotspotsForAGene));
+            hotspots.addAll(transformer.transform(hotspotsForAProtein));
             
             return hotspots;
         } catch (SQLException e) {
