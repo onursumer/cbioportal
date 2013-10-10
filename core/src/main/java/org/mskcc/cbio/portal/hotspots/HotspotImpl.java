@@ -26,6 +26,9 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang.StringUtils;
@@ -36,9 +39,10 @@ import org.mskcc.cbio.portal.model.CanonicalGene;
  * @author jgao
  */
 public class HotspotImpl implements Hotspot {
-    private CanonicalGene gene;
-    private Set<Integer> residues;
-    private String label;
+    protected CanonicalGene gene;
+    protected Set<Integer> residues;
+    protected Map<Sample,Set<String>> samples; //Map<Sample, AA changes>
+    protected String label;
 
     /**
      * 
@@ -49,6 +53,7 @@ public class HotspotImpl implements Hotspot {
     public HotspotImpl(CanonicalGene gene, Set<Integer> residues) {
         this.gene = gene;
         this.residues = residues;
+        this.samples = new HashMap<Sample, Set<String>>();
     }
     
     /**
@@ -68,6 +73,22 @@ public class HotspotImpl implements Hotspot {
     public Set<Integer> getResidues() {
         return residues;
     }
+    
+    @Override
+    public Map<Sample,Set<String>> getSamples() {
+        return samples;
+    }
+
+    @Override
+    public void addSample(Sample sample, String aaChange) {
+        Set<String> aaChanges = this.samples.get(sample);
+        if (aaChanges==null) {
+            aaChanges = new HashSet<String>();
+            this.samples.put(sample, aaChanges);
+        }
+        aaChanges.add(aaChange);
+    }
+
 
     /**
      * 
@@ -87,7 +108,7 @@ public class HotspotImpl implements Hotspot {
             return label;
         }
 
-        return gene.getHugoGeneSymbolAllCaps()+" "+StringUtils.join(new TreeSet<Integer>(residues),";");
+        return gene.getHugoGeneSymbolAllCaps()+" "+StringUtils.join(new TreeSet<Integer>(getResidues()),";");
     }
 
     @Override

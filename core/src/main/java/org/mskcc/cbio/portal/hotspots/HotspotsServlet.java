@@ -99,7 +99,7 @@ public class HotspotsServlet extends HttpServlet {
             }
         }
         
-        Map<Hotspot,Map<Integer, Map<String,Set<String>>>> mapKeywordStudyCaseMut = Collections.emptyMap();
+        Set<Hotspot> hotspots = Collections.emptySet();
         Map<Integer,String> cancerStudyIdMapping = new HashMap<Integer,String>();
         String[] studyStableIds = studyStableIdsStr.split("[, ]+");
         
@@ -138,8 +138,8 @@ public class HotspotsServlet extends HttpServlet {
 //                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             } else {
                 
-                mapKeywordStudyCaseMut = DaoHotspots.getSingleHotspots(
-                        studyIds.toString(), type.split("[, ]+"), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
+                hotspots = DaoHotspots.getSingleHotspots(studyIds.toString(),
+                        type.split("[, ]+"), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
             }
         } catch (DaoException ex) {
             throw new ServletException(ex);
@@ -147,12 +147,20 @@ public class HotspotsServlet extends HttpServlet {
         
         // transform the data to use stable cancer study id
         Map<String,Map<String, Map<String,Set<String>>>> map =
-                new HashMap<String,Map<String, Map<String,Set<String>>>>(mapKeywordStudyCaseMut.size());
-        for (Map.Entry<Hotspot,Map<Integer, Map<String,Set<String>>>> entry1 : mapKeywordStudyCaseMut.entrySet()) {
-            String label = entry1.getKey().getLabel();
-            Map<String, Map<String,Set<String>>> map1 = new HashMap<String, Map<String,Set<String>>>(entry1.getValue().size());
-            for (Map.Entry<Integer, Map<String,Set<String>>> entry2 : entry1.getValue().entrySet()) {
-                map1.put(cancerStudyIdMapping.get(entry2.getKey()), entry2.getValue());
+                new HashMap<String,Map<String, Map<String,Set<String>>>>(hotspots.size());
+        for (Hotspot hotspot : hotspots) {
+            String label = hotspot.getLabel();
+            Map<String, Map<String,Set<String>>> map1 = new HashMap<String, Map<String,Set<String>>>();
+            for (Map.Entry<Sample, Set<String>> entry : hotspot.getSamples().entrySet()) {
+                String cancerStudy = entry.getKey().getCancerStudy().getCancerStudyStableId();
+                Map<String,Set<String>> map2 = map1.get(cancerStudy);
+                if (map2==null) {
+                    map2 = new HashMap<String,Set<String>>();
+                    map1.put(cancerStudy, map2);
+                }
+                
+                String caseId = entry.getKey().getSampleId();
+                map2.put(caseId, entry.getValue());
             }
             map.put(label, map1);
         }

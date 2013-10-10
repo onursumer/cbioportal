@@ -26,6 +26,7 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
+import java.util.Map;
 import java.util.Set;
 import org.mskcc.cbio.portal.model.CanonicalGene;
 
@@ -46,6 +47,19 @@ public interface Hotspot {
      * @return residues
      */
     public Set<Integer> getResidues();
+    
+    /**
+     * 
+     * @return Map<Sample, AA_Changes>
+     */
+    public Map<Sample, Set<String>> getSamples();
+    
+    /**
+     * Add a sample with aa change
+     * @param sample
+     * @param aaChange 
+     */
+    public void addSample(Sample sample, String aaChange);
     
     /**
      * 
