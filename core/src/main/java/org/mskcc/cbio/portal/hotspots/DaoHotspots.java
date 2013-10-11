@@ -30,17 +30,20 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoException;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
+import org.mskcc.cbio.portal.dao.DaoPfamGraphics;
 import org.mskcc.cbio.portal.dao.JdbcUtil;
 import org.mskcc.cbio.portal.model.CanonicalGene;
+import org.mskcc.cbio.portal.model.ExtendedMutation;
 
 /**
  *
@@ -99,8 +102,8 @@ public class DaoHotspots {
         try {
             con = JdbcUtil.getDbConnection(DaoHotspots.class);
             String keywords = "(`KEYWORD` LIKE '%"+StringUtils.join(types,"' OR `KEYWORD` LIKE '%") +"') ";
-            String sql = "SELECT  gp.`CANCER_STUDY_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `CASE_ID`, `PROTEIN_CHANGE`, "
-                    + "`ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
+            String sql = "SELECT  gp.`GENETIC_PROFILE_ID`, gp.`CANCER_STUDY_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, `CASE_ID`, "
+                    + "`PROTEIN_CHANGE`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
@@ -112,7 +115,8 @@ public class DaoHotspots {
             if (concatExcludeEntrezGeneIds!=null) {
                 sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+concatExcludeEntrezGeneIds+") ";
             }
-            sql += "ORDER BY me.`ENTREZ_GENE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`"; // to filter and save memories
+            sql += "ORDER BY me.`ENTREZ_GENE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, "
+                    + " `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
@@ -120,19 +124,25 @@ public class DaoHotspots {
             Set<Hotspot> hotspotsForAProtein = new HashSet<Hotspot>();
             Hotspot hotspot = new HotspotImpl(null, null); // just a dummy one to start with
             while (rs.next()) {
-                int cancerStudyId = rs.getInt(1);
-                String uniprotId = rs.getString(2);
-                String caseId = rs.getString(3);
+                int geneticProfileId = rs.getInt("GENETIC_PROFILE_ID");
+                int cancerStudyId = rs.getInt("CANCER_STUDY_ID");
+                String uniprotId = rs.getString("ONCOTATOR_UNIPROT_ENTRY_NAME");
+                String uniprotAcc = rs.getString("ONCOTATOR_UNIPROT_ACCESSION");
+                int length = getProteinLength(uniprotAcc);
+                
+                String caseId = rs.getString("CASE_ID");
                 Sample sample = new SampleImpl(caseId, DaoCancerStudy.getCancerStudyByInternalId(cancerStudyId));
-                String aaChange = rs.getString(4);
-                int start = rs.getInt(5);
-                int end = rs.getInt(6);
+                String aaChange = rs.getString("PROTEIN_CHANGE");
+                int start = rs.getInt("ONCOTATOR_PROTEIN_POS_START");
+                int end = rs.getInt("ONCOTATOR_PROTEIN_POS_END");
                 Set<Integer> residues = new HashSet<Integer>(end-start+1);
                 for (int res=start; res<=end; res++) {
                     residues.add(res);
                 }
-                ProteinImpl protein = new ProteinImpl(daoGeneOptimized.getGene(rs.getLong(7)));
+                CanonicalGene gene = daoGeneOptimized.getGene(rs.getLong("ENTREZ_GENE_ID"));
+                ProteinImpl protein = new ProteinImpl(gene);
                 protein.setUniprotId(uniprotId);
+                protein.setProteinLength(length);
                 
                 if (!protein.equals(hotspot.getProtein()) || !residues.equals(hotspot.getResidues())) {
                     // a new hotspot
@@ -148,7 +158,13 @@ public class DaoHotspots {
                     }
                 }
                 
-                hotspot.addSample(sample, aaChange);
+                ExtendedMutation mutation = new ExtendedMutation();
+                mutation.setCaseId(caseId);
+                mutation.setGeneticProfileId(geneticProfileId);
+                mutation.setProteinChange(aaChange);
+                mutation.setGene(gene);
+                
+                hotspot.addMutation(mutation);
             }
             
             // last hot spot 
@@ -304,4 +320,34 @@ public class DaoHotspots {
 //            JdbcUtil.closeAll(DaoMutation.class, con, pstmt, rs);
 //        }
 //    }
+    
+    private static Map<String, Integer> mapUniprotProteinLengths = null;
+    private static int getProteinLength(String uniprotAcc) {
+        if (mapUniprotProteinLengths == null) {
+            mapUniprotProteinLengths = new HashMap<String, Integer>();
+            
+            Map<String, String> pfamGraphics;
+            try {
+                pfamGraphics = DaoPfamGraphics.getAllPfamGraphics();
+            } catch (DaoException e) {
+                e.printStackTrace();
+                return -1;
+            }
+            
+            Pattern p = Pattern.compile("\"length\":\"([0-9]+)\"");
+            
+            for (Map.Entry<String, String> entry : pfamGraphics.entrySet()) {
+                String uni = entry.getKey();
+                String json = entry.getValue();
+                Matcher m = p.matcher(json);
+                if (m.find()) {
+                    Integer length = Integer.valueOf(m.group(1));
+                    mapUniprotProteinLengths.put(uni, length);
+                }
+            }
+        }
+        
+        Integer ret = mapUniprotProteinLengths.get(uniprotAcc);
+        return ret==null?-1:ret;
+    }
 }

@@ -43,8 +43,10 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoException;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
+import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
 import org.mskcc.cbio.portal.model.CancerStudy;
 import org.mskcc.cbio.portal.model.CanonicalGene;
+import org.mskcc.cbio.portal.model.ExtendedMutation;
 import org.mskcc.cbio.portal.servlet.QueryBuilder;
 
 /**
@@ -151,16 +153,24 @@ public class HotspotsServlet extends HttpServlet {
         for (Hotspot hotspot : hotspots) {
             String label = hotspot.getLabel();
             Map<String, Map<String,Set<String>>> map1 = new HashMap<String, Map<String,Set<String>>>();
-            for (Map.Entry<Sample, Set<String>> entry : hotspot.getSamples().entrySet()) {
-                String cancerStudy = entry.getKey().getCancerStudy().getCancerStudyStableId();
+            for (ExtendedMutation mutation : hotspot.getMutations()) {
+                String cancerStudy = DaoCancerStudy.getCancerStudyByInternalId(
+                        DaoGeneticProfile.getGeneticProfileById(
+                        mutation.getGeneticProfileId()).getCancerStudyId()).getCancerStudyStableId();
                 Map<String,Set<String>> map2 = map1.get(cancerStudy);
                 if (map2==null) {
                     map2 = new HashMap<String,Set<String>>();
                     map1.put(cancerStudy, map2);
                 }
                 
-                String caseId = entry.getKey().getSampleId();
-                map2.put(caseId, entry.getValue());
+                String caseId = mutation.getCaseId();
+                
+                Set<String> aaChanges = map2.get(caseId);
+                if (aaChanges==null) {
+                    aaChanges = new HashSet<String>();
+                    map2.put(caseId, aaChanges);
+                }
+                aaChanges.add(mutation.getProteinChange());
             }
             map.put(label, map1);
         }
@@ -195,6 +205,9 @@ public class HotspotsServlet extends HttpServlet {
         } finally {            
             out.close();
         }
+    }
+
+    public HotspotsServlet() {
     }
     
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">

@@ -26,13 +26,15 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang.StringUtils;
-import org.mskcc.cbio.portal.model.CanonicalGene;
+import org.mskcc.cbio.portal.dao.DaoCancerStudy;
+import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
+import org.mskcc.cbio.portal.model.CancerStudy;
+import org.mskcc.cbio.portal.model.ExtendedMutation;
 
 /**
  *
@@ -41,7 +43,8 @@ import org.mskcc.cbio.portal.model.CanonicalGene;
 public class HotspotImpl implements Hotspot {
     private Protein protein;
     private Set<Integer> residues;
-    private Map<Sample,Set<String>> samples; //Map<Sample, AA changes>
+    private List<ExtendedMutation> mutations;
+    private List<Sample> samples;
     private String label;
 
     /**
@@ -53,7 +56,8 @@ public class HotspotImpl implements Hotspot {
     public HotspotImpl(Protein protein, Set<Integer> residues) {
         this.protein = protein;
         this.residues = residues;
-        this.samples = new HashMap<Sample, Set<String>>();
+        this.mutations = new ArrayList<ExtendedMutation>();
+        this.samples = new ArrayList<Sample>();
     }
     
     /**
@@ -75,20 +79,22 @@ public class HotspotImpl implements Hotspot {
     }
     
     @Override
-    public Map<Sample,Set<String>> getSamples() {
-        return samples;
+    public List<ExtendedMutation> getMutations() {
+        return mutations;
     }
 
     @Override
-    public void addSample(Sample sample, String aaChange) {
-        Set<String> aaChanges = this.samples.get(sample);
-        if (aaChanges==null) {
-            aaChanges = new HashSet<String>();
-            this.samples.put(sample, aaChanges);
-        }
-        aaChanges.add(aaChange);
+    public void addMutation(ExtendedMutation mutation) {
+        mutations.add(mutation);
+        CancerStudy cancerStudy = DaoCancerStudy.getCancerStudyByInternalId(
+                DaoGeneticProfile.getGeneticProfileById(mutation.getGeneticProfileId()).getCancerStudyId());
+        samples.add(new SampleImpl(mutation.getCaseId(), cancerStudy));
     }
 
+    @Override
+    public List<Sample> getSamples() {
+        return samples;
+    }
 
     /**
      * 

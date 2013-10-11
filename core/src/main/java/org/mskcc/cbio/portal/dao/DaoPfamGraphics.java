@@ -31,6 +31,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Dao for the pfam graphics cache.
@@ -54,7 +56,7 @@ public class DaoPfamGraphics
 
 		try
 		{
-			con = JdbcUtil.getDbConnection(DaoTextCache.class);
+			con = JdbcUtil.getDbConnection(DaoPfamGraphics.class);
 			pstmt = con.prepareStatement(
 				"INSERT INTO pfam_graphics (`UNIPROT_ID`, `JSON_DATA`) VALUES (?,?)");
 			pstmt.setString(1, uniprotId);
@@ -70,7 +72,7 @@ public class DaoPfamGraphics
 		}
 		finally
 		{
-			JdbcUtil.closeAll(DaoTextCache.class, con, pstmt, rs);
+			JdbcUtil.closeAll(DaoPfamGraphics.class, con, pstmt, rs);
 		}
 	}
 
@@ -89,7 +91,7 @@ public class DaoPfamGraphics
 
 		try
 		{
-			con = JdbcUtil.getDbConnection(DaoTextCache.class);
+			con = JdbcUtil.getDbConnection(DaoPfamGraphics.class);
 			pstmt = con.prepareStatement(
 					"SELECT * FROM pfam_graphics WHERE UNIPROT_ID=?");
 			pstmt.setString(1, uniprotId);
@@ -108,7 +110,38 @@ public class DaoPfamGraphics
 		}
 		finally
 		{
-			JdbcUtil.closeAll(DaoTextCache.class, con, pstmt, rs);
+			JdbcUtil.closeAll(DaoPfamGraphics.class, con, pstmt, rs);
+		}
+	}
+        
+        public static Map<String,String> getAllPfamGraphics()  throws DaoException
+	{
+		Connection con = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+
+		try
+		{
+			con = JdbcUtil.getDbConnection(DaoPfamGraphics.class);
+			pstmt = con.prepareStatement(
+					"SELECT * FROM pfam_graphics");
+			rs = pstmt.executeQuery();
+
+                        Map<String,String> map = new HashMap<String,String>();
+			while (rs.next())
+			{
+				map.put(rs.getString("UNIPROT_ID"), rs.getString("JSON_DATA"));
+			}
+
+			return map;
+		}
+		catch (SQLException e)
+		{
+			throw new DaoException(e);
+		}
+		finally
+		{
+			JdbcUtil.closeAll(DaoPfamGraphics.class, con, pstmt, rs);
 		}
 	}
 }
