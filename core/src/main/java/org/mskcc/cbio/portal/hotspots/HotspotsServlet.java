@@ -28,6 +28,7 @@ package org.mskcc.cbio.portal.hotspots;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -76,11 +77,9 @@ public class HotspotsServlet extends HttpServlet {
         String type = request.getParameter(MUTATION_TYPE);
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
         String genes = request.getParameter(GENES);
-        String concatEntrezGeneIds = null;
-        String concatExcludeEntrezGeneIds = null;
+        Set<Long>  entrezGeneIds = new HashSet<Long>();
+        Set<Long>  excludeEntrezGeneIds = new HashSet<Long>();
         if (genes!=null) {
-            Set<Long> entrezGeneIds = new HashSet<Long>();
-            Set<Long> excludeEntrezGeneIds = new HashSet<Long>();
             DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
             for (String gene : genes.split("[, ]+")) {
                 CanonicalGene canonicalGene = daoGeneOptimized.getGene(gene);
@@ -92,13 +91,7 @@ public class HotspotsServlet extends HttpServlet {
                         excludeEntrezGeneIds.add(canonicalGene.getEntrezGeneId());
                     }
                 }
-            }
-            if (!entrezGeneIds.isEmpty()) {
-                concatEntrezGeneIds = StringUtils.join(entrezGeneIds, ",");
-            }
-            if (!excludeEntrezGeneIds.isEmpty()) {
-                concatExcludeEntrezGeneIds = StringUtils.join(excludeEntrezGeneIds, ",");
-            }
+            };
         }
         
         Set<Hotspot> hotspots = Collections.emptySet();
@@ -106,19 +99,18 @@ public class HotspotsServlet extends HttpServlet {
         String[] studyStableIds = studyStableIdsStr.split("[, ]+");
         
         try {
-            StringBuilder studyIds = new StringBuilder();
+            Set<Integer> studyIds = new HashSet<Integer>();
             for (String stableId : studyStableIds) {
                 CancerStudy study = DaoCancerStudy.getCancerStudyByStableId(stableId);
                 if (study!=null) {
-                    studyIds.append(study.getInternalId()).append(",");
+                    studyIds.add(study.getInternalId());
                     cancerStudyIdMapping.put(study.getInternalId(), stableId);
                 }
             }
-            if (studyIds.length()>0) {
-                studyIds.deleteCharAt(studyIds.length()-1);
-            }
             
-            if (type.startsWith("ptm-effect")) {
+            HotspotDetective hotspotDetective;
+            
+//            if (type.startsWith("ptm-effect")) {
 //                int thresholdDis = Integer.parseInt(request.getParameter(THRESHOLD_DISTANCE_PTM_MUTATION));
 //                String ptmType = request.getParameter(PTM_TYPE);
 //                mapKeywordStudyCaseMut = DaoMutation.getPtmEffectStatistics(
@@ -138,12 +130,13 @@ public class HotspotsServlet extends HttpServlet {
 //            } else if (type.equalsIgnoreCase("pdb-ptm")) {
 //                mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
 //                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
-            } else {
+//            } else {
+                hotspotDetective = new SingleHotspotDetective(studyIds, Arrays.asList(type.split("[, ]+")),
+                        threshold, entrezGeneIds, excludeEntrezGeneIds);
+//            }
                 
-                hotspots = DaoHotspots.getSingleHotspots(studyIds.toString(),
-                        type.split("[, ]+"), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
-            }
-        } catch (DaoException ex) {
+              hotspots = hotspotDetective.detectHotspot();
+        } catch (HotspotException ex) {
             throw new ServletException(ex);
         }
         
