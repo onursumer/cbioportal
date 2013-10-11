@@ -31,6 +31,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -56,6 +57,8 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     private int thresholdSamples;
     private Collection<Long> entrezGeneIds;
     private Collection<Long>  excludeEntrezGeneIds;
+    
+    private Set<Hotspot> hotspots = null;
 
     public AbstractHotspotDetective(Collection<Integer> cancerStudyIds, Collection<String> mutationTypes,
             int thresholdSamples, Collection<Long> entrezGeneIds, Collection<Long> excludeEntrezGeneIds) {
@@ -74,7 +77,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     protected abstract Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspots);
     
     @Override
-    public Set<Hotspot> detectHotspot() throws HotspotException {
+    public void detectHotspot() throws HotspotException {
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -100,7 +103,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Set<Hotspot> hotspots = new HashSet<Hotspot>();
+            hotspots = new HashSet<Hotspot>();
             Set<Hotspot> hotspotsForAProtein = new HashSet<Hotspot>();
             Hotspot hotspot = new HotspotImpl(null, null); // just a dummy one to start with
             while (rs.next()) {
@@ -154,8 +157,6 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             
             // last gene
             hotspots.addAll(processSingleHotspotsOnAProtein(hotspotsForAProtein));
-            
-            return hotspots;
         } catch (SQLException e) {
             throw new HotspotException(e);
         } finally {
@@ -163,7 +164,13 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         }
     }
     
-    
+    @Override
+    public Set<Hotspot> getDetectedHotspots() {
+        if (hotspots==null) {
+            throw new java.lang.IllegalStateException("No detection has ran.");
+        }
+        return Collections.unmodifiableSet(hotspots);
+    }
     
     private static Map<String, Integer> mapUniprotProteinLengths = null;
     private static int getProteinLength(String uniprotAcc) {

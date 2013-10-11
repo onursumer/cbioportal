@@ -33,5 +33,17 @@ import java.util.Set;
  * @author jgao
  */
 public interface HotspotDetective {
-    Set<Hotspot> detectHotspot() throws HotspotException;
+    /**
+     * 
+     * @throws HotspotException 
+     */
+    void detectHotspot() throws HotspotException;
+    
+    /**
+     * 
+     * @return 
+     */
+    Set<Hotspot> getDetectedHotspots();
+    
+    
 }

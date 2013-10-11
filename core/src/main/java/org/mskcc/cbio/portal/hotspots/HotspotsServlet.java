@@ -135,7 +135,8 @@ public class HotspotsServlet extends HttpServlet {
                         threshold, entrezGeneIds, excludeEntrezGeneIds);
 //            }
                 
-              hotspots = hotspotDetective.detectHotspot();
+              hotspotDetective.detectHotspot();
+              hotspots = hotspotDetective.getDetectedHotspots();
         } catch (HotspotException ex) {
             throw new ServletException(ex);
         }
