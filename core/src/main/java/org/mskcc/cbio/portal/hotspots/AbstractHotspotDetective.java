@@ -39,6 +39,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoException;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
@@ -59,6 +61,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     private Collection<Long>  excludeEntrezGeneIds;
     
     private Set<Hotspot> hotspots = null;
+    protected Map<Protein, Integer> numberOfAllMutationOnProteins = new HashMap<Protein, Integer>();
 
     public AbstractHotspotDetective(Collection<Integer> cancerStudyIds, Collection<String> mutationTypes,
             int thresholdSamples, Collection<Long> entrezGeneIds, Collection<Long> excludeEntrezGeneIds) {
@@ -75,6 +78,8 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
      * @return 
      */
     protected abstract Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspots);
+    
+    //protected abstract void setNumberOfAllMutationOnProteins(Set<Protein> proteins);
     
     @Override
     public void detectHotspot() throws HotspotException {
@@ -200,5 +205,37 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         
         Integer ret = mapUniprotProteinLengths.get(uniprotAcc);
         return ret==null?-1:ret;
+    }
+    
+    private double calculatePValue(Hotspot hotspot) {
+        int hotspotLength = hotspot.getResidues().size();
+        Protein protein = hotspot.getProtein();
+        int proteinLength = protein.getProteinLength();
+        
+        double p = 1.0 * hotspotLength / proteinLength;
+        
+        int numberOfMutationInHotspot = hotspot.getMutations().size();
+        int numberOfAllMutations = numberOfAllMutationOnProteins.get(protein);
+        return binomialTest(numberOfAllMutations, numberOfMutationInHotspot, p);
+    }
+    
+    private double binomialTest(int n, int x, double p) {
+        // test for normal approximation
+        if (testNormalApproximationForBinomial(n, p)) {
+            // http://en.wikipedia.org/wiki/Binomial_distribution
+            NormalDistribution distribution = new NormalDistribution(n*p, Math.sqrt(n*p*(1-p)));
+            return 1- distribution.cumulativeProbability(x);
+        } else {
+            BinomialDistribution distribution = new BinomialDistribution(n, p);
+            return 1- distribution.cumulativeProbability(x);
+        }
+    }
+    
+    private boolean testNormalApproximationForBinomial (int n, double p) {
+        if (n*p>5) {
+            return true;
+        }
+        
+        return false;
     }
 }

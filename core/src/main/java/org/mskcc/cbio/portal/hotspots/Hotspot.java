@@ -43,7 +43,7 @@ public interface Hotspot {
     public Protein getProtein();
     
     /**
-     * 
+     * Not only residues that have mutations, but also residues within the cluster.
      * @return residues
      */
     public Set<Integer> getResidues();
