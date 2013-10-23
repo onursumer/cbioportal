@@ -26,36 +26,35 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
-import java.util.Set;
+import org.mskcc.cbio.portal.model.CanonicalGene;
 
 /**
  *
  * @author jgao
  */
-public class Hotspot3D extends HotspotImpl {
-    protected String pdbId;
-    protected String chain;
+public interface MutatedProtein {
     
-    public Hotspot3D(MutatedProtein protein, Set<Integer> residues,
-            String pdbId, String chain) {
-        super(protein, residues);
-        this.pdbId = pdbId;
-        this.chain = chain;
-    }
-
-    public String getPdbId() {
-        return pdbId;
-    }
-
-    public void setPdbId(String pdbId) {
-        this.pdbId = pdbId;
-    }
-
-    public String getChain() {
-        return chain;
-    }
-
-    public void setChain(String chain) {
-        this.chain = chain;
-    }
+    /**
+     * 
+     * @return 
+     */
+    public CanonicalGene getGene();
+    
+    /**
+     * 
+     * @return Uniprot ID, e.g. P53_HUMAN
+     */
+    public String getUniprotId(); 
+    
+    /**
+     * 
+     * @return 
+     */
+    public int getProteinLength();
+    
+    /**
+     * 
+     * @return 
+     */
+    public int getNumberOfMutations();
 }

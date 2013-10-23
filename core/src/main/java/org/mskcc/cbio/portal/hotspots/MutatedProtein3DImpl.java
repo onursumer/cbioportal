@@ -32,38 +32,12 @@ import org.mskcc.cbio.portal.model.CanonicalGene;
  *
  * @author jgao
  */
-public class ProteinImpl implements Protein {
-    private CanonicalGene gene;
-    private String uniprotId;
-    private int proteinLength;
+public class MutatedProtein3DImpl extends MutatedProteinImpl implements MutatedProtein3D {
     private String pdbId;
     private String pdbChain;
 
-    public ProteinImpl(CanonicalGene gene) {
-        this.gene = gene;
-    }
-
-    @Override
-    public CanonicalGene getGene() {
-        return gene;
-    }
-
-    @Override
-    public String getUniprotId() {
-        return uniprotId;
-    }
-
-    public void setUniprotId(String uniprotId) {
-        this.uniprotId = uniprotId;
-    }
-
-    @Override
-    public int getProteinLength() {
-        return proteinLength;
-    }
-
-    public void setProteinLength(int proteinLength) {
-        this.proteinLength = proteinLength;
+    public MutatedProtein3DImpl(CanonicalGene gene) {
+        super(gene);
     }
 
     @Override
@@ -87,8 +61,7 @@ public class ProteinImpl implements Protein {
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 17 * hash + (this.gene != null ? this.gene.hashCode() : 0);
-        hash = 17 * hash + (this.uniprotId != null ? this.uniprotId.hashCode() : 0);
+        hash = 17 * hash + super.hashCode();
         hash = 17 * hash + (this.pdbId != null ? this.pdbId.hashCode() : 0);
         hash = 17 * hash + (this.pdbChain != null ? this.pdbChain.hashCode() : 0);
         return hash;
@@ -102,11 +75,8 @@ public class ProteinImpl implements Protein {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final ProteinImpl other = (ProteinImpl) obj;
-        if (this.gene != other.gene && (this.gene == null || !this.gene.equals(other.gene))) {
-            return false;
-        }
-        if ((this.uniprotId == null) ? (other.uniprotId != null) : !this.uniprotId.equals(other.uniprotId)) {
+        final MutatedProtein3DImpl other = (MutatedProtein3DImpl) obj;
+        if (!super.equals(other)) {
             return false;
         }
         if ((this.pdbId == null) ? (other.pdbId != null) : !this.pdbId.equals(other.pdbId)) {
@@ -121,10 +91,7 @@ public class ProteinImpl implements Protein {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(gene.getHugoGeneSymbolAllCaps());
-        if (uniprotId!=null) {
-            sb.append("_").append(uniprotId);
-        }
+        sb.append(super.toString());
         if (pdbId!=null) {
             sb.append("_").append(pdbId);
         }

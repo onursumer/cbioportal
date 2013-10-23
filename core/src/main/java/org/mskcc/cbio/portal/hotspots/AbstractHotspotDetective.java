@@ -61,7 +61,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     private Collection<Long>  excludeEntrezGeneIds;
     
     private Set<Hotspot> hotspots = null;
-    protected Map<Protein, Integer> numberOfAllMutationOnProteins = new HashMap<Protein, Integer>();
+    protected Map<MutatedProtein, Integer> numberOfAllMutationOnProteins = new HashMap<MutatedProtein, Integer>();
 
     public AbstractHotspotDetective(Collection<Integer> cancerStudyIds, Collection<String> mutationTypes,
             int thresholdSamples, Collection<Long> entrezGeneIds, Collection<Long> excludeEntrezGeneIds) {
@@ -128,7 +128,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                     residues.add(res);
                 }
                 CanonicalGene gene = daoGeneOptimized.getGene(rs.getLong("ENTREZ_GENE_ID"));
-                ProteinImpl protein = new ProteinImpl(gene);
+                MutatedProteinImpl protein = new MutatedProteinImpl(gene);
                 protein.setUniprotId(uniprotId);
                 protein.setProteinLength(length);
                 
@@ -209,7 +209,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     
     private double calculatePValue(Hotspot hotspot) {
         int hotspotLength = hotspot.getResidues().size();
-        Protein protein = hotspot.getProtein();
+        MutatedProtein protein = hotspot.getProtein();
         int proteinLength = protein.getProteinLength();
         
         double p = 1.0 * hotspotLength / proteinLength;

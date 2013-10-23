@@ -32,25 +32,7 @@ import org.mskcc.cbio.portal.model.CanonicalGene;
  *
  * @author jgao
  */
-public interface Protein {
-    
-    /**
-     * 
-     * @return 
-     */
-    public CanonicalGene getGene();
-    
-    /**
-     * 
-     * @return Uniprot ID, e.g. P53_HUMAN
-     */
-    public String getUniprotId(); 
-    
-    /**
-     * 
-     * @return 
-     */
-    public int getProteinLength();
+public interface MutatedProtein3D extends MutatedProtein {
     
     /**
      * 

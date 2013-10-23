@@ -40,7 +40,7 @@ public interface Hotspot {
      * 
      * @return gene
      */
-    public Protein getProtein();
+    public MutatedProtein getProtein();
     
     /**
      * Not only residues that have mutations, but also residues within the cluster.
