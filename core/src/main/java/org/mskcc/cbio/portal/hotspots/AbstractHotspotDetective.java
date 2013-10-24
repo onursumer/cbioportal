@@ -39,8 +39,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.math3.distribution.BinomialDistribution;
-import org.apache.commons.math3.distribution.NormalDistribution;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoException;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
@@ -59,17 +57,31 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     private int thresholdSamples;
     private Collection<Long> entrezGeneIds;
     private Collection<Long>  excludeEntrezGeneIds;
+    private int thresholdHyperMutator = -1;
     
     private Set<Hotspot> hotspots = null;
     protected Map<MutatedProtein, Integer> numberOfAllMutationOnProteins = new HashMap<MutatedProtein, Integer>();
 
-    public AbstractHotspotDetective(Collection<Integer> cancerStudyIds, Collection<String> mutationTypes,
-            int thresholdSamples, Collection<Long> entrezGeneIds, Collection<Long> excludeEntrezGeneIds) {
+    public AbstractHotspotDetective(Collection<Integer> cancerStudyIds,
+            int thresholdSamples) {
         this.cancerStudyIds = cancerStudyIds;
-        this.mutationTypes = mutationTypes;
         this.thresholdSamples = thresholdSamples;
+    }
+
+    public void setMutationTypes(Collection<String> mutationTypes) {
+        this.mutationTypes = mutationTypes;
+    }
+
+    public void setEntrezGeneIds(Collection<Long> entrezGeneIds) {
         this.entrezGeneIds = entrezGeneIds;
+    }
+
+    public void setExcludeEntrezGeneIds(Collection<Long> excludeEntrezGeneIds) {
         this.excludeEntrezGeneIds = excludeEntrezGeneIds;
+    }
+
+    public void setThresholdHyperMutator(int thresholdHyperMutator) {
+        this.thresholdHyperMutator = thresholdHyperMutator;
     }
 
     /**
@@ -89,14 +101,15 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(AbstractHotspotDetective.class);
-            String keywords = "(`KEYWORD` LIKE '%"+StringUtils.join(mutationTypes,"' OR `KEYWORD` LIKE '%") +"') ";
             String sql = "SELECT  gp.`GENETIC_PROFILE_ID`, gp.`CANCER_STUDY_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, `CASE_ID`, "
                     + "`PROTEIN_CHANGE`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp "
                     + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
-                    + "AND gp.`CANCER_STUDY_ID` IN ("+StringUtils.join(cancerStudyIds,",")+") "
-                    + "AND " + keywords;
+                    + "AND gp.`CANCER_STUDY_ID` IN ("+StringUtils.join(cancerStudyIds,",")+") ";
+            if (mutationTypes!=null && !mutationTypes.isEmpty()) {
+                sql += "AND (`KEYWORD` LIKE '%"+StringUtils.join(mutationTypes,"' OR `KEYWORD` LIKE '%") +"') ";;
+            } 
             if (entrezGeneIds!=null && !entrezGeneIds.isEmpty()) {
                 sql += "AND me.`ENTREZ_GENE_ID` IN("+StringUtils.join(entrezGeneIds,",")+") ";
             }

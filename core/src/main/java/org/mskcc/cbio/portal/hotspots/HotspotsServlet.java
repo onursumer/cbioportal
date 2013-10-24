@@ -60,6 +60,7 @@ public class HotspotsServlet extends HttpServlet {
     public static final String PTM_TYPE = "ptm_type";
     public static final String GENES = "genes";
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
+    public static final String THRESHOLD_MUTATIONS_HYPERMUTATOR = "threshold_hupermutator";
     public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
     public static final String THRESHOLD_DISTANCE_ERROR_CONTACT_MAP = "threshold_distance_error";
     public static final String LINEAR_HOTSPOT_WINDOW = "window";
@@ -76,6 +77,7 @@ public class HotspotsServlet extends HttpServlet {
         String studyStableIdsStr = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
         String type = request.getParameter(MUTATION_TYPE);
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
+        int thresholdHyper = Integer.parseInt(request.getParameter(THRESHOLD_MUTATIONS_HYPERMUTATOR));
         String genes = request.getParameter(GENES);
         Set<Long>  entrezGeneIds = new HashSet<Long>();
         Set<Long>  excludeEntrezGeneIds = new HashSet<Long>();
@@ -131,8 +133,12 @@ public class HotspotsServlet extends HttpServlet {
 //                mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
 //                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
 //            } else {
-                hotspotDetective = new SingleHotspotDetective(studyIds, Arrays.asList(type.split("[, ]+")),
-                        threshold, entrezGeneIds, excludeEntrezGeneIds);
+                SingleHotspotDetective singleHotspotDetective = new SingleHotspotDetective(studyIds, threshold);
+                singleHotspotDetective.setEntrezGeneIds(entrezGeneIds);
+                singleHotspotDetective.setExcludeEntrezGeneIds(excludeEntrezGeneIds);
+                singleHotspotDetective.setMutationTypes(Arrays.asList(type.split("[, ]+")));
+                singleHotspotDetective.setThresholdHyperMutator(thresholdHyper);
+                hotspotDetective = singleHotspotDetective;
 //            }
                 
               hotspotDetective.detectHotspot();

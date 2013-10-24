@@ -35,9 +35,9 @@ import java.util.Set;
  */
 public class SingleHotspotDetective extends AbstractHotspotDetective {
 
-    public SingleHotspotDetective(Collection<Integer> cancerStudyIds, Collection<String> mutationTypes,
-            int thresholdSamples, Collection<Long> entrezGeneIds, Collection<Long> excludeEntrezGeneIds) {
-        super(cancerStudyIds, mutationTypes, thresholdSamples, entrezGeneIds, excludeEntrezGeneIds);
+    public SingleHotspotDetective(Collection<Integer> cancerStudyIds,
+            int thresholdSamples) {
+        super(cancerStudyIds, thresholdSamples);
     }
     
     /**

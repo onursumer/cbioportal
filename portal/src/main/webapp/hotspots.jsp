@@ -102,6 +102,10 @@ String jsonStudies = JSONValue.toJSONString(studies);
     </div>
     <br/>
     <div>
+        <input type="checkbox" id="exclude-hypermutator" checked="checked">&nbsp;Exclude hypermutated samples (&le;1000 nonsynonymous mutations)
+    </div>
+    <br/>
+    <div>
         <button type="submit">Submit</button>
     </div>
 </script>
@@ -198,7 +202,8 @@ AlteredGene.Form = Backbone.View.extend({
         var genes = $.trim(this.$('#gene-textarea').val()).split(/\s+/).join(",");
         var type = this.$('#data-type').val();
         var threshold = this.$('#threshold-number-samples').val();
-        var rounterTo = "submit/"+type+"/"+threshold+"/"+studies.join(",");
+        var thresholdHyper = this.$('#exclude-hypermutator').prop('checked') ? 1000 : -1;
+        var rounterTo = "submit/"+type+"/"+threshold+"/"+thresholdHyper+""+studies.join(",");
         if (genes) rounterTo += "/"+genes;
         router.navigate(rounterTo, {trigger: true});
     }
@@ -538,8 +543,8 @@ AlteredGene.Router = Backbone.Router.extend({
     },
     routes: {
         "": "form",
-        "submit/:type/:threshold/:studies": "submitWoGenes",
-        "submit/:type/:threshold/:studies/:genes": "submit"
+        "submit/:type/:threshold/thresholdHyper/:studies": "submitWoGenes",
+        "submit/:type/:threshold/thresholdHyper/:studies/:genes": "submit"
     },
     form: function() {
         var view = new AlteredGene.Form();
@@ -547,10 +552,10 @@ AlteredGene.Router = Backbone.Router.extend({
         this.el.empty();
         this.el.append(view.el);
     },
-    submitWoGenes: function(type, threshold, studies) {
-        this.submit(type, threshold, studies, null);
+    submitWoGenes: function(type, threshold, thresholdHyper, studies) {
+        this.submit(type, threshold, thresholdHyper, studies, null);
     },
-    submit: function(type, threshold, studies, genes) {
+    submit: function(type, threshold, thresholdHyper, studies, genes) {
         $('#merge-alterations').prop('checked',type==="truncating");
         $('#merge-alterations').prop('disabled',type==="truncating");
     
@@ -570,7 +575,8 @@ AlteredGene.Router = Backbone.Router.extend({
                 'cmd': 'statistics',
                 'cancer_study_id': studies,
                 'type': option_type,
-                'threshold_samples': threshold
+                'threshold_samples': threshold,
+                'threshold_hupermutator': thresholdHyper
             };
 
         if (genes) {
