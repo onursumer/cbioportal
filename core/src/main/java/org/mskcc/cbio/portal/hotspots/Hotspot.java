@@ -70,5 +70,11 @@ public interface Hotspot {
      * 
      * @return 
      */
+    public double getPValue();
+    
+    /**
+     * 
+     * @return 
+     */
     public String getLabel();
 }

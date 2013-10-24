@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
 import org.mskcc.cbio.portal.model.CancerStudy;
@@ -46,6 +48,7 @@ public class HotspotImpl implements Hotspot {
     private List<ExtendedMutation> mutations;
     private List<Sample> samples;
     private String label;
+    private double pvalue;
 
     /**
      * 
@@ -58,6 +61,7 @@ public class HotspotImpl implements Hotspot {
         this.residues = residues;
         this.mutations = new ArrayList<ExtendedMutation>();
         this.samples = new ArrayList<Sample>();
+        this.pvalue = Double.NaN;
     }
     
     /**
@@ -115,6 +119,41 @@ public class HotspotImpl implements Hotspot {
         }
 
         return protein.toString()+" "+StringUtils.join(new TreeSet<Integer>(getResidues()),";");
+    }
+    
+    @Override
+    public double getPValue() {
+        if (Double.isNaN(pvalue)) {
+            int hotspotLength = residues.size();
+            int proteinLength = protein.getProteinLength();
+
+            double p = 1.0 * hotspotLength / proteinLength;
+
+            int numberOfMutationInHotspot = getMutations().size();
+            int numberOfAllMutations = protein.getNumberOfMutations();
+            return binomialTest(numberOfAllMutations, numberOfMutationInHotspot, p);
+        }
+        return pvalue;
+    }
+    
+    private double binomialTest(int n, int x, double p) {
+        // test for normal approximation
+        if (testNormalApproximationForBinomial(n, p)) {
+            // http://en.wikipedia.org/wiki/Binomial_distribution
+            NormalDistribution distribution = new NormalDistribution(n*p, Math.sqrt(n*p*(1-p)));
+            return 1- distribution.cumulativeProbability(x);
+        } else {
+            BinomialDistribution distribution = new BinomialDistribution(n, p);
+            return 1- distribution.cumulativeProbability(x);
+        }
+    }
+    
+    private boolean testNormalApproximationForBinomial (int n, double p) {
+        if (n*p>5) {
+            return true;
+        }
+        
+        return false;
     }
 
     @Override

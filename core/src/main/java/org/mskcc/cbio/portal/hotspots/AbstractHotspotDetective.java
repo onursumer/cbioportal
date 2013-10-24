@@ -206,36 +206,4 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         Integer ret = mapUniprotProteinLengths.get(uniprotAcc);
         return ret==null?-1:ret;
     }
-    
-    private double calculatePValue(Hotspot hotspot) {
-        int hotspotLength = hotspot.getResidues().size();
-        MutatedProtein protein = hotspot.getProtein();
-        int proteinLength = protein.getProteinLength();
-        
-        double p = 1.0 * hotspotLength / proteinLength;
-        
-        int numberOfMutationInHotspot = hotspot.getMutations().size();
-        int numberOfAllMutations = numberOfAllMutationOnProteins.get(protein);
-        return binomialTest(numberOfAllMutations, numberOfMutationInHotspot, p);
-    }
-    
-    private double binomialTest(int n, int x, double p) {
-        // test for normal approximation
-        if (testNormalApproximationForBinomial(n, p)) {
-            // http://en.wikipedia.org/wiki/Binomial_distribution
-            NormalDistribution distribution = new NormalDistribution(n*p, Math.sqrt(n*p*(1-p)));
-            return 1- distribution.cumulativeProbability(x);
-        } else {
-            BinomialDistribution distribution = new BinomialDistribution(n, p);
-            return 1- distribution.cumulativeProbability(x);
-        }
-    }
-    
-    private boolean testNormalApproximationForBinomial (int n, double p) {
-        if (n*p>5) {
-            return true;
-        }
-        
-        return false;
-    }
 }
