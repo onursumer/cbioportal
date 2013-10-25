@@ -134,7 +134,7 @@ public final class DaoMutation {
                     keyword==null ? "\\N":(event.getGene().getHugoGeneSymbolAllCaps()+" "+keyword));
             return 1;
     }
-
+        
     public static ArrayList<ExtendedMutation> getMutations (int geneticProfileId, Collection<String> targetCaseList,
             long entrezGeneId) throws DaoException {
         Connection con = null;

@@ -101,12 +101,27 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(AbstractHotspotDetective.class);
-            String sql = "SELECT  gp.`GENETIC_PROFILE_ID`, gp.`CANCER_STUDY_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, `CASE_ID`, "
+            String sql = "";
+            if (thresholdHyperMutator>0) {
+                sql += "CREATE TABLE tmp_mutation_count IF NOT EXISTS AS " +
+                        "SELECT `CANCER_STUDY_ID` , `CASE_ID` , COUNT( * )  AS MUTATION_COUNT " +
+                        "FROM `mutation` , `genetic_profile` " +
+                        "WHERE mutation.`GENETIC_PROFILE_ID` = genetic_profile.`GENETIC_PROFILE_ID` " +
+                        "GROUP BY `CANCER_STUDY_ID` , `CASE_ID`;\n";
+            }
+            
+            sql += "SELECT  gp.`GENETIC_PROFILE_ID`, gp.`CANCER_STUDY_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, cme.`CASE_ID`, "
                     + "`PROTEIN_CHANGE`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
-                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp "
-                    + "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
+                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp ";
+            if (thresholdHyperMutator>0) {
+                sql += ",tmp_mutation_count tmc ";
+            }
+            sql += "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+StringUtils.join(cancerStudyIds,",")+") ";
+            if (thresholdHyperMutator>0) {
+                sql += "AND tmc.`CANCER_STUDY_ID`=gp.`CANCER_STUDY_ID` AND tmc.`CASE_ID`=cme.`CASE_ID` AND MUTATION_COUNT<" + thresholdHyperMutator + " ";
+            }
             if (mutationTypes!=null && !mutationTypes.isEmpty()) {
                 sql += "AND (`KEYWORD` LIKE '%"+StringUtils.join(mutationTypes,"' OR `KEYWORD` LIKE '%") +"') ";;
             } 
@@ -132,7 +147,6 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 int length = getProteinLength(uniprotAcc);
                 
                 String caseId = rs.getString("CASE_ID");
-                Sample sample = new SampleImpl(caseId, DaoCancerStudy.getCancerStudyByInternalId(cancerStudyId));
                 String aaChange = rs.getString("PROTEIN_CHANGE");
                 int start = rs.getInt("ONCOTATOR_PROTEIN_POS_START");
                 int end = rs.getInt("ONCOTATOR_PROTEIN_POS_END");
