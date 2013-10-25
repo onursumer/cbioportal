@@ -105,7 +105,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+StringUtils.join(cancerStudyIds,",")+") ";
             if (thresholdHyperMutator>0) {
-                sql += "AND tmc.`CANCER_STUDY_ID`=gp.`CANCER_STUDY_ID` AND tmc.`CASE_ID`=cme.`CASE_ID` AND MUTATION_COUNT<" + thresholdHyperMutator + " ";
+                sql += "AND tmc.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` AND tmc.`CASE_ID`=cme.`CASE_ID` AND MUTATION_COUNT<" + thresholdHyperMutator + " ";
             }
             if (mutationTypes!=null && !mutationTypes.isEmpty()) {
                 sql += "AND (`KEYWORD` LIKE '%"+StringUtils.join(mutationTypes,"' OR `KEYWORD` LIKE '%") +"') ";;
