@@ -203,7 +203,7 @@ AlteredGene.Form = Backbone.View.extend({
         var type = this.$('#data-type').val();
         var threshold = this.$('#threshold-number-samples').val();
         var thresholdHyper = this.$('#exclude-hypermutator').prop('checked') ? 1000 : -1;
-        var rounterTo = "submit/"+type+"/"+threshold+"/"+thresholdHyper+""+studies.join(",");
+        var rounterTo = "submit/"+type+"/"+threshold+"/"+thresholdHyper+"/"+studies.join(",");
         if (genes) rounterTo += "/"+genes;
         router.navigate(rounterTo, {trigger: true});
     }
@@ -543,8 +543,8 @@ AlteredGene.Router = Backbone.Router.extend({
     },
     routes: {
         "": "form",
-        "submit/:type/:threshold/thresholdHyper/:studies": "submitWoGenes",
-        "submit/:type/:threshold/thresholdHyper/:studies/:genes": "submit"
+        "submit/:type/:threshold/:thresholdHyper/:studies": "submitWoGenes",
+        "submit/:type/:threshold/:thresholdHyper/:studies/:genes": "submit"
     },
     form: function() {
         var view = new AlteredGene.Form();
@@ -576,7 +576,7 @@ AlteredGene.Router = Backbone.Router.extend({
                 'cancer_study_id': studies,
                 'type': option_type,
                 'threshold_samples': threshold,
-                'threshold_hupermutator': thresholdHyper
+                'threshold_hypermutator': thresholdHyper
             };
 
         if (genes) {

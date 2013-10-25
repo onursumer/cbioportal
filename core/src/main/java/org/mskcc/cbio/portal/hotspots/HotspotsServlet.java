@@ -60,7 +60,7 @@ public class HotspotsServlet extends HttpServlet {
     public static final String PTM_TYPE = "ptm_type";
     public static final String GENES = "genes";
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
-    public static final String THRESHOLD_MUTATIONS_HYPERMUTATOR = "threshold_hupermutator";
+    public static final String THRESHOLD_MUTATIONS_HYPERMUTATOR = "threshold_hypermutator";
     public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
     public static final String THRESHOLD_DISTANCE_ERROR_CONTACT_MAP = "threshold_distance_error";
     public static final String LINEAR_HOTSPOT_WINDOW = "window";

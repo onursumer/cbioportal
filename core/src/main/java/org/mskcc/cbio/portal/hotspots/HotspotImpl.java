@@ -119,7 +119,7 @@ public class HotspotImpl implements Hotspot {
         }
 
         return protein.toString()+" "+StringUtils.join(new TreeSet<Integer>(getResidues()),";")
-                + " (p="+String.format("%.3f", getPValue()) + ")";
+                + " (p="+String.format("%6.3e", getPValue()) + ")";
     }
     
     @Override
@@ -132,7 +132,7 @@ public class HotspotImpl implements Hotspot {
 
             int numberOfMutationInHotspot = getMutations().size();
             int numberOfAllMutations = protein.getNumberOfMutations();
-            return binomialTest(numberOfAllMutations, numberOfMutationInHotspot, p);
+            pvalue = binomialTest(numberOfAllMutations, numberOfMutationInHotspot, p);
         }
         return pvalue;
     }
@@ -150,9 +150,9 @@ public class HotspotImpl implements Hotspot {
     }
     
     private boolean testNormalApproximationForBinomial (int n, double p) {
-        if (n*p>5) {
-            return true;
-        }
+//        if (n*p>5) {
+//            return true;
+//        }
         
         return false;
     }

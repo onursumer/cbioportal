@@ -47,6 +47,7 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
     public SingleHotspotDetective(Collection<Integer> cancerStudyIds,
             int thresholdSamples) {
         super(cancerStudyIds);
+        this.thresholdSamples = thresholdSamples;
     }
     
     /**
@@ -77,7 +78,7 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
     
     @Override
     protected int getLengthOfProtein(MutatedProtein protein) {
-        return getProteinLength(protein.getUniprotId());
+        return getProteinLength(protein.getUniprotAcc());
     }
     
     private static Map<String, Integer> mapUniprotProteinLengths = null;
