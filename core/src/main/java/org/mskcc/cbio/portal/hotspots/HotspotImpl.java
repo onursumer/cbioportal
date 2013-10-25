@@ -26,7 +26,7 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -45,8 +45,8 @@ import org.mskcc.cbio.portal.model.ExtendedMutation;
 public class HotspotImpl implements Hotspot {
     private MutatedProtein protein;
     private Set<Integer> residues;
-    private List<ExtendedMutation> mutations;
-    private List<Sample> samples;
+    private Set<ExtendedMutation> mutations;
+    private Set<Sample> samples;
     private String label;
     private double pvalue;
 
@@ -59,8 +59,8 @@ public class HotspotImpl implements Hotspot {
     public HotspotImpl(MutatedProtein protein, Set<Integer> residues) {
         this.protein = protein;
         this.residues = residues;
-        this.mutations = new ArrayList<ExtendedMutation>();
-        this.samples = new ArrayList<Sample>();
+        this.mutations = new HashSet<ExtendedMutation>();
+        this.samples = new HashSet<Sample>();
         this.pvalue = Double.NaN;
     }
     
@@ -83,7 +83,7 @@ public class HotspotImpl implements Hotspot {
     }
     
     @Override
-    public List<ExtendedMutation> getMutations() {
+    public Set<ExtendedMutation> getMutations() {
         return mutations;
     }
 
@@ -96,7 +96,7 @@ public class HotspotImpl implements Hotspot {
     }
 
     @Override
-    public List<Sample> getSamples() {
+    public Set<Sample> getSamples() {
         return samples;
     }
 
@@ -118,7 +118,8 @@ public class HotspotImpl implements Hotspot {
             return label;
         }
 
-        return protein.toString()+" "+StringUtils.join(new TreeSet<Integer>(getResidues()),";");
+        return protein.toString()+" "+StringUtils.join(new TreeSet<Integer>(getResidues()),";")
+                + " (p="+String.format("%.3f", getPValue()) + ")";
     }
     
     @Override
@@ -158,7 +159,8 @@ public class HotspotImpl implements Hotspot {
 
     @Override
     public int hashCode() {
-        return getLabel().hashCode();
+        int hash = 3;
+        return hash;
     }
 
     @Override
@@ -166,10 +168,16 @@ public class HotspotImpl implements Hotspot {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof Hotspot)) {
+        if (getClass() != obj.getClass()) {
             return false;
         }
-        final Hotspot other = (Hotspot) obj;
-        return getLabel().equals(other.getLabel());
+        final HotspotImpl other = (HotspotImpl) obj;
+        if (this.protein != other.protein && (this.protein == null || !this.protein.equals(other.protein))) {
+            return false;
+        }
+        if (this.residues != other.residues && (this.residues == null || !this.residues.equals(other.residues))) {
+            return false;
+        }
+        return true;
     }
 }

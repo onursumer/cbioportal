@@ -27,17 +27,26 @@
 package org.mskcc.cbio.portal.hotspots;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.mskcc.cbio.portal.dao.DaoException;
+import org.mskcc.cbio.portal.dao.DaoPfamGraphics;
+import org.mskcc.cbio.portal.model.ExtendedMutation;
 
 /**
  *
  * @author jgao
  */
 public class SingleHotspotDetective extends AbstractHotspotDetective {
+    private int thresholdSamples;
 
     public SingleHotspotDetective(Collection<Integer> cancerStudyIds,
             int thresholdSamples) {
-        super(cancerStudyIds, thresholdSamples);
+        super(cancerStudyIds);
     }
     
     /**
@@ -46,8 +55,58 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
      * @return
      */
     @Override
-    protected Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspots) {
-        return hotspots;
+    protected Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspotsOnAProtein) {
+        Set<Hotspot> ret = new HashSet<Hotspot>();
+        for (Hotspot hotspot : hotspotsOnAProtein) {
+            // only return hotspot above sample threshold
+            if (hotspot.getSamples().size()>=thresholdSamples) {
+                ret.add(hotspot);
+            }
+        }
+        return ret;
     }
     
+    @Override
+    protected int getNumberOfAllMutationOnProtein(Set<Hotspot> hotspotsOnAProtein) {
+        Set<ExtendedMutation> mutations = new HashSet<ExtendedMutation>();
+        for (Hotspot hotspot : hotspotsOnAProtein) {
+            mutations.addAll(hotspot.getMutations());
+        }
+        return mutations.size();
+    }
+    
+    @Override
+    protected int getLengthOfProtein(MutatedProtein protein) {
+        return getProteinLength(protein.getUniprotId());
+    }
+    
+    private static Map<String, Integer> mapUniprotProteinLengths = null;
+    private static int getProteinLength(String uniprotAcc) {
+        if (mapUniprotProteinLengths == null) {
+            mapUniprotProteinLengths = new HashMap<String, Integer>();
+            
+            Map<String, String> pfamGraphics;
+            try {
+                pfamGraphics = DaoPfamGraphics.getAllPfamGraphics();
+            } catch (DaoException e) {
+                e.printStackTrace();
+                return -1;
+            }
+            
+            Pattern p = Pattern.compile("\"length\":\"([0-9]+)\"");
+            
+            for (Map.Entry<String, String> entry : pfamGraphics.entrySet()) {
+                String uni = entry.getKey();
+                String json = entry.getValue();
+                Matcher m = p.matcher(json);
+                if (m.find()) {
+                    Integer length = Integer.valueOf(m.group(1));
+                    mapUniprotProteinLengths.put(uni, length);
+                }
+            }
+        }
+        
+        Integer ret = mapUniprotProteinLengths.get(uniprotAcc);
+        return ret==null?0:ret;
+    }
 }

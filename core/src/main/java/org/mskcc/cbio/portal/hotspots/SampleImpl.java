@@ -41,11 +41,39 @@ public class SampleImpl implements Sample {
         this.cancerStudy = cancerStudy;
     }
 
+    @Override
     public String getSampleId() {
         return sampleId;
     }
 
+    @Override
     public CancerStudy getCancerStudy() {
         return cancerStudy;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 43 * hash + (this.sampleId != null ? this.sampleId.hashCode() : 0);
+        hash = 43 * hash + (this.cancerStudy != null ? this.cancerStudy.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final SampleImpl other = (SampleImpl) obj;
+        if ((this.sampleId == null) ? (other.sampleId != null) : !this.sampleId.equals(other.sampleId)) {
+            return false;
+        }
+        if (this.cancerStudy != other.cancerStudy && (this.cancerStudy == null || !this.cancerStudy.equals(other.cancerStudy))) {
+            return false;
+        }
+        return true;
     }
 }

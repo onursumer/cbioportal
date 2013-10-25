@@ -26,7 +26,6 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
-import java.util.List;
 import java.util.Set;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
 
@@ -52,7 +51,7 @@ public interface Hotspot {
      * 
      * @return a list of mutations
      */
-    public List<ExtendedMutation> getMutations();
+    public Set<ExtendedMutation> getMutations();
     
     /**
      * Add a sample with aa change
@@ -64,7 +63,7 @@ public interface Hotspot {
     /**
      * Get samples.
      */
-    public List<Sample> getSamples();
+    public Set<Sample> getSamples();
     
     /**
      * 

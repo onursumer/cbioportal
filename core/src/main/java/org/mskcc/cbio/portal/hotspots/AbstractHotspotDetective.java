@@ -36,13 +36,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
-import org.mskcc.cbio.portal.dao.DaoCancerStudy;
-import org.mskcc.cbio.portal.dao.DaoException;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
-import org.mskcc.cbio.portal.dao.DaoPfamGraphics;
 import org.mskcc.cbio.portal.dao.JdbcUtil;
 import org.mskcc.cbio.portal.model.CanonicalGene;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
@@ -54,18 +49,15 @@ import org.mskcc.cbio.portal.model.ExtendedMutation;
 public abstract class AbstractHotspotDetective implements HotspotDetective {
     private Collection<Integer> cancerStudyIds;
     private Collection<String> mutationTypes; // missense or truncating
-    private int thresholdSamples;
     private Collection<Long> entrezGeneIds;
     private Collection<Long>  excludeEntrezGeneIds;
     private int thresholdHyperMutator = -1;
     
-    private Set<Hotspot> hotspots = null;
+    private Set<Hotspot> hotspots;
     protected Map<MutatedProtein, Integer> numberOfAllMutationOnProteins = new HashMap<MutatedProtein, Integer>();
 
-    public AbstractHotspotDetective(Collection<Integer> cancerStudyIds,
-            int thresholdSamples) {
+    public AbstractHotspotDetective(Collection<Integer> cancerStudyIds) {
         this.cancerStudyIds = cancerStudyIds;
-        this.thresholdSamples = thresholdSamples;
     }
 
     public void setMutationTypes(Collection<String> mutationTypes) {
@@ -89,9 +81,11 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
      * @param hotspots
      * @return 
      */
-    protected abstract Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspots);
+    protected abstract Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspotsOnAProtein);
     
-    //protected abstract void setNumberOfAllMutationOnProteins(Set<Protein> proteins);
+    protected abstract int getNumberOfAllMutationOnProtein(Set<Hotspot> hotspotsOnAProtein);
+    
+    protected abstract int getLengthOfProtein(MutatedProtein protein);
     
     @Override
     public void detectHotspot() throws HotspotException {
@@ -107,10 +101,11 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                         "SELECT `CANCER_STUDY_ID` , `CASE_ID` , COUNT( * )  AS MUTATION_COUNT " +
                         "FROM `mutation` , `genetic_profile` " +
                         "WHERE mutation.`GENETIC_PROFILE_ID` = genetic_profile.`GENETIC_PROFILE_ID` " +
+                        "AND `CANCER_STUDY_ID` IN ("+StringUtils.join(cancerStudyIds,",")+") " +
                         "GROUP BY `CANCER_STUDY_ID` , `CASE_ID`;\n";
             }
             
-            sql += "SELECT  gp.`GENETIC_PROFILE_ID`, gp.`CANCER_STUDY_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, cme.`CASE_ID`, "
+            sql += "SELECT  gp.`GENETIC_PROFILE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, cme.`CASE_ID`, "
                     + "`PROTEIN_CHANGE`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp ";
             if (thresholdHyperMutator>0) {
@@ -141,10 +136,8 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             Hotspot hotspot = new HotspotImpl(null, null); // just a dummy one to start with
             while (rs.next()) {
                 int geneticProfileId = rs.getInt("GENETIC_PROFILE_ID");
-                int cancerStudyId = rs.getInt("CANCER_STUDY_ID");
                 String uniprotId = rs.getString("ONCOTATOR_UNIPROT_ENTRY_NAME");
                 String uniprotAcc = rs.getString("ONCOTATOR_UNIPROT_ACCESSION");
-                int length = getProteinLength(uniprotAcc);
                 
                 String caseId = rs.getString("CASE_ID");
                 String aaChange = rs.getString("PROTEIN_CHANGE");
@@ -157,20 +150,27 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 CanonicalGene gene = daoGeneOptimized.getGene(rs.getLong("ENTREZ_GENE_ID"));
                 MutatedProteinImpl protein = new MutatedProteinImpl(gene);
                 protein.setUniprotId(uniprotId);
-                protein.setProteinLength(length);
+                protein.setUniprotAcc(uniprotAcc);
                 
-                if (!protein.equals(hotspot.getProtein()) || !residues.equals(hotspot.getResidues())) {
-                    // a new hotspot
-                    if (hotspot.getSamples().size()>=thresholdSamples) {
-                        hotspotsForAProtein.add(hotspot);
-                    }
-                    hotspot = new HotspotImpl(protein, residues);
-                
-                    if (!protein.equals(hotspot.getProtein())) {
-                        // a new gene
+                boolean newProtein = !protein.equals(hotspot.getProtein());
+                boolean newResidues = newProtein || !residues.equals(hotspot.getResidues());
+                if (newResidues) {
+                    // record the old hotspot
+                    hotspotsForAProtein.add(hotspot);
+                    
+                    if (newProtein) {
+                        // process all hotspot
+                        MutatedProtein oldProtein = hotspot.getProtein();
+                        oldProtein.setProteinLength(getLengthOfProtein(oldProtein));
+                        oldProtein.setNumberOfMutations(getNumberOfAllMutationOnProtein(hotspotsForAProtein)); // only have to set once
                         hotspots.addAll(processSingleHotspotsOnAProtein(hotspotsForAProtein));
+
+                        // a new protein
                         hotspotsForAProtein = new HashSet<Hotspot>();
                     }
+                    
+                    // a new hotspot
+                    hotspot = new HotspotImpl(protein, residues);
                 }
                 
                 ExtendedMutation mutation = new ExtendedMutation();
@@ -183,9 +183,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             }
             
             // last hot spot 
-            if (hotspot.getSamples().size()>=thresholdSamples) {
-                hotspotsForAProtein.add(hotspot);
-            }
+            hotspotsForAProtein.add(hotspot);
             
             // last gene
             hotspots.addAll(processSingleHotspotsOnAProtein(hotspotsForAProtein));
@@ -202,35 +200,5 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             throw new java.lang.IllegalStateException("No detection has ran.");
         }
         return Collections.unmodifiableSet(hotspots);
-    }
-    
-    private static Map<String, Integer> mapUniprotProteinLengths = null;
-    private static int getProteinLength(String uniprotAcc) {
-        if (mapUniprotProteinLengths == null) {
-            mapUniprotProteinLengths = new HashMap<String, Integer>();
-            
-            Map<String, String> pfamGraphics;
-            try {
-                pfamGraphics = DaoPfamGraphics.getAllPfamGraphics();
-            } catch (DaoException e) {
-                e.printStackTrace();
-                return -1;
-            }
-            
-            Pattern p = Pattern.compile("\"length\":\"([0-9]+)\"");
-            
-            for (Map.Entry<String, String> entry : pfamGraphics.entrySet()) {
-                String uni = entry.getKey();
-                String json = entry.getValue();
-                Matcher m = p.matcher(json);
-                if (m.find()) {
-                    Integer length = Integer.valueOf(m.group(1));
-                    mapUniprotProteinLengths.put(uni, length);
-                }
-            }
-        }
-        
-        Integer ret = mapUniprotProteinLengths.get(uniprotAcc);
-        return ret==null?-1:ret;
     }
 }

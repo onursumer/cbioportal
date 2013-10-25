@@ -35,6 +35,7 @@ import org.mskcc.cbio.portal.model.CanonicalGene;
 public class MutatedProteinImpl implements MutatedProtein {
     private CanonicalGene gene;
     private String uniprotId;
+    private String uniprotAcc;
     private int proteinLength;
     private int numberOfMutations;
 
@@ -57,18 +58,30 @@ public class MutatedProteinImpl implements MutatedProtein {
     }
 
     @Override
+    public String getUniprotAcc() {
+        return uniprotAcc;
+    }
+
+    public void setUniprotAcc(String uniprotAcc) {
+        this.uniprotAcc = uniprotAcc;
+    }
+
+    @Override
     public int getProteinLength() {
         return proteinLength;
     }
 
+    @Override
     public void setProteinLength(int proteinLength) {
         this.proteinLength = proteinLength;
     }
 
+    @Override
     public int getNumberOfMutations() {
         return numberOfMutations;
     }
 
+    @Override
     public void setNumberOfMutations(int numberOfMutations) {
         this.numberOfMutations = numberOfMutations;
     }

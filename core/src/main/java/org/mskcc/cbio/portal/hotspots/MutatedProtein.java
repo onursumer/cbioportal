@@ -48,13 +48,29 @@ public interface MutatedProtein {
     
     /**
      * 
+     * @return Uniprot Accession, e.g. P04637
+     */
+    public String getUniprotAcc();
+    
+    /**
+     * 
      * @return 
      */
     public int getProteinLength();
     
     /**
      * 
+     */
+    public void setProteinLength(int proteinLegnth);
+    
+    /**
+     * 
      * @return 
      */
     public int getNumberOfMutations();
+    
+    /**
+     * 
+     */
+    public void setNumberOfMutations(int numberOfMutations);
 }
