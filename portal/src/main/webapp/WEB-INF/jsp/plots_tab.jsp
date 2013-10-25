@@ -8,30 +8,8 @@
 <%@ page import="org.mskcc.cbio.portal.model.GeneticAlterationType" %>
 
 <%
-    String cancer_study_id = (String)request.getParameter("cancer_study_id");
-    String case_set_id = (String)request.getParameter("case_set_id");
-    String genetic_profile_id = (String)request.getParameter("genetic_profile_id");
-    //Translate Onco Query Language
-    ArrayList<String> _listOfGenes = theOncoPrintSpecParserOutput.getTheOncoPrintSpecification().listOfGenes();
-    String tmpGeneStr = "";
-    for(String gene: _listOfGenes) {
-        tmpGeneStr += gene + " ";
-    }
-    tmpGeneStr = tmpGeneStr.trim();
 
 %>
-
-<script>
-    var cancer_study_id = "<%out.print(cancer_study_id);%>",
-            case_set_id = "<%out.print(case_set_id);%>";
-    case_ids_key = "";
-    if (case_set_id === "-1") {
-        case_ids_key = "<%out.print(caseIdsKey);%>";
-    }
-    var genetic_profile_id = "<%out.print(genetic_profile_id);%>";
-    var gene_list_str = "<%out.print(tmpGeneStr);%>";
-    var gene_list = gene_list_str.split(/\s+/);
-</script>
 
 <script type="text/javascript" src="js/src/plots-view/plots_tab_model.js"></script>
 <script type="text/javascript" src="js/src/plots-view/plots_tab.js"></script>
@@ -41,14 +19,14 @@
 <style>
     #plots .plots {
         height: 610px;
+        border: 1px solid #aaaaaa;
+        border-radius: 4px;
     }
     #plots .plots.plots-menus {
         width: 320px;
         height: 685px;
     }
     #plots .plots.plots-view {
-        border: 1px solid #aaaaaa;
-        border-radius: 4px;
         padding: 40px;
         width: 720px;
     }
@@ -97,19 +75,35 @@
                             <h5>Data Type</h5>
                             <div id='one_gene_platform_select_div'></div>
                         </div>
+                        <div id="inner-search-box-one-gene">
+                            <h5>Search case(s)</h5>
+                            <input type="text" id="search_plots_one_gene" placeholder="Case ID..." onkeyup="Plots.searchPlots('one_gene');">
+                        </div>
                     </div>
                     <div id="plots_two_genes">
                         <h4>Plot Parameters</h4>
                         <h5>Genes</h5>
-                        x Axis<select id='geneX' onchange="PlotsTwoGenesMenu.updateMenu();PlotsTwoGenesView.init();"></select><br>
+                        x Axis<select id='geneX' onchange="PlotsTwoGenesMenu.updateMenu();PlotsTwoGenesView.init();"></select>
+                        <br>
                         y Axis<select id='geneY' onchange="PlotsTwoGenesMenu.updateMenu();PlotsTwoGenesView.init();"></select>
                         <h5>Plot Type</h5>
                         <select id='two_genes_plots_type' onchange="PlotsTwoGenesMenu.updateDataType();PlotsTwoGenesView.init();"></select>
                         <h5>Platform</h5>
                         <div id='two_genes_platform_select_div'></div>
-                        <br><label for="show_mutation">Show Mutation Data</label>
-                        <input type="checkbox" name="show_mutation" id="show_mutation"
-                               value="show_mutation" checked onchange='PlotsTwoGenesView.updateMutationDisplay();'/>
+                        <div id='two_genes_apply_log_scale_div_x'></div>
+                        <div id='two_genes_apply_log_scale_div_y'></div>
+                        <br>
+                        <div id='two_genes_view_options'>
+                            <h5>Options</h5>
+                            <div id='two_genes_show_mutation_div'>
+                                <input type="checkbox" id="show_mutation" checked onchange='PlotsTwoGenesView.updateMutationDisplay();'/>
+                                show mutation data
+                            </div>
+                        </div>
+                        <div id="inner-search-box-two-genes">
+                            <h5>Search case(s)</h5>
+                            <input type="text" id="search_plots_two_genes" placeholder="Case ID..." onkeyup="Plots.searchPlots('two_genes');">
+                        </div>
                     </div>
                     <div id="plots_custom">
                         <h4>Plot Parameters</h4>
@@ -120,6 +114,7 @@
                         <select id='custom_plots_type_x' onchange='PlotsCustomMenu.updateX();PlotsCustomView.init();'></select><br>
                         Platform<br>
                         <div id='custom_platform_select_div_x'></div>
+                        <div id='custom_genes_apply_log_scale_div_x'></div>
                         <br>
                         <h5>y Axis</h5>
                         Gene<br>
@@ -128,9 +123,19 @@
                         <select id='custom_plots_type_y' onchange='PlotsCustomMenu.updateY();PlotsCustomView.init();'></select><br>
                         Platform<br>
                         <div id='custom_platform_select_div_y'></div>
-                        <br><label for="show_mutation_custom_view">Show Mutation Data</label>
-                        <input type="checkbox" name="show_mutation_custom_view" id="show_mutation_custom_view"
-                               value="show_mutation" checked onchange='PlotsCustomView.updateMutationDisplay();'/>
+                        <div id='custom_genes_apply_log_scale_div_y'></div>
+                        <br>
+                        <div id='custom_genes_view_options'>
+                            <h5>Options</h5>
+                            <div id='custom_genes_show_mutation_div'>
+                                <input type="checkbox" id="show_mutation_custom_view" checked onchange='PlotsCustomView.updateMutationDisplay();'/>
+                                show mutation data
+                            </div>
+                        </div>
+                        <div id="inner-search-box-custom">
+                            <h5>Search case(s)</h5>
+                            <input type="text" id="search_plots_custom" placeholder="Case ID..." onkeyup="Plots.searchPlots('custom');">
+                        </div>
                     </div>
                 </div>
             </td>
@@ -155,7 +160,10 @@
         $("#plots-menus").tabs();
         $("#plots-menus").tabs("disable", 1);
     }
-    window.onload = Plots.init();
+    
+    $(document).ready(function() {
+        Plots.init();
+    });
 </script>
 
 <script>

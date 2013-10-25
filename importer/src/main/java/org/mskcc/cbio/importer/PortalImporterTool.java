@@ -49,6 +49,9 @@ public class PortalImporterTool implements Runnable {
 
     private static final String HOME_DIR = "PORTAL_HOME";
 	private static final Log LOG = LogFactory.getLog(PortalImporterTool.class);
+    static {
+        configureLogging();
+    }
 	private static final String contextFile = "classpath:applicationContext-portalImporterTool.xml";
 	private static final ApplicationContext context = new ClassPathXmlApplicationContext(contextFile);
 	private static final Options options = initializeOptions();
@@ -59,27 +62,35 @@ public class PortalImporterTool implements Runnable {
     {
 		
 		// create each option
-		Option help = new Option("help", "Print this message.");
+		Option help = new Option("h", "Print this message.");
 
-        Option validateCancerStudy = (OptionBuilder.withArgName("cancer_study_directory")
+        Option annotateMAF = (OptionBuilder.withArgName("maf:output")
+                              .hasArgs(2)
+                              .withValueSeparator(':')
+                              .withDescription("Annotates the MAF file with additional information from mutationassessor.org and Oncotator." +
+                                               "If output filename is not given, input filename will be used with a '.annotated' extension.")
+                              .create("a"));
+
+        Option validateCancerStudy = (OptionBuilder.withArgName("dir")
                                       .hasArg()
-                                      .withDescription("Validates cancer studies within the given cancer study directory")
-                                      .create("validate_cancer_study"));
+                                      .withDescription("Validates cancer studies within the given cancer study directory.")
+                                      .create("v"));
 
-        Option importCancerStudy = (OptionBuilder.withArgName("cancer_study_directory:skip:force")
+        Option importCancerStudy = (OptionBuilder.withArgName("dir:skip:force")
                                     .hasArgs(3)
                                     .withValueSeparator(':')
                                     .withDescription("Import cancer study data into the database.  " +
                                                      "This command will traverse all subdirectories of cancer_study_directory " +
                                                      "looking for cancer studies to import.  If the skip argument is 't', " +
                                                      "cancer studies will not be replaced.  Set force to 't' to force a cancer study replacement.")
-                                    .create("import_cancer_study"));
+                                    .create("i"));
 
 		// create an options instance
 		Options toReturn = new Options();
 
 		// add options
 		toReturn.addOption(help);
+		toReturn.addOption(annotateMAF);
         toReturn.addOption(validateCancerStudy);
 		toReturn.addOption(importCancerStudy);
 
@@ -99,7 +110,6 @@ public class PortalImporterTool implements Runnable {
 		}
 		catch (Exception e) {
 			Admin.usage(new PrintWriter(System.out, true));
-			System.exit(-1);
 		}
 	}
 
@@ -107,7 +117,7 @@ public class PortalImporterTool implements Runnable {
     {
 
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(writer, HelpFormatter.DEFAULT_WIDTH,
+		formatter.printHelp(writer, 100,
 							"PortalImporterTool", "", options,
 							HelpFormatter.DEFAULT_LEFT_PAD,
 							HelpFormatter.DEFAULT_DESC_PAD, "");
@@ -119,23 +129,26 @@ public class PortalImporterTool implements Runnable {
 		if (commandLine == null) return;
 
 		try {
-			if (commandLine.hasOption("help")) {
+			if (commandLine.hasOption("h")) {
 				Admin.usage(new PrintWriter(System.out, true));
 			}
-            else if (commandLine.hasOption("validate_cancer_study")) {
-                validateCancerStudy(commandLine.getOptionValue("validate_cancer_study"));
+            else if (commandLine.hasOption("v")) {
+                validateCancerStudy(commandLine.getOptionValue("v"));
             }
-			else if (commandLine.hasOption("import_cancer_study")) {
-                String[] values = commandLine.getOptionValues("import_cancer_study");
+			else if (commandLine.hasOption("i")) {
+                String[] values = commandLine.getOptionValues("i");
 				importCancerStudy(values[0], (values.length >= 2) ? values[1] : "", (values.length == 3) ? values[2] : "");
 			}
+            else if (commandLine.hasOption("a")) {
+                String[] values = commandLine.getOptionValues("a");
+                annotateMAF(values[0], (values.length == 2) ? values[1] : values[0] + ".annotated");
+            }
 			else {
 				Admin.usage(new PrintWriter(System.out, true));
 			}
 		}
 		catch (Exception e) {
 			e.printStackTrace();
-			System.exit(-1);
 		}
 	}
 
@@ -144,10 +157,8 @@ public class PortalImporterTool implements Runnable {
 		if (args.length == 0) {
 			System.err.println("Missing args to PortalImporterTool.");
 			PortalImporterTool.usage(new PrintWriter(System.err, true));
-			System.exit(-1);
+                        return;
 		}
-
-        PortalImporterTool.configureLogging();
 
 		// process
 		PortalImporterTool importer = new PortalImporterTool();
@@ -157,7 +168,6 @@ public class PortalImporterTool implements Runnable {
 		}
 		catch (Exception e) {
 			e.printStackTrace();
-			System.exit(-1);
 		}
 	}
 
@@ -183,32 +193,49 @@ public class PortalImporterTool implements Runnable {
 
 	private void validateCancerStudy(String cancerStudyDirectory) throws Exception
     {
-		if (LOG.isInfoEnabled()) {
-			LOG.info("validateCancerStudy(), cancer study directory: " + cancerStudyDirectory);
-		}
+        logMessage("validateCancerStudy(), cancer study directory: " + cancerStudyDirectory);
 
 		Validator validator = (Validator)context.getBean("cancerStudyValidator");
 		validator.validateCancerStudy(cancerStudyDirectory);
 
-		if (LOG.isInfoEnabled()) {
-			LOG.info("validateCancerStudy(), complete");
-		}
+        logMessage("validateCancerStudy(), complete");
     }
 
 	private void importCancerStudy(String cancerStudyDirectory, String skip, String force) throws Exception
     {
 
-		if (LOG.isInfoEnabled()) {
-			LOG.info("importCancerStudy(), cancer study directory: " + cancerStudyDirectory);
-		}
+        logMessage("importCancerStudy(), cancer study directory: " + cancerStudyDirectory);
 
         boolean skipBool = getBoolean(skip);
         boolean forceBool = getBoolean(force);
 		Importer importer = (Importer)context.getBean("cancerStudyImporter");
 		importer.importCancerStudy(cancerStudyDirectory, skipBool, forceBool);
 
+        logMessage("importCancerStudy(), complete");
+	}
+
+	private void annotateMAF(String inputFilename, String outputFilename) throws Exception {
+
+        logMessage("annotateMAF(), mafFile: " + inputFilename);
+
+		// sanity check
+		File mafFile = new File(inputFilename);
+		if (!mafFile.exists()) {
+			throw new IllegalArgumentException("cannot find the give MAF: " + inputFilename);
+		}
+
+		// create fileUtils object
+		FileUtils fileUtils = (FileUtils)context.getBean("fileUtils");
+
+		// create output file
+		File outputMAF = 
+			org.apache.commons.io.FileUtils.getFile(outputFilename);
+
+		fileUtils.oncotateMAF(FileUtils.FILE_URL_PREFIX + mafFile.getCanonicalPath(),
+                              FileUtils.FILE_URL_PREFIX + outputMAF.getCanonicalPath());
+
 		if (LOG.isInfoEnabled()) {
-			LOG.info("importCancerStudy(), complete");
+			LOG.info("annotateMAF(), complete");
 		}
 	}
 
@@ -216,4 +243,12 @@ public class PortalImporterTool implements Runnable {
     {
 		return (parameterValue.equalsIgnoreCase("t")) ? Boolean.TRUE : Boolean.FALSE;
 	}
+
+    private void logMessage(String message)
+    {
+        if (LOG.isInfoEnabled()) {
+            LOG.info(message);
+        }
+        System.err.println(message);
+    }
 }

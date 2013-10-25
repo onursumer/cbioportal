@@ -82,6 +82,7 @@ public class ImportGeneData {
                 }
                 
                 if (geneSymbol.startsWith("MIR") && type.equalsIgnoreCase("miscRNA")) {
+                    line = buf.readLine();
                     continue; // ignore miRNA; process seperately
                 }
                 
@@ -164,7 +165,7 @@ public class ImportGeneData {
         daoGene.deleteAllRecords();
         if (args.length == 0) {
             System.out.println("command line usage:  importGenes.pl <ncbi_genes.txt> <microrna.txt> <all_exon_loci.bed>");
-            System.exit(1);
+            return;
         }
         ProgressMonitor pMonitor = new ProgressMonitor();
         pMonitor.setConsoleMode(true);

@@ -23,6 +23,10 @@
   <!-- importer beans -->
   <b:bean id="cancerStudyImporter" class="org.mskcc.cbio.importer.internal.CancerStudyImporterImpl"/>
   <b:bean id="cancerStudyValidator" class="org.mskcc.cbio.importer.internal.CancerStudyImporterImpl"/>
+  <b:bean id="fileUtils" class="org.mskcc.cbio.importer.io.internal.FileUtilsImpl">
+	<b:constructor-arg index="0"><b:null/></b:constructor-arg>
+	<b:constructor-arg index="1"><b:null/></b:constructor-arg>
+  </b:bean>
 
   <b:bean name="importerClassMap" class="java.util.HashMap">
     <b:constructor-arg index="0" type="java.util.Map">
@@ -35,7 +39,7 @@
         <b:entry key="METHYLATION" value="org.mskcc.cbio.portal.scripts.ImportProfileData"/>
         <b:entry key="MRNA_EXPRESSION" value="org.mskcc.cbio.portal.scripts.ImportProfileData"/>
         <b:entry key="MUTATION_EXTENDED" value="org.mskcc.cbio.portal.scripts.ImportProfileData"/>
-        <b:entry key="MUTSIG" value="org.mskcc.cbio.portal.scripts.ImportMutSigData"/>
+        <b:entry key="MUTATION_SIGNIFICANCE" value="org.mskcc.cbio.portal.scripts.ImportMutSigData"/>
         <b:entry key="RPPA" value="org.mskcc.cbio.portal.scripts.ImportProteinArrayData"/>
         <b:entry key="SEGMENT" value="org.mskcc.cbio.portal.scripts.ImportCopyNumberSegmentData"/>
       </b:map>

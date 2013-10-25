@@ -1286,6 +1286,10 @@ cc-ie-message {
     font-size: 70% !important;
 }
 
+.ui-tooltip-wide {
+    max-width: 600px;
+}
+
 /* Float on alright! */
 #ppy2 {
     z-index: 9999999;
