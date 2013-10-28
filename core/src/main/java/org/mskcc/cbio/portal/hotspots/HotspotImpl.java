@@ -159,7 +159,9 @@ public class HotspotImpl implements Hotspot {
 
     @Override
     public int hashCode() {
-        int hash = 3;
+        int hash = 7;
+        hash = 43 * hash + (this.protein != null ? this.protein.hashCode() : 0);
+        hash = 43 * hash + (this.residues != null ? this.residues.hashCode() : 0);
         return hash;
     }
 
