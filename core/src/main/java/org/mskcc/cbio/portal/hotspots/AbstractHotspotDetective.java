@@ -85,7 +85,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     
     protected abstract int getNumberOfAllMutationOnProtein(Set<Hotspot> hotspotsOnAProtein);
     
-    protected abstract int getLengthOfProtein(MutatedProtein protein);
+    protected abstract int getLengthOfProtein(Set<Hotspot> hotspotsOnAProtein);
     
     @Override
     public void detectHotspot() throws HotspotException {
@@ -186,7 +186,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             hotspotsForAProtein.add(hotspot); 
             if (currProteinEnds) {
                 // process all hotspots
-                protein.setProteinLength(getLengthOfProtein(protein));
+                protein.setProteinLength(getLengthOfProtein(hotspotsForAProtein));
                 protein.setNumberOfMutations(getNumberOfAllMutationOnProtein(hotspotsForAProtein)); // only have to set once
                 hotspots.addAll(processSingleHotspotsOnAProtein(hotspotsForAProtein));
             }

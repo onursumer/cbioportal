@@ -27,12 +27,10 @@
 package org.mskcc.cbio.portal.hotspots;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.distribution.BinomialDistribution;
-import org.apache.commons.math3.distribution.NormalDistribution;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
 import org.mskcc.cbio.portal.model.CancerStudy;
@@ -127,6 +125,12 @@ public class HotspotImpl implements Hotspot {
         if (Double.isNaN(pvalue)) {
             int hotspotLength = residues.size();
             int proteinLength = protein.getProteinLength();
+            
+            if (proteinLength<=0) {
+                System.err.println("Protein length is not available for "+protein.getGene().getHugoGeneSymbolAllCaps()
+                        +"("+protein.getUniprotId()+")");
+                return Double.NaN;
+            }
 
             double p = 1.0 * hotspotLength / proteinLength;
 
@@ -138,23 +142,8 @@ public class HotspotImpl implements Hotspot {
     }
     
     private double binomialTest(int n, int x, double p) {
-        // test for normal approximation
-        if (testNormalApproximationForBinomial(n, p)) {
-            // http://en.wikipedia.org/wiki/Binomial_distribution
-            NormalDistribution distribution = new NormalDistribution(n*p, Math.sqrt(n*p*(1-p)));
-            return 1- distribution.cumulativeProbability(x);
-        } else {
-            BinomialDistribution distribution = new BinomialDistribution(n, p);
-            return 1- distribution.cumulativeProbability(x);
-        }
-    }
-    
-    private boolean testNormalApproximationForBinomial (int n, double p) {
-//        if (n*p>5) {
-//            return true;
-//        }
-        
-        return false;
+        BinomialDistribution distribution = new BinomialDistribution(n, p);
+        return 1- distribution.cumulativeProbability(x-1);
     }
 
     @Override

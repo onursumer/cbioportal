@@ -26,6 +26,9 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,9 +36,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.mskcc.cbio.portal.dao.DaoException;
 import org.mskcc.cbio.portal.dao.DaoPfamGraphics;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
+import org.mskcc.cbio.portal.web_api.ConnectionManager;
 
 /**
  *
@@ -77,8 +86,28 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
     }
     
     @Override
-    protected int getLengthOfProtein(MutatedProtein protein) {
-        return getProteinLength(protein.getUniprotAcc());
+    protected int getLengthOfProtein(Set<Hotspot> hotspotsOnAProtein) {
+        MutatedProtein protein = hotspotsOnAProtein.iterator().next().getProtein();
+        int length = getProteinLength(protein.getUniprotAcc());
+        
+        if (length==0) {
+            // TODO: this is not ideal -- under estimating p values
+            length = getLargestResidue(hotspotsOnAProtein);
+        }
+        
+        return length;
+    }
+    
+    private static int getLargestResidue(Set<Hotspot> hotspotsOnAProtein) {
+        int length = 0;
+        for (Hotspot hotspot : hotspotsOnAProtein) {
+            for (int residue : hotspot.getResidues()) {
+                if (residue>length) {
+                    length = residue;
+                }
+            }
+        }
+        return length;
     }
     
     private static Map<String, Integer> mapUniprotProteinLengths = null;
@@ -108,6 +137,53 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
         }
         
         Integer ret = mapUniprotProteinLengths.get(uniprotAcc);
-        return ret==null?0:ret;
+        
+        if (ret==null) {
+            ret = getProteinLengthFromUniprot(uniprotAcc);
+            mapUniprotProteinLengths.put(uniprotAcc, ret);
+        }
+        
+        if (ret==0) {
+            System.out.println("No length informaiton found for "+uniprotAcc);
+            return 0;
+        }
+        
+        return ret;
+    }
+    
+    private static int getProteinLengthFromUniprot(String uniprotAcc) {
+        String strURL = "http://www.uniprot.org/uniprot/"+uniprotAcc+".fasta";
+        MultiThreadedHttpConnectionManager connectionManager =
+                ConnectionManager.getConnectionManager();
+        HttpClient client = new HttpClient(connectionManager);
+        GetMethod method = new GetMethod(strURL);
+        
+        try {
+            int statusCode = client.executeMethod(method);
+            if (statusCode == HttpStatus.SC_OK) {
+                BufferedReader bufReader = new BufferedReader(
+                        new InputStreamReader(method.getResponseBodyAsStream()));
+                String line = bufReader.readLine();
+                if (line==null||!line.startsWith(">")) {
+                    return 0;
+                }
+                
+                int len = 0;
+                for (line=bufReader.readLine(); line!=null; line=bufReader.readLine()) {
+                    len += line.length();
+                }
+                return len;
+            } else {
+                //  Otherwise, throw HTTP Exception Object
+                throw new HttpException(statusCode + ": " + HttpStatus.getStatusText(statusCode)
+                        + " Base URL:  " + strURL);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        } finally {
+            //  Must release connection back to Apache Commons Connection Pool
+            method.releaseConnection();
+        }
     }
 }
