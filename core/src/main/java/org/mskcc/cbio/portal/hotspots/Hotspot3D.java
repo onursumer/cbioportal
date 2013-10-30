@@ -26,7 +26,7 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
-import java.util.Set;
+import java.util.TreeSet;
 
 /**
  *
@@ -36,7 +36,7 @@ public class Hotspot3D extends HotspotImpl {
     protected String pdbId;
     protected String chain;
     
-    public Hotspot3D(MutatedProtein protein, Set<Integer> residues,
+    public Hotspot3D(MutatedProtein protein, TreeSet<Integer> residues,
             String pdbId, String chain) {
         super(protein, residues);
         this.pdbId = pdbId;

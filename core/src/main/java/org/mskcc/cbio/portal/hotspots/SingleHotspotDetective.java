@@ -101,10 +101,9 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
     private static int getLargestResidue(Set<Hotspot> hotspotsOnAProtein) {
         int length = 0;
         for (Hotspot hotspot : hotspotsOnAProtein) {
-            for (int residue : hotspot.getResidues()) {
-                if (residue>length) {
-                    length = residue;
-                }
+            int residue = hotspot.getResidues().last();
+            if (residue>length) {
+                length = residue;
             }
         }
         return length;

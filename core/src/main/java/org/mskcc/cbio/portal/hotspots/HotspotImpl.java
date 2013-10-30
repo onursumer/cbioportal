@@ -42,7 +42,7 @@ import org.mskcc.cbio.portal.model.ExtendedMutation;
  */
 public class HotspotImpl implements Hotspot {
     private MutatedProtein protein;
-    private Set<Integer> residues;
+    private TreeSet<Integer> residues;
     private Set<ExtendedMutation> mutations;
     private Set<Sample> samples;
     private String label;
@@ -54,7 +54,7 @@ public class HotspotImpl implements Hotspot {
      * @param residues
      * @param label 
      */
-    public HotspotImpl(MutatedProtein protein, Set<Integer> residues) {
+    public HotspotImpl(MutatedProtein protein, TreeSet<Integer> residues) {
         this.protein = protein;
         this.residues = residues;
         this.mutations = new HashSet<ExtendedMutation>();
@@ -76,7 +76,7 @@ public class HotspotImpl implements Hotspot {
      * @return residues
      */
     @Override
-    public Set<Integer> getResidues() {
+    public TreeSet<Integer> getResidues() {
         return residues;
     }
     
@@ -116,7 +116,7 @@ public class HotspotImpl implements Hotspot {
             return label;
         }
 
-        return protein.toString()+" "+StringUtils.join(new TreeSet<Integer>(getResidues()),";")
+        return protein.toString()+" "+StringUtils.join(getResidues(),";")
                 + " (p="+String.format("%6.3e", getPValue()) + ")";
     }
     

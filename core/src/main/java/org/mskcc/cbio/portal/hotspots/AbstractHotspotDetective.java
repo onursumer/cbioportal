@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import org.apache.commons.lang.StringUtils;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
 import org.mskcc.cbio.portal.dao.JdbcUtil;
@@ -124,7 +125,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             hotspots = new HashSet<Hotspot>();
             Set<Hotspot> hotspotsForAProtein = new HashSet<Hotspot>();
             MutatedProtein currProtein = null;
-            Set<Integer> currResidues = null;
+            TreeSet<Integer> currResidues = null;
             Hotspot hotspot = null;
             while (rs.next()) {
                 int geneticProfileId = rs.getInt("GENETIC_PROFILE_ID");
@@ -139,7 +140,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 String aaChange = rs.getString("PROTEIN_CHANGE");
                 int start = rs.getInt("ONCOTATOR_PROTEIN_POS_START");
                 int end = rs.getInt("ONCOTATOR_PROTEIN_POS_END");
-                Set<Integer> newResidues = new HashSet<Integer>(end-start+1);
+                TreeSet<Integer> newResidues = new TreeSet<Integer>();
                 for (int res=start; res<=end; res++) {
                     newResidues.add(res);
                 }

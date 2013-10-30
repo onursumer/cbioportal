@@ -27,6 +27,7 @@
 package org.mskcc.cbio.portal.hotspots;
 
 import java.util.Set;
+import java.util.TreeSet;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
 
 /**
@@ -45,7 +46,7 @@ public interface Hotspot {
      * Not only residues that have mutations, but also residues within the cluster.
      * @return residues
      */
-    public Set<Integer> getResidues();
+    public TreeSet<Integer> getResidues();
     
     /**
      * 
