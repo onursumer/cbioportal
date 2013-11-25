@@ -230,6 +230,10 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         int length = getProteinLength(protein.getUniprotAcc());
         
         if (length==0) {
+            length = protein.getGene().getLength()/3;
+        }
+        
+        if (length==0) {
             // TODO: this is not ideal -- under estimating p values
             length = getLargestResidue(hotspotsOnAProtein);
         }

@@ -116,8 +116,8 @@ public class HotspotImpl implements Hotspot {
             return label;
         }
 
-        return protein.toString()+" "+StringUtils.join(getResidues(),";")
-                + " (p="+String.format("%6.3e", getPValue()) + ")";
+        return protein.toString()+" "+StringUtils.join(getResidues(),";");
+               // + " (p="+String.format("%6.3e", getPValue()) + ")";
     }
     
     @Override
