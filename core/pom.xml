@@ -193,7 +193,7 @@
 	</dependency>
 
 	<!-- rserve -->
-	<dependency>
+	<!--dependency>
 	  <groupId>org.nuiton.thirdparty</groupId>
 	  <artifactId>REngine</artifactId>
 	  <version>0.6-1</version>
@@ -202,7 +202,7 @@
 	  <groupId>org.nuiton.thirdparty</groupId>
 	  <artifactId>Rserve</artifactId>
 	  <version>0.6-1</version>
-	</dependency>
+	</dependency-->
         
         <!-- BioJava3 -->
         <dependency>
@@ -264,7 +264,7 @@
 
 	  <plugins>
 
-		<!-- java 1.6 support -->
+		<!-- java 1.7 support -->
 		<plugin>
 		  <groupId>org.apache.maven.plugins</groupId>
 		  <artifactId>maven-compiler-plugin</artifactId>
