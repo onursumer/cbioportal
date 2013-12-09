@@ -62,6 +62,16 @@ public class HotspotImpl implements Hotspot {
         this.pvalue = Double.NaN;
     }
     
+    @Override
+    public void mergeHotspot(Hotspot hotspot) {
+        if (hotspot!=null) {
+            for (ExtendedMutation mutation : hotspot.getMutations()) {
+                addMutation(mutation);
+            }
+            this.pvalue = Double.NaN;
+        }
+    }
+    
     /**
      * 
      * @return gene

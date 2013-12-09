@@ -37,6 +37,12 @@ import org.mskcc.cbio.portal.model.ExtendedMutation;
 public interface Hotspot {
     
     /**
+     * Merge with another hotspot
+     * @param hotspot  another hotspot
+     */
+    public void mergeHotspot(Hotspot hotspot);
+    
+    /**
      * 
      * @return gene
      */

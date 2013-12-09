@@ -28,10 +28,12 @@ package org.mskcc.cbio.portal.hotspots;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.mskcc.cbio.portal.model.ExtendedMutation;
 
 /**
  *
@@ -55,17 +57,32 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
      */
     @Override
     protected Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspotsOnAProtein) {
+        Map<Integer, Hotspot> mapPositionHotspot = getMapPositionHotspot(hotspotsOnAProtein);
         List<Integer> hotspotCenters = findLocalMaximum(hotspotsOnAProtein);
         Set<Hotspot> ret = new HashSet<Hotspot>();
-        for (int center : hotspotCenters) {
-            
+        for (Integer center : hotspotCenters) {
+            Hotspot hs = mapPositionHotspot.get(center);
+            ret.add(hs);
+            for (int w=1; w<=window; w++) {
+                hs.mergeHotspot(mapPositionHotspot.get(center-w));
+                hs.mergeHotspot(mapPositionHotspot.get(center+w));
+            }
         }
-        
         
         return ret;
     }
     
-    
+    private Map<Integer, Hotspot> getMapPositionHotspot(Set<Hotspot> hotspotsOnAProtein) {
+        Map<Integer, Hotspot> map = new HashMap<Integer, Hotspot>();
+        for (Hotspot hotspot : hotspotsOnAProtein) {
+            if (hotspot.getResidues().size()!=1) {
+                throw new IllegalStateException("Only single residue hotspot should be here");
+            }
+            map.put(hotspot.getResidues().first(), hotspot);
+        }
+        
+        return map;
+    }
     
     /**
      * 
