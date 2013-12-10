@@ -116,6 +116,7 @@ public class HotspotsServlet extends HttpServlet {
             hotspotDetectiveParameters.setExcludeEntrezGeneIds(excludeEntrezGeneIds);
             hotspotDetectiveParameters.setMutationTypes(Arrays.asList(type.split("[, ]+")));
             hotspotDetectiveParameters.setThresholdHyperMutator(thresholdHyper);
+            hotspotDetectiveParameters.setThresholdSamples(threshold);
                 
             HotspotDetective hotspotDetective;
             
