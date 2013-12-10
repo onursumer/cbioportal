@@ -40,13 +40,9 @@ import java.util.Set;
  */
 public class LinearHotspotDetective extends AbstractHotspotDetective {
     private int thresholdSamples;
-    private int window;
 
-    public LinearHotspotDetective(Collection<Integer> cancerStudyIds,
-            int thresholdSamples, int window) {
-        super(cancerStudyIds);
-        this.thresholdSamples = thresholdSamples;
-        this.window = window;
+    public LinearHotspotDetective(HotspotDetectiveParameters parameters) {
+        super(parameters);
     }
     
     /**
@@ -62,7 +58,7 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
         for (Integer center : hotspotCenters) {
             Hotspot hs = mapPositionHotspot.get(center);
             ret.add(hs);
-            for (int w=1; w<=window; w++) {
+            for (int w=1; w<=parameters.getLinearSpotWindowSize(); w++) {
                 hs.mergeHotspot(mapPositionHotspot.get(center-w));
                 hs.mergeHotspot(mapPositionHotspot.get(center+w));
             }
@@ -94,8 +90,8 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
     private List<Integer> findLocalMaximum(Set<Hotspot> hotspotsOnAProtein) {
         
         //arrSamples e.g. 0044400, 0040400, 00400, 004400
-        int[] arrSamples = sampleCountArrayAlongProtein(hotspotsOnAProtein, window);
-        int[] sumWindow = sumInWindow(arrSamples, window);
+        int[] arrSamples = sampleCountArrayAlongProtein(hotspotsOnAProtein, parameters.getLinearSpotWindowSize());
+        int[] sumWindow = sumInWindow(arrSamples, parameters.getLinearSpotWindowSize());
         
         List<Integer> list = new ArrayList<Integer>();
         

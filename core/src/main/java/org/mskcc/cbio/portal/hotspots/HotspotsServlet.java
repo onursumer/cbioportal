@@ -110,6 +110,13 @@ public class HotspotsServlet extends HttpServlet {
                 }
             }
             
+            HotspotDetectiveParameters hotspotDetectiveParameters = new HotspotDetectiveParametersImpl();
+            hotspotDetectiveParameters.setCancerStudyIds(studyIds);
+            hotspotDetectiveParameters.setEntrezGeneIds(entrezGeneIds);
+            hotspotDetectiveParameters.setExcludeEntrezGeneIds(excludeEntrezGeneIds);
+            hotspotDetectiveParameters.setMutationTypes(Arrays.asList(type.split("[, ]+")));
+            hotspotDetectiveParameters.setThresholdHyperMutator(thresholdHyper);
+                
             HotspotDetective hotspotDetective;
             
 //            if (type.startsWith("ptm-effect")) {
@@ -121,10 +128,11 @@ public class HotspotsServlet extends HttpServlet {
 //            } else if (type.equalsIgnoreCase("truncating-sep")) {
 //                 mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
 //                    studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
-//            } else if (type.equalsIgnoreCase("linear")) {
-//                int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
-//                mapKeywordStudyCaseMut = DaoMutation.getMutatationLinearStatistics(
-//                        studyIds.toString(), window, threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
+//            } else
+            if (type.equalsIgnoreCase("linear")) {
+                int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
+                hotspotDetective = new LinearHotspotDetective(hotspotDetectiveParameters);
+                hotspotDetectiveParameters.setLinearSpotWindowSize(window);
 //            } else if (type.equalsIgnoreCase("3d")) {
 //                double thresholdDisError = Double.parseDouble(request.getParameter(THRESHOLD_DISTANCE_ERROR_CONTACT_MAP));
 //                mapKeywordStudyCaseMut = DaoMutation.getMutatation3DStatistics(
@@ -132,17 +140,12 @@ public class HotspotsServlet extends HttpServlet {
 //            } else if (type.equalsIgnoreCase("pdb-ptm")) {
 //                mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
 //                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
-//            } else {
-                SingleHotspotDetective singleHotspotDetective = new SingleHotspotDetective(studyIds, threshold);
-                singleHotspotDetective.setEntrezGeneIds(entrezGeneIds);
-                singleHotspotDetective.setExcludeEntrezGeneIds(excludeEntrezGeneIds);
-                singleHotspotDetective.setMutationTypes(Arrays.asList(type.split("[, ]+")));
-                singleHotspotDetective.setThresholdHyperMutator(thresholdHyper);
-                hotspotDetective = singleHotspotDetective;
-//            }
+            } else {
+                hotspotDetective = new SingleHotspotDetective(hotspotDetectiveParameters);
+            }
                 
-              hotspotDetective.detectHotspot();
-              hotspots = hotspotDetective.getDetectedHotspots();
+          hotspotDetective.detectHotspot();
+          hotspots = hotspotDetective.getDetectedHotspots();
         } catch (HotspotException ex) {
             throw new ServletException(ex);
         }

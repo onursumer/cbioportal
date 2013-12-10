@@ -60,33 +60,18 @@ import org.mskcc.cbio.portal.web_api.ConnectionManager;
  * @author jgao
  */
 public abstract class AbstractHotspotDetective implements HotspotDetective {
-    private Collection<Integer> cancerStudyIds;
-    private Collection<String> mutationTypes; // missense or truncating
-    private Collection<Long> entrezGeneIds;
-    private Collection<Long>  excludeEntrezGeneIds;
-    private int thresholdHyperMutator = -1;
+    protected HotspotDetectiveParameters parameters;
     
     private Set<Hotspot> hotspots;
     protected Map<MutatedProtein, Integer> numberOfAllMutationOnProteins = new HashMap<MutatedProtein, Integer>();
 
-    public AbstractHotspotDetective(Collection<Integer> cancerStudyIds) {
-        this.cancerStudyIds = cancerStudyIds;
+    public AbstractHotspotDetective(HotspotDetectiveParameters parameters) {
+        setParameters(parameters);
     }
 
-    public void setMutationTypes(Collection<String> mutationTypes) {
-        this.mutationTypes = mutationTypes;
-    }
-
-    public void setEntrezGeneIds(Collection<Long> entrezGeneIds) {
-        this.entrezGeneIds = entrezGeneIds;
-    }
-
-    public void setExcludeEntrezGeneIds(Collection<Long> excludeEntrezGeneIds) {
-        this.excludeEntrezGeneIds = excludeEntrezGeneIds;
-    }
-
-    public void setThresholdHyperMutator(int thresholdHyperMutator) {
-        this.thresholdHyperMutator = thresholdHyperMutator;
+    @Override
+    public final void setParameters(HotspotDetectiveParameters parameters) {
+        this.parameters = parameters;
     }
 
     /**
@@ -107,23 +92,23 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             String sql = "SELECT  gp.`GENETIC_PROFILE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, cme.`CASE_ID`, "
                     + "`PROTEIN_CHANGE`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp ";
-            if (thresholdHyperMutator>0) {
+            if (parameters.getThresholdHyperMutator()>0) {
                 sql += ",mutation_count tmc ";
             }
             sql += "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
-                    + "AND gp.`CANCER_STUDY_ID` IN ("+StringUtils.join(cancerStudyIds,",")+") ";
-            if (thresholdHyperMutator>0) {
-                sql += "AND tmc.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` AND tmc.`CASE_ID`=cme.`CASE_ID` AND MUTATION_COUNT<" + thresholdHyperMutator + " ";
+                    + "AND gp.`CANCER_STUDY_ID` IN ("+StringUtils.join(parameters.getCancerStudyIds(),",")+") ";
+            if (parameters.getThresholdHyperMutator()>0) {
+                sql += "AND tmc.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` AND tmc.`CASE_ID`=cme.`CASE_ID` AND MUTATION_COUNT<" + parameters.getThresholdHyperMutator() + " ";
             }
-            if (mutationTypes!=null && !mutationTypes.isEmpty()) {
-                sql += "AND (`KEYWORD` LIKE '%"+StringUtils.join(mutationTypes,"' OR `KEYWORD` LIKE '%") +"') ";;
+            if (parameters.getMutationTypes()!=null && !parameters.getMutationTypes().isEmpty()) {
+                sql += "AND (`KEYWORD` LIKE '%"+StringUtils.join(parameters.getMutationTypes(),"' OR `KEYWORD` LIKE '%") +"') ";;
             } 
-            if (entrezGeneIds!=null && !entrezGeneIds.isEmpty()) {
-                sql += "AND me.`ENTREZ_GENE_ID` IN("+StringUtils.join(entrezGeneIds,",")+") ";
+            if (parameters.getEntrezGeneIds()!=null && !parameters.getEntrezGeneIds().isEmpty()) {
+                sql += "AND me.`ENTREZ_GENE_ID` IN("+StringUtils.join(parameters.getEntrezGeneIds(),",")+") ";
             }
-            if (excludeEntrezGeneIds!=null && !excludeEntrezGeneIds.isEmpty()) {
-                sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+StringUtils.join(excludeEntrezGeneIds,",")+") ";
+            if (parameters.getExcludeEntrezGeneIds()!=null && !parameters.getExcludeEntrezGeneIds().isEmpty()) {
+                sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+StringUtils.join(parameters.getExcludeEntrezGeneIds(),",")+") ";
             }
             sql += "ORDER BY me.`ENTREZ_GENE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, "
                     + " `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`"; // to filter and save memories

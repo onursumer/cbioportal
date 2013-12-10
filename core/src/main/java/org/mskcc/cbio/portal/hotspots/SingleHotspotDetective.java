@@ -26,7 +26,6 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,12 +34,9 @@ import java.util.Set;
  * @author jgao
  */
 public class SingleHotspotDetective extends AbstractHotspotDetective {
-    private int thresholdSamples;
 
-    public SingleHotspotDetective(Collection<Integer> cancerStudyIds,
-            int thresholdSamples) {
-        super(cancerStudyIds);
-        this.thresholdSamples = thresholdSamples;
+    public SingleHotspotDetective(HotspotDetectiveParameters parameters) {
+        super(parameters);
     }
     
     /**
@@ -53,7 +49,7 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
         Set<Hotspot> ret = new HashSet<Hotspot>();
         for (Hotspot hotspot : hotspotsOnAProtein) {
             // only return hotspot above sample threshold
-            if (hotspot.getSamples().size()>=thresholdSamples) {
+            if (hotspot.getSamples().size()>=parameters.getThresholdSamples()) {
                 ret.add(hotspot);
             }
         }

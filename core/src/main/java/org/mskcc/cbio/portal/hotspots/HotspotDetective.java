@@ -33,6 +33,9 @@ import java.util.Set;
  * @author jgao
  */
 public interface HotspotDetective {
+    
+    void setParameters(HotspotDetectiveParameters parameters);
+    
     /**
      * 
      * @throws HotspotException 
