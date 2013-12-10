@@ -5,7 +5,8 @@
  * options: {el: [target container],
  *           model: {mutationProxy: [mutation data proxy],
  *                   sampleArray: [list of case ids as an array of strings],
- *                   diagramOpts: [mutation diagram options -- optional]}
+ *                   diagramOpts: [mutation diagram options -- optional],
+ *                   tableOpts: [mutation table options -- optional]}
  *           mut3dVis: [optional] reference to the 3d structure visualizer
  *          }
  */
@@ -34,7 +35,8 @@ var MutationDetailsView = Backbone.View.extend({
 		if (self.model.mutationProxy.hasData())
 		{
 			self._initDefaultView(self.model.sampleArray,
-                    self.model.diagramOpts);
+                    self.model.diagramOpts,
+					self.model.tableOpts);
 		}
 
 		// format after render
@@ -56,7 +58,7 @@ var MutationDetailsView = Backbone.View.extend({
 			var mainContent = self.$el.find("#mutation_details_content");
 			mainContent.tabs();
 			mainContent.tabs('paging', {tabsPerPage: 10, follow: true, cycle: false});
-			mainContent.tabs('select', 0);
+			mainContent.tabs("option", "active", 0);
 			self.$el.find(".mutation-details-tabs-ref").tipTip(
 				{defaultPosition: "bottom", delay:"100", edgeOffset: 10, maxWidth: 200});
 		}
@@ -80,6 +82,23 @@ var MutationDetailsView = Backbone.View.extend({
 		{
 		   $(container3d).hide();
 		}
+	},
+	/**
+	 * Refreshes the genes tab.
+	 * (Intended to fix a resize problem with ui.tabs.paging plugin)
+	 */
+	refreshGenesTab: function()
+	{
+		// tabs("refresh") is problematic...
+//		var self = this;
+//		var mainContent = self.$el.find("#mutation_details_content");
+//		mainContent.tabs("refresh");
+
+        // just trigger the window resize event,
+        // rest is handled by the resize handler in ui.tabs.paging plugin.
+		// it would be better to directly call the resize handler of the plugin,
+		// but the function doesn't have public access...
+		$(window).trigger('resize');
 	},
 	/**
 	 * Generates the content structure by creating div elements for each
@@ -127,8 +146,9 @@ var MutationDetailsView = Backbone.View.extend({
 	 *
 	 * @param cases         array of case ids (samples)
 	 * @param diagramOpts   [optional] mutation diagram options
+	 * @param tableOpts     [optional] mutation table options
 	 */
-	_initDefaultView: function(cases, diagramOpts)
+	_initDefaultView: function(cases, diagramOpts, tableOpts)
 	{
 		var self = this;
 
@@ -137,18 +157,31 @@ var MutationDetailsView = Backbone.View.extend({
 		self.pdbProxy = new PdbDataProxy(
 				self.model.mutationProxy.getMutationUtil());
 
+		var contentSelector = self.$el.find("#mutation_details_content");
+
+		// reset all previous tabs related listeners (if any)
+		contentSelector.bind('tabscreate', false);
+		contentSelector.bind('tabsactivate', false);
+
 		// init view for the first gene only
-		self._initView(genes[0], cases, diagramOpts);
+		contentSelector.bind('tabscreate', function(event, ui) {
+		self._initView(genes[0], cases, diagramOpts, tableOpts);
+		});
 
 		// init other views upon selecting the corresponding tab
-		self.$el.find("#mutation_details_content").bind('tabsselect', function(event, ui) {
-			var gene = genes[ui.index];
+		contentSelector.bind('tabsactivate', function(event, ui) {
+			// TODO using index() causes problems with ui.tabs.paging plugin
+			// note: ui.index is replaced with ui.newTab.index() after jQuery 1.9
+			//var gene = genes[ui.newTab.index()];
+
+			// get the gene name directly from the html content
+			var gene = ui.newTab.text().trim();
 
 			// init view for the selected tab (if not initialized before)
 			if (self.geneTabView[gene] == undefined)
 			{
 				// init view (self.geneTabView mapping is updated within this function)
-				self._initView(gene, cases, diagramOpts);
+				self._initView(gene, cases, diagramOpts, tableOpts);
 			}
 			// check if 3D panel is visible
 			else if (self.mut3dVisView &&
@@ -172,8 +205,9 @@ var MutationDetailsView = Backbone.View.extend({
 	 * @param gene          hugo gene symbol
      * @param cases         array of case ids (samples)
      * @param diagramOpts   [optional] mutation diagram options
+     * @param tableOpts     [optional] mutation table options
 	 */
-	_initView: function(gene, cases, diagramOpts)
+	_initView: function(gene, cases, diagramOpts, tableOpts)
 	{
 		var self = this;
 		var mutationDiagram = null;
@@ -431,7 +465,8 @@ var MutationDetailsView = Backbone.View.extend({
 					{el: "#mutation_table_" + gene,
 					model: {geneSymbol: gene,
 						mutations: mutationData,
-						syncFn: syncWithMutationTable}});
+						syncFn: syncWithMutationTable,
+						tableOpts: tableOpts}});
 
 			mutationTableView.render();
 

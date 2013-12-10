@@ -38,7 +38,7 @@ var Mutation3dVisView = Backbone.View.extend({
 			mut3dVis.updateContainer(container3d);
 		}
 
-		// add click listener to the close icon of the 3d vis container
+		// click listener for the close icon of the 3d vis container
 		var closeHandler = function() {
 			// hide the vis pane
 			if (mut3dVis != null)
@@ -47,7 +47,7 @@ var Mutation3dVisView = Backbone.View.extend({
 			}
 
 			// also hide all pdb panel views
-			self.options.parentEl.find(".mutation-pdb-panel-view").hide();
+			self.options.parentEl.find(".mutation-pdb-panel-view").slideUp();
 		};
 
 		// add listeners to panel (header) buttons
@@ -97,7 +97,7 @@ var Mutation3dVisView = Backbone.View.extend({
 		});
 
 		// TODO this is an access to a global div out of this view's template...
-		$("#tabs").bind("tabsselect", function(event, ui){
+		$("#tabs").bind("tabsactivate", function(event, ui){
 			// close the vis panel only if the selected tab is one of the main tabs
 			// (i.e.: do not close panel if a gene tab selected)
 			if (ui.tab.className != "mutation-details-tabs-ref")
@@ -166,6 +166,26 @@ var Mutation3dVisView = Backbone.View.extend({
 
 		// just reload with the last known pdb id and chain
 		mut3dVis.reload(self.pdbId, self.chain);
+	},
+	/**
+	 * Minimizes the 3D visualizer panel.
+	 */
+	minimizeView: function()
+	{
+		var self = this;
+		var mut3dVis = self.options.mut3dVis;
+
+		mut3dVis.minimize();
+	},
+	/**
+	 * Restores the 3D visualizer panel to its full size.
+	 */
+	maximizeView: function()
+	{
+		var self = this;
+		var mut3dVis = self.options.mut3dVis;
+
+		mut3dVis.maximize();
 	},
 	isVisible: function()
 	{
