@@ -56,7 +56,8 @@ import org.mskcc.cbio.portal.servlet.QueryBuilder;
  */
 public class HotspotsServlet extends HttpServlet {
     private static Logger logger = Logger.getLogger(HotspotsServlet.class);
-    public static final String MUTATION_TYPE = "type";
+    public static final String HOTSPOT_TYPE = "hotspot_type";
+    public static final String MUTATION_TYPE = "mutation_type";
     public static final String PTM_TYPE = "ptm_type";
     public static final String GENES = "genes";
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
@@ -75,7 +76,8 @@ public class HotspotsServlet extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String studyStableIdsStr = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
-        String type = request.getParameter(MUTATION_TYPE);
+        String hotspotType = request.getParameter(HOTSPOT_TYPE);
+        String mutationType = request.getParameter(MUTATION_TYPE);
         int threshold = Integer.parseInt(request.getParameter(THRESHOLD_SAMPLES));
         int thresholdHyper = Integer.parseInt(request.getParameter(THRESHOLD_MUTATIONS_HYPERMUTATOR));
         String genes = request.getParameter(GENES);
@@ -114,7 +116,7 @@ public class HotspotsServlet extends HttpServlet {
             hotspotDetectiveParameters.setCancerStudyIds(studyIds);
             hotspotDetectiveParameters.setEntrezGeneIds(entrezGeneIds);
             hotspotDetectiveParameters.setExcludeEntrezGeneIds(excludeEntrezGeneIds);
-            hotspotDetectiveParameters.setMutationTypes(Arrays.asList(type.split("[, ]+")));
+            hotspotDetectiveParameters.setMutationTypes(Arrays.asList(mutationType.split("[, ]+")));
             hotspotDetectiveParameters.setThresholdHyperMutator(thresholdHyper);
             hotspotDetectiveParameters.setThresholdSamples(threshold);
                 
@@ -130,7 +132,7 @@ public class HotspotsServlet extends HttpServlet {
 //                 mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
 //                    studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
 //            } else
-            if (type.equalsIgnoreCase("linear")) {
+            if (hotspotType.equalsIgnoreCase("linear")) {
                 int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
                 hotspotDetective = new LinearHotspotDetective(hotspotDetectiveParameters);
                 hotspotDetectiveParameters.setLinearSpotWindowSize(window);
@@ -141,8 +143,10 @@ public class HotspotsServlet extends HttpServlet {
 //            } else if (type.equalsIgnoreCase("pdb-ptm")) {
 //                mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
 //                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
-            } else {
+            } else if (hotspotType.equalsIgnoreCase("single-missense")) {
                 hotspotDetective = new SingleHotspotDetective(hotspotDetectiveParameters);
+            } else {
+                throw new IllegalStateException("wrong hotspot type: "+hotspotType);
             }
                 
           hotspotDetective.detectHotspot();

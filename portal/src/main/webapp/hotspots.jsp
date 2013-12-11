@@ -77,9 +77,9 @@ String jsonStudies = JSONValue.toJSONString(studies);
     <div>
         <label><b>Data type:</b></label>
         <select id="data-type">
-            <option selected="selected" value="missense">Missense and In-frame Mutations</option>
-            <option value="truncating-sep">Truncating Mutations</option>
-            <!--option value="truncating">Truncating Mutations (merge by gene)</option-->
+            <option selected="selected" value="single-missense">Missense and In-frame Mutations (Single residue hotspots)</option>
+            <option value="single-truncating-sep">Truncating Mutations (Single residue hotspots)</option>
+            <!--option value="single-truncating">Truncating Mutations (Single residue hotspots) (merge by gene)</option-->
             <option value="linear-1">Linear hotspots (d<=1)</option>
             <option value="linear-2">Linear hotspots (d<=2)</option>
             <option value="linear-4">Linear hotspots (d<=4)</option>
@@ -560,8 +560,11 @@ AlteredGene.Router = Backbone.Router.extend({
         $('#merge-alterations').prop('disabled',type==="truncating");
     
         var option_type = type;
-        if (type==='missense') {
-            option_type = 'missense,ins,del';
+        var option_mutation_type = 'missense';
+        if (type==='single-missense') {
+            option_mutation_type = 'missense,ins,del';
+        } else if (type.indexOf('single-truncating')===0) {
+            option_mutation_type = 'truncating';
         } else if (type.indexOf('ptm-effect-')===0) {
             option_type = 'ptm-effect';
             //option_type = 'ptm-effect,PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
@@ -574,7 +577,8 @@ AlteredGene.Router = Backbone.Router.extend({
         var options = {
                 'cmd': 'statistics',
                 'cancer_study_id': studies,
-                'type': option_type,
+                'hotspot_type': option_type,
+                'mutation_type': option_mutation_type,
                 'threshold_samples': threshold,
                 'threshold_hypermutator': thresholdHyper
             };
