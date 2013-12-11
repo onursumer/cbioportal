@@ -32,6 +32,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -79,7 +80,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
      * @param hotspots
      * @return 
      */
-    protected abstract Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspotsOnAProtein);
+    protected abstract Set<Hotspot> processSingleHotspotsOnAProtein(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot);
     
     @Override
     public void detectHotspot() throws HotspotException {
@@ -110,16 +111,13 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             if (parameters.getExcludeEntrezGeneIds()!=null && !parameters.getExcludeEntrezGeneIds().isEmpty()) {
                 sql += "AND me.`ENTREZ_GENE_ID` NOT IN("+StringUtils.join(parameters.getExcludeEntrezGeneIds(),",")+") ";
             }
-            sql += "ORDER BY me.`ENTREZ_GENE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, "
-                    + " `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`"; // to filter and save memories
+            sql += "ORDER BY me.`ENTREZ_GENE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`"; // to filter and save memories
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
             hotspots = new HashSet<Hotspot>();
-            Set<Hotspot> hotspotsForAProtein = new HashSet<Hotspot>();
             MutatedProtein currProtein = null;
-            TreeSet<Integer> currResidues = null;
-            Hotspot hotspot = null;
+            Map<Integer, Hotspot> mapResidueHotspot = new HashMap<Integer, Hotspot>();
             while (rs.next()) {
                 int geneticProfileId = rs.getInt("GENETIC_PROFILE_ID");
                 String uniprotId = rs.getString("ONCOTATOR_UNIPROT_ENTRY_NAME");
@@ -131,42 +129,41 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 
                 String caseId = rs.getString("CASE_ID");
                 String aaChange = rs.getString("PROTEIN_CHANGE");
-                int start = rs.getInt("ONCOTATOR_PROTEIN_POS_START");
-                int end = rs.getInt("ONCOTATOR_PROTEIN_POS_END");
-                TreeSet<Integer> newResidues = new TreeSet<Integer>();
-                for (int res=start; res<=end; res++) {
-                    newResidues.add(res);
-                }
+                
                 CanonicalGene gene = daoGeneOptimized.getGene(rs.getLong("ENTREZ_GENE_ID"));
                 MutatedProteinImpl newProtein = new MutatedProteinImpl(gene);
                 newProtein.setUniprotId(uniprotId);
                 newProtein.setUniprotAcc(uniprotAcc);
                 
-                boolean currProteinEnds = !newProtein.equals(currProtein);
-                boolean currResiduesEnds = currProteinEnds || !newResidues.equals(currResidues);
-                if (currResiduesEnds) {
-                    // record the old hotspot
-                    recordHotspot(hotspot, hotspotsForAProtein, currProteinEnds);
-                
-                    if (currProteinEnds) {
-                        currProtein = newProtein;
-                    }
-                    
-                    // a new hotspot
-                    currResidues = newResidues;
-                    hotspot = new HotspotImpl(currProtein, currResidues);
+                if (!newProtein.equals(currProtein)) {
+                    recordHotspots(currProtein, mapResidueHotspot);
+                    currProtein = newProtein;
+                    mapResidueHotspot.clear();
                 }
                 
-                ExtendedMutation mutation = new ExtendedMutation();
-                mutation.setCaseId(caseId);
-                mutation.setGeneticProfileId(geneticProfileId);
-                mutation.setProteinChange(aaChange);
-                mutation.setGene(gene);
+                int start = rs.getInt("ONCOTATOR_PROTEIN_POS_START");
+                int end = rs.getInt("ONCOTATOR_PROTEIN_POS_END");
+                // TODO: so the hotspots are organized by residues, ie. a deletion of two residues would have two hotspots.
+                for (int res=start; res<=end; res++) {
+                    Hotspot hotspot = mapResidueHotspot.get(res);
+                    if (hotspot==null) {
+                        hotspot = new HotspotImpl(currProtein, new TreeSet<Integer>(Arrays.asList(res)));
+                        mapResidueHotspot.put(res, hotspot);
+                    }
+
+                    ExtendedMutation mutation = new ExtendedMutation();
+                    mutation.setCaseId(caseId);
+                    mutation.setGeneticProfileId(geneticProfileId);
+                    mutation.setProteinChange(aaChange);
+                    mutation.setGene(gene);
+                    mutation.setOncotatorProteinPosStart(start);
+                    mutation.setOncotatorProteinPosEnd(end);
+                    hotspot.addMutation(mutation);
+                }
                 
-                hotspot.addMutation(mutation);
             }
             
-            recordHotspot(hotspot, hotspotsForAProtein, true);
+            recordHotspots(currProtein, mapResidueHotspot);
         } catch (SQLException e) {
             throw new HotspotException(e);
         } finally {
@@ -174,20 +171,12 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         }
     }
     
-    private void recordHotspot(Hotspot hotspot, Set<Hotspot> hotspotsForAProtein, boolean currProteinEnds) {
-        if (hotspot!=null) { // skip first one
-            MutatedProtein protein = hotspot.getProtein();
-            hotspotsForAProtein.add(hotspot); 
-            if (currProteinEnds) {
-                // process all hotspots
-                protein.setProteinLength(getLengthOfProtein(hotspotsForAProtein));
-                protein.setNumberOfMutations(getNumberOfAllMutationOnProtein(hotspotsForAProtein)); // only have to set once
-                hotspots.addAll(processSingleHotspotsOnAProtein(hotspotsForAProtein));
-            }
-        }
-        
-        if (currProteinEnds) {
-            hotspotsForAProtein.clear();
+    private void recordHotspots(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) {
+        if (!mapResidueHotspot.isEmpty()) { // skip first one
+            // process all hotspots
+            protein.setProteinLength(getLengthOfProtein(protein, mapResidueHotspot));
+            protein.setNumberOfMutations(getNumberOfAllMutationOnProtein(mapResidueHotspot)); // only have to set once
+            hotspots.addAll(processSingleHotspotsOnAProtein(protein, mapResidueHotspot));
         }
     }
     
@@ -199,19 +188,18 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         return Collections.unmodifiableSet(hotspots);
     }
     
-    protected int getNumberOfAllMutationOnProtein(Set<Hotspot> hotspotsOnAProtein) {
+    protected int getNumberOfAllMutationOnProtein(Map<Integer, Hotspot> mapResidueHotspot) {
 	// default behavior for single and linear hotspots
         Set<ExtendedMutation> mutations = new HashSet<ExtendedMutation>();
-        for (Hotspot hotspot : hotspotsOnAProtein) {
+        for (Hotspot hotspot : mapResidueHotspot.values()) {
             mutations.addAll(hotspot.getMutations());
         }
         return mutations.size();
     }
     
     
-    protected int getLengthOfProtein(Set<Hotspot> hotspotsOnAProtein) {
+    protected int getLengthOfProtein(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) {
 	// default behavior for single and linear hotspots
-        MutatedProtein protein = hotspotsOnAProtein.iterator().next().getProtein();
         int length = getProteinLength(protein.getUniprotAcc());
         
         if (length==0) {
@@ -220,15 +208,15 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         
         if (length==0) {
             // TODO: this is not ideal -- under estimating p values
-            length = getLargestResidue(hotspotsOnAProtein);
+            length = getLargestResidue(mapResidueHotspot);
         }
         
         return length;
     }
     
-    private static int getLargestResidue(Set<Hotspot> hotspotsOnAProtein) {
+    private static int getLargestResidue(Map<Integer, Hotspot> mapResidueHotspot) {
         int length = 0;
-        for (Hotspot hotspot : hotspotsOnAProtein) {
+        for (Hotspot hotspot : mapResidueHotspot.values()) {
             int residue = hotspot.getResidues().last();
             if (residue>length) {
                 length = residue;

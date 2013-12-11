@@ -27,6 +27,7 @@
 package org.mskcc.cbio.portal.hotspots;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,9 +46,10 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
      * @return
      */
     @Override
-    protected Set<Hotspot> processSingleHotspotsOnAProtein(Set<Hotspot> hotspotsOnAProtein) {
+    protected Set<Hotspot> processSingleHotspotsOnAProtein(MutatedProtein protein,
+            Map<Integer, Hotspot> mapResidueHotspot) {
         Set<Hotspot> ret = new HashSet<Hotspot>();
-        for (Hotspot hotspot : hotspotsOnAProtein) {
+        for (Hotspot hotspot : mapResidueHotspot.values()) {
             // only return hotspot above sample threshold
             if (hotspot.getSamples().size()>=parameters.getThresholdSamples()) {
                 ret.add(hotspot);

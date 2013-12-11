@@ -26,8 +26,10 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.distribution.BinomialDistribution;
@@ -42,11 +44,15 @@ import org.mskcc.cbio.portal.model.ExtendedMutation;
  */
 public class HotspotImpl implements Hotspot {
     private MutatedProtein protein;
-    private TreeSet<Integer> residues;
+    private SortedSet<Integer> residues;
     private Set<ExtendedMutation> mutations;
     private Set<Sample> samples;
     private String label;
     private double pvalue;
+    
+    public HotspotImpl(MutatedProtein protein) {
+        this(protein, new TreeSet<Integer>());
+    }
 
     /**
      * 
@@ -54,7 +60,7 @@ public class HotspotImpl implements Hotspot {
      * @param residues
      * @param label 
      */
-    public HotspotImpl(MutatedProtein protein, TreeSet<Integer> residues) {
+    public HotspotImpl(MutatedProtein protein, SortedSet<Integer> residues) {
         this.protein = protein;
         this.residues = residues;
         this.mutations = new HashSet<ExtendedMutation>();
@@ -67,6 +73,7 @@ public class HotspotImpl implements Hotspot {
         if (hotspot!=null) {
             for (ExtendedMutation mutation : hotspot.getMutations()) {
                 addMutation(mutation);
+                residues.addAll(hotspot.getResidues());
             }
             this.pvalue = Double.NaN;
         }
@@ -86,17 +93,20 @@ public class HotspotImpl implements Hotspot {
      * @return residues
      */
     @Override
-    public TreeSet<Integer> getResidues() {
-        return residues;
+    public SortedSet<Integer> getResidues() {
+        return Collections.unmodifiableSortedSet(residues);
     }
     
     @Override
     public Set<ExtendedMutation> getMutations() {
-        return mutations;
+        return Collections.unmodifiableSet(mutations);
     }
 
     @Override
     public void addMutation(ExtendedMutation mutation) {
+        if (mutations.contains(mutation)) {
+            return;
+        }
         mutations.add(mutation);
         CancerStudy cancerStudy = DaoCancerStudy.getCancerStudyByInternalId(
                 DaoGeneticProfile.getGeneticProfileById(mutation.getGeneticProfileId()).getCancerStudyId());
@@ -105,7 +115,7 @@ public class HotspotImpl implements Hotspot {
 
     @Override
     public Set<Sample> getSamples() {
-        return samples;
+        return Collections.unmodifiableSet(samples);
     }
 
     /**
