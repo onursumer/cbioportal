@@ -109,10 +109,11 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
         return list;
     }
     
+    // TODO: sampels maybe double counted
     private int[] sampleCountArrayAlongProtein(MutatedProtein protein,
             Map<Integer, Hotspot> mapResidueHotspot, int window) {
         int lenProtein = protein.getProteinLength();
-        int[] array = new int[lenProtein+window];
+        int[] array = new int[lenProtein+2];
         for (Hotspot hotspot : mapResidueHotspot.values()) {
             array[hotspot.getResidues().first()] += hotspot.getSamples().size();
         }

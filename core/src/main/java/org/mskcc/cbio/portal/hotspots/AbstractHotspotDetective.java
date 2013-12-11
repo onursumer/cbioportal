@@ -144,21 +144,23 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 int start = rs.getInt("ONCOTATOR_PROTEIN_POS_START");
                 int end = rs.getInt("ONCOTATOR_PROTEIN_POS_END");
                 // TODO: so the hotspots are organized by residues, ie. a deletion of two residues would have two hotspots.
-                for (int res=start; res<=end; res++) {
-                    Hotspot hotspot = mapResidueHotspot.get(res);
-                    if (hotspot==null) {
-                        hotspot = new HotspotImpl(currProtein, new TreeSet<Integer>(Arrays.asList(res)));
-                        mapResidueHotspot.put(res, hotspot);
-                    }
+                if (start>0 && end>0 && end>=start) {
+                    for (int res=start; res<=end; res++) {
+                        Hotspot hotspot = mapResidueHotspot.get(res);
+                        if (hotspot==null) {
+                            hotspot = new HotspotImpl(currProtein, new TreeSet<Integer>(Arrays.asList(res)));
+                            mapResidueHotspot.put(res, hotspot);
+                        }
 
-                    ExtendedMutation mutation = new ExtendedMutation();
-                    mutation.setCaseId(caseId);
-                    mutation.setGeneticProfileId(geneticProfileId);
-                    mutation.setProteinChange(aaChange);
-                    mutation.setGene(gene);
-                    mutation.setOncotatorProteinPosStart(start);
-                    mutation.setOncotatorProteinPosEnd(end);
-                    hotspot.addMutation(mutation);
+                        ExtendedMutation mutation = new ExtendedMutation();
+                        mutation.setCaseId(caseId);
+                        mutation.setGeneticProfileId(geneticProfileId);
+                        mutation.setProteinChange(aaChange);
+                        mutation.setGene(gene);
+                        mutation.setOncotatorProteinPosStart(start);
+                        mutation.setOncotatorProteinPosEnd(end);
+                        hotspot.addMutation(mutation);
+                    }
                 }
                 
             }
@@ -206,15 +208,17 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             length = protein.getGene().getLength()/3;
         }
         
-        if (length==0) {
+        int largetMutatedResidue = getLargestMutatedResidue(mapResidueHotspot);
+        if (length < largetMutatedResidue) {
             // TODO: this is not ideal -- under estimating p values
-            length = getLargestResidue(mapResidueHotspot);
+            length = largetMutatedResidue;
+            System.out.println("Used largest mutated residues ("+length+") for protein "+protein.getUniprotAcc());
         }
         
         return length;
     }
     
-    private static int getLargestResidue(Map<Integer, Hotspot> mapResidueHotspot) {
+    private static int getLargestMutatedResidue(Map<Integer, Hotspot> mapResidueHotspot) {
         int length = 0;
         for (Hotspot hotspot : mapResidueHotspot.values()) {
             int residue = hotspot.getResidues().last();
