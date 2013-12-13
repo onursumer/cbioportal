@@ -27,6 +27,8 @@
 package org.mskcc.cbio.portal.hotspots;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,20 +50,21 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
      * @return
      */
     @Override
-    protected Set<Hotspot> processSingleHotspotsOnAProtein(MutatedProtein protein,
-    Map<Integer, Hotspot> mapResidueHotspot) {
-        List<Integer> hotspotCenters = findLocalMaximum(protein, mapResidueHotspot);
-        Set<Hotspot> ret = new HashSet<Hotspot>();
+    protected Map<MutatedProtein,Set<Hotspot>> processSingleHotspotsOnAProtein(MutatedProtein protein,
+            Map<Integer, Hotspot> mapResidueHotspot) throws HotspotException {
+        Collection<Hotspot> hotspotOnAProtein = mapResidueHotspot.values();
+        List<Integer> hotspotCenters = findLocalMaximum(protein, hotspotOnAProtein);
+        Set<Hotspot> hotspotsOnAProtein = new HashSet<Hotspot>();
         for (Integer center : hotspotCenters) {
             Hotspot hs = new HotspotImpl(protein);
             int window = parameters.getLinearSpotWindowSize();
             for (int w=-window; w<=window; w++) {
                 hs.mergeHotspot(mapResidueHotspot.get(center+w));
             }
-            ret.add(hs);
+            hotspotsOnAProtein.add(hs);
         }
         
-        return ret;
+        return Collections.singletonMap(protein, hotspotsOnAProtein);
     }
     
     /**
@@ -72,10 +75,10 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
      * @param threshold samples threshold
      * @return 
      */
-    private List<Integer> findLocalMaximum(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) {
+    private List<Integer> findLocalMaximum(MutatedProtein protein, Collection<Hotspot> hotspotOnAProtein) {
         
         //arrSamples e.g. 0044400, 0040400, 00400, 004400
-        int[] arrSamples = sampleCountArrayAlongProtein(protein, mapResidueHotspot, parameters.getLinearSpotWindowSize());
+        int[] arrSamples = sampleCountArrayAlongProtein(protein, hotspotOnAProtein);
         int[] sumWindow = sumInWindow(arrSamples, parameters.getLinearSpotWindowSize());
         
         List<Integer> list = new ArrayList<Integer>();
@@ -110,10 +113,10 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
     
     // TODO: sampels maybe double counted
     private int[] sampleCountArrayAlongProtein(MutatedProtein protein,
-            Map<Integer, Hotspot> mapResidueHotspot, int window) {
-        int lenProtein = protein.getProteinLength();
+            Collection<Hotspot> hotspotOnAProtein) {
+        int lenProtein = getLargestMutatedResidue(hotspotOnAProtein);
         int[] array = new int[lenProtein+2];
-        for (Hotspot hotspot : mapResidueHotspot.values()) {
+        for (Hotspot hotspot : hotspotOnAProtein) {
             array[hotspot.getResidues().first()] += hotspot.getSamples().size();
         }
         return array;

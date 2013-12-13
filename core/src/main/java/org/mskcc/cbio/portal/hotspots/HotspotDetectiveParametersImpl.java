@@ -40,6 +40,8 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     private int thresholdHyperMutator = -1;
     private int thresholdSamples;
     private int linearSpotWindowSize;
+    private double distanceThresholdFor3DHotspots;
+    private double distanceErrorThresholdFor3DHotspots;
 
     @Override
     public Collection<Integer> getCancerStudyIds() {
@@ -109,5 +111,25 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     @Override
     public void setLinearSpotWindowSize(int linearSpotWindowSize) {
         this.linearSpotWindowSize = linearSpotWindowSize;
+    }
+
+    @Override
+    public double getDistanceThresholdFor3DHotspots() {
+        return distanceThresholdFor3DHotspots;
+    }
+
+    @Override
+    public void setDistanceThresholdFor3DHotspots(double distanceThresholdFor3DHotspots) {
+        this.distanceThresholdFor3DHotspots = distanceThresholdFor3DHotspots;
+    }
+
+    @Override
+    public double getDistanceErrorThresholdFor3DHotspots() {
+        return distanceErrorThresholdFor3DHotspots;
+    }
+
+    @Override
+    public void setDistanceErrorThresholdFor3DHotspots(double distanceErrorThresholdFor3DHotspots) {
+        this.distanceErrorThresholdFor3DHotspots = distanceErrorThresholdFor3DHotspots;
     }
 }

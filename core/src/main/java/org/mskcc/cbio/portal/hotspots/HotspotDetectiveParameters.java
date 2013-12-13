@@ -116,4 +116,28 @@ public interface HotspotDetectiveParameters {
      * @param linearSpotWindowSize 
      */
     public void setLinearSpotWindowSize(int linearSpotWindowSize);
+    
+    /**
+     * 
+     * @return 
+     */
+    public double getDistanceThresholdFor3DHotspots();
+    
+    /**
+     * 
+     * @param anstrom 
+     */
+    public void setDistanceThresholdFor3DHotspots(double anstrom);
+    
+    /**
+     * 
+     * @return 
+     */
+    public double getDistanceErrorThresholdFor3DHotspots();
+    
+    /**
+     * 
+     * @param anstrom 
+     */
+    public void setDistanceErrorThresholdFor3DHotspots(double anstrom);
 }

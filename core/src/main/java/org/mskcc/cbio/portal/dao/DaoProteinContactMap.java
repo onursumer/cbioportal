@@ -30,6 +30,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -73,7 +74,7 @@ public class DaoProteinContactMap {
      * @return Map<residue, set <contacting residues>>
      */
     public static Map<Integer, Set<Integer>> getProteinContactMap(String pdbId, String chain,
-            Set<Integer> residues, double distanceErrorThreshold) throws DaoException {
+            Collection<Integer> residues, double distanceThreshold, double distanceErrorThreshold) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -86,8 +87,11 @@ public class DaoProteinContactMap {
                     + "AND `CHAIN`='" + chain + "' "
                     + "AND `RESIDUE1` IN (" + strResidues + ") "
                     + "AND `RESIDUE2` IN (" + strResidues + ") ";
-            if (distanceErrorThreshold>=0) {
-                sql += "AND `DISTANCE_ERROR`<"+distanceErrorThreshold;
+            if (distanceThreshold>0) {
+                sql += "AND `DISTANCE`<"+distanceThreshold+" ";
+            }
+            if (distanceErrorThreshold>0) {
+                sql += "AND `DISTANCE_ERROR`<"+distanceErrorThreshold+" ";
             }
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();

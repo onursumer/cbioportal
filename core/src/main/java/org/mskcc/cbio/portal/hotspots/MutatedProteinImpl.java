@@ -38,51 +38,59 @@ public class MutatedProteinImpl implements MutatedProtein {
     private String uniprotAcc;
     private int proteinLength;
     private int numberOfMutations;
+    
+    public MutatedProteinImpl(MutatedProtein protein) {
+        this(protein.getGene());
+        setUniprotId(protein.getUniprotId());
+        setUniprotAcc(protein.getUniprotAcc());
+        setProteinLength(protein.getProteinLength());
+        setNumberOfMutations(protein.getNumberOfMutations());
+    }
 
     public MutatedProteinImpl(CanonicalGene gene) {
         this.gene = gene;
     }
 
     @Override
-    public CanonicalGene getGene() {
+    public final CanonicalGene getGene() {
         return gene;
     }
 
     @Override
-    public String getUniprotId() {
+    public final String getUniprotId() {
         return uniprotId;
     }
 
-    public void setUniprotId(String uniprotId) {
+    public final void setUniprotId(String uniprotId) {
         this.uniprotId = uniprotId;
     }
 
     @Override
-    public String getUniprotAcc() {
+    public final String getUniprotAcc() {
         return uniprotAcc;
     }
 
-    public void setUniprotAcc(String uniprotAcc) {
+    public final void setUniprotAcc(String uniprotAcc) {
         this.uniprotAcc = uniprotAcc;
     }
 
     @Override
-    public int getProteinLength() {
+    public final int getProteinLength() {
         return proteinLength;
     }
 
     @Override
-    public void setProteinLength(int proteinLength) {
+    public final void setProteinLength(int proteinLength) {
         this.proteinLength = proteinLength;
     }
 
     @Override
-    public int getNumberOfMutations() {
+    public final int getNumberOfMutations() {
         return numberOfMutations;
     }
 
     @Override
-    public void setNumberOfMutations(int numberOfMutations) {
+    public final void setNumberOfMutations(int numberOfMutations) {
         this.numberOfMutations = numberOfMutations;
     }
 

@@ -35,6 +35,10 @@ import org.mskcc.cbio.portal.model.CanonicalGene;
 public class MutatedProtein3DImpl extends MutatedProteinImpl implements MutatedProtein3D {
     private String pdbId;
     private String pdbChain;
+    
+    public MutatedProtein3DImpl(MutatedProtein protein) {
+        super(protein);
+    }
 
     public MutatedProtein3DImpl(CanonicalGene gene) {
         super(gene);

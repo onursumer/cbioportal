@@ -80,7 +80,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
      * @param hotspots
      * @return 
      */
-    protected abstract Set<Hotspot> processSingleHotspotsOnAProtein(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot);
+    protected abstract Map<MutatedProtein, Set<Hotspot>> processSingleHotspotsOnAProtein(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) throws HotspotException;
     
     @Override
     public void detectHotspot() throws HotspotException {
@@ -173,12 +173,19 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         }
     }
     
-    private void recordHotspots(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) {
+    private void recordHotspots(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) throws HotspotException {
         if (!mapResidueHotspot.isEmpty()) { // skip first one
             // process all hotspots
-            protein.setProteinLength(getLengthOfProtein(protein, mapResidueHotspot));
-            protein.setNumberOfMutations(getNumberOfAllMutationOnProtein(mapResidueHotspot)); // only have to set once
-            hotspots.addAll(processSingleHotspotsOnAProtein(protein, mapResidueHotspot));
+            Map<MutatedProtein, Set<Hotspot>> mapHotspots = processSingleHotspotsOnAProtein(protein, mapResidueHotspot);
+            for (Map.Entry<MutatedProtein, Set<Hotspot>> entry : mapHotspots.entrySet()) {
+                MutatedProtein mutatedProtein = entry.getKey();
+                Set<Hotspot> hotspotsOnAProtein = entry.getValue();
+                if (!hotspotsOnAProtein.isEmpty()) {
+                    mutatedProtein.setProteinLength(getLengthOfProtein(protein, hotspotsOnAProtein));
+                    mutatedProtein.setNumberOfMutations(getNumberOfAllMutationOnProtein(hotspotsOnAProtein)); // only have to set once
+                }
+                hotspots.addAll(hotspotsOnAProtein);
+            }
         }
     }
     
@@ -190,17 +197,17 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         return Collections.unmodifiableSet(hotspots);
     }
     
-    protected int getNumberOfAllMutationOnProtein(Map<Integer, Hotspot> mapResidueHotspot) {
+    protected int getNumberOfAllMutationOnProtein(Collection<Hotspot> hotspotsOnAProtein) {
 	// default behavior for single and linear hotspots
         Set<ExtendedMutation> mutations = new HashSet<ExtendedMutation>();
-        for (Hotspot hotspot : mapResidueHotspot.values()) {
+        for (Hotspot hotspot : hotspotsOnAProtein) {
             mutations.addAll(hotspot.getMutations());
         }
         return mutations.size();
     }
     
     
-    protected int getLengthOfProtein(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) {
+    protected int getLengthOfProtein(MutatedProtein protein, Collection<Hotspot> hotspotsOnAProtein) {
 	// default behavior for single and linear hotspots
         int length = getProteinLength(protein.getUniprotAcc());
         
@@ -208,7 +215,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             length = protein.getGene().getLength()/3;
         }
         
-        int largetMutatedResidue = getLargestMutatedResidue(mapResidueHotspot);
+        int largetMutatedResidue = getLargestMutatedResidue(hotspotsOnAProtein);
         if (length < largetMutatedResidue) {
             // TODO: this is not ideal -- under estimating p values
             length = largetMutatedResidue;
@@ -218,9 +225,9 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         return length;
     }
     
-    private static int getLargestMutatedResidue(Map<Integer, Hotspot> mapResidueHotspot) {
+    protected final static int getLargestMutatedResidue(Collection<Hotspot> hotspotsOnAProtein) {
         int length = 0;
-        for (Hotspot hotspot : mapResidueHotspot.values()) {
+        for (Hotspot hotspot : hotspotsOnAProtein) {
             int residue = hotspot.getResidues().last();
             if (residue>length) {
                 length = residue;
