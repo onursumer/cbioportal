@@ -37,7 +37,6 @@ import java.util.Set;
  * @author jgao
  */
 public class LinearHotspotDetective extends AbstractHotspotDetective {
-    private int thresholdSamples;
 
     public LinearHotspotDetective(HotspotDetectiveParameters parameters) {
         super(parameters);
@@ -83,7 +82,7 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
         
         int plateauStart = -1;
         for (int i=1; i<arrSamples.length; i++) {
-            if (sumWindow[i]>=thresholdSamples) {
+            if (sumWindow[i]>=parameters.getThresholdSamples()) {
                 if (sumWindow[i]>sumWindow[i-1]) {
                     plateauStart = i;
                 } else if (sumWindow[i]==sumWindow[i-1]) {
