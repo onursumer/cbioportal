@@ -48,7 +48,7 @@ public class HotspotImpl implements Hotspot {
     private Set<ExtendedMutation> mutations;
     private Set<Sample> samples;
     private String label;
-    private double pvalue;
+    protected double pvalue;
     
     public HotspotImpl(MutatedProtein protein) {
         this(protein, new TreeSet<Integer>());
