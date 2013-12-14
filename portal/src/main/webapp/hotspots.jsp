@@ -84,8 +84,8 @@ String jsonStudies = JSONValue.toJSONString(studies);
             <option value="linear-2">Linear hotspots (d<=2)</option>
             <option value="linear-4">Linear hotspots (d<=4)</option>
             <option value="linear-8">Linear hotspots (d<=8)</option>
-            <option value="3d-0.4">3D hotspots (stringent contact map)</option>
-            <option value="3d-4">3D hotspots (extended 3D neighbors)</option>
+            <option value="3d-e-0.4">3D hotspots (stringent contact map)</option>
+            <option value="3d-d-5">3D hotspots (extended 3D neighbors)</option>
             <option value="pdb-ptm">3D PTM hotspots</option>
             <option value="ptm-effect-0">Mutations of PTM sites</option>
             <option value="ptm-effect-1">Mutations of PTM site neighbors (d<=1)</option>
@@ -600,8 +600,12 @@ AlteredGene.Router = Backbone.Router.extend({
             options['window'] = parseInt(type.replace('linear-',''));
         }
         
-        if (type.indexOf('3d-')===0) {
-            options['threshold_distance_error'] = type.replace('3d-','');
+        if (type.indexOf('3d-e-')===0) {
+            options['threshold_distance_error'] = type.replace('3d-e-','');
+        }
+        
+        if (type.indexOf('3d-d-')===0) {
+            options['threshold_distance'] = type.replace('3d-d-','');
         }
 
         // alteration view

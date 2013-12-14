@@ -63,6 +63,7 @@ public class HotspotsServlet extends HttpServlet {
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
     public static final String THRESHOLD_MUTATIONS_HYPERMUTATOR = "threshold_hypermutator";
     public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
+    public static final String THRESHOLD_DISTANCE_CONTACT_MAP = "threshold_distance";
     public static final String THRESHOLD_DISTANCE_ERROR_CONTACT_MAP = "threshold_distance_error";
     public static final String LINEAR_HOTSPOT_WINDOW = "window";
     
@@ -121,8 +122,23 @@ public class HotspotsServlet extends HttpServlet {
             hotspotDetectiveParameters.setThresholdSamples(threshold);
                 
             HotspotDetective hotspotDetective;
-            
-//            if (type.startsWith("ptm-effect")) {
+            if (hotspotType.equalsIgnoreCase("single-missense")) {
+                hotspotDetective = new SingleHotspotDetective(hotspotDetectiveParameters);
+            } else if (hotspotType.equalsIgnoreCase("linear")) {
+                int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
+                hotspotDetectiveParameters.setLinearSpotWindowSize(window);
+                hotspotDetective = new LinearHotspotDetective(hotspotDetectiveParameters);
+            } else if (hotspotType.equalsIgnoreCase("3d")) {
+                String strThresholdDis = request.getParameter(THRESHOLD_DISTANCE_CONTACT_MAP);
+                double thresholdDis = strThresholdDis==null?0:Double.parseDouble(strThresholdDis);
+                hotspotDetectiveParameters.setDistanceThresholdFor3DHotspots(thresholdDis);
+                
+                String strThresholdDisError = request.getParameter(THRESHOLD_DISTANCE_ERROR_CONTACT_MAP);
+                double thresholdDisError = strThresholdDisError==null?0:Double.parseDouble(strThresholdDisError);
+                hotspotDetectiveParameters.setDistanceErrorThresholdFor3DHotspots(thresholdDisError);
+                
+                hotspotDetective = new ProteinStructureHotspotDetective(hotspotDetectiveParameters);
+//            } else if (type.startsWith("ptm-effect")) {
 //                int thresholdDis = Integer.parseInt(request.getParameter(THRESHOLD_DISTANCE_PTM_MUTATION));
 //                String ptmType = request.getParameter(PTM_TYPE);
 //                mapKeywordStudyCaseMut = DaoMutation.getPtmEffectStatistics(
@@ -131,20 +147,9 @@ public class HotspotsServlet extends HttpServlet {
 //            } else if (type.equalsIgnoreCase("truncating-sep")) {
 //                 mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
 //                    studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
-//            } else
-            if (hotspotType.equalsIgnoreCase("linear")) {
-                int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));
-                hotspotDetective = new LinearHotspotDetective(hotspotDetectiveParameters);
-                hotspotDetectiveParameters.setLinearSpotWindowSize(window);
-//            } else if (type.equalsIgnoreCase("3d")) {
-//                double thresholdDisError = Double.parseDouble(request.getParameter(THRESHOLD_DISTANCE_ERROR_CONTACT_MAP));
-//                mapKeywordStudyCaseMut = DaoMutation.getMutatation3DStatistics(
-//                        studyIds.toString(), threshold, thresholdDisError, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
 //            } else if (type.equalsIgnoreCase("pdb-ptm")) {
 //                mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
 //                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
-            } else if (hotspotType.equalsIgnoreCase("single-missense")) {
-                hotspotDetective = new SingleHotspotDetective(hotspotDetectiveParameters);
             } else {
                 throw new IllegalStateException("wrong hotspot type: "+hotspotType);
             }

@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,11 +66,19 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
         for (Map.Entry<MutatedProtein3D, Map<Integer, Set<Integer>>> entryContactMaps : contactMaps.entrySet()) {
             MutatedProtein3D protein3D = entryContactMaps.getKey();
             Map<Integer, Set<Integer>> contactMap = entryContactMaps.getValue();
+            Set<Hotspot> hotspotOnAProtein = new HashSet<Hotspot>();
             for (Set<Integer> residues : cleanResiduesSet(contactMap.values())) { // remove redundancy
                 Hotspot hotspot3D = new HotspotImpl(protein3D, new TreeSet<Integer>(residues));
                 for (int residue : residues) {
                     hotspot3D.mergeHotspot(mapResidueHotspot.get(residue));
                 }
+                
+                if (hotspot3D.getSamples().size()>=parameters.getThresholdSamples()) {
+                    hotspotOnAProtein.add(hotspot3D);
+                }
+            }
+            if (!hotspotOnAProtein.isEmpty()) {
+                ret.put(protein3D, hotspotOnAProtein);
             }
         }
         return ret;
@@ -115,25 +124,27 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
                 OneToOneMap<Integer, Integer> pdbUniprotResidueMapping = getPdbUniprotResidueMapping(alignments);
                 protein3D.setProteinLength(pdbUniprotResidueMapping.size()); // only mapped residues
                 
-                // only retain the mapped residues
-                Set<Integer> mappedResidues = new HashSet<Integer>(residues);
-                mappedResidues.retainAll(pdbUniprotResidueMapping.getValToKeyMap().entrySet());
+                // only retain the mapped mutated residues
+                pdbUniprotResidueMapping.retainByValue(residues);
+                
+                if (pdbUniprotResidueMapping.size()==0) {
+                    continue;
+                }
                 
                 Map<Integer, Set<Integer>> pdbContactMap = DaoProteinContactMap.getProteinContactMap(protein3D.getPdbId(), protein3D.getPdbChain(),
-                        mappedResidues, parameters.getDistanceThresholdFor3DHotspots(),
+                        pdbUniprotResidueMapping.getKeySet(), parameters.getDistanceThresholdFor3DHotspots(),
                         parameters.getDistanceErrorThresholdFor3DHotspots());
                 
                 Map<Integer, Set<Integer>> contactMap = new HashMap<Integer, Set<Integer>>(pdbContactMap.size());
                 for (Map.Entry<Integer, Set<Integer>> entryPdbContactMap : pdbContactMap.entrySet()) {
                     Integer uniprotPos = pdbUniprotResidueMapping.getByKey(entryPdbContactMap.getKey());
                     Set<Integer> uniprotNeighbors = new HashSet<Integer>(entryPdbContactMap.getValue().size()+1);
-                    uniprotNeighbors.add(entryPdbContactMap.getKey()); // add itself
+                    uniprotNeighbors.add(uniprotPos); // add itself
                     for (Integer pdbNeighbor : entryPdbContactMap.getValue()) {
                         uniprotNeighbors.add(pdbUniprotResidueMapping.getByKey(pdbNeighbor));
                     }
                     contactMap.put(uniprotPos, uniprotNeighbors);
                 }
-                
                 
                 contactMaps.put(protein3D, contactMap);
             }
@@ -196,8 +207,8 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
     }
     
     private final class OneToOneMap<K, V> {
-        private HashMap<K, V> keyToValMap;
-        private HashMap<V, K> valToKeyMap;
+        private Map<K, V> keyToValMap;
+        private Map<V, K> valToKeyMap;
         
         OneToOneMap() {
             keyToValMap = new HashMap<K,V>();
@@ -223,12 +234,34 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
             return valToKeyMap.get(v);
         }
 
-        HashMap<K, V> getKeyToValMap() {
-            return keyToValMap;
+        Set<K> getKeySet() {
+            return keyToValMap.keySet();
         }
 
-        HashMap<V, K> getValToKeyMap() {
-            return valToKeyMap;
+        Set<V> getValSet() {
+            return valToKeyMap.keySet();
+        }
+        
+        void retainByKey(Collection<K> keys) {
+            keyToValMap.keySet().retainAll(keys);
+            Iterator<Map.Entry<V,K>> itEntry = valToKeyMap.entrySet().iterator();
+            while (itEntry.hasNext()) {
+                Map.Entry<V,K> entry = itEntry.next();
+                if (!keyToValMap.containsKey(entry.getValue())) {
+                    itEntry.remove();
+                }
+            }
+        }
+        
+        void retainByValue(Collection<V> values) {
+            valToKeyMap.keySet().retainAll(values);
+            Iterator<Map.Entry<K,V>> itEntry = keyToValMap.entrySet().iterator();
+            while (itEntry.hasNext()) {
+                Map.Entry<K,V> entry = itEntry.next();
+                if (!valToKeyMap.containsKey(entry.getValue())) {
+                    itEntry.remove();
+                }
+            }
         }
     }
 }
