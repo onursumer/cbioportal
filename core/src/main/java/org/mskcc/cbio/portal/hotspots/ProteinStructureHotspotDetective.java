@@ -109,10 +109,6 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
     private List<SortedSet<Integer>> cleanResiduesSet(Collection<SortedSet<Integer>> residuesSet) {
         List<SortedSet<Integer>> ret = new ArrayList<SortedSet<Integer>>();
         for (SortedSet<Integer> residues : residuesSet) {
-            if (residues.size()<=1) {
-                continue; // remove single residue hotspots
-            }
-            
             boolean exist = false;
             for (SortedSet<Integer> existing : ret) {
                 if (existing.containsAll(residues)) {
@@ -159,9 +155,14 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
                 Map<Integer, SortedSet<Integer>> contactMap = new HashMap<Integer, SortedSet<Integer>>(pdbContactMap.size());
                 for (Map.Entry<Integer, Set<Integer>> entryPdbContactMap : pdbContactMap.entrySet()) {
                     Integer uniprotPos = pdbUniprotResidueMapping.getByKey(entryPdbContactMap.getKey());
+                    Set<Integer> pdbNeighbors = entryPdbContactMap.getValue();
+                    if (pdbNeighbors.isEmpty()) {
+                        continue;
+                    }
+                    
                     SortedSet<Integer> uniprotNeighbors = new TreeSet<Integer>();
                     uniprotNeighbors.add(uniprotPos); // add itself
-                    for (Integer pdbNeighbor : entryPdbContactMap.getValue()) {
+                    for (Integer pdbNeighbor : pdbNeighbors) {
                         uniprotNeighbors.add(pdbUniprotResidueMapping.getByKey(pdbNeighbor));
                     }
                     contactMap.put(uniprotPos, uniprotNeighbors);
