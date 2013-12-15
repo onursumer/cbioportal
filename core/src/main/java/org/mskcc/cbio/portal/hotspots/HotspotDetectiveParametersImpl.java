@@ -42,6 +42,7 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     private int linearSpotWindowSize;
     private double distanceThresholdFor3DHotspots;
     private double distanceErrorThresholdFor3DHotspots;
+    private double identpThresholdFor3DHotspots;
 
     @Override
     public Collection<Integer> getCancerStudyIds() {
@@ -131,5 +132,15 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     @Override
     public void setDistanceErrorThresholdFor3DHotspots(double distanceErrorThresholdFor3DHotspots) {
         this.distanceErrorThresholdFor3DHotspots = distanceErrorThresholdFor3DHotspots;
+    }
+
+    @Override
+    public double getIdentpThresholdFor3DHotspots() {
+        return identpThresholdFor3DHotspots;
+    }
+
+    @Override
+    public void setIdentpThresholdFor3DHotspots(double identpThresholdFor3DHotspots) {
+        this.identpThresholdFor3DHotspots = identpThresholdFor3DHotspots;
     }
 }

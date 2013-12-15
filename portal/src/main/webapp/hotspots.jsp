@@ -600,12 +600,16 @@ AlteredGene.Router = Backbone.Router.extend({
             options['window'] = parseInt(type.replace('linear-',''));
         }
         
-        if (type.indexOf('3d-e-')===0) {
-            options['threshold_distance_error'] = type.replace('3d-e-','');
-        }
-        
-        if (type.indexOf('3d-d-')===0) {
-            options['threshold_distance'] = type.replace('3d-d-','');
+        if (type.indexOf('3d-')===0) {
+            if (type.indexOf('3d-e-')===0) {
+                options['threshold_distance_error'] = type.replace('3d-e-','');
+            }
+
+            if (type.indexOf('3d-d-')===0) {
+                options['threshold_distance'] = type.replace('3d-d-','');
+            }
+            
+            options['threshold_identp'] = '90';
         }
 
         // alteration view

@@ -118,6 +118,8 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             hotspots = new HashSet<Hotspot>();
             MutatedProtein currProtein = null;
             Map<Integer, Hotspot> mapResidueHotspot = new HashMap<Integer, Hotspot>();
+            
+            int count = 0;
             while (rs.next()) {
                 int geneticProfileId = rs.getInt("GENETIC_PROFILE_ID");
                 String uniprotId = rs.getString("ONCOTATOR_UNIPROT_ENTRY_NAME");
@@ -136,6 +138,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 newProtein.setUniprotAcc(uniprotAcc);
                 
                 if (!newProtein.equals(currProtein)) {
+                    System.out.println(count++);
                     recordHotspots(currProtein, mapResidueHotspot);
                     currProtein = newProtein;
                     mapResidueHotspot.clear();
@@ -225,7 +228,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         return length;
     }
     
-    protected final static int getLargestMutatedResidue(Collection<Hotspot> hotspotsOnAProtein) {
+    protected final int getLargestMutatedResidue(Collection<Hotspot> hotspotsOnAProtein) {
         int length = 0;
         for (Hotspot hotspot : hotspotsOnAProtein) {
             int residue = hotspot.getResidues().last();
@@ -264,12 +267,12 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         
         Integer ret = mapUniprotProteinLengths.get(uniprotAcc);
         
-        if (ret==null) {
-            ret = getProteinLengthFromUniprot(uniprotAcc);
-            mapUniprotProteinLengths.put(uniprotAcc, ret);
-        }
+//        if (ret==null) {
+//            ret = getProteinLengthFromUniprot(uniprotAcc);
+//            mapUniprotProteinLengths.put(uniprotAcc, ret);
+//        }
         
-        if (ret==0) {
+        if (ret==null || ret==0) {
             System.out.println("No length informaiton found for "+uniprotAcc);
             return 0;
         }

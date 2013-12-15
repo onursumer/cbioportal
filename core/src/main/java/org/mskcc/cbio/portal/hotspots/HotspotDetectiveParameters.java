@@ -140,4 +140,16 @@ public interface HotspotDetectiveParameters {
      * @param anstrom 
      */
     public void setDistanceErrorThresholdFor3DHotspots(double anstrom);
+    
+    /**
+     * 
+     * @return 
+     */
+    public double getIdentpThresholdFor3DHotspots();
+    
+    /**
+     * 
+     * @param identpThreshold 
+     */
+    public void setIdentpThresholdFor3DHotspots(double identpThreshold);
 }

@@ -90,15 +90,22 @@ public final class DaoPdbUniprotResidueMapping {
 	 */
 	public static List<PdbUniprotAlignment> getAlignments(String uniprotId) throws DaoException
 	{
+                return getAlignments(uniprotId, 0);
+        }
+        public static List<PdbUniprotAlignment> getAlignments(String uniprotId, float identpThreshold) throws DaoException
+	{
 		Connection con = null;
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
 		try {
 			con = JdbcUtil.getDbConnection(DaoPdbUniprotResidueMapping.class);
 			pstmt = con.prepareStatement("SELECT * FROM pdb_uniprot_alignment " +
-			                             "WHERE UNIPROT_ID=? " +
-			                             "ORDER BY UNIPROT_FROM ASC");
+			                             "WHERE UNIPROT_ID=?" +
+			                             (identpThreshold>0?" AND IDENTP>=?":""));
 			pstmt.setString(1, uniprotId);
+                        if (identpThreshold>0) {
+                            pstmt.setFloat(2, identpThreshold);
+                        }
 			rs = pstmt.executeQuery();
 
 			List<PdbUniprotAlignment> alignments = new ArrayList<PdbUniprotAlignment>();

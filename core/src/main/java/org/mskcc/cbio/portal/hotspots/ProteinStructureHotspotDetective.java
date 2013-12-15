@@ -109,6 +109,10 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
     private List<SortedSet<Integer>> cleanResiduesSet(Collection<SortedSet<Integer>> residuesSet) {
         List<SortedSet<Integer>> ret = new ArrayList<SortedSet<Integer>>();
         for (SortedSet<Integer> residues : residuesSet) {
+            if (residues.size()<=1) {
+                continue; // remove single residue hotspots
+            }
+            
             boolean exist = false;
             for (SortedSet<Integer> existing : ret) {
                 if (existing.containsAll(residues)) {
@@ -203,7 +207,8 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
     
     private Map<MutatedProtein3D,List<PdbUniprotAlignment>> getPdbUniprotAlignments(MutatedProtein protein) throws HotspotException {
         try {
-            List<PdbUniprotAlignment> alignments = DaoPdbUniprotResidueMapping.getAlignments(protein.getUniprotId());
+            List<PdbUniprotAlignment> alignments = DaoPdbUniprotResidueMapping.getAlignments(protein.getUniprotId(),
+                    Double.valueOf(parameters.getIdentpThresholdFor3DHotspots()).floatValue());
             Map<MutatedProtein3D,List<PdbUniprotAlignment>> map = new HashMap<MutatedProtein3D,List<PdbUniprotAlignment>>();
             for (PdbUniprotAlignment alignment : alignments) {
                 MutatedProtein3DImpl protein3D = new MutatedProtein3DImpl(protein);

@@ -42,7 +42,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
-import org.mskcc.cbio.portal.dao.DaoException;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
 import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
 import org.mskcc.cbio.portal.model.CancerStudy;
@@ -65,6 +64,7 @@ public class HotspotsServlet extends HttpServlet {
     public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
     public static final String THRESHOLD_DISTANCE_CONTACT_MAP = "threshold_distance";
     public static final String THRESHOLD_DISTANCE_ERROR_CONTACT_MAP = "threshold_distance_error";
+    public static final String THRESHOLD_UNIPROT_PDB_ALIGNMENT_IDENTP = "threshold_identp";
     public static final String LINEAR_HOTSPOT_WINDOW = "window";
     
     /** 
@@ -136,6 +136,12 @@ public class HotspotsServlet extends HttpServlet {
                 String strThresholdDisError = request.getParameter(THRESHOLD_DISTANCE_ERROR_CONTACT_MAP);
                 double thresholdDisError = strThresholdDisError==null?0:Double.parseDouble(strThresholdDisError);
                 hotspotDetectiveParameters.setDistanceErrorThresholdFor3DHotspots(thresholdDisError);
+                
+                
+                
+                String strThresholdIdentp = request.getParameter(THRESHOLD_UNIPROT_PDB_ALIGNMENT_IDENTP);
+                double thresholdIdentp = strThresholdIdentp==null?0:Double.parseDouble(strThresholdIdentp);
+                hotspotDetectiveParameters.setIdentpThresholdFor3DHotspots(thresholdIdentp);
                 
                 hotspotDetective = new ProteinStructureHotspotDetective(hotspotDetectiveParameters);
 //            } else if (type.startsWith("ptm-effect")) {
