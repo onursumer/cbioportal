@@ -136,7 +136,7 @@ public class HotspotImpl implements Hotspot {
             return label;
         }
 
-        return protein.toString()+" "+StringUtils.join(getResidues(),";");
+        return protein.getGene().getHugoGeneSymbolAllCaps()+" "+StringUtils.join(getResidues(),";");
                // + " (p="+String.format("%6.3e", getPValue()) + ")";
     }
     

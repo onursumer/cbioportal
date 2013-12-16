@@ -26,8 +26,6 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
-import org.mskcc.cbio.portal.model.CanonicalGene;
-
 /**
  *
  * @author jgao
