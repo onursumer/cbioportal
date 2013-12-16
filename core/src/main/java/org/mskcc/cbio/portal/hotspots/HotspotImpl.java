@@ -27,7 +27,9 @@
 package org.mskcc.cbio.portal.hotspots;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -135,9 +137,41 @@ public class HotspotImpl implements Hotspot {
         if (label != null) {
             return label;
         }
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append(protein.getGene().getHugoGeneSymbolAllCaps());
+        
+        Map<Integer, Set<ExtendedMutation>> mapResidueMuations = getMapResidueMutations();
+        for (Integer res : residues) {
+            sb.append(res.toString());
+            Set<ExtendedMutation> muts = mapResidueMuations.get(res);
+            sb.append("(").append(muts==null?0:muts.size()).append(");");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        
+        // + " (p="+String.format("%6.3e", getPValue()) + ")";
 
-        return protein.getGene().getHugoGeneSymbolAllCaps()+" "+StringUtils.join(getResidues(),";");
-               // + " (p="+String.format("%6.3e", getPValue()) + ")";
+        return sb.toString();
+    }
+    
+    private Map<Integer, Set<ExtendedMutation>> getMapResidueMutations() {
+        Map<Integer, Set<ExtendedMutation>> map = new HashMap<Integer, Set<ExtendedMutation>>();
+        
+        for (ExtendedMutation mut : mutations) {
+            int start = mut.getOncotatorProteinPosStart();
+            int end = mut.getOncotatorProteinPosEnd();
+            for (int res=start; res<=end; res++) {
+                Set<ExtendedMutation> muts = map.get(res);
+                if (muts==null) {
+                    muts = new HashSet<ExtendedMutation>();
+                    map.put(res, muts);
+                }
+                muts.add(mut);
+            }
+            
+        }
+        
+        return map;
     }
     
     @Override
