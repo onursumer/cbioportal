@@ -139,7 +139,7 @@ public class HotspotImpl implements Hotspot {
         }
         
         StringBuilder sb = new StringBuilder();
-        sb.append(protein.getGene().getHugoGeneSymbolAllCaps());
+        sb.append(protein.getGene().getHugoGeneSymbolAllCaps()).append(" ");
         
         Map<Integer, Set<ExtendedMutation>> mapResidueMuations = getMapResidueMutations();
         for (Integer res : residues) {
