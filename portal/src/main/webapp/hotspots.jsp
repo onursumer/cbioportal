@@ -102,7 +102,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
     </div>
     <br/>
     <div>
-        <input type="checkbox" id="exclude-hypermutator" checked="checked">&nbsp;Exclude hypermutated samples (&le;1000 nonsynonymous mutations)
+        <input type="checkbox" id="exclude-hypermutator">&nbsp;Exclude hypermutated samples (&le;1000 nonsynonymous mutations)
     </div>
     <br/>
     <div>

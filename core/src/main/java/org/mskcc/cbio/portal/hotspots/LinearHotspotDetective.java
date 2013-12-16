@@ -61,7 +61,10 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
             for (int w=-window; w<=window; w++) {
                 hs.mergeHotspot(mapResidueHotspot.get(center+w));
             }
-            hotspotsOnAProtein.add(hs);
+            if (hs.getResidues().size()>1) {
+                // only hotspots with 2 or more residues
+                hotspotsOnAProtein.add(hs);
+            }
         }
         
         return Collections.singletonMap(protein, hotspotsOnAProtein);
