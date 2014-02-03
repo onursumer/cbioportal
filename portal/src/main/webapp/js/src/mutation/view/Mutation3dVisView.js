@@ -9,6 +9,9 @@
  *          }
  */
 var Mutation3dVisView = Backbone.View.extend({
+	initialize : function (options) {
+		this.options = options || {};
+	},
 	render: function()
 	{
 		var self = this;
@@ -57,14 +60,7 @@ var Mutation3dVisView = Backbone.View.extend({
 		self.$el.find(".mutation-3d-minimize").click(function(){
 			if (mut3dVis != null)
 			{
-				mut3dVis.minimize();
-			}
-		});
-
-		self.$el.find(".mutation-3d-maximize").click(function(){
-			if (mut3dVis != null)
-			{
-				mut3dVis.maximize();
+				mut3dVis.toggleSize();
 			}
 		});
 
@@ -96,14 +92,40 @@ var Mutation3dVisView = Backbone.View.extend({
 
 		});
 
+		// zoom buttons
+
+		var zoomIn = self.$el.find(".mutation-3d-zoomin");
+		var zoomOut = self.$el.find(".mutation-3d-zoomout");
+		var zoomActual = self.$el.find(".mutation-3d-zoomactual");
+
+		self.$el.find(".mutation-3d-button").tipTip();
+
+		// TODO add also tips
+		zoomIn.click(function() {
+			if (mut3dVis != null)
+			{
+				mut3dVis.zoomIn();
+			}
+		});
+
+		zoomOut.click(function() {
+			if (mut3dVis != null)
+			{
+				mut3dVis.zoomOut();
+			}
+		});
+
+		zoomActual.click(function() {
+			if (mut3dVis != null)
+			{
+				mut3dVis.zoomActual();
+			}
+		});
+
+
 		// TODO this is an access to a global div out of this view's template...
 		$("#tabs").bind("tabsactivate", function(event, ui){
-			// close the vis panel only if the selected tab is one of the main tabs
-			// (i.e.: do not close panel if a gene tab selected)
-			if (ui.tab.className != "mutation-details-tabs-ref")
-			{
-				closeHandler();
-			}
+			closeHandler();
 		});
 	},
 	/**
