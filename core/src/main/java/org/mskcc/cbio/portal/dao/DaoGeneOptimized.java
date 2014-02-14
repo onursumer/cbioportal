@@ -29,6 +29,7 @@ package org.mskcc.cbio.portal.dao;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,8 +37,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.mskcc.cbio.portal.model.CanonicalGene;
+import org.mskcc.cbio.portal.util.GlobalProperties;
+import org.mskcc.cbio.portal.web_api.ConnectionManager;
 
 /**
  * A Utility Class that speeds access to Gene Info.
@@ -69,22 +77,66 @@ public class DaoGeneOptimized {
             e.printStackTrace();
         }
         
+        if (geneSymbolMap.size()>10000) { 
+            // only for deployed version; not for unit test and importing
+            if (!setOncokbGenes()) {
+                setCbioCancerGene();
+            }
+        }
+    }
+    
+    private boolean setOncokbGenes() {
+        String url = GlobalProperties.getOncokbUrl() + "/gene.json";
+        HttpClient client = ConnectionManager.getHttpClient(5000);
+
+        GetMethod method = new GetMethod(url);
+        ObjectMapper mapper = new ObjectMapper();
+
+        
         try {
-            if (geneSymbolMap.size()>10000) { 
-                // only for deployed version; not for unit test and importing
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(getClass().getResourceAsStream(CBIO_CANCER_GENES_FILE)));
-                for (String line=in.readLine(); line!=null; line=in.readLine()) {
-                    long entrez = Long.parseLong(line.trim().split("\t")[0]);
+            int statusCode = client.executeMethod(method);
+            if (statusCode == HttpStatus.SC_OK) {
+                InputStream is = method.getResponseBodyAsStream();
+                List<Object> list = mapper.readValue(is, List.class);
+                for (Object obj : list) {
+                    Integer entrez = Integer.class.cast((Map.class.cast(obj)).get("entrezGeneId"));
                     CanonicalGene gene = getGene(entrez);
                     if (gene!=null) {
                         cbioCancerGenes.add(gene);
                     } else {
-                        System.err.println(line+" in the cbio cancer gene list is not a HUGO gene symbol.");
+                        System.err.println(""+entrez+" in the OncoKB is not an Entrez Gene ID we can recognize.");
                     }
                 }
-                in.close();
+                return true;
+            } else {
+                //  Otherwise, throw HTTP Exception Object
+                System.err.println(statusCode + ": " + HttpStatus.getStatusText(statusCode)
+                        + " Base URL:  " + url);
             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            //  Must release connection back to Apache Commons Connection Pool
+            method.releaseConnection();
+        }
+        
+        return false;
+    }
+    
+    private void setCbioCancerGene() {
+        try {
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(getClass().getResourceAsStream(CBIO_CANCER_GENES_FILE)));
+            for (String line=in.readLine(); line!=null; line=in.readLine()) {
+                long entrez = Long.parseLong(line.trim().split("\t")[0]);
+                CanonicalGene gene = getGene(entrez);
+                if (gene!=null) {
+                    cbioCancerGenes.add(gene);
+                } else {
+                    System.err.println(line+" in the cbio cancer gene list is not a HUGO gene symbol.");
+                }
+            }
+            in.close();
         } catch(IOException e) {
             e.printStackTrace();
         }

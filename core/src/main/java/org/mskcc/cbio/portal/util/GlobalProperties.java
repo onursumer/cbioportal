@@ -86,6 +86,8 @@ public class GlobalProperties {
     public static final String PATIENT_VIEW_TCGA_PATH_REPORT_URL = "tcga_path_report.url";
     
     public static final String TEMPORARY_DIR = "temporary_dir";
+    
+    public static final String ONCOKB_URL = "oncokb.url";
 
     private static Log LOG = LogFactory.getLog(GlobalProperties.class);
     private static Properties properties = initializeProperties();
@@ -345,5 +347,10 @@ public class GlobalProperties {
     public static String getTemporaryDir() {
         String tmp = GlobalProperties.getProperty(TEMPORARY_DIR);
         return tmp == null ? "/tmp" : tmp;
+    }
+    
+    public static String getOncokbUrl() {
+        String url = GlobalProperties.getProperty(ONCOKB_URL);
+        return url == null ? "http://oncokb.org" : url;
     }
 }

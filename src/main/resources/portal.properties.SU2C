@@ -120,3 +120,6 @@ broad.bam.checking.url=
 
 # temp dir
 temporary_dir=/tmp
+
+# oncokb
+oncokb.url=http://dashi.cbio.mskcc.org:8080/oncokb/
