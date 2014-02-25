@@ -79,7 +79,7 @@ public class MutationsJSON extends HttpServlet {
                 
                 // get all cbio cancer genes
                 Set<Long> cbioCancerGeneIds = daoGeneOptimized.getEntrezGeneIds(
-                        daoGeneOptimized.getCbioCancerGenes());
+                        daoGeneOptimized.getOncokbGenes());
                 cbioCancerGeneIds.removeAll(smgs.keySet());
                 if (!cbioCancerGeneIds.isEmpty()) {
                     smgs.putAll(DaoMutation.getSMGs(profileId, cbioCancerGeneIds, -1, -1));
@@ -509,7 +509,7 @@ public class MutationsJSON extends HttpServlet {
         boolean isCbioCancerGene = false;
         try {
             isSangerGene = DaoSangerCensus.getInstance().getCancerGeneSet().containsKey(symbol);
-            isCbioCancerGene = daoGeneOptimized.isCbioCancerGene(mutation.getGene());
+            isCbioCancerGene = daoGeneOptimized.isOncokbGene(mutation.getGene());
         } catch (DaoException ex) {
             throw new ServletException(ex);
         }

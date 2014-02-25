@@ -53,13 +53,13 @@ import org.mskcc.cbio.portal.web_api.ConnectionManager;
  * @author Ethan Cerami
  */
 public class DaoGeneOptimized {
-    private static final String CBIO_CANCER_GENES_FILE = "/cbio_cancer_genes.txt";
+    private static final String ONCOKB_GENES_FILE = "/oncokb_genes.txt";
         
     private static final DaoGeneOptimized daoGeneOptimized = new DaoGeneOptimized();
     private final HashMap<String, CanonicalGene> geneSymbolMap = new HashMap <String, CanonicalGene>();
     private final HashMap<Long, CanonicalGene> entrezIdMap = new HashMap <Long, CanonicalGene>();
     private final HashMap<String, List<CanonicalGene>> geneAliasMap = new HashMap<String, List<CanonicalGene>>();
-    private final Set<CanonicalGene> cbioCancerGenes = new HashSet<CanonicalGene>();
+    private final Set<CanonicalGene> oncokbGenes = new HashSet<CanonicalGene>();
     
     /**
      * Private Constructor, to enforce singleton pattern.
@@ -80,7 +80,7 @@ public class DaoGeneOptimized {
         if (geneSymbolMap.size()>10000) { 
             // only for deployed version; not for unit test and importing
             if (!setOncokbGenes()) {
-                setCbioCancerGene();
+                setOncokbGeneFromFile();
             }
         }
     }
@@ -102,7 +102,7 @@ public class DaoGeneOptimized {
                     Integer entrez = Integer.class.cast((Map.class.cast(obj)).get("entrezGeneId"));
                     CanonicalGene gene = getGene(entrez);
                     if (gene!=null) {
-                        cbioCancerGenes.add(gene);
+                        oncokbGenes.add(gene);
                     } else {
                         System.err.println(""+entrez+" in the OncoKB is not an Entrez Gene ID we can recognize.");
                     }
@@ -123,17 +123,17 @@ public class DaoGeneOptimized {
         return false;
     }
     
-    private void setCbioCancerGene() {
+    private void setOncokbGeneFromFile() {
         try {
             BufferedReader in = new BufferedReader(
-                    new InputStreamReader(getClass().getResourceAsStream(CBIO_CANCER_GENES_FILE)));
+                    new InputStreamReader(getClass().getResourceAsStream(ONCOKB_GENES_FILE)));
             for (String line=in.readLine(); line!=null; line=in.readLine()) {
                 long entrez = Long.parseLong(line.trim().split("\t")[0]);
                 CanonicalGene gene = getGene(entrez);
                 if (gene!=null) {
-                    cbioCancerGenes.add(gene);
+                    oncokbGenes.add(gene);
                 } else {
-                    System.err.println(line+" in the cbio cancer gene list is not a HUGO gene symbol.");
+                    System.err.println(line+" in the OncoKB gene list is not a HUGO gene symbol.");
                 }
             }
             in.close();
@@ -305,12 +305,12 @@ public class DaoGeneOptimized {
         return entrezGeneIds;
     }
     
-    public Set<CanonicalGene> getCbioCancerGenes() {
-        return Collections.unmodifiableSet(cbioCancerGenes);
+    public Set<CanonicalGene> getOncokbGenes() {
+        return Collections.unmodifiableSet(oncokbGenes);
     }
     
-    public boolean isCbioCancerGene(CanonicalGene gene) {
-        return cbioCancerGenes.contains(gene);
+    public boolean isOncokbGene(CanonicalGene gene) {
+        return oncokbGenes.contains(gene);
     }
 
     /**

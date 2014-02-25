@@ -359,7 +359,7 @@ public class CnaJSON extends HttpServlet {
         boolean isCbioCancerGene = false;
         try {
             isSangerGene = DaoSangerCensus.getInstance().getCancerGeneSet().containsKey(symbol);
-            isCbioCancerGene = daoGeneOptimized.isCbioCancerGene(gene);
+            isCbioCancerGene = daoGeneOptimized.isOncokbGene(gene);
         } catch (DaoException ex) {
             throw new ServletException(ex);
         }
