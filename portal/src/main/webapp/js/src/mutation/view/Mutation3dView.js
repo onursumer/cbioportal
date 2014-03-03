@@ -2,19 +2,16 @@
  * 3D visualizer controls view.
  *
  * This view is designed to provide controls to initialize, show or hide
- * the actual 3D visualizer panel. PDB chain panel, which is supposed to
- * be displayed just below the mutation diagram, is initialized by this view.
+ * the actual 3D visualizer panel.
  *
  * IMPORTANT NOTE: This view does not initialize the actual 3D visualizer.
- * 3D visualizer is a global instance bound to MainMutationView
- * and it is maintained by Mutation3dVisView.
+ * 3D visualizer is a global instance bound to MutationDetailsView
+ * and it is a part of Mutation3dVisView.
  *
  * options: {el: [target container],
  *           model: {geneSymbol: hugo gene symbol,
  *                   uniprotId: uniprot identifier for this gene,
  *                   pdbProxy: pdb data proxy}
- *           mut3dVisView: [optional] reference to the Mutation3dVisView instance,
- *           diagram: [optional] reference to the MutationDiagram instance
  *          }
  *
  * @author Selcuk Onur Sumer
@@ -22,6 +19,10 @@
 var Mutation3dView = Backbone.View.extend({
 	initialize : function (options) {
 		this.options = options || {};
+
+		// custom event dispatcher
+		this.dispatcher = {};
+		_.extend(this.dispatcher, Backbone.Events);
 	},
 	render: function()
 	{
@@ -51,17 +52,6 @@ var Mutation3dView = Backbone.View.extend({
 			{
 				// enable button if there is PDB data
 				button3d.removeAttr("disabled");
-
-				// add click listener for the 3d visualizer initializer
-				button3d.click(function() {
-					self.resetView();
-					var vis = self.options.mut3dVisView;
-
-					if (vis != null)
-					{
-						vis.maximizeView();
-					}
-				});
 			}
 			else
 			{
@@ -87,47 +77,28 @@ var Mutation3dView = Backbone.View.extend({
 		pdbProxy.hasPdbData(uniprotId, formatButton);
 	},
 	/**
-	 * Resets the 3D view to its initial state. This function also initializes
-	 * the PDB panel view if it is not initialized yet.
+	 * Adds a callback function for the 3D visualizer init button.
+	 *
+	 * @param callback      function to be invoked on click
+	 */
+	addInitCallback: function(callback) {
+		var self = this;
+		var button3d = self.$el.find(".mutation-3d-vis");
+
+		// add listener to 3D init button
+		button3d.click(callback);
+	},
+	/**
+	 * Resets the 3D view to its initial state.
 	 */
 	resetView: function()
 	{
 		var self = this;
+		var button3d = self.$el.find(".mutation-3d-vis");
 
-		var gene = self.model.geneSymbol;
-		var uniprotId = self.model.uniprotId;
-		var vis = self.options.mut3dVisView;
-		var panel = self.pdbPanelView;
-		var pdbProxy = self.model.pdbProxy;
+		// TODO this might not be safe, since we are relying on the callback function
 
-		var initView = function(pdbColl)
-		{
-			// init pdb panel view if not initialized yet
-			if (panel == undefined)
-			{
-				var panelOpts = {el: "#mutation_pdb_panel_view_" + gene.toUpperCase(),
-					model: {geneSymbol: gene, pdbColl: pdbColl, pdbProxy: pdbProxy},
-					mut3dVisView: self.options.mut3dVisView,
-					diagram: self.options.diagram};
-
-				var pdbPanelView = new PdbPanelView(panelOpts);
-				panel = self.pdbPanelView = pdbPanelView;
-
-				pdbPanelView.render();
-			}
-
-			if (vis != null &&
-			    panel != null &&
-			    pdbColl.length > 0)
-			{
-				panel.showView();
-
-				// reload the visualizer content with the default pdb and chain
-				panel.loadDefaultChain();
-			}
-		};
-
-		// init view with the pdb data
-		pdbProxy.getPdbData(uniprotId, initView);
+		// just simulate click function on the 3d button to reset the view
+		button3d.click();
 	}
 });

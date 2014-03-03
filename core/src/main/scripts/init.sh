@@ -14,7 +14,7 @@
 ./importSangerCensus.pl $PORTAL_DATA_HOME/reference-data/sanger_gene_census.txt
 
 # Load UniProt Mapping Data
-# You must run:  ./prepareUniProtIdMapping.sh first.
+# You must run:  ./prepareUniProtData.sh first.
 ./importUniProtIdMapping.pl $PORTAL_DATA_HOME/reference-data/uniprot-id-mapping.txt
 
 # Network
@@ -33,6 +33,10 @@
 # PDB Uniprot Mapping
 ## ./convertPdbUniprotMappingFromMaDb.py --host [host] --user [user] --passwd [passwd] --db [db] --output $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
 ./importPdbUniprotResidueMapping.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
+
+# PDB Uniprot Mapping from Sifts
+# ./prepareEbiSiftsPdbUniprotMappingData.sh
+./importPdbUniprotResidueMappingFromSifts.pl $PORTAL_DATA_HOME/reference-data/pdb_chain_uniprot.tsv $PORTAL_DATA_HOME/reference-data/pdb_chain_human.tsv $PORTAL_DATA_HOME/reference-data/pdb-cache
 
 # ptm in 3D structures
 # ./calculatePDBPTMData.pl ptm $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 0.4

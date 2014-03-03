@@ -1,11 +1,11 @@
 <%@ taglib prefix="sql_rt" uri="http://java.sun.com/jstl/sql_rt" %>
 
 <script type="text/template" id="default_mutation_details_template">
-	<div id='mutation_3d_container' class='mutation-3d-container'></div>
-	<div id='mutation_details_loader'>
+	<div class='mutation-3d-container'></div>
+	<div class='mutation-details-loader'>
 		<img src='{{loaderImage}}'/>
 	</div>
-	<div id='mutation_details_content' class='mutation-details-content'>
+	<div class='mutation-details-content'>
 		<ul>
 			{{listContent}}
 		</ul>
@@ -19,7 +19,7 @@
 	<br>
 </script>
 
-<script type="text/template" id="default_gene_mutation_details_info_template">
+<script type="text/template" id="default_mutation_details_gene_info_template">
 	<p>There are no mutation details available for this gene.</p>
 	<br>
 	<br>
@@ -44,7 +44,7 @@
 
 <script type="text/template" id="mutation_view_template">
 	<h4>{{geneSymbol}}: {{mutationSummary}}</h4>
-	<div id='mutation_diagram_toolbar_{{geneSymbol}}' class='mutation-diagram-toolbar'>
+	<div class='mutation-diagram-toolbar'>
 		<a href='http://www.uniprot.org/uniprot/{{uniprotId}}'
 		   class='mutation-details-uniprot-link'
 		   target='_blank'>{{uniprotId}}</a>
@@ -73,21 +73,21 @@
 		<table>
 			<tr>
 				<td>
-					<div id='mutation_diagram_{{geneSymbol}}' class='mutation-diagram-container'></div>
+					<div class='mutation-diagram-container'></div>
 				</td>
 				<td>
-					<div id='mutation_3d_{{geneSymbol}}' class="mutation-3d-initializer"></div>
+					<div class="mutation-3d-initializer"></div>
 				</td>
 			</tr>
 		</table>
 	</div>
-	<div id='mutation_pdb_panel_view_{{geneSymbol}}' class="mutation-pdb-panel-view"></div>
+	<div class="mutation-pdb-panel-view"></div>
 
 	<div class='mutation-details-filter-info'>
 		Current view shows filtered results.
 		Click <a class='mutation-details-filter-reset'>here</a> to reset all filters.
 	</div>
-	<div id='mutation_table_{{geneSymbol}}' class='mutation-table-container'>
+	<div class='mutation-table-container'>
 		<img src='images/ajax-loader.gif'/>
 	</div>
 </script>
@@ -149,7 +149,8 @@
 		<div class='mutation-3d-info'></div>
 	</div>
 	<div class='mutation-3d-residue-warning'>
-		Selected mutation cannot be mapped onto this structure.
+		<span class="mutation-3d-unmapped-info">Selected mutation</span>
+		cannot be mapped onto this structure.
 	</div>
 	<div class='mutation-3d-nomap-warning'>
 		None of the mutations can be mapped onto this structure.
@@ -157,7 +158,7 @@
 	<div class='mutation-3d-vis-loader'>
 		<img src='{{loaderImage}}'/>
 	</div>
-	<div id='mutation_3d_visualizer' class='mutation-3d-vis-container'></div>
+	<div class='mutation-3d-vis-container'></div>
 	<div class='mutation-3d-vis-toolbar'>
 		<div class='mutation-3d-vis-help-init'>
 			<a href="#">how to pan/zoom/rotate?</a>
@@ -173,7 +174,9 @@
 			and then move the mouse in the desired direction.<br>
 			<b>Rotate:</b> Press and hold the left mouse button, and then move the mouse in the desired
 			direction to rotate along the x and y axes. To be able to rotate along the z-axis, you need to
-			press and hold the SHIFT key and the left mouse button, and then move the mouse left or right.
+			press and hold the SHIFT key and the left mouse button, and then move the mouse left or right.<br>
+			<b>Reset:</b> Press and hold the SHIFT key, and then double click on the background
+			to reset the orientation and the zoom level to the initial state.
 		</div>
 		<table>
 			<tr>
@@ -235,7 +238,7 @@
 									<option value='bySecondaryStructure'
 									        title='Color by Secondary Structure'>secondary structure</option>
 									<option value='byChain'
-									        title='Color by Chain'>chain</option>
+									        title='Color by Rainbow Gradient'>N-C rainbow</option>
 									<option value='byAtomType'
 									        title='Color by Atom Type'
 									        disabled='disabled'>atom type</option>
@@ -252,12 +255,22 @@
 					<table cellpadding="0">
 						<tr>
 							<td>
-								<label>
+								<!--label>
 									<input class='mutation-3d-side-chain'
 									       type='checkbox'
 									       checked='checked'>
 									Display side chain
-								</label>
+								</label-->
+								<label>Side chain:</label>
+								<select class='mutation-3d-side-chain-select'>
+									<option value='all'
+									        title='Display side chain for all mapped residues'>all</option>
+									<option value='highlighted'
+									        selected='selected'
+									        title='Display side chain for highlighted residues only'>selected</option>
+									<option value='none'
+									        title='Do not display side chains'>none</option>
+								</select>
 								<img class='display-side-chain-help' src='{{helpImage}}'/>
 							</td>
 						</tr>
@@ -343,7 +356,7 @@
 	<span class='mutation-3d-beta-sheet'>beta sheets</span>, and
 	<span class='mutation-3d-loop'>loops</span>.
 	This color option is not available for the space-filling protein scheme.<br>
-	<b>Chain:</b> Colors the protein with a rainbow gradient
+	<b>N-C rainbow:</b> Colors the protein with a rainbow gradient
 	from red (N-terminus) to blue (C-terminus).<br>
 	<b>Atom Type:</b> Colors the structure with respect to the atom type (CPK color scheme).
 	This color option is only available for the space-filling protein scheme.<br>
@@ -353,7 +366,12 @@
 </script>
 
 <script type="text/template" id="mutation_3d_side_chain_tip_template">
-	Displays the side chain atoms for the highlighted residues.
+	Display options for the side chain atoms.<br>
+	<br>
+	<b>All:</b> Displays the side chain atoms for every mapped residue.<br>
+	<b>Selected:</b> Displays the side chain atoms only for the selected mutations.<br>
+	<b>None:</b> Hides the side chain atoms.<br>
+	<br>
 	This option has no effect for the space-filling protein scheme.
 </script>
 
@@ -367,13 +385,13 @@
 	<table>
 		<tr>
 			<td valign="top">
-				<div id='mutation_pdb_panel_{{geneSymbol}}' class='mutation-pdb-panel-container'></div>
+				<div class='mutation-pdb-panel-container'></div>
 			</td>
 			<td></td>
 		</tr>
 		<tr>
 			<td valign="top" align="center">
-				<div id='mutation_pdb_controls_{{geneSymbol}}' class='mutation-pdb-panel-controls'>
+				<div class='mutation-pdb-panel-controls'>
 					<button class='expand-collapse-pdb-panel'
 					        title='Expand/Collapse PDB Chains'></button>
 				</div>
@@ -384,7 +402,7 @@
 </script>
 
 <script type="text/template" id="mutation_details_table_template">
-	<table id='mutation_details_table_{{geneSymbol}}' class='display mutation_details_table'
+	<table class='display mutation_details_table'
 	       cellpadding='0' cellspacing='0' border='0'>
 		<thead>{{tableHeaders}}</thead>
 		<tbody>{{tableRows}}</tbody>
@@ -405,6 +423,11 @@
                 <b title="{{cancerStudy}}" alt="{{cancerStudy}}" class="cc-short-study-name">{{cancerStudyShort}}</b>
             </a>
         </td>
+		<td>
+			<span class='{{tumorTypeClass}}' alt='{{tumorTypeTip}}'>
+				{{tumorType}}
+			</span>
+		</td>
 		<td>
 			<span class='{{proteinChangeClass}}' alt='{{proteinChangeTip}}'>
 				{{proteinChange}}
@@ -485,7 +508,7 @@
 			</a>
 		</td>
 		<td>
-			<label alt='{{cnaTip}}' class='simple-tip {{cnaClass}}'>{{cna}}</label>
+			<label alt='{{cnaTip}}' class='simple-tip-left {{cnaClass}}'>{{cna}}</label>
 		</td>
 		<td>
 			<label class='{{mutationCountClass}}'>{{mutationCount}}</label>
@@ -497,6 +520,7 @@
 	<th alt='Mutation ID' class='mutation-table-header'>Mutation ID</th>
 	<th alt='Case ID' class='mutation-table-header'>Case ID</th>
     <th alt='Cancer Study' class='mutation-table-header'>Cancer Study</th>
+	<th alt='Tumor Type' class='mutation-table-header'>Tumor Type</th>
     <th alt='Protein Change' class='mutation-table-header'>AA Change</th>
 	<th alt='Mutation Type' class='mutation-table-header'>Type</th>
 	<th alt='Overlapping mutations in COSMIC' class='mutation-table-header'>COSMIC</th>

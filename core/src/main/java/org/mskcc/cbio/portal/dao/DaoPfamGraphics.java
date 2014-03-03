@@ -46,11 +46,11 @@ public class DaoPfamGraphics
 	/**
 	 * Inserts the given key and text pair to the database.
 	 *
-	 * @param uniprotId	uniprot id
+	 * @param uniprotAcc	uniprot accession
 	 * @param jsonData	pfam graphics data as a JSON object
 	 * @throws DaoException	if an entity already exists with the same key
 	 */
-	public int addPfamGraphics(String uniprotId, String jsonData) throws DaoException
+	public int addPfamGraphics(String uniprotAcc, String jsonData) throws DaoException
 	{
 		Connection con = null;
 		PreparedStatement pstmt = null;
@@ -60,8 +60,8 @@ public class DaoPfamGraphics
 		{
 			con = JdbcUtil.getDbConnection(DaoPfamGraphics.class);
 			pstmt = con.prepareStatement(
-				"INSERT INTO pfam_graphics (`UNIPROT_ID`, `JSON_DATA`) VALUES (?,?)");
-			pstmt.setString(1, uniprotId);
+				"INSERT INTO pfam_graphics (`UNIPROT_ACC`, `JSON_DATA`) VALUES (?,?)");
+			pstmt.setString(1, uniprotAcc);
 			pstmt.setString(2, jsonData);
 
 			return pstmt.executeUpdate();
@@ -79,11 +79,11 @@ public class DaoPfamGraphics
 	/**
 	 * Retrieves the text corresponding to the given key form the DB.
 	 *
-	 * @param uniprotId	a uniprot id
+	 * @param uniprotAcc	a uniprot acession
 	 * @return  pfam data as a JSON string
 	 * @throws DaoException
 	 */
-	public String getPfamGraphics(String uniprotId) throws DaoException
+	public String getPfamGraphics(String uniprotAcc) throws DaoException
 	{
 		Connection con = null;
 		PreparedStatement pstmt = null;
@@ -93,8 +93,8 @@ public class DaoPfamGraphics
 		{
 			con = JdbcUtil.getDbConnection(DaoPfamGraphics.class);
 			pstmt = con.prepareStatement(
-					"SELECT * FROM pfam_graphics WHERE UNIPROT_ID=?");
-			pstmt.setString(1, uniprotId);
+					"SELECT * FROM pfam_graphics WHERE UNIPROT_ACC=?");
+			pstmt.setString(1, uniprotAcc);
 			rs = pstmt.executeQuery();
 
 			if (rs.next())

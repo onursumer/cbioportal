@@ -17,10 +17,13 @@
   
   <repositories>
         <repository>
-                <id>biojava-maven-repo</id>
-                <name>BioJava repository</name>
-                <url>http://www.biojava.org/download/maven/</url>			
-        </repository>
+		<id>biojava-maven-repo</id>
+		<name>BioJava repository</name>
+		<url>http://www.biojava.org/download/maven/</url>
+		<releases>
+			<enabled>true</enabled>
+		</releases>
+	</repository>
         <!--repository>
             <id>biopax.releases</id>
             <name>BioPAX Repository at Sourceforge</name>
@@ -207,13 +210,18 @@
         <!-- BioJava3 -->
         <dependency>
                 <groupId>org.biojava</groupId>
+                <artifactId>biojava3-core</artifactId>
+                <version>3.0.7</version>
+        </dependency>
+        <dependency>
+                <groupId>org.biojava</groupId>
                 <artifactId>biojava3-structure</artifactId>
-                <version>3.0.5</version>
+                <version>3.0.7</version>
         </dependency>
         <dependency>
                 <groupId>org.biojava</groupId>
                 <artifactId>biojava3-modfinder</artifactId>
-                <version>3.0.5</version>
+                <version>3.0.7</version>
         </dependency>
 
     <!-- Mockito -->

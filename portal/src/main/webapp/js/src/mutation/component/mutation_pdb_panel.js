@@ -87,6 +87,10 @@ function MutationPdbPanel(options, data, proxy, xScale)
 	// event listeners
 	var _listeners = {};
 
+	// custom event dispatcher
+	var _dispatcher = {};
+	_.extend(_dispatcher, Backbone.Events);
+
 	// merge options with default options to use defaults for missing values
 	var _options = jQuery.extend(true, {}, _defaultOpts, options);
 
@@ -389,6 +393,15 @@ function MutationPdbPanel(options, data, proxy, xScale)
 //			});
 //		});
 
+		// sort alignments in the first row by alignment length
+		if (rows.length > 0)
+		{
+			rows[0].sort(function(a, b){
+				return (b.chain.mergedAlignment.mergedString.length -
+				        a.chain.mergedAlignment.mergedString.length);
+			});
+		}
+
 		return rows;
 	}
 
@@ -555,8 +568,9 @@ function MutationPdbPanel(options, data, proxy, xScale)
 		_rowData = allocateRows(PdbDataUtil.getSortedChainData(data));
 		_maxExpansionLevel = calcMaxExpansionLevel(_rowData.length, _options.numRows);
 
-		// init svg container
-		var container = d3.select(_options.el);
+		// selecting using jQuery node to support both string and jQuery selector values
+		var node = $(_options.el)[0];
+		var container = d3.select(node);
 
 		// number of rows to be shown initially
 		var numRows = _options.numRows[0];
@@ -577,6 +591,9 @@ function MutationPdbPanel(options, data, proxy, xScale)
 		{
 			drawYAxisLabel(svg, _options);
 		}
+
+		// add default listeners
+		addDefaultListeners();
 	}
 
 	/**
@@ -615,6 +632,14 @@ function MutationPdbPanel(options, data, proxy, xScale)
 		{
 			delete _listeners[selector][event];
 		}
+	}
+
+	function addDefaultListeners()
+	{
+		addListener(".pdb-chain-group", "click", function(datum, index) {
+			// highlight the selected chain on the pdb panel
+			highlight(d3.select(this));
+		});
 	}
 
 	/**
@@ -742,6 +767,11 @@ function MutationPdbPanel(options, data, proxy, xScale)
 
 		// ...alternatively we can just use a yellowish color
 		// to highlight the whole background
+
+		// trigger corresponding event
+		_dispatcher.trigger(
+			MutationDetailsEvents.CHAIN_SELECTED,
+			chainGroup);
 	}
 
 	function boundingBox(rectGroup)
@@ -785,6 +815,7 @@ function MutationPdbPanel(options, data, proxy, xScale)
 		hide: hidePanel,
 		toggleHeight: toggleHeight,
 		hasMoreChains: hasMoreChains,
-		highlight: highlight};
+		highlight: highlight,
+		dispatcher: _dispatcher};
 }
 
