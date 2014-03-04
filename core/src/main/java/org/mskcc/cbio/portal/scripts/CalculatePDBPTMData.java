@@ -67,14 +67,16 @@ public class CalculatePDBPTMData {
     public static void main(String[] args) throws Exception {
         String cmd = args[0];
         String dirPdbUniProtMappingFile = args[1];
-        String dirOutputFile = args[2];
-        String dirCache = args[3];
+        String dirSiftsHumanChains = args[2];
+        String dirOutputFile = args[3];
+        String dirCache = args[4];
         double lengthTolerance = 4.0;
-        if (args.length==5) {
-            lengthTolerance = Double.parseDouble(args[4]);
+        if (args.length==6) {
+            lengthTolerance = Double.parseDouble(args[5]);
         }
 
-        Map<String,Set<String>> pdbEntries = getPdbEntries(dirPdbUniProtMappingFile);
+        Map<String,Set<String>> pdbEntries = getPdbEntries(dirPdbUniProtMappingFile,
+                dirSiftsHumanChains);
         
         if (cmd.equalsIgnoreCase("contact-map")) {
             calculateContactMap(pdbEntries, dirOutputFile, dirCache, lengthTolerance);
@@ -85,7 +87,8 @@ public class CalculatePDBPTMData {
         }
     }
     
-    private static Map<String,Set<String>> getPdbEntries(String dirPdbUniProtMappingFile) throws IOException {
+    private static Map<String,Set<String>> getPdbEntries(String dirPdbUniProtMappingFile,
+            String dirSiftsHumanChains) throws IOException {
         Map<String,Set<String>> map = new TreeMap<String,Set<String>>(); // sorted treemap so that we know the progress later
         FileReader reader = new FileReader(dirPdbUniProtMappingFile);
         BufferedReader buf = new BufferedReader(reader);
@@ -106,6 +109,25 @@ public class CalculatePDBPTMData {
         }
         buf.close();
         reader.close();
+        
+        reader = new FileReader(dirSiftsHumanChains);
+        buf = new BufferedReader(reader);
+        line = buf.readLine();
+        while (line != null) {
+            String parts[] = line.substring(1).split("\t",3);
+            String pdb = parts[0];
+            String chain = parts[1];
+            Set<String> set = map.get(pdb);
+            if (set==null) {
+                set = new HashSet<String>();
+                map.put(pdb, set);
+            }
+            set.add(chain);
+            line = buf.readLine();
+        }
+        buf.close();
+        reader.close();
+        
         return map;
     }
     
