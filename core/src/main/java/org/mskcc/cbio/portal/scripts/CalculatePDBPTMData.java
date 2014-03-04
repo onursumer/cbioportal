@@ -114,7 +114,7 @@ public class CalculatePDBPTMData {
         buf = new BufferedReader(reader);
         line = buf.readLine();
         while (line != null) {
-            String parts[] = line.substring(1).split("\t",3);
+            String parts[] = line.split("\t",3);
             String pdb = parts[0];
             String chain = parts[1];
             Set<String> set = map.get(pdb);
