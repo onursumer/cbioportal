@@ -152,4 +152,16 @@ public interface HotspotDetectiveParameters {
      * @param identpThreshold 
      */
     public void setIdentpThresholdFor3DHotspots(double identpThreshold);
+    
+    /**
+     * 
+     * @return 
+     */
+    public boolean getIncludingMismatchesFor3DHotspots();
+    
+    /**
+     * 
+     * @param includeMismatches 
+     */
+    public void setIncludingMismatchesFor3DHotspots(boolean includeMismatches);
 }

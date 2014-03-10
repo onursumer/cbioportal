@@ -142,6 +142,7 @@ public class HotspotsServlet extends HttpServlet {
                 String strThresholdIdentp = request.getParameter(THRESHOLD_UNIPROT_PDB_ALIGNMENT_IDENTP);
                 double thresholdIdentp = strThresholdIdentp==null?0:Double.parseDouble(strThresholdIdentp);
                 hotspotDetectiveParameters.setIdentpThresholdFor3DHotspots(thresholdIdentp);
+                hotspotDetectiveParameters.setIncludingMismatchesFor3DHotspots(false);
                 
                 hotspotDetective = new ProteinStructureHotspotDetective(hotspotDetectiveParameters);
 //            } else if (type.startsWith("ptm-effect")) {

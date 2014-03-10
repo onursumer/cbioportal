@@ -138,7 +138,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 newProtein.setUniprotAcc(uniprotAcc);
                 
                 if (!newProtein.equals(currProtein)) {
-                    System.out.println(count++);
+                    //System.out.println(count++);
                     recordHotspots(currProtein, mapResidueHotspot);
                     currProtein = newProtein;
                     mapResidueHotspot.clear();

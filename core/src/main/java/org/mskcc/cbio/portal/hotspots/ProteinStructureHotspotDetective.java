@@ -195,7 +195,7 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
                 List<PdbUniprotResidueMapping> mappings = 
                         DaoPdbUniprotResidueMapping.getResidueMappings(alignment.getAlignmentId());
                 for (PdbUniprotResidueMapping mapping : mappings) {
-                    if (mapping.getMatch().matches("[A-Z]")) { // exact match
+                    if (parameters.getIncludingMismatchesFor3DHotspots() || mapping.getMatch().matches("[A-Z]")) { // exact match
                         map.put(mapping.getPdbPos(), mapping.getUniprotPos());
                     }
                 }
