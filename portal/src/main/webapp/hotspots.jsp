@@ -75,11 +75,44 @@ String jsonStudies = JSONValue.toJSONString(studies);
     </div>
     <br/>
     <div>
-        <label><b>Data type:</b></label>
-        <select id="data-type">
+        <label id="hotspot-type-label"><b>Hotspot type: </b>
+        <select id="hotspot-type-select">
+        <option value="single">Single residue</option>
+        <option value="linear">Linear</option>
+        <option value="3d">3D</option>
+        <option value="3d-ptm">PTM in 3D (under construnction)</option>
+        <option value="ptm">PTM (under construnction)</option>
+        </select>
+        </label>
+        
+        <label id="mutation-type-label"><b>Mutation type: </b>
+        <select id="mutation-type-select">
+        <option value="missense">Missense</option>
+        <option value="inframe">Inframe</option>
+        <option value="truncating">truncating</option>
+        </select>
+        </label>
+        
+        <label id="linear-window-label"><b>Window size for linear hotspots</b>
+        <input type='text' id='linear-window-input' value="4">
+        </label>
+        
+        <label id="3d-distance-label"><b>3D distance threhold</b>
+        <input type='text' id='3d-distance-input' value="4">
+        </label>
+        
+        <label id="3d-include-mismatch-label">
+        <input type="checkbox" id="3d-include-mismatch-checkbox" value="value">
+        include mismatches when detecting 3D hotspots
+        </label>
+        
+        <label id="ptm-window-label"><b>Window size for PTM hotspots</b>
+        <input type='text' id='ptm-window-input' value="4">
+        </label>
+        
+        <!--select id="data-type">
             <option selected="selected" value="single-missense">Missense and In-frame Mutations (Single residue hotspots)</option>
             <option value="single-truncating-sep">Truncating Mutations (Single residue hotspots)</option>
-            <!--option value="single-truncating">Truncating Mutations (Single residue hotspots) (merge by gene)</option-->
             <option value="linear-1">Linear hotspots (d<=1)</option>
             <option value="linear-2">Linear hotspots (d<=2)</option>
             <option value="linear-4">Linear hotspots (d<=4)</option>
@@ -92,8 +125,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
             <option value="ptm-effect-2">Mutations of PTM site neighbors (d<=2)</option>
             <option value="ptm-effect-4">Mutations of PTM site neighbors (d<=4)</option>
             <option value="ptm-effect-8">Mutations of PTM site neighbors (d<=8)</option>
-            <!--option value="cna">Copy Number Alterations (under development)</option-->
-        </select>
+        </select-->
     </div>
     <br/>
     <div>
