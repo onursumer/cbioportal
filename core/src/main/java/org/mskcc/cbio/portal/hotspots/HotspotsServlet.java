@@ -61,11 +61,11 @@ public class HotspotsServlet extends HttpServlet {
     public static final String GENES = "genes";
     public static final String THRESHOLD_SAMPLES = "threshold_samples";
     public static final String THRESHOLD_MUTATIONS_HYPERMUTATOR = "threshold_hypermutator";
-    public static final String THRESHOLD_DISTANCE_PTM_MUTATION = "threshold_distance";
-    public static final String THRESHOLD_DISTANCE_CONTACT_MAP = "threshold_distance";
-    public static final String THRESHOLD_DISTANCE_ERROR_CONTACT_MAP = "threshold_distance_error";
-    public static final String THRESHOLD_UNIPROT_PDB_ALIGNMENT_IDENTP = "threshold_identp";
-    public static final String LINEAR_HOTSPOT_WINDOW = "window";
+    public static final String PTM_HOTSPOT_WINDOW = "window_ptm";
+    public static final String THRESHOLD_DISTANCE_CONTACT_MAP = "threshold_distance_3d";
+    public static final String THRESHOLD_DISTANCE_ERROR_CONTACT_MAP = "threshold_distance_error_3d";
+    public static final String THRESHOLD_UNIPROT_PDB_ALIGNMENT_IDENTP = "threshold_identp_3d";
+    public static final String LINEAR_HOTSPOT_WINDOW = "window_linear";
     
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
@@ -122,7 +122,7 @@ public class HotspotsServlet extends HttpServlet {
             hotspotDetectiveParameters.setThresholdSamples(threshold);
                 
             HotspotDetective hotspotDetective;
-            if (hotspotType.equalsIgnoreCase("single-missense")) {
+            if (hotspotType.equalsIgnoreCase("single")) {
                 hotspotDetective = new SingleHotspotDetective(hotspotDetectiveParameters);
             } else if (hotspotType.equalsIgnoreCase("linear")) {
                 int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));

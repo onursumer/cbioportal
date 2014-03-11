@@ -84,57 +84,62 @@ String jsonStudies = JSONValue.toJSONString(studies);
         <option value="ptm">PTM (under construnction)</option>
         </select>
         </label>
-        
+    </div>
+    <br/>
+    <div>       
         <label id="mutation-type-label"><b>Mutation type: </b>
-        <select id="mutation-type-select">
-        <option value="missense">Missense</option>
+        <select id="mutation-type-select" data-placeholder="Choose mutation types..." multiple>
+        <option value="missense" selected="selected">Missense</option>
         <option value="inframe">Inframe</option>
-        <option value="truncating">truncating</option>
+        <option value="truncating">Truncating</option>
         </select>
         </label>
-        
-        <label id="linear-window-label"><b>Window size for linear hotspots</b>
+    </div>
+    <br/>
+    <div>       
+        <label id="linear-window-label"><b>Window size (linear hotspots)</b>
         <input type='text' id='linear-window-input' value="4">
         </label>
-        
-        <label id="3d-distance-label"><b>3D distance threhold</b>
-        <input type='text' id='3d-distance-input' value="4">
+    </div>
+    <br/>
+    <div>       
+        <label id="3d-distance-label"><b>Distance threhold (3D hotspots)</b>
+        <select id="3d-distance-select">
+        <option value="extended">Extended neighbors (<5A)</option>
+        <option value="covalent">covalently bonded</option>
+        </select>
         </label>
-        
+    </div>
+    <br/>
+    <div>       
         <label id="3d-include-mismatch-label">
         <input type="checkbox" id="3d-include-mismatch-checkbox" value="value">
-        include mismatches when detecting 3D hotspots
+        include mismatches in alignments (3D hotspots)
         </label>
-        
-        <label id="ptm-window-label"><b>Window size for PTM hotspots</b>
+    </div>
+    <br/>
+    <div>       
+        <label id="3d-identp-threshold-label"><b>Alignment identity percentage (3D hotspots)</b>
+        <input type='text' id='3d-identp-threshold-input' value="90">
+        </label>
+    </div>
+    <br/>
+    <div>       
+        <label id="ptm-window-label"><b>Window size (PTM hotspots)</b>
         <input type='text' id='ptm-window-input' value="4">
         </label>
-        
-        <!--select id="data-type">
-            <option selected="selected" value="single-missense">Missense and In-frame Mutations (Single residue hotspots)</option>
-            <option value="single-truncating-sep">Truncating Mutations (Single residue hotspots)</option>
-            <option value="linear-1">Linear hotspots (d<=1)</option>
-            <option value="linear-2">Linear hotspots (d<=2)</option>
-            <option value="linear-4">Linear hotspots (d<=4)</option>
-            <option value="linear-8">Linear hotspots (d<=8)</option>
-            <option value="3d-e-0.4">3D hotspots (stringent contact map)</option>
-            <option value="3d-d-5">3D hotspots (extended 3D neighbors)</option>
-            <option value="pdb-ptm">3D PTM hotspots</option>
-            <option value="ptm-effect-0">Mutations of PTM sites</option>
-            <option value="ptm-effect-1">Mutations of PTM site neighbors (d<=1)</option>
-            <option value="ptm-effect-2">Mutations of PTM site neighbors (d<=2)</option>
-            <option value="ptm-effect-4">Mutations of PTM site neighbors (d<=4)</option>
-            <option value="ptm-effect-8">Mutations of PTM site neighbors (d<=8)</option>
-        </select-->
     </div>
     <br/>
     <div>
-        <label><b>Threshold of number samples:</b></label>
-        <input type='text' id='threshold-number-samples' value="10">
+        <label><b>Threshold of number samples: </b>
+        <input type='text' id='threshold-number-samples-input' value="10">
+        </label>
     </div>
     <br/>
     <div>
-        <input type="checkbox" id="exclude-hypermutator">&nbsp;Exclude hypermutated samples (&le;1000 nonsynonymous mutations)
+        <label id="exclude-hypermutator-label">
+        <input type="checkbox" id="exclude-hypermutator-checkbox">&nbsp;Exclude hypermutated samples (&le;1000 nonsynonymous mutations)
+        </label>
     </div>
     <br/>
     <div>
@@ -223,21 +228,35 @@ AlteredGene.Form = Backbone.View.extend({
     render: function() {
         this.$el.html(this.template());
         var view = new AlteredGene.CancerStudies.View();
+        this.$('#mutation-type-select').chosen({width: "50%"});
         this.$('#cancer-study-selection').html(view.render().$el);
     },
     submit: function(event) {
         event.preventDefault();
-        var studies = [];
-        this.$('#cancer-study-select').val().forEach(function(selected){
-            studies.push(selected);
-        });
+        var studies = this.$('#cancer-study-select').val();
         var genes = $.trim(this.$('#gene-textarea').val()).split(/\s+/).join(",");
-        var type = this.$('#data-type').val();
-        var threshold = this.$('#threshold-number-samples').val();
-        var thresholdHyper = this.$('#exclude-hypermutator').prop('checked') ? 1000 : -1;
-        var rounterTo = "submit/"+type+"/"+threshold+"/"+thresholdHyper+"/"+studies.join(",");
-        if (genes) rounterTo += "/"+genes;
-        router.navigate(rounterTo, {trigger: true});
+        var hotspot_type = this.$('#hotspot-type-select').val();
+        var mutation_type = this.$('#mutation-type-select').val();
+        var window_linear = this.$('#linear-window-input').val();
+        var distance_3d = this.$('#3d-distance-select').val();
+        var include_mismatches_3d = this.$('#3d-include-mismatch-checkbox').prop('checked');
+        var identp_3d_threhold = this.$('#3d-identp-threshold-input').val();
+        var window_ptm = this.$('#ptm-window-input').val();
+        // var ptm_type = 'PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
+        var threshold = this.$('#threshold-number-samples-input').val();
+        var thresholdHyper = this.$('#exclude-hypermutator-checkbox').prop('checked') ? 1000 : -1;
+        var routerTo = "submit/hotspot_type="+hotspot_type
+                        +"&mutation_type="+mutation_type.join(",")
+                        +"&genes="+genes
+                        +"&threshold_samples="+threshold
+                        +"&threshold_hypermutator="+thresholdHyper
+                        +"&window_linear="+window_linear
+                        +(distance_3d==="extended"?"&threshold_distance_3d=5":"&threshold_distance_error_3d=0.5")
+                        +"&include_mismatches_3d="+(include_mismatches_3d?"yes":"no")
+                        +"&threshold_identp_3d="+identp_3d_threhold
+                        +"&window_ptm="+window_ptm
+                        +"&cancer_study_id="+studies.join(",");
+        router.navigate(routerTo, {trigger: true});
     }
 });
 
@@ -575,8 +594,7 @@ AlteredGene.Router = Backbone.Router.extend({
     },
     routes: {
         "": "form",
-        "submit/:type/:threshold/:thresholdHyper/:studies": "submitWoGenes",
-        "submit/:type/:threshold/:thresholdHyper/:studies/:genes": "submit"
+        "submit/:optionsParams": "submit"
     },
     form: function() {
         var view = new AlteredGene.Form();
@@ -584,65 +602,16 @@ AlteredGene.Router = Backbone.Router.extend({
         this.el.empty();
         this.el.append(view.el);
     },
-    submitWoGenes: function(type, threshold, thresholdHyper, studies) {
-        this.submit(type, threshold, thresholdHyper, studies, null);
-    },
-    submit: function(type, threshold, thresholdHyper, studies, genes) {
-        $('#merge-alterations').prop('checked',type==="truncating");
-        $('#merge-alterations').prop('disabled',type==="truncating");
-    
-        var option_type = type;
-        var option_mutation_type = 'missense';
-        if (type==='single-missense') {
-            option_mutation_type = 'missense,ins,del';
-        } else if (type.indexOf('single-truncating')===0) {
-            option_mutation_type = 'truncating';
-        } else if (type.indexOf('ptm-effect-')===0) {
-            option_type = 'ptm-effect';
-            //option_type = 'ptm-effect,PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
-        } else if (type.indexOf('linear-')===0) {
-            option_type = 'linear';
-        } else if (type.indexOf('3d-')===0) {
-            option_type = '3d';
-        }
-
-        var options = {
-                'cmd': 'statistics',
-                'cancer_study_id': studies,
-                'hotspot_type': option_type,
-                'mutation_type': option_mutation_type,
-                'threshold_samples': threshold,
-                'threshold_hypermutator': thresholdHyper
-            };
-
-        if (genes) {
-            options['genes'] = genes;
-        }
-
-        if(type.indexOf('ptm-effect-')===0) {
-            var ix = type.indexOf(',');
-            if (ix!==-1) {
-                options['ptm_type'] = type.substring(ix);
-                type = type.substring(0,ix);
-            }
-            options['threshold_distance'] = parseInt(type.replace('ptm-effect-',''));
-        }
-
-        if(type.indexOf('linear-')===0) {
-            options['window'] = parseInt(type.replace('linear-',''));
+    submit: function(optionsParams) {
+        var options = {};
+        var parts = optionsParams.split('&');
+        for (var i = 0; i < parts.length; i++)
+        {    	
+            var sParameterName = parts[i].split('=');      
+            options[sParameterName[0]] = sParameterName[1];
         }
         
-        if (type.indexOf('3d-')===0) {
-            if (type.indexOf('3d-e-')===0) {
-                options['threshold_distance_error'] = type.replace('3d-e-','');
-            }
-
-            if (type.indexOf('3d-d-')===0) {
-                options['threshold_distance'] = type.replace('3d-d-','');
-            }
-            
-            options['threshold_identp'] = '90';
-        }
+        var studies = options["cancer_study_id"];
 
         // alteration view
         var alterations = new AlteredGene.Alterations([]);
