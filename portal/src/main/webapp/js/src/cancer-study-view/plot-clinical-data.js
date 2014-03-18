@@ -87,7 +87,7 @@ function togglePlotAllOrSelect(divRemoveFirst, divRemoveLast) {
 
 function selectedCol(dt,col) {
     var c = dt.getColumnLabel(col);
-    return c.toLowerCase().match(/(^age)|(gender)|(survival)|(grade)|(stage)|(histology)|(disease state)|(tumor_type)|(metastasis site)|(score)|(mutation_count)|(fraction_of_copy_number_altered_genome)/);
+    return c.toLowerCase().match(/(^age)|(gender)|(os_status)|(os_months)|(dfs_status)|(dfs_months)|(race)|(ethnicity)|(.*grade.*)|(.*stage.*)|(histology)|(tumor_type)|(subtype)|(tumor_site)|(.*score.*)|(mutation_count)|(fraction_of_copy_number_altered_genome)/);
 }
 
 // draw datatable
@@ -212,8 +212,8 @@ function drawDataTable(tableId,dt,caseMap,cancerStudyId) {
             oTable.fnFilter("(^"+ids.join("$)|(^")+"$)",0,true);
         }
     },true);
-    
-    $('#'+tableId+' tbody tr').live('click', function () {
+
+	$(document).on('click', '#'+tableId+' tbody tr', function () {
         var nTds = $('td', this);
         var caseId = $(nTds[0]).text();
         csObs.fireSelection(caseId,tableId);

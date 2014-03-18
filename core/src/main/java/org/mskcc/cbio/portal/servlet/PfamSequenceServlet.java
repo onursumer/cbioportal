@@ -1,9 +1,15 @@
 package org.mskcc.cbio.portal.servlet;
 
+import org.biojava3.core.sequence.compound.AminoAcidCompound;
+import org.biojava3.core.sequence.compound.AminoAcidCompoundSet;
+import org.biojava3.core.sequence.loader.UniprotProxySequenceReader;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.mskcc.cbio.cgds.dao.DaoException;
-import org.mskcc.cbio.cgds.dao.DaoGeneOptimized;
-import org.mskcc.cbio.cgds.dao.DaoPfamGraphics;
+import org.mskcc.cbio.portal.dao.DaoException;
+import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
+import org.mskcc.cbio.portal.dao.DaoPfamGraphics;
+import org.mskcc.cbio.portal.model.CanonicalGene;
 import org.mskcc.cbio.portal.mut_diagram.IdMappingService;
 import org.mskcc.cbio.portal.mut_diagram.impl.CgdsIdMappingService;
 
@@ -45,28 +51,51 @@ public class PfamSequenceServlet extends HttpServlet
 			final HttpServletResponse response)
 			throws ServletException, IOException
 	{
-		// TODO sanitize geneSymbol if necessary
+		// TODO sanitize geneSymbol & uniprot id if necessary
 		String hugoGeneSymbol = request.getParameter("geneSymbol");
-
-		List<String> uniProtIds = this.idMappingService.getUniProtIds(hugoGeneSymbol);
+		String uniprotAcc = request.getParameter("uniprotAcc");
 
 		// final json string to return
 		String jsonString = "";
 
-		if (uniProtIds.isEmpty())
-		{
-			this.writeOutput(response, JSONValue.parse(jsonString));
-			return;
-		}
+		// TODO retrieve data for all uniprot ids, instead of only one?
 
-		// TODO retrieve data for all uniprot ids, instead of the first one?
-		String uniprotId = uniProtIds.get(0);
+		if (uniprotAcc == null ||
+		    uniprotAcc.length() == 0)
+		{
+			List<String> uniProtAccs = this.idMappingService.mapFromHugoToUniprotAccessions(hugoGeneSymbol);
+
+			// if no uniprot mapping, then try to get only the sequence length
+			if (uniProtAccs.isEmpty())
+			{
+				// try to create a dummy sequence data with only length info
+				JSONArray dummyData = this.generateDummyData(hugoGeneSymbol);
+
+				// write dummy (or empty) output
+				if (dummyData != null)
+				{
+					this.writeOutput(response, dummyData);
+				}
+				else
+				{
+					// last resort: send empty data
+					this.writeOutput(response, JSONValue.parse(jsonString));
+				}
+
+				return;
+			}
+
+			// TODO longest sequence is not always the desired one.
+			// (ex: BRCA1 returns E9PFC7_HUMAN instead of BRCA1_HUMAN)
+
+			uniprotAcc = this.longestAcc(uniProtAccs);
+		}
 
 		DaoPfamGraphics dao = new DaoPfamGraphics();
 
 		try
 		{
-			jsonString = dao.getPfamGraphics(uniprotId);
+			jsonString = dao.getPfamGraphics(uniprotAcc);
 		}
 		catch (DaoException e)
 		{
@@ -74,6 +103,28 @@ public class PfamSequenceServlet extends HttpServlet
 		}
 
 		this.writeOutput(response, JSONValue.parse(jsonString));
+	}
+
+	protected JSONArray generateDummyData(String hugoGeneSymbol)
+	{
+		CanonicalGene gene = DaoGeneOptimized.getInstance().getGene(hugoGeneSymbol);
+		JSONArray data = new JSONArray();
+
+		if (gene != null)
+		{
+			int length = gene.getLength() / 3;
+
+			JSONObject dummy = new JSONObject();
+			dummy.put("markups", new JSONArray());
+			dummy.put("length", length);
+			dummy.put("regions", new JSONArray());
+			dummy.put("motifs", new JSONArray());
+			dummy.put("metadata", new JSONObject());
+
+			data.add(dummy);
+		}
+
+		return data;
 	}
 
 	protected void writeOutput(HttpServletResponse response,
@@ -90,5 +141,41 @@ public class PfamSequenceServlet extends HttpServlet
 		{
 			out.close();
 		}
+	}
+
+	/**
+	 * Finds the uniprot accession, within the given list,
+	 * corresponding to the longest uniprot sequence.
+	 *
+	 * @param uniProtAccs   list of uniprot accessions
+	 * @return  uniprot accession corresponding to the longest sequence
+	 */
+	protected String longestAcc(List<String> uniProtAccs)
+	{
+		String longest = "";
+		int max = -1;
+
+		try
+		{
+			for (String accession : uniProtAccs)
+			{
+				UniprotProxySequenceReader<AminoAcidCompound> uniprotSequence
+					= new UniprotProxySequenceReader<AminoAcidCompound>(
+						accession,
+						AminoAcidCompoundSet.getAminoAcidCompoundSet());
+
+				if (uniprotSequence.getLength() > max)
+				{
+					max = uniprotSequence.getLength();
+					longest = accession;
+				}
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+
+		return longest;
 	}
 }

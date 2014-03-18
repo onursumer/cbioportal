@@ -22,15 +22,15 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.mskcc.cbio.cgds.dao.*;
-import org.mskcc.cbio.cgds.model.*;
-import org.mskcc.cbio.cgds.util.AccessControl;
-import org.mskcc.cbio.portal.remote.ConnectionManager;
-import org.mskcc.cbio.portal.util.SkinUtil;
+import org.mskcc.cbio.portal.dao.*;
+import org.mskcc.cbio.portal.model.*;
+import org.mskcc.cbio.portal.util.AccessControl;
+import org.mskcc.cbio.portal.web_api.ConnectionManager;
+import org.mskcc.cbio.portal.util.GlobalProperties;
 import org.mskcc.cbio.portal.util.XDebug;
-import org.owasp.validator.html.PolicyException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -40,7 +40,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  */
 public class PatientView extends HttpServlet {
     private static Logger logger = Logger.getLogger(PatientView.class);
-    public static final String ERROR = "error";
+    public static final String ERROR = "user_error_message";
     public static final String CASE_ID = "case_id";
     public static final String PATIENT_ID = "patient_id";
     public static final String PATIENT_ID_ATTR_NAME = "PATIENT_ID";
@@ -61,15 +61,10 @@ public class PatientView extends HttpServlet {
     public static final String CLINICAL_DATA = "clinical_data";
     public static final String TISSUE_IMAGES = "tissue_images";
     public static final String PATH_REPORT_URL = "path_report_url";
-    
+
     public static final String DRUG_TYPE = "drug_type";
     public static final String DRUG_TYPE_CANCER_DRUG = "cancer_drug";
     public static final String DRUG_TYPE_FDA_ONLY = "fda_approved";
-    
-    private ServletXssUtil servletXssUtil;
-    
-    private static final DaoClinicalData daoClinicalData = new DaoClinicalData();
-    private static final DaoClinicalFreeForm daoClinicalFreeForm = new DaoClinicalFreeForm();
 
     // class which process access control to cancer studies
     private AccessControl accessControl;
@@ -82,17 +77,13 @@ public class PatientView extends HttpServlet {
     @Override
     public void init() throws ServletException {
         super.init();
-        try {
-            servletXssUtil = ServletXssUtil.getInstance();
-                        ApplicationContext context = 
-                                new ClassPathXmlApplicationContext("classpath:applicationContext-security.xml");
-                        accessControl = (AccessControl)context.getBean("accessControl");
-        } catch (PolicyException e) {
-            throw new ServletException (e);
-        }
+
+        ApplicationContext context =
+                new ClassPathXmlApplicationContext("classpath:applicationContext-security.xml");
+        accessControl = (AccessControl)context.getBean("accessControl");
     }
-    
-    /** 
+
+    /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
      * @param request servlet request
      * @param response servlet response
@@ -103,28 +94,32 @@ public class PatientView extends HttpServlet {
             throws ServletException, IOException {
         XDebug xdebug = new XDebug( request );
         request.setAttribute(QueryBuilder.XDEBUG_OBJECT, xdebug);
-        
-        //  Get patient ID
-        String cancerStudyId = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
 
+        String cancerStudyId = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
         request.setAttribute(QueryBuilder.CANCER_STUDY_ID, cancerStudyId);
-        
+
         try {
             if (validate(request)) {
-                request.setAttribute(QueryBuilder.HTML_TITLE, "Patient: "+request.getAttribute(CASE_ID));
                 setGeneticProfiles(request);
                 setClinicalInfo(request);
                 setNumCases(request);
             }
-            RequestDispatcher dispatcher =
-                    getServletContext().getRequestDispatcher("/WEB-INF/jsp/tumormap/patient_view/patient_view.jsp");
-            dispatcher.forward(request, response);
-        
+
+            if (request.getAttribute(ERROR)!=null) {
+                String msg = (String)request.getAttribute(ERROR);
+                xdebug.logMsg(this, msg);
+                forwardToErrorPage(request, response, msg, xdebug);
+            } else {
+                RequestDispatcher dispatcher =
+                        getServletContext().getRequestDispatcher("/WEB-INF/jsp/tumormap/patient_view/patient_view.jsp");
+                dispatcher.forward(request, response);
+            }
+
         } catch (DaoException e) {
             xdebug.logMsg(this, "Got Database Exception:  " + e.getMessage());
             forwardToErrorPage(request, response,
-                               "An error occurred while trying to connect to the database.", xdebug);
-        } 
+                    "An error occurred while trying to connect to the database.", xdebug);
+        }
     }
 
     /**
@@ -138,31 +133,22 @@ public class PatientView extends HttpServlet {
      *
      * @author Gideon Dresdner
      */
-    public boolean hasAlleleFrequencyData(CancerStudy cancerStudy, String patientId, GeneticProfile mutationProfile) throws DaoException {
+    public boolean hasAlleleFrequencyData(String patientId, GeneticProfile mutationProfile) throws DaoException {
 
         if (mutationProfile == null) {
             // fail quietly
             return false;
         }
 
-        List<ExtendedMutation> mutations
-                = DaoMutation.getMutations(mutationProfile.getGeneticProfileId(), patientId);
-
-        for (ExtendedMutation mutation : mutations) {
-            if (mutation.getTumorAltCount() != -1) {
-                return true;
-            }
-        }
-
-        return false;
+        return DaoMutation.hasAlleleFrequencyData(mutationProfile.getGeneticProfileId(), patientId);
     }
 
     private boolean validate(HttpServletRequest request) throws DaoException {
-        
+
         // by default; in case return false;
         request.setAttribute(HAS_SEGMENT_DATA, Boolean.FALSE);
         request.setAttribute(HAS_ALLELE_FREQUENCY_DATA, Boolean.FALSE);
-        
+
         String caseIdsStr = request.getParameter(CASE_ID);
         String patientIdsStr = request.getParameter(PATIENT_ID);
         if ((caseIdsStr == null || caseIdsStr.isEmpty())
@@ -170,13 +156,13 @@ public class PatientView extends HttpServlet {
             request.setAttribute(ERROR, "Please specify at least one case ID or patient ID. ");
             return false;
         }
-        
+
         String cancerStudyId = (String) request.getAttribute(QueryBuilder.CANCER_STUDY_ID);
         if (cancerStudyId==null) {
             request.setAttribute(ERROR, "Please specify cancer study ID. ");
             return false;
         }
-        
+
         CancerStudy cancerStudy = DaoCancerStudy.getCancerStudyByStableId(cancerStudyId);
         if (cancerStudy==null) {
             request.setAttribute(ERROR, "We have no information about cancer study "+cancerStudyId);
@@ -184,7 +170,7 @@ public class PatientView extends HttpServlet {
         }
 
         Set<Case> cases = new HashSet<Case>();
-        List<String> sampleIds = new ArrayList<String>();
+        Set<String> sampleIds = new HashSet<String>();
         if (caseIdsStr!=null) {
             for (String caseId : caseIdsStr.split(" +")) {
                 Case _case = DaoCase.getCase(caseId, cancerStudy.getInternalId());
@@ -194,11 +180,11 @@ public class PatientView extends HttpServlet {
                 }
             }
         }
-        
+
         if (patientIdsStr!=null) {
             for (String patientId : patientIdsStr.split(" +")) {
-                List<String> samples = daoClinicalFreeForm.getCaseIdsByAttribute(
-                    cancerStudy.getInternalId(), PATIENT_ID_ATTR_NAME, patientId);
+                List<String> samples = DaoClinicalData.getCaseIdsByAttribute(
+                        cancerStudy.getInternalId(), PATIENT_ID_ATTR_NAME, patientId);
                 for (String sample : samples) {
                     Case _case = DaoCase.getCase(sample, cancerStudy.getInternalId());
                     if (_case != null) {
@@ -213,151 +199,122 @@ public class PatientView extends HttpServlet {
             request.setAttribute(ERROR, "We have no information about the patient.");
             return false;
         }
-        
-        
-        request.setAttribute(CASE_ID, StringUtils.join(sampleIds, " "));
-        
+
+        request.setAttribute(CASE_ID, sampleIds);
+        request.setAttribute(QueryBuilder.HTML_TITLE, "Patient: "+StringUtils.join(sampleIds,","));
+
         String cancerStudyIdentifier = cancerStudy.getCancerStudyStableId();
 
         if (accessControl.isAccessibleCancerStudy(cancerStudyIdentifier).size() != 1) {
             request.setAttribute(ERROR,
                     "You are not authorized to view the cancer study with id: '" +
-                    cancerStudyIdentifier + "'. ");
+                            cancerStudyIdentifier + "'. ");
             return false;
         }
-        
+
         request.setAttribute(PATIENT_CASE_OBJ, cases);
         request.setAttribute(CANCER_STUDY, cancerStudy);
 
         request.setAttribute(HAS_SEGMENT_DATA, DaoCopyNumberSegment
                 .segmentDataExistForCancerStudy(cancerStudy.getInternalId()));
-        request.setAttribute(HAS_ALLELE_FREQUENCY_DATA, 
-                hasAlleleFrequencyData(cancerStudy, sampleIds.get(0), cancerStudy.getMutationProfile(sampleIds.get(0))));
-        
+        String firstSampleId = sampleIds.iterator().next();
+        request.setAttribute(HAS_ALLELE_FREQUENCY_DATA,
+                hasAlleleFrequencyData(firstSampleId, cancerStudy.getMutationProfile(firstSampleId)));
+
         return true;
     }
-    
+
     private void setGeneticProfiles(HttpServletRequest request) throws DaoException {
         CancerStudy cancerStudy = (CancerStudy)request.getAttribute(CANCER_STUDY);
         GeneticProfile mutProfile = cancerStudy.getMutationProfile();
         if (mutProfile!=null) {
             request.setAttribute(MUTATION_PROFILE, mutProfile);
-            request.setAttribute(NUM_CASES_IN_SAME_MUTATION_PROFILE, 
+            request.setAttribute(NUM_CASES_IN_SAME_MUTATION_PROFILE,
                     DaoCaseProfile.countCasesInProfile(mutProfile.getGeneticProfileId()));
         }
-        
+
         GeneticProfile cnaProfile = cancerStudy.getCopyNumberAlterationProfile(true);
         if (cnaProfile!=null) {
             request.setAttribute(CNA_PROFILE, cnaProfile);
-            request.setAttribute(NUM_CASES_IN_SAME_CNA_PROFILE, 
+            request.setAttribute(NUM_CASES_IN_SAME_CNA_PROFILE,
                     DaoCaseProfile.countCasesInProfile(cnaProfile.getGeneticProfileId()));
         }
-        
+
         GeneticProfile mrnaProfile = cancerStudy.getMRnaZscoresProfile();
         if (mrnaProfile!=null) {
             request.setAttribute(MRNA_PROFILE, mrnaProfile);
-            request.setAttribute(NUM_CASES_IN_SAME_MRNA_PROFILE, 
+            request.setAttribute(NUM_CASES_IN_SAME_MRNA_PROFILE,
                     DaoCaseProfile.countCasesInProfile(mrnaProfile.getGeneticProfileId()));
         }
     }
-    
+
     private void setNumCases(HttpServletRequest request) throws DaoException {
         CancerStudy cancerStudy = (CancerStudy)request.getAttribute(CANCER_STUDY);
         request.setAttribute(NUM_CASES_IN_SAME_STUDY,DaoCase.countCases(cancerStudy.getInternalId()));
     }
-    
+
     private void setClinicalInfo(HttpServletRequest request) throws DaoException {
-        Set<Case> cases = (Set<Case>)request.getAttribute(PATIENT_CASE_OBJ);
-        
+        Set<String> cases = (Set<String>)request.getAttribute(CASE_ID);
+
         CancerStudy cancerStudy = (CancerStudy)request.getAttribute(CANCER_STUDY);
-        String patient = null;
-        Map<String,ClinicalFreeForm> clinicalFreeForms = Collections.emptyMap();
+        List<ClinicalData> cds = DaoClinicalData.getData(cancerStudy.getInternalId(), cases);
         Map<String,Map<String,String>> clinicalData = new LinkedHashMap<String,Map<String,String>>();
-        for (Case _case : cases) {
-            patient = _case.getCaseId();
-            ClinicalData cd = daoClinicalData.getCase(cancerStudy.getInternalId(),patient);
-            clinicalFreeForms = getClinicalFreeform(cancerStudy.getInternalId(),patient);
-            clinicalData.put(patient,mergeClinicalData(cd, clinicalFreeForms));
+        for (ClinicalData cd : cds) {
+            String caseId = cd.getCaseId();
+            String attrId = cd.getAttrId();
+            String attrValue = cd.getAttrVal();
+            Map<String,String> attrMap = clinicalData.get(caseId);
+            if (attrMap==null) {
+                attrMap = new HashMap<String,String>();
+                clinicalData.put(caseId, attrMap);
+            }
+            attrMap.put(attrId, attrValue);
         }
         request.setAttribute(CLINICAL_DATA, clinicalData);
-        
+
         if (cases.size()>1) {
             return;
         }
-        
+
+        String caseId = cases.iterator().next();
+
         // images
-        String tisImageUrl = getTissueImageIframeUrl(cancerStudy.getCancerStudyStableId(), patient);
+        String tisImageUrl = getTissueImageIframeUrl(cancerStudy.getCancerStudyStableId(), caseId);
         if (tisImageUrl!=null) {
             request.setAttribute(TISSUE_IMAGES, tisImageUrl);
         }
-        
+
         // path report
         String typeOfCancer = cancerStudy.getTypeOfCancerId();
         if (cancerStudy.getCancerStudyStableId().contains(typeOfCancer+"_tcga")) {
-            String pathReport = getTCGAPathReport(typeOfCancer, patient);
+            String pathReport = getTCGAPathReport(typeOfCancer, caseId);
             if (pathReport!=null) {
                 request.setAttribute(PATH_REPORT_URL, pathReport);
             }
         }
-        
+
         // other cases with the same patient id
-        ClinicalFreeForm cff = clinicalFreeForms.get(PATIENT_ID_ATTR_NAME.toLowerCase());
-        if (cff!=null) {
-            String patientId = cff.getParamValue();
-            List<String> samples = daoClinicalFreeForm.getCaseIdsByAttribute(
+        Map<String,String> attrMap = clinicalData.get(caseId);
+        if (attrMap!=null) {
+            String patientId = attrMap.get(PATIENT_ID_ATTR_NAME);
+            List<String> samples = DaoClinicalData.getCaseIdsByAttribute(
                     cancerStudy.getInternalId(), PATIENT_ID_ATTR_NAME, patientId);
             if (samples.size()>1) {
                 request.setAttribute(PATIENT_ID_ATTR_NAME, patientId);
             }
         }
-        
-        
     }
-    
-    private Map<String,ClinicalFreeForm> getClinicalFreeform(int cancerStudyId, String patient) throws DaoException {
-        List<ClinicalFreeForm> list = daoClinicalFreeForm.getCasesById(cancerStudyId, patient);
-        Map<String,ClinicalFreeForm> map = new HashMap<String,ClinicalFreeForm>(list.size());
-        for (ClinicalFreeForm cff : list) {
-            map.put(cff.getParamName().toLowerCase(), cff);
-        }
-        return map;
-    }
-    
-    private Map<String,String> mergeClinicalData(ClinicalData cd, Map<String,ClinicalFreeForm> cffs) {
-        Map<String,String> map = new HashMap<String,String>();
-        if (cd!=null&&cd.getAgeAtDiagnosis()!=null) {
-            map.put("age",cd.getAgeAtDiagnosis().toString());
-        }
-        if (cd!=null&&cd.getOverallSurvivalStatus()!=null) {
-            map.put("overall_survival_status", cd.getOverallSurvivalStatus());
-        }
-        if (cd!=null&&cd.getOverallSurvivalMonths()!=null) {
-            map.put("overall_survival_months", Long.toString(Math.round(cd.getOverallSurvivalMonths())));
-        }
-        if (cd!=null&&cd.getDiseaseFreeSurvivalStatus()!=null) {
-            map.put("disease-free_survival_status", cd.getDiseaseFreeSurvivalStatus());
-        }
-        if (cd!=null&&cd.getDiseaseFreeSurvivalMonths()!=null) {
-            map.put("disease-free_survival_months", Long.toString(Math.round(cd.getDiseaseFreeSurvivalMonths())));
-        }
-        
-        for (ClinicalFreeForm cff : cffs.values()) {
-            map.put(cff.getParamName().toLowerCase(), cff.getParamValue());
-        }
-        
-        return map;
-    }
-    
+
     private String getTissueImageIframeUrl(String cancerStudyId, String caseId) {
         if (!caseId.toUpperCase().startsWith("TCGA-")) {
             return null;
         }
-        
+
         // test if images exist for the case
-        String metaUrl = SkinUtil.getDigitalSlideArchiveMetaUrl(caseId);
-        MultiThreadedHttpConnectionManager connectionManager =
-                    ConnectionManager.getConnectionManager();
-        HttpClient client = new HttpClient(connectionManager);
+        String metaUrl = GlobalProperties.getDigitalSlideArchiveMetaUrl(caseId);
+
+        HttpClient client = ConnectionManager.getHttpClient(5000);
+
         GetMethod method = new GetMethod(metaUrl);
 
         Pattern p = Pattern.compile("<data total_count='([0-9]+)'>");
@@ -370,10 +327,10 @@ public class PatientView extends HttpServlet {
                     Matcher m = p.matcher(line);
                     if (m.find()) {
                         int count = Integer.parseInt(m.group(1));
-                        return count>0 ? SkinUtil.getDigitalSlideArchiveIframeUrl(caseId) : null;
+                        return count>0 ? GlobalProperties.getDigitalSlideArchiveIframeUrl(caseId) : null;
                     }
                 }
-                
+
             } else {
                 //  Otherwise, throw HTTP Exception Object
                 logger.error(statusCode + ": " + HttpStatus.getStatusText(statusCode)
@@ -385,10 +342,10 @@ public class PatientView extends HttpServlet {
             //  Must release connection back to Apache Commons Connection Pool
             method.releaseConnection();
         }
-        
+
         return null;
     }
-    
+
     // Map<TypeOfCancer, Map<CaseId, List<ImageName>>>
     private static Map<String,Map<String,String>> pathologyReports
             = new HashMap<String,Map<String,String>>();
@@ -399,9 +356,8 @@ public class PatientView extends HttpServlet {
         Map<String,String> map = pathologyReports.get(typeOfCancer);
         if (map==null) {
             map = new HashMap<String,String>();
-            pathologyReports.put(typeOfCancer, map);
-            
-            String pathReportUrl = SkinUtil.getTCGAPathReportUrl(typeOfCancer);
+
+            String pathReportUrl = GlobalProperties.getTCGAPathReportUrl(typeOfCancer);
             if (pathReportUrl!=null) {
                 List<String> pathReportDirs = extractLinksByPattern(pathReportUrl,tcgaPathReportDirLinePattern);
                 for (String dir : pathReportDirs) {
@@ -424,15 +380,14 @@ public class PatientView extends HttpServlet {
                 }
             }
 
+            pathologyReports.put(typeOfCancer, map);
         }
-        
+
         return map.get(caseId);
     }
-    
+
     private static List<String> extractLinksByPattern(String reportsUrl, Pattern p) {
-        MultiThreadedHttpConnectionManager connectionManager =
-                ConnectionManager.getConnectionManager();
-        HttpClient client = new HttpClient(connectionManager);
+        HttpClient client = ConnectionManager.getHttpClient(5000);
         GetMethod method = new GetMethod(reportsUrl);
         try {
             int statusCode = client.executeMethod(method);
@@ -460,10 +415,10 @@ public class PatientView extends HttpServlet {
             //  Must release connection back to Apache Commons Connection Pool
             method.releaseConnection();
         }
-        
+
         return Collections.emptyList();
     }
-    
+
     private void forwardToErrorPage(HttpServletRequest request, HttpServletResponse response,
                                     String userMessage, XDebug xdebug)
             throws ServletException, IOException {
@@ -473,9 +428,9 @@ public class PatientView extends HttpServlet {
                 getServletContext().getRequestDispatcher("/WEB-INF/jsp/error.jsp");
         dispatcher.forward(request, response);
     }
-    
+
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /** 
+    /**
      * Handles the HTTP <code>GET</code> method.
      * @param request servlet request
      * @param response servlet response
@@ -488,7 +443,7 @@ public class PatientView extends HttpServlet {
         processRequest(request, response);
     }
 
-    /** 
+    /**
      * Handles the HTTP <code>POST</code> method.
      * @param request servlet request
      * @param response servlet response
@@ -501,7 +456,7 @@ public class PatientView extends HttpServlet {
         processRequest(request, response);
     }
 
-    /** 
+    /**
      * Returns a short description of the servlet.
      * @return a String containing servlet description
      */

@@ -24,6 +24,8 @@ CREATE TABLE `type_of_cancer` (
   `TYPE_OF_CANCER_ID` varchar(25) NOT NULL,
   `NAME` varchar(255) NOT NULL,
   `CLINICAL_TRIAL_KEYWORDS` varchar(1024) NOT NULL,
+  `DEDICATED_COLOR` char(31) NOT NULL,
+  `SHORT_NAME` varchar(127) NOT NULL,
   PRIMARY KEY  (`TYPE_OF_CANCER_ID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -35,9 +37,10 @@ CREATE TABLE `type_of_cancer` (
 drop table IF EXISTS cancer_study;
 CREATE TABLE `cancer_study` (
   `CANCER_STUDY_ID` int(11) NOT NULL auto_increment,
-  `CANCER_STUDY_IDENTIFIER` varchar(50),
+  `CANCER_STUDY_IDENTIFIER` varchar(255),
   `TYPE_OF_CANCER_ID` varchar(25) NOT NULL,
   `NAME` varchar(255) NOT NULL,
+  `SHORT_NAME` varchar(64) NOT NULL,
   `DESCRIPTION` varchar(1024) NOT NULL,
   `PUBLIC` BOOLEAN NOT NULL,
   `PMID` varchar(20) DEFAULT NULL,
@@ -80,7 +83,7 @@ CREATE TABLE `authorities` (
 drop table IF EXISTS case_list;
 CREATE TABLE `case_list` (
   `LIST_ID` int(11) NOT NULL auto_increment,
-  `STABLE_ID` varchar(50) NOT NULL,
+  `STABLE_ID` varchar(255) NOT NULL,
   `CATEGORY` varchar(255) NOT NULL,
   `CANCER_STUDY_ID` int(11) NOT NULL,
   `NAME` varchar(255) NOT NULL,
@@ -112,6 +115,9 @@ drop table IF EXISTS gene;
 CREATE TABLE `gene` (
   `ENTREZ_GENE_ID` int(255) NOT NULL,
   `HUGO_GENE_SYMBOL` varchar(255) NOT NULL,
+  `TYPE` varchar(50),
+  `CYTOBAND` varchar(50),
+  `LENGTH` int(11),
   PRIMARY KEY  (`ENTREZ_GENE_ID`),
   KEY `HUGO_GENE_SYMBOL` (`HUGO_GENE_SYMBOL`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
@@ -136,9 +142,12 @@ CREATE TABLE `gene_alias` (
 --
 drop table IF EXISTS uniprot_id_mapping;
 CREATE TABLE `uniprot_id_mapping` (
-  `ENTREZ_GENE_ID` int(255) NOT NULL,
+  `UNIPROT_ACC` varchar(255) NOT NULL,
   `UNIPROT_ID` varchar(255) NOT NULL,
+  `ENTREZ_GENE_ID` int(255),
   PRIMARY KEY  (`ENTREZ_GENE_ID`, `UNIPROT_ID`),
+  KEY (`UNIPROT_ID`),
+  Key (`UNIPROT_ACC`),
   FOREIGN KEY (`ENTREZ_GENE_ID`) REFERENCES `gene` (`ENTREZ_GENE_ID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -150,9 +159,10 @@ CREATE TABLE `uniprot_id_mapping` (
 drop table IF EXISTS genetic_profile;
 CREATE TABLE `genetic_profile` (
   `GENETIC_PROFILE_ID` int(11) NOT NULL auto_increment,
-  `STABLE_ID` varchar(50) NOT NULL,
+  `STABLE_ID` varchar(255) NOT NULL,
   `CANCER_STUDY_ID` int(11) NOT NULL,
   `GENETIC_ALTERATION_TYPE` varchar(255) NOT NULL,
+  `DATATYPE` varchar(255) NOT NULL,
   `NAME` varchar(255) NOT NULL,
   `DESCRIPTION` mediumtext,
   `SHOW_PROFILE_IN_ANALYSIS_TAB` binary(1) NOT NULL,
@@ -288,6 +298,15 @@ CREATE TABLE `mutation` (
   FOREIGN KEY (`GENETIC_PROFILE_ID`) REFERENCES `genetic_profile` (`GENETIC_PROFILE_ID`) ON DELETE CASCADE
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 COMMENT='Mutation Data Details';
 
+drop table if EXISTS mutation_count;
+CREATE TABLE `mutation_count` (
+  `GENETIC_PROFILE_ID` int(11) NOT NULL,
+  `CASE_ID` varchar(255) NOT NULL,
+  `MUTATION_COUNT` int NOT NULL,
+  KEY (`GENETIC_PROFILE_ID`,`CASE_ID`),
+  FOREIGN KEY (`GENETIC_PROFILE_ID`) REFERENCES `genetic_profile` (`GENETIC_PROFILE_ID`) ON DELETE CASCADE
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
 -- --------------------------------------------------------
 
 --
@@ -315,27 +334,32 @@ CREATE TABLE `case_profile` (
   FOREIGN KEY (`GENETIC_PROFILE_ID`) REFERENCES `genetic_profile` (`GENETIC_PROFILE_ID`) ON DELETE CASCADE
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
+--
+-- Table structure for table `clinical`
+--
 drop table IF EXISTS clinical;
 CREATE TABLE `clinical` (
   `CANCER_STUDY_ID` int(11) NOT NULL,
   `CASE_ID` varchar(255) NOT NULL,
-  `OVERALL_SURVIVAL_MONTHS` double default NULL,
-  `OVERALL_SURVIVAL_STATUS` varchar(50) default NULL,
-  `DISEASE_FREE_SURVIVAL_MONTHS` double default NULL,
-  `DISEASE_FREE_SURVIVAL_STATUS` varchar(50) default NULL,
-  `AGE_AT_DIAGNOSIS` double default NULL,
-  PRIMARY KEY (`CANCER_STUDY_ID`, `CASE_ID`),
+  `ATTR_ID` varchar(255) NOT NULL,
+  `ATTR_VALUE` varchar(255) NOT NULL,
+  PRIMARY KEY (`CANCER_STUDY_ID`, `CASE_ID`, `ATTR_ID`),
   FOREIGN KEY (`CANCER_STUDY_ID`) REFERENCES `cancer_study` (`CANCER_STUDY_ID`) ON DELETE CASCADE
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
-drop table IF EXISTS clinical_free_form;
-CREATE TABLE `clinical_free_form` (
-  `CANCER_STUDY_ID` int(11) NOT NULL,
-  `CASE_ID` varchar(256) NOT NULL,
-  `PARAM_NAME` varchar(256) NOT NULL,
-  `PARAM_VALUE` varchar(256) NOT NULL,
-  FOREIGN KEY (`CANCER_STUDY_ID`) REFERENCES `cancer_study` (`CANCER_STUDY_ID`) ON DELETE CASCADE
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `clinical_attribute`
+--
+drop table IF EXISTS clinical_attribute;
+CREATE TABLE `clinical_attribute` (
+  `ATTR_ID` varchar(255) NOT NULL,
+  `DISPLAY_NAME` varchar(255) NOT NULL,
+  `DESCRIPTION` varchar(255) NOT NULL,
+  `DATATYPE` varchar(255) NOT NULL,
+  PRIMARY KEY (`ATTR_ID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COMMENT='DATATYPE can be NUMBER, BOOLEAN, STRING';
 
 --
 -- Table structure for table `interaction`
@@ -465,9 +489,9 @@ CREATE TABLE `text_cache` (
 --
 drop table IF EXISTS pfam_graphics;
 CREATE TABLE `pfam_graphics` (
-  `UNIPROT_ID` varchar(255) NOT NULL,
+  `UNIPROT_ACC` varchar(255) NOT NULL,
   `JSON_DATA` longtext NOT NULL,
-  PRIMARY KEY (`UNIPROT_ID`)
+  PRIMARY KEY (`UNIPROT_ACC`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
@@ -586,3 +610,34 @@ CREATE TABLE `clinical_trial_keywords` (
   FOREIGN KEY (`PROTOCOLID`) REFERENCES `clinical_trials` (`PROTOCOLID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
+drop table IF EXISTS pdb_uniprot_residue_mapping;
+CREATE TABLE `pdb_uniprot_residue_mapping` (
+  `ALIGNMENT_ID` int NOT NULL,
+  `PDB_POSITION` int NOT NULL,
+  `PDB_INSERTION_CODE` char(1) DEFAULT NULL,
+  `UNIPROT_POSITION` int NOT NULL,
+  `MATCH` char(1),
+  KEY(`ALIGNMENT_ID`, `UNIPROT_POSITION`),
+  FOREIGN KEY(`ALIGNMENT_ID`) REFERENCES `pdb_uniprot_alignment` (`ALIGNMENT_ID`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+drop table IF EXISTS pdb_uniprot_alignment;
+CREATE TABLE `pdb_uniprot_alignment` (
+  `ALIGNMENT_ID` int NOT NULL,
+  `PDB_ID` char(4) NOT NULL,
+  `CHAIN` char(1) NOT NULL,
+  `UNIPROT_ID` varchar(50) NOT NULL,
+  `PDB_FROM` varchar(10) NOT NULL,
+  `PDB_TO` varchar(10) NOT NULL,
+  `UNIPROT_FROM` int NOT NULL,
+  `UNIPROT_TO` int NOT NULL,
+  `EVALUE` float,
+  `IDENTITY` float,
+  `IDENTP` float,
+  `UNIPROT_ALIGN` text,
+  `PDB_ALIGN` text,
+  `MIDLINE_ALIGN` text,
+  PRIMARY KEY (`ALIGNMENT_ID`),
+  KEY(`UNIPROT_ID`),
+  KEY(`PDB_ID`, `CHAIN`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;

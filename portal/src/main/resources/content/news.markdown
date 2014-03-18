@@ -1,3 +1,63 @@
+# March 18, 2014
+* All TCGA data updated to the Firehose run of January 15, 2014
+* Updated to the latest COSMIC data (v68)
+* Added two new provisional TCGA studies:
+    * Adrenocortical Carcinoma
+    * Uterine Carcinosarcoma
+* Added mutation data of 898 samples from 11 published studies:
+    * Hepatocellular Carcinoma (RIKEN, Nature Genetics 2012)
+    * Hepatocellular Carcinoma (LGGM, Hepatology in press)
+    * Medulloblastoma (Broad, Nature 2012)
+    * Medulloblastoma (ICGC, Nature 2012)
+    * Medulloblastoma (WashU, Nature 2012)
+    * Multiple Myeloma (Broad, Cancer Cell 2014)
+    * Pancreatic Adenocarcinoma (ICGC, Nature 2012)
+    * Small Cell Carcinoma of the Ovary (MSKCC, Nature Genetics in press)
+    * Small Cell Lung Cancer (CLCGP, Nature Genetics 2012)
+    * Small Cell Lung Cancer (Johns Hopkins, Nature Genetics 2012)
+    * NCI-60 Cell Lines (NCI, Cancer Res. 2012)
+
+# December 9, 2013
+* Added mutation data of 99 bladder cancer samples (BGI, Nature Genetics 2013)
+
+# December 6, 2013
+* Data sets matching four recently submitted or published TCGA studies are now available
+    * Glioblastoma (Cell 2013)
+    * Bladder carcinoma (Nature, in press)
+    * Head & neck squamous cell carcinoma (submitted)
+    * Lung adenocarcinoma (submitted)
+
+# November 8, 2013
+
+* All TCGA data updated to the Firehose run of September 23, 2013.
+* Updated to the latest COSMIC data (v67).
+* Added mutation data of 792 samples from 9 published cancer studies:
+    * Esophageal Adenocarcinoma (Broad, Nature Genetics 2013)
+    * Head and Neck Squamous Cell Carcinoma (Broad, Science 2011)
+    * Head and Neck Squamous Cell Carcinoma (Johns Hopkins, Science 2011)
+    * Kidney Renal Clear Cell Carcinoma (BGI, Nature Genetics 2012)
+    * Prostate Adenocarcinoma, Metastatic (Michigan, Nature 2012)
+    * Prostate Adenocarcinoma (Broad/Cornell, Nature Genetics 2012)
+    * Prostate Adenocarcinoma (Broad/Cornell, Cell 2013)
+    * Skin Cutaneous Melanoma (Yale, Nature Genetics 2012)
+    * Skin Cutaneous Melanoma (Broad, Cell 2012)
+
+# October 21, 2013
+ 
+* Improved interface for survival plots, including information on individual samples via mouse-over
+* New fusion glyph in OncoPrints &nbsp;&nbsp;&nbsp;[![FGFR3 fusions in head and neck carcinoma](images/previews/fusion-in-oncoprint.png)](index.do?cancer_study_id=hnsc_tcga_pub&genetic_profile_ids_PROFILE_MUTATION_EXTENDED=hnsc_tcga_pub_mutations&genetic_profile_ids_PROFILE_COPY_NUMBER_ALTERATION=hnsc_tcga_pub_gistic&Z_SCORE_THRESHOLD=2.0&RPPA_SCORE_THRESHOLD=2.0&data_priority=0&case_set_id=hnsc_tcga_pub_sequenced&case_ids=&gene_set_choice=user-defined-list&gene_list=FGFR3%3A+AMP+MUT%3B%0D%0A%0D%0A%0D%0A%0D%0A%0D%0A%0D%0A&clinical_param_selection=null&tab_index=tab_visualize&Action=Submit)
+* Improved cross-cancer query: new alteration frequency histogram (example below - query gene: CDKN2A) and mutation diagram
+<center>![Cross Cancer Query](images/previews/cross_cancer.png)</center>
+
+# September 9, 2013
+
+* Updated COSMIC data (v66 Release)
+* Improved / interactive visualization on the "Protein changes" tab
+* Enhanced mutation diagrams: color-coding by mutation time and syncing with table filters
+* Addition of DNA cytoband information in the patient view of copy-number changes
+* OncoPrints now allow the display of an optional track with clinical annotation (Endometrial cancer example below)
+<center>![Oncoprint with clinical track](images/previews/oncoprint_clinical_track.png)</center>
+
 # July 25, 2013
 
 * Multi-gene correlation plots.
@@ -6,7 +66,7 @@
 
 # July 16, 2013
 
-* All TCGA data updated to the May Firehose run (May 23, 2012).
+* All TCGA data updated to the May Firehose run (May 23, 2013).
     * TCGA Pancreatic Cancer study (provisional) added.
 
 # July 4, 2013
@@ -137,8 +197,6 @@ As per NCI guidelines, preliminary mutation data cannot be redistributed until t
 * You can now query across different cancer studies (feature available directly from the home page).
 * Our [MATLAB CGDS Cancer Genomics Toolbox](cgds_r.jsp) is now available.  The toolbox enables you to download data from the cBio Portal, and import it directly into MATLAB.
 * The code for the cBio Portal has now been fully open sourced, and made available at [Google Code](http://code.google.com/p/cbio-cancer-genomics-portal/).  If you would like to join our open source efforts and make the portal even better, drop us an email.
-
-<center>![Cross Cancer Query](images/previews/cross_cancer.png)</center>
 <BR/>
 <BR/>
 

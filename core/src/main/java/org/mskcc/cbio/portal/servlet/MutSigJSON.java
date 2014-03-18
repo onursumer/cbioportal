@@ -29,11 +29,11 @@ package org.mskcc.cbio.portal.servlet;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
-import org.mskcc.cbio.cgds.dao.DaoCancerStudy;
-import org.mskcc.cbio.cgds.dao.DaoException;
-import org.mskcc.cbio.cgds.dao.DaoMutSig;
-import org.mskcc.cbio.cgds.model.CancerStudy;
-import org.mskcc.cbio.cgds.model.MutSig;
+import org.mskcc.cbio.portal.dao.DaoCancerStudy;
+import org.mskcc.cbio.portal.dao.DaoException;
+import org.mskcc.cbio.portal.dao.DaoMutSig;
+import org.mskcc.cbio.portal.model.CancerStudy;
+import org.mskcc.cbio.portal.model.MutSig;
 import org.owasp.validator.html.PolicyException;
 
 import javax.servlet.ServletException;
@@ -55,7 +55,6 @@ import org.apache.commons.logging.LogFactory;
  * @author Gideon Dresdner
  */
 public class MutSigJSON extends HttpServlet {
-    private ServletXssUtil servletXssUtil;
     public static final String SELECTED_CANCER_STUDY = "selected_cancer_type";
     private static Log log = LogFactory.getLog(MutSigJSON.class);
 
@@ -64,11 +63,6 @@ public class MutSigJSON extends HttpServlet {
     //
     public void init() throws ServletException {
         super.init();
-        try {
-            servletXssUtil = ServletXssUtil.getInstance();
-        } catch (PolicyException e) {
-            throw new ServletException(e);
-        }
     }
 
     // Make a map out of every mutsig
@@ -111,13 +105,11 @@ public class MutSigJSON extends HttpServlet {
         try {
             CancerStudy cancerStudy = DaoCancerStudy.getCancerStudyByStableId(cancer_study_id);
 
-            DaoMutSig daoMutSig = DaoMutSig.getInstance();
-
             if (log.isDebugEnabled()) {
                 log.debug("cancerStudyId passed to MutSigJSON: " + cancerStudy.getInternalId());
             }
 
-            ArrayList<MutSig> mutSigList = daoMutSig.getAllMutSig(cancerStudy.getInternalId());
+            ArrayList<MutSig> mutSigList = DaoMutSig.getAllMutSig(cancerStudy.getInternalId());
 
             if (log.isDebugEnabled()) {
                 log.debug("no of mutsigs associated with cancerStudy: " + mutSigList.size() + "\n");

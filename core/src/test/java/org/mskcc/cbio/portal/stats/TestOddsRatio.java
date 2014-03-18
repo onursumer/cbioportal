@@ -34,8 +34,8 @@ import org.mskcc.cbio.portal.oncoPrintSpecLanguage.OncoPrintSpecification;
 import org.mskcc.cbio.portal.util.ProfileMerger;
 import org.mskcc.cbio.io.WebFileConnect;
 import org.mskcc.cbio.portal.util.ZScoreUtil;
-import org.mskcc.cbio.cgds.model.GeneticProfile;
-import org.mskcc.cbio.cgds.model.GeneticAlterationType;
+import org.mskcc.cbio.portal.model.GeneticProfile;
+import org.mskcc.cbio.portal.model.GeneticAlterationType;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,8 +48,8 @@ public class TestOddsRatio extends TestCase {
 
         GeneticProfile profile0 =
                 new GeneticProfile("gbm", 1,
-                        GeneticAlterationType.COPY_NUMBER_ALTERATION,
-                        "CNA", "CNA", true);
+								   GeneticAlterationType.COPY_NUMBER_ALTERATION, "DISCRETE",
+								   "CNA", "CNA", true);
 		// TBD: change this to use getResourceAsStream()
         String matrix0[][] = WebFileConnect.retrieveMatrix(new File("target/test-classes/cna_sample2.txt"));
         ProfileData data0 = new ProfileData(profile0, matrix0);

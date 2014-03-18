@@ -38,8 +38,8 @@ import junit.framework.TestCase;
 import org.mskcc.cbio.portal.model.ProfileData;
 import org.mskcc.cbio.portal.util.ProfileMerger;
 import org.mskcc.cbio.io.WebFileConnect;
-import org.mskcc.cbio.cgds.model.GeneticProfile;
-import org.mskcc.cbio.cgds.model.GeneticAlterationType;
+import org.mskcc.cbio.portal.model.GeneticProfile;
+import org.mskcc.cbio.portal.model.GeneticAlterationType;
 
 public class TestRenderImageDataType extends TestCase {
    
@@ -49,17 +49,16 @@ public class TestRenderImageDataType extends TestCase {
 
       GeneticProfile profile0 =
               new GeneticProfile("ovarian_cna", 1,
-              GeneticAlterationType.COPY_NUMBER_ALTERATION,
-                      "Ovarian CNA", "Ovarian CNA", true);
+								 GeneticAlterationType.COPY_NUMBER_ALTERATION, "DISCRETE",
+								 "Ovarian CNA", "Ovarian CNA", true);
 	  // TBD: change this to use getResourceAsStream()
       String matrix0[][] = WebFileConnect.retrieveMatrix(new File("target/test-classes/cna_sample.txt"));
       ProfileData data0 = new ProfileData(profile0, matrix0);
       profileList.add(data0);
 
-      GeneticProfile profile1 = new
-              GeneticProfile
-              ("ovarian_protein", 1, GeneticAlterationType.PROTEIN_LEVEL,
-              "Ovarian Protein", "Ovarian Protein", true);
+      GeneticProfile profile1 =
+		  new GeneticProfile("ovarian_protein", 1, GeneticAlterationType.PROTEIN_LEVEL, "Z-SCORE",
+							 "Ovarian Protein", "Ovarian Protein", true);
 	  // TBD: change this to use getResourceAsStream()
       String matrix1[][] = WebFileConnect.retrieveMatrix(new File("target/test-classes/protein_sample.txt"));
       ProfileData data1 = new ProfileData(profile1, matrix1);

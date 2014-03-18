@@ -28,8 +28,8 @@
 package org.mskcc.cbio.portal.mut_diagram;
 
 import junit.framework.TestCase;
-import org.mskcc.cbio.cgds.dao.DaoException;
-import org.mskcc.cbio.cgds.dao.DaoGeneOptimized;
+import org.mskcc.cbio.portal.dao.DaoException;
+import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
 import org.mskcc.cbio.portal.mut_diagram.IdMappingService;
 import org.mskcc.cbio.portal.mut_diagram.impl.CgdsIdMappingService;
 
@@ -49,7 +49,7 @@ public class TestAbstractIdMappingService extends TestCase {
 
     public final void testGetUniProtIdNullHugoGeneSymbol() {
         try {
-            idMappingService.getUniProtIds(null);
+            idMappingService.mapFromHugoToUniprotAccessions(null);
             fail("Null Pointer Exception should have been thrown.");
         } catch (NullPointerException e) {
         }

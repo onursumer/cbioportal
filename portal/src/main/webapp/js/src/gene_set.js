@@ -8,8 +8,8 @@
 GeneSet = function(raw_genes_str) {
 
     if (typeof(raw_genes_str) !== 'string') {
-        throw "Error: GeneSet only takes strings, given type '"
-                    + typeof(raw_genes_str) + "'";
+        throw new Error("Error: GeneSet only takes strings, given type '"
+                    + typeof(raw_genes_str) + "'");
         return -1;
     }
 
@@ -154,13 +154,13 @@ GeneSet = function(raw_genes_str) {
     onco_queries = $.grep(geneStmts, function(x) {
         return x.isOncoQuery();
     });
-    onco_queries = uniqueElementsOfArray(onco_queries);
+    onco_queries = cbio.util.uniqueElementsOfArray(onco_queries);
 
     // filter out the gene statements
     genes = $.grep(geneStmts, function(x) {
         return !x.isOncoQuery();
     });
-    genes = uniqueElementsOfArray(genes);
+    genes = cbio.util.uniqueElementsOfArray(genes);
 
     // take all genes, parse out the gene from an onco query
     all_genes = $.map(geneStmts, function(x) {
@@ -178,7 +178,7 @@ GeneSet = function(raw_genes_str) {
         }
     });
 
-    all_genes = uniqueElementsOfArray(all_genes);
+    all_genes = cbio.util.uniqueElementsOfArray(all_genes);
 
     // return GeneSet object
     return {

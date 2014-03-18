@@ -1,3 +1,21 @@
+# October 18, 2013
+ 
+* Improved interface for survival plots, including information on individual samples via mouse-over
+* New fusion glyph in OncoPrints
+* Improved cross-cancer query: new alteration frequency histogram (example below - query gene: CDKN2A) and mutation diagram
+<center>![Cross Cancer Query](images/previews/cross_cancer.png)</center>
+
+# September 5, 2013:
+
+* Linked to BAM files for single mutations via IGV.
+* [New standalone oncoprint tool](tools.jsp)
+* Updated COSMIC data (v66 Release)
+* Improved / interactive visualization on the "Protein changes" tab
+* Enhanced mutation diagrams: color-coding by mutation time and syncing with table filters
+* Addition of DNA cytoband information in the patient view of copy-number changes
+* OncoPrints now allow the display of an optional track with clinical annotation (Endometrial cancer example below)
+<center>![Oncoprint with clinical track](images/previews/oncoprint_clinical_track.png)</center>
+
 # July 25, 2013
 
 * Multi-gene correlation plots.

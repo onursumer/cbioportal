@@ -1,12 +1,50 @@
+<%@ taglib prefix="sql_rt" uri="http://java.sun.com/jstl/sql_rt" %>
+
 <script type="text/template" id="default_mutation_details_template">
-	<div id='mutation_details_loader'>
+	<div class='mutation-3d-container'></div>
+	<div class='mutation-details-loader'>
+		<img src='{{loaderImage}}'/>
+	</div>
+	<div class='mutation-details-content'>
+		<ul>
+			{{listContent}}
+		</ul>
+		{{mainContent}}
+	</div>
+</script>
+
+<script type="text/template" id="default_mutation_details_info_template">
+	<p>There are no mutation details available for the gene set entered.</p>
+	<br>
+	<br>
+</script>
+
+<script type="text/template" id="default_mutation_details_gene_info_template">
+	<p>There are no mutation details available for this gene.</p>
+	<br>
+	<br>
+</script>
+
+<script type="text/template" id="default_mutation_details_main_content_template">
+	<div id='mutation_details_{{geneSymbol}}'>
 		<img src='{{loaderImage}}'/>
 	</div>
 </script>
 
+<script type="text/template" id="default_mutation_details_list_content_template">
+	<li>
+		<a href="#mutation_details_{{geneSymbol}}"
+		   id="mutation_details_tab_{{geneSymbol}}"
+		   class="mutation-details-tabs-ref"
+		   title="{{geneSymbol}} mutations">
+			<span>{{geneSymbol}}</span>
+		</a>
+	</li>
+</script>
+
 <script type="text/template" id="mutation_view_template">
 	<h4>{{geneSymbol}}: {{mutationSummary}}</h4>
-	<div id='mutation_diagram_toolbar_{{geneSymbol}}' class='mutation-diagram-toolbar'>
+	<div class='mutation-diagram-toolbar'>
 		<a href='http://www.uniprot.org/uniprot/{{uniprotId}}'
 		   class='mutation-details-uniprot-link'
 		   target='_blank'>{{uniprotId}}</a>
@@ -28,15 +66,343 @@
 		</form>
 		<button class='diagram-to-pdf'>PDF</button>
 		<button class='diagram-to-svg'>SVG</button>
+		<button class="diagram-customize">Customize</button>
 	</div>
-	<div id='mutation_diagram_{{geneSymbol}}' class='mutation-diagram-container'></div>
-	<div id='mutation_table_{{geneSymbol}}' class='mutation-table-container'>
+	<div class="mutation-diagram-customize ui-widget"></div>
+	<div>
+		<table>
+			<tr>
+				<td>
+					<div class='mutation-diagram-container'></div>
+				</td>
+				<td>
+					<div class="mutation-3d-initializer"></div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div class="mutation-pdb-panel-view"></div>
+
+	<div class='mutation-details-filter-info'>
+		Current view shows filtered results.
+		Click <a class='mutation-details-filter-reset'>here</a> to reset all filters.
+	</div>
+	<div class='mutation-table-container'>
 		<img src='images/ajax-loader.gif'/>
 	</div>
 </script>
 
+<script type="text/template" id="mutation_customize_panel_template">
+	<div class="diagram-customize-close">
+		<a href="#">&times;</a>
+	</div>
+	<h4>Customize</h4>
+	<table>
+		<tr>
+			<td>
+				<div class="diagram-y-axis-slider-area">
+					<div class="diagram-slider-title"><label>max y-axis value</label></div>
+					<table>
+						<tr>
+							<td width="90%" valign="top">
+								<div class="diagram-y-axis-slider"></div>
+								<span class="diagram-slider-min-label">{{minY}}</span>
+								<span class="diagram-slider-max-label">{{maxY}}</span>
+							</td>
+							<td valign="top">
+								<input class="diagram-y-axis-limit-input" size="2" type='text'>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</td>
+		</tr>
+	</table>
+</script>
+
+<script type="text/template" id="mutation_3d_view_template">
+	<button class='mutation-3d-vis'>
+		<label>3D Structure &#187</label>
+	</button>
+</script>
+
+<script type="text/template" id="mutation_3d_vis_info_template">
+	<div class='mutation-3d-info-title'>
+		3D Structure
+	</div>
+	<div class='mutation-3d-info-main'>
+		Chain <span class='mutation-3d-chain-id'>{{chainId}}</span> of PDB
+		<span class='mutation-3d-pdb-id'>
+			<a href="http://www.rcsb.org/pdb/explore/explore.do?structureId={{pdbId}}"
+			   target="_blank">
+				{{pdbId}}
+			</a>
+		</span>
+		<span class='mutation-3d-pdb-info'>: {{pdbInfo}}</span>
+	</div>
+</script>
+
+<script type="text/template" id="mutation_3d_vis_template">
+	<div class='mutation-3d-vis-header'>
+		<span class='mutation-3d-close ui-icon ui-icon-circle-close' title='close'></span>
+		<span class='mutation-3d-minimize ui-icon ui-icon-circle-minus' title='minimize'></span>
+		<div class='mutation-3d-info'></div>
+	</div>
+	<div class='mutation-3d-residue-warning'>
+		<span class="mutation-3d-unmapped-info">Selected mutation</span>
+		cannot be mapped onto this structure.
+	</div>
+	<div class='mutation-3d-nomap-warning'>
+		None of the mutations can be mapped onto this structure.
+	</div>
+	<div class='mutation-3d-vis-loader'>
+		<img src='{{loaderImage}}'/>
+	</div>
+	<div class='mutation-3d-vis-container'></div>
+	<div class='mutation-3d-vis-toolbar'>
+		<div class='mutation-3d-vis-help-init'>
+			<a href="#">how to pan/zoom/rotate?</a>
+		</div>
+		<div class='mutation-3d-vis-help-content'>
+			<div class="mutation-3d-vis-help-close">
+				<a href="#"><b>&times;</b></a>
+			</div>
+			<h4>3D visualizer basic interaction</h4>
+			<b>Zoom in/out:</b> Press and hold the SHIFT key and the left mouse button,
+			and then move the mouse backward/forward.<br>
+			<b>Pan:</b> Press and hold the SHIFT key, double click and hold the left mouse button,
+			and then move the mouse in the desired direction.<br>
+			<b>Rotate:</b> Press and hold the left mouse button, and then move the mouse in the desired
+			direction to rotate along the x and y axes. To be able to rotate along the z-axis, you need to
+			press and hold the SHIFT key and the left mouse button, and then move the mouse left or right.<br>
+			<b>Reset:</b> Press and hold the SHIFT key, and then double click on the background
+			to reset the orientation and the zoom level to the initial state.
+		</div>
+		<table>
+			<tr>
+				<!--td>
+					<input class='mutation-3d-spin' type='checkbox'>
+					<label>Spin</label>
+				</td>
+				<td class='mutation-3d-buttons'>
+					<button class='mutation-3d-button mutation-3d-center-selected'
+							alt='Center the view on the highlighted residue'></button>
+					<button class='mutation-3d-button mutation-3d-center-default'
+							alt='Restore the view to its default center'></button>
+				</td>
+				<td class='mutation-3d-zoom-label'>
+					<label>Zoom</label>
+				</td>
+				<td>
+					<div class='mutation-3d-zoom-slider'></div>
+				</td-->
+			</tr>
+		</table>
+		<table cellpadding="0">
+			<tr>
+				<td class='mutation-3d-protein-style-menu' valign='top'>
+					<div class='mutation-3d-style-header'>
+						<label>Protein Style</label>
+					</div>
+					<table cellpadding='0'>
+						<tr>
+							<td>
+								<label>
+									<input class='mutation-3d-display-non-protein'
+									       type='checkbox'
+									       checked='checked'>
+									Display bound molecules
+								</label>
+								<img class='display-non-protein-help' src='{{helpImage}}'/>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label>Scheme:</label>
+								<select class='mutation-3d-protein-style-select'>
+									<option value='cartoon'
+									        title='Switch to the Cartoon Scheme'>cartoon</option>
+									<option value='spaceFilling'
+									        title='Switch to the Space-filling Scheme'>space-filling</option>
+									<option value='trace'
+									        title='Switch to the Trace Scheme'>trace</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label>Color:</label>
+								<select class='mutation-3d-protein-color-select'>
+									<option value='uniform'
+									        title='Uniform Color'>uniform</option>
+									<option value='bySecondaryStructure'
+									        title='Color by Secondary Structure'>secondary structure</option>
+									<option value='byChain'
+									        title='Color by Rainbow Gradient'>N-C rainbow</option>
+									<option value='byAtomType'
+									        title='Color by Atom Type'
+									        disabled='disabled'>atom type</option>
+								</select>
+								<img class='protein-struct-color-help' src='{{helpImage}}'/>
+							</td>
+						</tr>
+					</table>
+				</td>
+				<td class='mutation-3d-mutation-style-menu' valign='top'>
+					<div class='mutation-3d-style-header'>
+						<label>Mutation Style</label>
+					</div>
+					<table cellpadding="0">
+						<tr>
+							<td>
+								<!--label>
+									<input class='mutation-3d-side-chain'
+									       type='checkbox'
+									       checked='checked'>
+									Display side chain
+								</label-->
+								<label>Side chain:</label>
+								<select class='mutation-3d-side-chain-select'>
+									<option value='all'
+									        title='Display side chain for all mapped residues'>all</option>
+									<option value='highlighted'
+									        selected='selected'
+									        title='Display side chain for highlighted residues only'>selected</option>
+									<option value='none'
+									        title='Do not display side chains'>none</option>
+								</select>
+								<img class='display-side-chain-help' src='{{helpImage}}'/>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<!--table cellpadding="0">
+									<tr>
+										<td>
+											<label>Color:</label>
+										</td>
+										<td>
+											<label>
+												<input class='mutation-3d-mutation-color-by-type'
+												       type='checkbox'
+												       checked='checked'>
+												mutation type
+											</label>
+											<img class='mutation-type-color-help' src='{{helpImage}}'/>
+										</td>
+									</tr>
+									<tr>
+										<td></td>
+										<td>
+											<label>
+												<input class='mutation-3d-mutation-color-by-atom'
+												       type='checkbox'>
+												atom type
+											</label>
+										</td>
+									</tr>
+								</table-->
+								<label>Color:</label>
+								<select class='mutation-3d-mutation-color-select'>
+									<option value='uniform'
+									        title='Uniform color'>uniform</option>
+									<option value='byMutationType'
+									        selected='selected'
+									        title='Color by mutation type'>mutation type</option>
+									<option value='none'
+									        title='Do not color'>none</option>
+								</select>
+								<img class='mutation-type-color-help' src='{{helpImage}}'/>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</div>
+</script>
+
+<script type="text/template" id="mutation_3d_type_color_tip_template">
+	Color options for the mapped mutations.<br>
+	<br>
+	<b>Uniform:</b> Colors all mutated residues with a
+	<span class='uniform_mutation'>single color</span>.<br>
+	<b>Mutation type:</b> Enables residue coloring by mutation type.
+	Mutation types and corresponding color codes are as follows:
+	<ul>
+		<li><span class='missense_mutation'>Missense Mutations</span></li>
+		<li><span class='trunc_mutation'>Truncating Mutations</span>
+			(Nonsense, Nonstop, FS del, FS ins)</li>
+		<li><span class='inframe_mutation'>Inframe Mutations</span>
+			(IF del, IF ins)</li>
+		<li>
+			Residues colored with <span class='mutation-3d-tied'>purple</span> indicate residues
+			that are affected by different mutation types at the same proportion.
+		</li>
+	</ul>
+	<b>None:</b> Disables coloring of the mutated residues
+	except for manually selected (highlighted) residues.<br>
+	<br>
+	Highlighted residues are colored with <span class='mutation-3d-highlighted'>yellow</span>.
+</script>
+
+<script type="text/template" id="mutation_3d_structure_color_tip_template">
+	Color options for the protein structure.<br>
+	<br>
+	<b>Uniform:</b> Colors the entire protein structure with a
+	<span class='mutation-3d-loop'>single color</span>.<br>
+	<b>Secondary structure:</b> Colors the protein by secondary structure.
+	Assigns different colors for <span class='mutation-3d-alpha-helix'>alpha helices</span>,
+	<span class='mutation-3d-beta-sheet'>beta sheets</span>, and
+	<span class='mutation-3d-loop'>loops</span>.
+	This color option is not available for the space-filling protein scheme.<br>
+	<b>N-C rainbow:</b> Colors the protein with a rainbow gradient
+	from red (N-terminus) to blue (C-terminus).<br>
+	<b>Atom Type:</b> Colors the structure with respect to the atom type (CPK color scheme).
+	This color option is only available for the space-filling protein scheme.<br>
+	<br>
+	The selected chain is always displayed with full opacity while the rest of the structure
+	has some transparency to help better focusing on the selected chain.
+</script>
+
+<script type="text/template" id="mutation_3d_side_chain_tip_template">
+	Display options for the side chain atoms.<br>
+	<br>
+	<b>All:</b> Displays the side chain atoms for every mapped residue.<br>
+	<b>Selected:</b> Displays the side chain atoms only for the selected mutations.<br>
+	<b>None:</b> Hides the side chain atoms.<br>
+	<br>
+	This option has no effect for the space-filling protein scheme.
+</script>
+
+<script type="text/template" id="mutation_3d_non_protein_tip_template">
+	Displays co-crystalized molecules.
+	This option has no effect if the current structure
+	does not contain any co-crystalized bound molecules.
+</script>
+
+<script type="text/template" id="pdb_panel_view_template">
+	<table>
+		<tr>
+			<td valign="top">
+				<div class='mutation-pdb-panel-container'></div>
+			</td>
+			<td></td>
+		</tr>
+		<tr>
+			<td valign="top" align="center">
+				<div class='mutation-pdb-panel-controls'>
+					<button class='expand-collapse-pdb-panel'
+					        title='Expand/Collapse PDB Chains'></button>
+				</div>
+			</td>
+			<td></td>
+		</tr>
+	</table>
+</script>
+
 <script type="text/template" id="mutation_details_table_template">
-	<table id='mutation_details_table_{{geneSymbol}}' class='display mutation_details_table'
+	<table class='display mutation_details_table'
 	       cellpadding='0' cellspacing='0' border='0'>
 		<thead>{{tableHeaders}}</thead>
 		<tbody>{{tableRows}}</tbody>
@@ -45,11 +411,22 @@
 </script>
 
 <script type="text/template" id="mutation_details_table_data_row_template">
-	<tr>
+	<tr id='{{mutationId}}' class="{{mutationSid}}">
+		<td>{{mutationId}}-{{mutationSid}}</td>
 		<td>
 			<a href='{{linkToPatientView}}' target='_blank'>
-				<b>{{caseId}}</b>
+				<b alt="{{caseIdTip}}" class="{{caseIdClass}}">{{caseId}}</b>
 			</a>
+		</td>
+        <td>
+            <a href='{{cancerStudyLink}}' target='_blank'>
+                <b title="{{cancerStudy}}" alt="{{cancerStudy}}" class="cc-short-study-name">{{cancerStudyShort}}</b>
+            </a>
+        </td>
+		<td>
+			<span class='{{tumorTypeClass}}' alt='{{tumorTypeTip}}'>
+				{{tumorType}}
+			</span>
 		</td>
 		<td>
 			<span class='{{proteinChangeClass}}' alt='{{proteinChangeTip}}'>
@@ -62,7 +439,7 @@
 			</span>
 		</td>
 		<td>
-			<label class='{{cosmicClass}}' alt='{{cosmic}}'><b>{{cosmicCount}}</b></label>
+			<label class='{{cosmicClass}}' alt='{{mutationId}}'><b>{{cosmicCount}}</b></label>
 		</td>
 		<td>
 			<span class='{{omaClass}} {{fisClass}}' alt='{{fisValue}}|{{xVarLink}}'>
@@ -84,7 +461,7 @@
 			</a>
 		</td>
 		<td>
-			<span alt='mutationStatusTip' class='simple-tip {{mutationStatusClass}}'>
+			<span alt='{{mutationStatusTip}}' class='simple-tip {{mutationStatusClass}}'>
 				<label>{{mutationStatusText}}</label>
 			</span>
 		</td>
@@ -108,20 +485,30 @@
 			       class='{{tumorFreqClass}} {{tumorFreqTipClass}}'>{{tumorFreq}}</label>
 		</td>
 		<td>
-			<label class='{{tumorAltCountClass}}'>{{tumorAltCount}}</label>
+			<label alt='<b>{{normalAltCount}}</b> variant reads out of <b>{{normalTotalCount}}</b> total'
+			       class='{{normalFreqClass}} {{normalFreqTipClass}}'>{{normalFreq}}</label>
 		</td>
 		<td>
 			<label class='{{tumorRefCountClass}}'>{{tumorRefCount}}</label>
 		</td>
 		<td>
-			<label alt='<b>{{normalAltCount}}</b> variant reads out of <b>{{normalTotalCount}}</b> total'
-			       class='{{normalFreqClass}} {{normalFreqTipClass}}'>{{normalFreq}}</label>
+			<label class='{{tumorAltCountClass}}'>{{tumorAltCount}}</label>
+		</td>
+		<td>
+			<label class='{{normalRefCountClass}}'>{{normalRefCount}}</label>
 		</td>
 		<td>
 			<label class='{{normalAltCountClass}}'>{{normalAltCount}}</label>
 		</td>
 		<td>
-			<label class='{{normalRefCountClass}}'>{{normalRefCount}}</label>
+			<a class='igv-link' alt='{{igvLink}}'>
+				<span style="background-color:#88C;color:white">
+					&nbsp;IGV&nbsp;
+				</span>
+			</a>
+		</td>
+		<td>
+			<label alt='{{cnaTip}}' class='simple-tip-left {{cnaClass}}'>{{cna}}</label>
 		</td>
 		<td>
 			<label class='{{mutationCountClass}}'>{{mutationCount}}</label>
@@ -130,8 +517,11 @@
 </script>
 
 <script type="text/template" id="mutation_details_table_header_row_template">
+	<th alt='Mutation ID' class='mutation-table-header'>Mutation ID</th>
 	<th alt='Case ID' class='mutation-table-header'>Case ID</th>
-	<th alt='Protein Change' class='mutation-table-header'>AA Change</th>
+    <th alt='Cancer Study' class='mutation-table-header'>Cancer Study</th>
+	<th alt='Tumor Type' class='mutation-table-header'>Tumor Type</th>
+    <th alt='Protein Change' class='mutation-table-header'>AA Change</th>
 	<th alt='Mutation Type' class='mutation-table-header'>Type</th>
 	<th alt='Overlapping mutations in COSMIC' class='mutation-table-header'>COSMIC</th>
 	<th alt='Predicted Functional Impact Score (via Mutation Assessor) for missense mutations'
@@ -155,17 +545,22 @@
 	<th alt='Variant Alt Count' class='mutation-table-header'>Var Alt</th>
 	<th alt='Normal Ref Count' class='mutation-table-header'>Norm Ref</th>
 	<th alt='Normal Alt Count' class='mutation-table-header'>Norm Alt</th>
+	<th alt='Link to BAM file' class='mutation-table-header'>BAM</th>
+	<th alt='Copy-number status of the mutated gene' class='mutation-table-header'>Copy #</th>
 	<th alt='Total number of<br> nonsynonymous mutations<br> in the sample'
 	    class='mutation-table-header'>#Mut in Sample</th>
 </script>
 
 <script type="text/template" id="mutation_details_cosmic_tip_template">
-	<div class='cosmic-details-tip-info'><b>{{cosmicTotal}} occurrences in COSMIC</b></div>
+	<div class='cosmic-details-tip-info'>
+		<b>{{cosmicTotal}} occurrences of {{mutationKeyword}} mutations in COSMIC</b>
+	</div>
 	<table class='cosmic-details-table display'
 	       cellpadding='0' cellspacing='0' border='0'>
 		<thead>
 			<tr>
-				<th>Mutation</th>
+				<th>COSMIC ID</th>
+				<th>Protein Change</th>
 				<th>Count</th>
 			</tr>
 		</thead>
@@ -173,781 +568,88 @@
 	</table>
 </script>
 
-<script type="text/javascript">
-
-	/**
-	 * Default mutation view for a single gene.
-	 *
-	 * options: {el: [target container],
-	 *           model: {geneSymbol: [hugo gene symbol],
-	 *                   mutationSummary: [single line summary text],
-	 *                   uniprotId: [gene identifier]}
-	 *          }
-	 */
-	var MainMutationView = Backbone.View.extend({
-		render: function() {
-			// pass variables in using Underscore.js template
-			var variables = { geneSymbol: this.model.geneSymbol,
-				mutationSummary: this.model.mutationSummary,
-				uniprotId: this.model.uniprotId};
-
-			// compile the template using underscore
-			var template = _.template(
-				$("#mutation_view_template").html(),
-				variables);
-
-			// load the compiled HTML into the Backbone "el"
-			this.$el.html(template);
-		}
-	});
-
-	/**
-	 * Default mutation details view for the entire mutation details tab.
-	 * Creates a separate MainMutationView (another Backbone view) for each gene.
-	 *
-	 * options: {el: [target container],
-	 *           model: {mutations: [mutation data as an array of JSON objects],
-	 *                   sampleArray: [list of case ids as an array of strings],
-	 *                   diagramOpts: [mutation diagram options -- optional]}
-	 *          }
-	 */
-	var MutationDetailsView = Backbone.View.extend({
-		render: function() {
-			var self = this;
-
-			self.util = new MutationDetailsUtil(
-					new MutationCollection(self.model.mutations));
-
-			// TODO make the image customizable?
-			var variables = {loaderImage: "images/ajax-loader.gif"};
-
-			// compile the template using underscore
-			var template = _.template(
-				$("#default_mutation_details_template").html(),
-				variables);
-
-			// load the compiled HTML into the Backbone "el"
-			self.$el.html(template);
-
-			self._initDefaultView(self.$el,
-				self.model.sampleArray,
-				self.model.diagramOpts);
-		},
-		/**
-		 * Initializes the mutation view for the current mutation data.
-		 * Use this function if you want to have a default view of mutation
-		 * details composed of different backbone views (by default params).
-		 *
-		 * If you want to have more customized components, it is better
-		 * to initialize all the component separately.
-		 *
-		 * @param container     target container selector for the main view
-		 * @param cases         array of case ids (samples)
-		 * @param diagramOpts   [optional] mutation diagram options
-		 */
-		_initDefaultView: function(container, cases, diagramOpts)
-		{
-			var self = this;
-
-			// check if there is mutation data
-			if (self.model.mutations.length == 0)
-			{
-				// display information if no data is available
-				// TODO also factor this out as a backbone template?
-				container.html(
-					"<p>There are no mutation details available for the gene set entered.</p>" +
-					"<br><br>");
-			}
-			else
-			{
-				// init main view for each gene
-				for (var key in self.util.getMutationGeneMap())
-				{
-					// TODO also factor this out to a backbone template?
-					container.append("<div id='mutation_details_" + key +"'></div>");
-					self._initView(key, cases, diagramOpts);
-				}
-			}
-		},
-	    /**
-		 * Initializes mutation view for the given gene and cases.
-		 *
-		 * @param gene          hugo gene symbol
-	     * @param cases         array of case ids (samples)
-	     * @param diagramOpts   [optional] mutation diagram options
-		 */
-		_initView: function(gene, cases, diagramOpts)
-		{
-			var self = this;
-			var mutationMap = self.util.getMutationGeneMap();
-
-			// callback function to init view after retrieving
-			// sequence information.
-			var init = function(response)
-			{
-				// TODO response may be null for unknown genes...
-
-				// get the first sequence from the response
-				var sequence = response[0];
-
-				// calculate somatic & germline mutation rates
-				var mutationCount = self.util.countMutations(gene, cases);
-				// generate summary string for the calculated mutation count values
-				var summary = self.util.generateSummary(mutationCount);
-
-				// prepare data for mutation view
-				var mutationInfo = {geneSymbol: gene,
-					mutationSummary: summary,
-					uniprotId : sequence.metadata.identifier};
-
-				// reset the loader image
-				self.$el.find("#mutation_details_loader").empty();
-
-				// init the view
-				var mainView = new MainMutationView({
-					el: "#mutation_details_" + gene,
-					model: mutationInfo});
-
-				mainView.render();
-
-				// draw mutation diagram
-				var diagram = self._drawMutationDiagram(
-						gene, mutationMap[gene], sequence, diagramOpts);
-
-				var pdfButton = mainView.$el.find(".diagram-to-pdf");
-				var svgButton = mainView.$el.find(".diagram-to-svg");
-				var toolbar = mainView.$el.find(".mutation-diagram-toolbar");
-
-				// check if diagram is initialized successfully.
-				// if not, disable any diagram related functions
-				if (!diagram)
-				{
-					console.log("Error initializing mutation diagram: %s", gene);
-					toolbar.hide();
-				}
-
-				// helper function to trigger submit event for the svg and pdf button clicks
-				var submitForm = function(alterFn, diagram, formClass)
-				{
-					// alter diagram to have the desired output
-					alterFn(diagram, false);
-
-					// convert svg content to string
-					var xmlSerializer = new XMLSerializer();
-					var svgString = xmlSerializer.serializeToString(diagram.svg[0][0]);
-
-					// restore previous settings after generating xml string
-					alterFn(diagram, true);
-
-					// set actual value of the form element (svgelement)
-					var form = mainView.$el.find("." + formClass);
-					form.find('input[name="svgelement"]').val(svgString);
-
-					// submit form
-					form.submit();
-				};
-
-				// TODO setting & rolling back diagram values (which may not be safe)
-
-				// helper function to adjust SVG for file output
-				var alterDiagramForSvg = function(diagram, rollback)
-				{
-					var topLabel = gene;
-
-					if (rollback)
-					{
-						topLabel = "";
-					}
-
-					// adding a top left label (to include a label in the file)
-					diagram.updateTopLabel(topLabel);
-				};
-
-				// helper function to adjust SVG for PDF output
-				var alterDiagramForPdf = function(diagram, rollback)
-				{
-					// we also need the same changes (top label) in pdf
-					alterDiagramForSvg(diagram, rollback);
-
-					cbio.util.alterAxesAttrForPDFConverter(
-							diagram.svg.select(".mut-dia-x-axis"), 8,
-							diagram.svg.select(".mut-dia-y-axis"), 3,
-							rollback);
-				};
-
-				//add listener to the svg button
-				svgButton.click(function (event) {
-					// submit svg form
-					submitForm(alterDiagramForSvg, diagram, "svg-to-file-form");
-				});
-
-				// add listener to the pdf button
-				pdfButton.click(function (event) {
-					// submit pdf form
-					submitForm(alterDiagramForPdf, diagram, "svg-to-pdf-form");
-				});
-
-				// draw mutation table after a short delay
-				setTimeout(function(){
-					var mutationTableView = new MutationDetailsTableView(
-							{el: "#mutation_table_" + gene,
-							model: {geneSymbol: gene,
-								mutations: mutationMap[gene]}});
-
-					mutationTableView.render();
-				}, 2000);
-
-			};
-
-			// TODO cache sequence for each gene (implement another class for this)?
-			$.getJSON("getPfamSequence.json", {geneSymbol: gene}, init);
-		},
-		/**
-		 * Initializes the mutation diagram view.
-		 *
-		 * @param gene          hugo gene symbol
-		 * @param mutationData  mutation data (array of JSON objects)
-		 * @param sequenceData  sequence data (as a JSON object)
-		 * @param options       [optional] diagram options
-		 */
-		_drawMutationDiagram: function(gene, mutationData, sequenceData, options)
-		{
-			// use defaults if no options provided
-			if (!options)
-			{
-				options = {};
-			}
-
-			// do not draw the diagram if there is a critical error with
-			// the sequence data
-			if (sequenceData["length"] == "" ||
-			    parseInt(sequenceData["length"]) <= 0)
-			{
-				// return null to indicate an error
-				return null;
-			}
-
-			// overwrite container in any case (for consistency with the default view)
-			options.el = "#mutation_diagram_" + gene.toUpperCase();
-
-			// create a backbone collection for the given data
-			var mutationColl = new MutationCollection(mutationData);
-
-			var mutationDiagram = new MutationDiagram(gene, options, mutationColl);
-			mutationDiagram.initDiagram(sequenceData);
-
-			return mutationDiagram;
-		}
-	});
-
-	/**
-	 * Default table view for the mutations.
-	 *
-	 * options: {el: [target container],
-	 *           model: {mutations: [mutation data as an array of JSON objects],
-	 *                   geneSymbol: [hugo gene symbol as a string]}
-	 *          }
-	 */
-	var MutationDetailsTableView = Backbone.View.extend({
-		render: function()
-		{
-			var self = this;
-
-			var mutations = new MutationCollection(self.model.mutations);
-
-			var tableHeaders = _.template(
-					$("#mutation_details_table_header_row_template").html(), {});
-
-			var tableRows = "";
-
-			for (var i=0; i < mutations.length; i++)
-			{
-				var dataRowVariables = self._getDataRowVars(mutations.at(i));
-
-				var tableDataTemplate = _.template(
-						$("#mutation_details_table_data_row_template").html(),
-						dataRowVariables);
-
-				tableRows += tableDataTemplate;
-			}
-
-			var tableVariables = {geneSymbol: self.model.geneSymbol,
-				tableHeaders: tableHeaders,
-				tableRows: tableRows};
-
-			// compile the table template
-			var tableTemplate = _.template(
-					$("#mutation_details_table_template").html(),
-					tableVariables);
-
-			// load the compiled HTML into the Backbone "el"
-			self.$el.html(tableTemplate);
-
-			self.format();
-		},
-		/**
-		 * Extract & generates data required to visualize a single row of the table.
-		 * The data returned by this function can be used to compile a mutation data
-		 * table row template.
-		 *
-		 * @param mutation  a MutationModel instance
-		 * @return {object} template variables as a single object
-		 * @private
-		 */
-		_getDataRowVars: function(mutation)
-		{
-			var self = this;
-
-			/**
-			 * Mapping between the mutation type (data) values and
-			 * view values. The first element of an array corresponding to a
-			 * data value is the display text (html), and the second one
-			 * is style (css).
-			 */
-			var mutationTypeMap = {
-				missense_mutation: {label: "Missense", style: "missense_mutation"},
-				nonsense_mutation: {label: "Nonsense", style: "trunc_mutation"},
-				nonstop_mutation: {label: "Nonstop", style: "trunc_mutation"},
-				frame_shift_del: {label: "FS del", style: "trunc_mutation"},
-				frame_shift_ins: {label: "FS ins", style: "trunc_mutation"},
-				in_frame_ins: {label: "IF ins", style: "inframe_mutation"},
-				in_frame_del: {label: "IF del", style: "inframe_mutation"},
-				splice_site: {label: "Splice", style: "trunc_mutation"},
-				other: {style: "other_mutation"}
-			};
-
-			/**
-			 * Mapping between the validation status (data) values and
-			 * view values. The first element of an array corresponding to a
-			 * data value is the display text (html), and the second one
-			 * is style (css).
-			 */
-			var validationStatusMap = {
-				valid: {label: "V", style: "valid", tooltip: "Valid"},
-				validated: {label: "V", style: "valid", tooltip: "Valid"},
-				wildtype: {label: "W", style: "wildtype", tooltip: "Wildtype"},
-				unknown: {label: "U", style: "unknown", tooltip: "Unknown"},
-				not_tested: {label: "U", style: "unknown", tooltip: "Unknown"},
-				none: {label: "U", style: "unknown", tooltip: "Unknown"},
-				na: {label: "U", style: "unknown", tooltip: "Unknown"}
-			};
-
-			/**
-			 * Mapping between the mutation status (data) values and
-			 * view values. The first element of an array corresponding to a
-			 * data value is the display text (html), and the second one
-			 * is style (css).
-			 */
-			var mutationStatusMap = {
-				somatic: {label: "S", style: "somatic", tooltip: "Somatic"},
-				germline: {label: "G", style: "germline", tooltip: "Germline"},
-				unknown: {label: "U", style: "unknown", tooltip: "Unknown"},
-				none: {label: "U", style: "unknown", tooltip: "Unknown"},
-				na: {label: "U", style: "unknown", tooltip: "Unknown"}
-			};
-
-			var omaScoreMap = {
-				h: {label: "H", style: "oma_high", tooltip: "High"},
-				m: {label: "M", style: "oma_medium", tooltip: "Medium"},
-				l: {label: "L", style: "oma_low", tooltip: "Low"},
-				n: {label: "N", style: "oma_neutral", tooltip: "Neutral"}
-			};
-
-			var vars = {};
-
-			vars.caseId = mutation.caseId;
-			vars.linkToPatientView = mutation.linkToPatientView;
-
-			var proteinChange = self._getProteinChange(mutation);
-			vars.proteinChange = proteinChange.text;
-			vars.proteinChangeClass = proteinChange.style;
-			vars.proteinChangeTip = proteinChange.tip;
-
-			var mutationType = self._getMutationType(mutationTypeMap, mutation.mutationType);
-			vars.mutationTypeClass = mutationType.style;
-			vars.mutationTypeText = mutationType.text;
-
-			// TODO remove cosmicCount from model & calculate on the client side
-			var cosmic = self._getCosmic(mutation.cosmic, mutation.cosmicCount);
-			vars.cosmicClass = cosmic.style;
-			vars.cosmicCount = cosmic.count;
-			vars.cosmic = cosmic.value;
-
-			var fis = self._getFis(omaScoreMap, mutation.functionalImpactScore, mutation.fisValue);
-			vars.fisClass = fis.fisClass;
-			vars.omaClass = fis.omaClass;
-			vars.fisValue = fis.value;
-			vars.fisText = fis.text;
-
-			vars.xVarLink = mutation.xVarLink;
-			vars.msaLink = mutation.msaLink;
-			vars.pdbLink = mutation.pdbLink;
-
-			var mutationStatus = self._getMutationStatus(mutationStatusMap, mutation.mutationStatus);
-			vars.mutationStatusTip = mutationStatus.tip;
-			vars.mutationStatusClass = mutationStatus.style;
-			vars.mutationStatusText = mutationStatus.text;
-
-			var validationStatus = self._getValidationStatus(validationStatusMap, mutation.validationStatus);
-			vars.validationStatusTip = validationStatus.tip;
-			vars.validationStatusClass = validationStatus.style;
-			vars.validationStatusText = validationStatus.text;
-
-			vars.sequencingCenter = mutation.sequencingCenter;
-			vars.chr = mutation.chr;
-
-			var startPos = self._getIntValue(mutation.startPos);
-			vars.startPos = startPos.text;
-			vars.startPosClass = startPos.style;
-
-			var endPos = self._getIntValue(mutation.endPos);
-			vars.endPos = endPos.text;
-			vars.endPosClass = endPos.style;
-
-			vars.referenceAllele = mutation.referenceAllele;
-			vars.variantAllele = mutation.variantAllele;
-
-			var alleleCount = self._getAlleleCount(mutation.tumorAltCount);
-			vars.tumorAltCount = alleleCount.text;
-			vars.tumorAltCountClass = alleleCount.style;
-
-			alleleCount = self._getAlleleCount(mutation.tumorRefCount);
-			vars.tumorRefCount = alleleCount.text;
-			vars.tumorRefCountClass = alleleCount.style;
-
-			alleleCount = self._getAlleleCount(mutation.normalAltCount);
-			vars.normalAltCount = alleleCount.text;
-			vars.normalAltCountClass = alleleCount.style;
-
-			alleleCount = self._getAlleleCount(mutation.normalRefCount);
-			vars.normalRefCount = alleleCount.text;
-			vars.normalRefCountClass = alleleCount.style;
-
-			var tumorFreq = self._getAlleleFreq(mutation.tumorFreq,
-					mutation.tumorAltCount,
-					mutation.tumorRefCount,
-					"simple-tip-left");
-			vars.tumorFreq = tumorFreq.text;
-			vars.tumorFreqClass = tumorFreq.style;
-			vars.tumorFreqTipClass = tumorFreq.tipClass;
-			vars.tumorTotalCount = tumorFreq.total;
-
-			var normalFreq = self._getAlleleFreq(mutation.normalFreq,
-					mutation.normalAltCount,
-					mutation.normalRefCount,
-					"simple-tip-left");
-			vars.normalFreq = normalFreq.text;
-			vars.normalFreqClass = normalFreq.style;
-			vars.normalFreqTipClass = normalFreq.tipClass;
-			vars.normalTotalCount = normalFreq.total;
-
-			var mutationCount = self._getIntValue(mutation.mutationCount);
-			vars.mutationCount = mutationCount.text;
-			vars.mutationCountClass = mutationCount.style;
-
-			return vars;
-		},
-		/**
-		 * Formats the contents of the view after the initial rendering.
-		 */
-		format: function()
-		{
-			var self = this;
-
-			// remove invalid links
-			self.$el.find('a[href=""]').remove();
-
-			var tableSelector = self.$el.find('.mutation_details_table');
-
-			var tableUtil = new MutationTableUtil(tableSelector,
-				self.model.geneSymbol,
-				self.model.mutations);
-
-			// format the table (convert to a DataTable)
-			tableUtil.formatTable();
-		},
-        /**
-         * Returns the text content and the css class for the given
-         * mutation type value.
-         *
-         * @param map   map of <mutationType, {label, style}>
-         * @param value actual string value of the mutation type
-         * @return {{style: string, text: string}}
-         * @private
-         */
-		_getMutationType: function(map, value)
-		{
-			var style, text;
-			value = value.toLowerCase();
-
-			if (map[value] != null)
-			{
-				style = map[value].style;
-				text = map[value].label;
-			}
-			else
-			{
-				style = map.other.style;
-				text = value;
-			}
-
-			return {style: style, text: text};
-		},
-		/**
-         * Returns the text content, the css class, and the tooltip
-		 * for the given mutation type value.
-         *
-         * @param map   map of <mutationStatus, {label, style, tooltip}>
-         * @param value actual string value of the mutation status
-         * @return {{style: string, text: string, tip: string}}
-         * @private
-         */
-		_getMutationStatus: function(map, value)
-		{
-			var style = "simple-tip";
-			var text = value;
-			var tip = "";
-			value = value.toLowerCase();
-
-			if (map[value] != null)
-			{
-				style = map[value].style;
-				text = map[value].label;
-				tip = map[value].tooltip;
-			}
-
-			return {style: style, tip: tip, text: text};
-		},
-		/**
-		 * Returns the text content, the css class, and the tooltip
-		 * for the given validation status value.
-		 *
-		 * @param map   map of <validationStatus, {label, style, tooltip}>
-		 * @param value actual string value of the validation status
-		 * @return {{style: string, text: string, tip: string}}
-		 * @private
-		 */
-		_getValidationStatus: function(map, value)
-		{
-			var style, label, tip;
-			value = value.toLowerCase();
-
-			if (map[value] != null)
-			{
-				style = map[value].style;
-				label = map[value].label;
-				tip = map[value].tooltip;
-			}
-			else
-			{
-				style = map.unknown.style;
-				label = map.unknown.label;
-				tip = map.unknown.tooltip;
-			}
-
-			return {style: style, tip: tip, text: label};
-		},
-		/**
-		 * Returns the text content, the css classes, and the tooltip
-		 * for the given string and numerical values of a
-		 * functional impact score.
-		 *
-		 * @param map       map of <FIS, {label, style, tooltip}>
-		 * @param fis       string value of the functional impact (h, l, m or n)
-		 * @param fisValue  numerical value of the functional impact score
-		 * @return {{fisClass: string, omaClass: string, value: string, text: string}}
-		 * @private
-		 */
-		_getFis: function(map, fis, fisValue)
-		{
-			var text = "";
-			var fisClass = "";
-			var omaClass = "";
-			var value = "";
-			fis = fis.toLowerCase();
-
-			if (map[fis] != null)
-			{
-				value = map[fis].tooltip;
-
-				if (fisValue != null)
-				{
-					value = fisValue.toFixed(2);
-				}
-
-				text = map[fis].label;
-				fisClass = map[fis].style;
-				omaClass = "oma_link";
-			}
-
-			return {fisClass: fisClass, omaClass: omaClass, value: value, text: text};
-		},
-		/**
-		 * Returns the text content, the css classes, and the total
-		 * allele count for the given allele frequency.
-		 *
-		 * @param frequency allele frequency
-		 * @param alt       alt allele count
-		 * @param ref       ref allele count
-		 * @param tipClass  css class for the tooltip
-		 * @return {{text: string, total: number, style: string, tipClass: string}}
-		 * @private
-		 */
-		_getAlleleFreq: function(frequency, alt, ref, tipClass)
-		{
-			var text = "NA";
-			var total = alt + ref;
-			var style = "";
-			var tipStyle = "";
-
-			if (frequency)
-			{
-				style = "mutation_table_allele_freq";
-				text = frequency.toFixed(2);
-				tipStyle = tipClass;
-			}
-
-			return {text: text, total: total, style: style, tipClass: tipStyle};
-		},
-		_getProteinChange: function(mutation)
-		{
-			var style = "protein_change";
-			var tip = "";
-
-			// TODO disabled temporarily, enable when isoform support completely ready
-//        if (!mutation.canonicalTranscript)
-//        {
-//            style = "best_effect_transcript " + style;
-//            // TODO find a better way to display isoform information
-//            tip = "Specified protein change is for the best effect transcript " +
-//                "instead of the canonical transcript.<br>" +
-//                "<br>RefSeq mRNA id: " + "<b>" + mutation.refseqMrnaId + "</b>" +
-//                "<br>Codon change: " + "<b>" + mutation.codonChange + "</b>" +
-//                "<br>Uniprot id: " + "<b>" + mutation.uniprotId + "</b>";
-//        }
-
-			return {text: mutation.proteinChange,
-				style : style,
-				tip: tip};
-		},
-		/**
-		 * Returns the css class, count, and string value
-		 * for the given cosmic value.
-		 *
-		 * @param value cosmic value
-		 * @param count number of occurrences
-		 * @return {{value: string, style: string, count: string}}
-		 * @private
-		 */
-		_getCosmic: function(value, count)
-		{
-			var style = "";
-			var cosmic = "";
-			var text = "";
-
-			if (count > 0)
-			{
-				style = "mutation_table_cosmic";
-				cosmic = JSON.stringify(value);
-				text = count;
-			}
-
-			return {value: cosmic,
-				style: style,
-				count: text};
-	    },
-		/**
-		 * Returns the text and css class values for the given integer value.
-		 *
-		 * @param value an integer value
-		 * @return {{text: *, style: string}}
-		 * @private
-		 */
-		_getIntValue: function(value)
-		{
-			var text = value;
-			var style = "mutation_table_int_value";
-
-			if (value == null)
-			{
-				text = "NA";
-				style = "";
-			}
-
-			return {text: text, style: style};
-		},
-		/**
-		 * Returns the text and css class values for the given allele count value.
-		 *
-		 * @param count an integer value
-		 * @return {{text: *, style: string}}
-		 * @private
-		 */
-		_getAlleleCount: function(count)
-		{
-			var text = count;
-			var style = "mutation_table_allele_count";
-
-			if (count == null)
-			{
-				text = "NA";
-				style = "";
-			}
-
-			return {text: text, style: style};
-	    }
-	});
-
-	var CosmicTipView = Backbone.View.extend({
-		render: function()
-		{
-			// compile the template
-			var template = this.compileTemplate();
-
-			// load the compiled HTML into the Backbone "el"
-			this.$el.html(template);
-			this.format();
-		},
-		format: function()
-		{
-			// TODO correct style to have a better view
-
-			// initialize cosmic details table
-			this.$el.find(".cosmic-details-table").dataTable({
-				"aaSorting" : [ ], // do not sort by default
-				"sDom": 't', // show only the table
-				"aoColumnDefs": [{ "sType": "aa-change-col", "sClass": "left-align-td", "aTargets": [0]},
-				  { "sType": "numeric", "sClass": "left-align-td", "aTargets": [1]}],
-				//"bJQueryUI": true,
-				//"fnDrawCallback": function (oSettings) {console.log("cosmic datatable is ready?");},
-				"bDestroy": false,
-				"bPaginate": false,
-				"bJQueryUI": true,
-				"bFilter": false});
-		},
-		_parseCosmic: function(cosmic)
-		{
-			var dataRows = [];
-
-			// COSMIC data (as AA change & frequency pairs)
-                        for (var aa in cosmic) {
-                            dataRows.push( aa + "</td><td>" + cosmic[aa]);
-                        }
-
-			return "<tr><td>" + dataRows.join("</td></tr><tr><td>") + "</td></tr>";
-		},
-		compileTemplate: function()
-		{
-			var dataRows = this._parseCosmic(this.model.cosmic);
-
-			// pass variables in using Underscore.js template
-			var variables = {cosmicDataRows: dataRows,
-				cosmicTotal: this.model.total};
-
-			// compile the template using underscore
-			return _.template(
-					$("#mutation_details_cosmic_tip_template").html(),
-					variables);
-		}
-	});
+<script type="text/template" id="mutation_details_lollipop_tip_template">
+    <div>
+        <div class='diagram-lollipop-tip'>
+            <b>{{count}} {{mutationStr}}</b>
+            <br/>AA Change: {{label}}
+            <div class="lollipop-stats">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cancer Type</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </script>
+
+<script type="text/template" id="mutation_details_lollipop_tip_stats_template">
+    <tr>
+        <td>{{cancerType}}</td>
+        <td>{{count}}</td>
+    </tr>
+</script>
+
+<script type="text/template" id="mutation_details_region_tip_template">
+	<span class="diagram-region-tip">
+		{{identifier}} {{type}}, {{description}} ({{start}} - {{end}})
+	</span>
+</script>
+
+<script type="text/template" id="mutation_details_pdb_chain_tip_template">
+	<span class='pdb-chain-tip'>
+		<b>PDB id:</b> {{pdbId}}<br>
+		<b>Chain:</b> {{chainId}} ({{from}} - {{to}})<br>
+		{{pdbInfo}}
+	</span>
+</script>
+
+<script type="text/template" id="mutation_details_pdb_help_tip_template">
+	<span class='pdb-chain-tip'>
+		This panel displays a list of PDB chains for the corresponding uniprot ID.
+		PDB chains are ranked with respect to their sequence similarity ratio,
+		and aligned to the y-axis of the mutation diagram.
+		Highly ranked chains have darker color than the lowly ranked ones.<br>
+		<br>
+		Each chain is represented by a single rectangle.
+		Gaps within the chains are represented by a thin line connecting the segments of the chain.<br>
+		<br>
+		By default, only a first few rows are displayed.
+		To see more chains, click on the expand/collapse button below the panel.<br>
+		<br>
+		To select a chain, simply click on it.
+		Selected chain is highlighted with a different frame color.
+		Selecting a chain reloads the PDB data for the 3D structure visualizer.
+	</span>
+</script>
+
+<script type="text/template" id="mutation_details_fis_tip_template">
+	Predicted impact score: <b>{{impact}}</b>
+	<div class='mutation-assessor-link'>
+		<a href='{{linkOut}}' target='_blank'>
+			<img height=15 width=19 src='images/ma.png'>
+			Go to Mutation Assessor
+		</a>
+	</div>
+</script>
+
+<script type="text/javascript" src="js/src/mutation/view/CosmicTipView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/LollipopTipStatsView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/LollipopTipView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/MainMutationView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/Mutation3dView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/Mutation3dVisView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/Mutation3dVisInfoView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/MutationCustomizePanelView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/MutationDetailsTableView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/MutationDetailsView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/PdbChainTipView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/PdbPanelView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/PredictedImpactTipView.js"></script>
+<script type="text/javascript" src="js/src/mutation/view/RegionTipView.js"></script>

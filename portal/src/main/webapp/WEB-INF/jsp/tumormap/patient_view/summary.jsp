@@ -1,10 +1,9 @@
 <%@ page import="org.mskcc.cbio.portal.servlet.CnaJSON" %>
-<%@ page import="org.mskcc.cbio.cgds.dao.DaoCase" %>
-<%@ page import="org.mskcc.cbio.cgds.model.Case" %>
+<%@ page import="org.mskcc.cbio.portal.dao.DaoCase" %>
+<%@ page import="org.mskcc.cbio.portal.model.Case" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.json.simple.JSONValue" %>
-<%@ page import="org.mskcc.cbio.portal.util.SkinUtil" %>
+<%@ page import="org.mskcc.cbio.portal.util.GlobalProperties" %>
 
 <style type="text/css" title="currentStyle">
 #genomic-overview-tip {
@@ -26,16 +25,16 @@
 </style>
 
 <%
-String jsonCaseIds = "[]";
+String jsonCaseIdsInStudy = "[]";
 if (mutationProfile!=null && hasCnaSegmentData) {
     List<Case> cases = DaoCase.getAllCaseIdsInCancer(cancerStudy.getInternalId());
-    List<String> caseIds = new ArrayList<String>(cases.size());
+    List<String> caseIdsInStudy = new ArrayList<String>(cases.size());
     for (Case c : cases) {
-        caseIds.add(c.getCaseId());
+        caseIdsInStudy.add(c.getCaseId());
     }
-    jsonCaseIds = JSONValue.toJSONString(caseIds);
+    jsonCaseIdsInStudy = jsonMapper.writeValueAsString(caseIdsInStudy);
 }
-String linkToCancerStudy = SkinUtil.getLinkToCancerStudyView(cancerStudy.getCancerStudyStableId());
+String linkToCancerStudy = GlobalProperties.getLinkToCancerStudyView(cancerStudy.getCancerStudyStableId());
 %>
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
@@ -127,7 +126,7 @@ String linkToCancerStudy = SkinUtil.getLinkToCancerStudyView(cancerStudy.getCanc
     }
     
     function loadMutCnaAndPlot(scatterPlotDiv,caseIdDiv) {
-        loadMutCountCnaFrac(<%=jsonCaseIds%>, cancerStudyId,
+        loadMutCountCnaFrac(<%=jsonCaseIdsInStudy%>, cancerStudyId,
             <%=mutationProfileStableId==null%>?null:'<%=mutationProfileStableId%>',
             hasCnaSegmentData,
             function(dt){
@@ -151,9 +150,9 @@ String linkToCancerStudy = SkinUtil.getLinkToCancerStudyView(cancerStudy.getCanc
     function addMutCnaPlotTooltip(scatterPlotDiv) {
         var params = {
             content: $('#mut_cna_scatter_dialog').remove(),
-            show: { delay: 200 },
-            hide: { fixed: true, delay: 100 },
-            style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tooltip-wide' },
+            show: {delay: 200, event: "mouseover" },
+            hide: {fixed: true, delay: 100,  event: "mouseout"},
+            style: { classes: 'qtip-light qtip-rounded qtip-wide' },
             position: {my:'top right',at:'top left'},
             events: {
                 render: function(event, api) {
@@ -194,6 +193,8 @@ String linkToCancerStudy = SkinUtil.getLinkToCancerStudyView(cancerStudy.getCanc
         <td><div id="genomics-overview"></div></td>
         <td valign="top">
             <span style="float: left;" id="allele-freq-plot-thumbnail"></span>
+        </td>
+        <td valign="top">
             <span style="float: right;" id="mut-cna-scatter"><img src="images/ajax-loader.gif"/></span>
         </td>
     </tr>
@@ -214,7 +215,7 @@ String linkToCancerStudy = SkinUtil.getLinkToCancerStudyView(cancerStudy.getCanc
 </div>
 <%}%>
 
-<%if(hasAlleleFrequencyData && !multiSamples){%>
+<%if(hasAlleleFrequencyData && caseIds.size() == 1) {%>
 <script type="text/javascript" src="js/src/patient-view/AlleleFreqPlot.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
@@ -285,8 +286,9 @@ String linkToCancerStudy = SkinUtil.getLinkToCancerStudyView(cancerStudy.getCanc
                         });
                     }
                 },
-                hide: { fixed: true, delay: 100 },
-                style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tooltip-shadow ui-tooltip-lightyellow', tip: false },
+	            show: {event: "mouseover"},
+                hide: {fixed: true, delay: 100, event: "mouseout"},
+                style: { classes: 'qtip-light qtip-rounded qtip-shadow qtip-lightyellow', tip: false},
                 //position: {my:'left top',at:'bottom center'}
                 position: {my:'top right',at:'top right'},
             });

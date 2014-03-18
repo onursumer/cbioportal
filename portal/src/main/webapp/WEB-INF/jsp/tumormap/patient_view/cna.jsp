@@ -3,7 +3,7 @@
 
 <script type="text/javascript">
     
-    var cnaTableIndices = {id:0,case_ids:1,gene:2,alteration:3,mrna:4,altrate:5,drug:6};
+    var cnaTableIndices = cbio.util.arrayToAssociatedArrayIndices(["id","case_ids","gene","cytoband","alteration","mrna","altrate","drug"]);
     function buildCnaDataTable(cnas, cnaEventIds, table_id, sDom, iDisplayLength, sEmptyInfo) {
         var data = [];
         for (var i=0, nEvents=cnaEventIds.length; i<nEvents; i++) {
@@ -82,6 +82,16 @@
                                 return ret;
                             } else {
                                 return cnas.getValue(source[0], "gene");
+                            }
+                        }
+                    },
+                    {// cytoband
+                        "aTargets": [ cnaTableIndices['cytoband'] ],
+                        "mDataProp": function(source,type,value) {
+                            if (type==='set') {
+                                return;
+                            } else {
+                                return cnas.getValue(source[0], "cytoband");
                             }
                         }
                     },
@@ -272,8 +282,9 @@
         function qtip(el, tip) {
             $(el).qtip({
                 content: {text: tip},
-                hide: { fixed: true, delay: 200 },
-                style: { classes: 'ui-tooltip-light ui-tooltip-rounded' },
+	            show: {event: "mouseover"},
+                hide: {fixed: true, delay: 200, event: "mouseout"},
+                style: { classes: 'qtip-light qtip-rounded' },
                 position: {my:'top right',at:'bottom center'}
             });
         }
@@ -359,7 +370,7 @@
                         <li>otherwise, altered in >5% of samples in the study with &ge; 50 samples.</li></ul></li></ul>'/>");
                 $('#cna-summary-help').qtip({
                     content: { attr: 'title' },
-                    style: { classes: 'ui-tooltip-light ui-tooltip-rounded' },
+                    style: { classes: 'qtip-light qtip-rounded' },
                     position: { my:'top center',at:'bottom center' }
                 });
                 $('.cna-summary-table-name').addClass("datatable-name");

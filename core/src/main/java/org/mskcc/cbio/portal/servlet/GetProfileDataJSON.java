@@ -41,12 +41,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
-import org.mskcc.cbio.cgds.dao.*;
+import org.mskcc.cbio.portal.dao.*;
 
-import org.mskcc.cbio.cgds.model.CancerStudy;
-import org.mskcc.cbio.cgds.model.CaseList;
-import org.mskcc.cbio.cgds.model.Gene;
-import org.mskcc.cbio.cgds.model.GeneticProfile;
+import org.mskcc.cbio.portal.model.CancerStudy;
+import org.mskcc.cbio.portal.model.CaseList;
+import org.mskcc.cbio.portal.model.Gene;
+import org.mskcc.cbio.portal.model.GeneticProfile;
 import org.mskcc.cbio.portal.util.CaseSetUtil;
 
 /**
@@ -101,7 +101,7 @@ public class GetProfileDataJSON extends HttpServlet  {
             DaoCaseList daoCaseList = new DaoCaseList();
             CaseList caseList;
             ArrayList<String> caseIdList = new ArrayList<String>();
-            if (caseSetId.equals("-1") && caseIdsKey.length() != 0) {
+            if (caseSetId.equals("-1")) {
                 String strCaseIds = CaseSetUtil.getCaseIds(caseIdsKey);
                 String[] caseArray = strCaseIds.split("\\s+");
                 for (String item : caseArray) {

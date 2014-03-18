@@ -1,3 +1,33 @@
+# March 18, 2014
+* All TCGA data updated to the Firehose run of January 15, 2014
+* Updated to the latest COSMIC data (v68)
+* Added two new provisional TCGA studies
+    * Adrenocortical Carcinoma
+    * Uterine Carcinosarcoma
+* Added genomic data from multiple studies from the literature
+
+# November 8, 2013
+
+* All TCGA data updated to the Firehose run of September 23, 2013.
+* Updated to the latest COSMIC data (v67).
+
+# October 18, 2013
+ 
+* Improved interface for survival plots, including information on individual samples via mouse-over
+* New fusion glyph in OncoPrints &nbsp;&nbsp;&nbsp;[![FGFR3 fusions in head and neck carcinoma](images/previews/fusion-in-oncoprint.png)](index.do?cancer_study_id=hnsc_tcga_pub&genetic_profile_ids_PROFILE_MUTATION_EXTENDED=hnsc_tcga_pub_mutations&genetic_profile_ids_PROFILE_COPY_NUMBER_ALTERATION=hnsc_tcga_pub_gistic&Z_SCORE_THRESHOLD=2.0&RPPA_SCORE_THRESHOLD=2.0&data_priority=0&case_set_id=hnsc_tcga_pub_sequenced&case_ids=&gene_set_choice=user-defined-list&gene_list=FGFR3%3A+AMP+MUT%3B%0D%0A%0D%0A%0D%0A%0D%0A%0D%0A%0D%0A&clinical_param_selection=null&tab_index=tab_visualize&Action=Submit)
+* Improved cross-cancer query: new alteration frequency histogram (example below - query gene: CDKN2A) and mutation diagram
+<center>![Cross Cancer Query](images/previews/cross_cancer.png)</center>
+
+# September 5, 2013:
+
+* [New standalone oncoprint tool](tools.jsp)
+* Updated COSMIC data (v66 Release)
+* Improved / interactive visualization on the "Protein changes" tab
+* Enhanced mutation diagrams: color-coding by mutation time and syncing with table filters
+* Addition of DNA cytoband information in the patient view of copy-number changes
+* OncoPrints now allow the display of an optional track with clinical annotation (Endometrial cancer example below)
+<center>![Oncoprint with clinical track](images/previews/oncoprint_clinical_track.png)</center>
+
 # July 23, 2013
 
 * Multi-gene correlation plots.
