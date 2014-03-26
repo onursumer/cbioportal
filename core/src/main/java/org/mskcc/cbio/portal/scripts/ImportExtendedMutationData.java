@@ -31,11 +31,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -68,6 +66,7 @@ public class ImportExtendedMutationData{
 	private File mutationFile;
 	private int geneticProfileId;
 	private MutationFilter myMutationFilter;
+        boolean cosmicData = false;
 
 	/**
 	 * construct an ImportExtendedMutationData with no white lists.
@@ -99,6 +98,10 @@ public class ImportExtendedMutationData{
 		myMutationFilter = new MutationFilter(germline_white_list_file);
 	}
 
+        public void setCosmicData(boolean cosmicData) {
+            this.cosmicData = cosmicData;
+        }
+        
 	public void importData() throws IOException, DaoException {
 		HashSet <String> sequencedCaseSet = new HashSet<String>();
                 
@@ -154,7 +157,7 @@ public class ImportExtendedMutationData{
 				String barCode = record.getTumorSampleID();
 				String caseId = CaseIdUtil.getCaseId(barCode);
 
-				if( !DaoCaseProfile.caseExistsInGeneticProfile(caseId, geneticProfileId)) {
+				if(!cosmicData && !DaoCaseProfile.caseExistsInGeneticProfile(caseId, geneticProfileId)) {
 					DaoCaseProfile.addCaseProfile(caseId, geneticProfileId);
 				}
 
@@ -385,11 +388,13 @@ public class ImportExtendedMutationData{
                     }
                 }
                 
-                for (ExtendedMutation mutation : mutations.values()) {
-                    try {
-                        DaoMutation.addMutation(mutation,false);
-                    } catch (DaoException ex) {
-                        ex.printStackTrace();
+                if (!cosmicData) {
+                    for (ExtendedMutation mutation : mutations.values()) {
+                        try {
+                            DaoMutation.addMutation(mutation,false);
+                        } catch (DaoException ex) {
+                            ex.printStackTrace();
+                        }
                     }
                 }
                 
@@ -398,7 +403,9 @@ public class ImportExtendedMutationData{
 		}
                 
                 // calculate mutation count for every sample
-                DaoMutation.calculateMutationCount(geneticProfileId);
+                if (!cosmicData) {
+                    DaoMutation.calculateMutationCount(geneticProfileId);
+                }
 		
                 pMonitor.setCurrentMessage(myMutationFilter.getStatistics() );
 

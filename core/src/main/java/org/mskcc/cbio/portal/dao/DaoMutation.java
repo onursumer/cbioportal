@@ -121,6 +121,7 @@ public final class DaoMutation {
                     Integer.toString(event.getOncotatorProteinPosStart()),
                     Integer.toString(event.getOncotatorProteinPosEnd()),
                     boolToStr(event.isCanonicalTranscript()),
+                    Integer.toString(event.getCosmicCount()),
                     keyword==null ? "\\N":(event.getGene().getHugoGeneSymbolAllCaps()+" "+keyword));
             return 1;
     }
@@ -512,6 +513,7 @@ public final class DaoMutation {
         event.setOncotatorProteinPosEnd(rs.getInt("ONCOTATOR_PROTEIN_POS_END"));
         event.setCanonicalTranscript(rs.getBoolean("CANONICAL_TRANSCRIPT"));
         event.setTumorSeqAllele(rs.getString("TUMOR_SEQ_ALLELE"));
+        event.setCosmicCount(rs.getInt("COSMIC_COUNT"));
         event.setKeyword(rs.getString("KEYWORD"));
         return event;
     }

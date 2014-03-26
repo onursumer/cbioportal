@@ -67,6 +67,7 @@ public final class ExtendedMutation
         private int oncotatorProteinPosStart;
         private int oncotatorProteinPosEnd;
         private boolean canonicalTranscript;
+        private int cosmicCount;
 
         public long getMutationEventId() {
             return mutationEventId;
@@ -292,6 +293,14 @@ public final class ExtendedMutation
 
         public void setCanonicalTranscript(boolean canonicalTranscript) {
             this.canonicalTranscript = canonicalTranscript;
+        }
+
+        public int getCosmicCount() {
+            return cosmicCount;
+        }
+
+        public void setCosmicCount(int cosmicCount) {
+            this.cosmicCount = cosmicCount;
         }
 
         @Override
@@ -871,6 +880,14 @@ public final class ExtendedMutation
     public void setCanonicalTranscript(boolean canonicalTranscript)
     {
         event.setCanonicalTranscript(canonicalTranscript);
+    }
+    
+    public int getCosmicCount() {
+        return event.getCosmicCount();
+    }
+
+    public void setCosmicCount(int cosmicCount) {
+        event.setCosmicCount(cosmicCount);
     }
 
     @JsonIgnore

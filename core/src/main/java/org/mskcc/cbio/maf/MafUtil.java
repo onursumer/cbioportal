@@ -132,6 +132,8 @@ public class MafUtil
 	public static final String MA_LINK_MSA = "MA:link.MSA";
 	public static final String MA_LINK_PDB = "MA:link.PDB";
 	public static final String MA_PROTEIN_CHANGE = "MA:protein.change";
+        
+	public static final String COSMIC_COUNT = "COSMIC_COUNT";
 
 
     // standard MAF column indices
@@ -219,6 +221,9 @@ public class MafUtil
 	private int maLinkMsaIndex = -1; // MA:link.MSA
 	private int maLinkPdbIndex = -1; // MA:link.PDB
 	private int maProteinChangeIndex = -1; // MA:protein.change
+        
+        // Cosmic
+        private int cosmicCountIndex = -1; // COSMIC_COUNT
 
 	// number of headers in the header line
     private int headerCount;
@@ -414,6 +419,8 @@ public class MafUtil
                 normalDepthIndex = i;
             } else if(header.equalsIgnoreCase(NORMAL_VAF)) {
                 normalVafIndex = i;
+            } else if (header.equalsIgnoreCase(COSMIC_COUNT)) {
+                cosmicCountIndex = i;
             }
         }
     }
@@ -513,6 +520,8 @@ public class MafUtil
 	    record.setOncotatorProteinPosStartBestEffect(TabDelimitedFileUtil.getPartInt(oncoProteinPosStartBeIndex, parts));
 	    record.setOncotatorProteinPosEndBestEffect(TabDelimitedFileUtil.getPartInt(oncoProteinPosEndBeIndex, parts));
 
+            record.setNormalDepth(TabDelimitedFileUtil.getPartInt(cosmicCountIndex, parts));
+            
         return record;
     }
 

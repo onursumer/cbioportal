@@ -249,6 +249,7 @@ CREATE TABLE `mutation_event` (
   `ONCOTATOR_PROTEIN_POS_START` int(11),
   `ONCOTATOR_PROTEIN_POS_END` int(11),
   `CANONICAL_TRANSCRIPT` boolean,
+  `COSMIC_COUNT` int(11),
   `KEYWORD` varchar(50) DEFAULT NULL COMMENT 'e.g. truncating, V200 Missense, E338del, ',
   KEY (`KEYWORD`),
   PRIMARY KEY  (`MUTATION_EVENT_ID`),
@@ -571,24 +572,6 @@ CREATE TABLE `copy_number_seg` (
   PRIMARY KEY (`SEG_ID`),
   FOREIGN KEY (`CANCER_STUDY_ID`) REFERENCES `cancer_study` (`CANCER_STUDY_ID`) ON DELETE CASCADE
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
-
-drop table IF EXISTS cosmic_mutation;
-CREATE TABLE `cosmic_mutation` (
-  `COSMIC_MUTATION_ID` varchar(30) NOT NULL,
-  `CHR` varchar(5),
-  `START_POSITION` bigint(20),
-  `REFERENCE_ALLELE` varchar(255),
-  `TUMOR_SEQ_ALLELE` varchar(255),
-  `STRAND` varchar(2),
-  `CODON_CHANGE` varchar(255),
-  `ENTREZ_GENE_ID` int(255) NOT NULL,
-  `PROTEIN_CHANGE` varchar(255) NOT NULL,
-  `COUNT` int(11) NOT NULL,
-  `KEYWORD` varchar(50) DEFAULT NULL,
-  KEY (`KEYWORD`),
-  PRIMARY KEY (`COSMIC_MUTATION_ID`),
-  FOREIGN KEY (`ENTREZ_GENE_ID`) REFERENCES `gene` (`ENTREZ_GENE_ID`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 drop table IF EXISTS clinical_trials; 
 CREATE TABLE `clinical_trials` (
