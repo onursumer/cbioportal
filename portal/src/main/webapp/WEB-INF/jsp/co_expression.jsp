@@ -8,7 +8,7 @@
 
 <style>
     #coexp .coexp-table-filter-custom {
-        width: 100%;
+        width: 400px;
         float: left;
     }
     #coexp .datatables_filter {
@@ -20,8 +20,8 @@
         padding-left: 6px;
     }
     #coexp .dataTables_paginate {
-        float: left;
-        text-align: left;
+        float: right;
+        padding: 3px;
     }
     #coexp .paging_full_numbers .ui-button {
         border: 1px solid #aaa;
@@ -59,26 +59,28 @@
 </style>
 
 <div class="section" id="coexp">
-    <p style='margin-top: -25px;'>
+    <p style='margin-top: -35px;'>
+        <div id='coexp-profile-selector-dropdown'></div>
         This table lists the genes with the highest expression correlation with the query genes. Click on a row to see the corresponding correlation plot. 
         <img src='images/help.png' id='coexp-help'>
     </p>
-
     <div id="coexp-tabs" class="coexp-tabs">
         <ul id='coexp-tabs-list'></ul>
-        <div id='coexp-tabs-content'>
-        </div>
+        <div id='coexp-tabs-content'></div>
     </div>
 </div>
 
 <script>
     $(document).ready( function() {
         var coexp_tab_init = false;
+        if ($("#coexp").is(":visible")) {
+            CoExpView.init();
+            coexp_tab_init = true;
+        }
         $("#tabs").bind("tabsactivate", function(event, ui) {
             if (ui.newTab.text().trim().toLowerCase() === "co-expression") {
                 if (coexp_tab_init === false) {
-                    CoExpView.initTabs();
-                    CoExpView.initView();
+                    CoExpView.init();
                     coexp_tab_init = true;
                 } else {
                     $(window).trigger("resize");
@@ -91,6 +93,6 @@
         style: { classes: 'ui-tooltip-light ui-tooltip-rounded ui-tooltip-shadow ui-tooltip-lightyellow' },
         show: {event: "mouseover"},
         hide: {fixed:true, delay: 100, event: "mouseout"},
-        position: {my:'left bottom',at:'top right'}
+        position: {my:'left bottom',at:'top right',viewport: $(window)}
     })
 </script>
