@@ -667,6 +667,7 @@ CREATE TABLE `protein_contact_map` (
   `DISTANCE_ERROR` float DEFAULT NULL, # DISTANCE - Covalent bond length
   PRIMARY KEY (`PDB_ID`,`CHAIN`,`RESIDUE1`,`RESIDUE2`),
   KEY (`PDB_ID`,`CHAIN`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
 drop table IF EXISTS clinical_event;
 CREATE TABLE `clinical_event` (
