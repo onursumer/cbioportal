@@ -13,6 +13,7 @@ for (CancerStudyStats stats : (new DataSetsUtil()).getCancerStudyStats()) {
     study.put("id",stats.getStableID());
     study.put("name",stats.getStudyName());
     study.put("sequenced",stats.getSequenced());
+    study.put("reference",stats.getReference());
     studies.put(stats.getStableID(),study);
 }
 String jsonStudies = JSONValue.toJSONString(studies);
@@ -217,7 +218,7 @@ AlteredGene.CancerStudy = Backbone.Model.extend({
 AlteredGene.CancerStudies = Backbone.Collection.extend({
     model: AlteredGene.CancerStudy,
     comparator: function(cancerStudy) {
-        return cancerStudy.get("name");
+        return cancerStudy.get("id");
     }
 });
 
