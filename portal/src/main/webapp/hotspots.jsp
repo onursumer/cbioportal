@@ -66,7 +66,12 @@ String jsonStudies = JSONValue.toJSONString(studies);
 
 <script type="text/template" id="form-template">
     <div>
-        <label><b>Cancer studies (<i>x</i> sequenced cases):</b></label></br>
+        <label><b>Cancer studies (sequenced cases):</b></label>
+        <div style="float:right">
+        <button id="select-none-studies">select none</button>
+        <button id="select-all-studies">select all</button>
+        </div>
+        </br>
         <div id="cancer-study-selection"></div>
     </div>
     <br/>
@@ -206,10 +211,6 @@ var template = function(name) {
     return _.template($('#'+name+'-template').html());
 };
 
-$(document).ready(function(){
-    AlteredGene.boot($('#main'));
-});
-
 var AlteredGene = {};
 
 AlteredGene.CancerStudy = Backbone.Model.extend({
@@ -288,10 +289,12 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
     render: function() {
         this.$el.html(this.template(this.model.attributes));
             
-        var id = this.model.get('id');
-        var sequencedCases = this.model.get('sequenced');
-        if (sequencedCases>0 && id.search(/(merged)|(_tcga_pub)|(gbm_yale)|(prad_fhcrc)/)===-1)
-            this.$('option').attr('selected','selected');
+        if (this.model.get('sequenced')>0) {
+            if (this.model.get('id').search(/_tcga$/)>=0)
+                this.$('option').attr('selected','selected'); // tcga provisonal
+            if (this.model.get('reference') && this.model.get('id').search(/(_tcga_pub)/)===-1)
+                this.$('option').attr('selected','selected'); // published non-tcga
+        }
             
         return this;
     }
@@ -704,6 +707,25 @@ function addCancerStudyFrequencyTooltip() {
         position: {my:'top right',at:'bottom left'}
     });
 }
+
+function addSelectionButtonsListeners() {
+    $("#select-none-studies").click(function() {
+        $("#cancer-study-select option").removeAttr('selected');
+        $('#cancer-study-select').trigger('chosen:updated');
+        return false;
+    });
+    
+    $("#select-all-studies").click(function() {
+        $("#cancer-study-select option").attr('selected',"selected");
+        $('#cancer-study-select').trigger('chosen:updated');
+        return false;
+    });
+}
+
+$(document).ready(function(){
+    AlteredGene.boot($('#main'));
+    addSelectionButtonsListeners();
+});
 
 </script>
 
