@@ -7,7 +7,6 @@
 <%@ page import="org.apache.commons.lang.math.DoubleRange" %>
 <%@ page import="java.io.PrintWriter" %>
 <%@ page import="java.io.IOException" %>
-<%@ page import="org.mskcc.cbio.portal.stats.OddsRatioTemp" %>
 <%
     DecimalFormat decimalFormat = new DecimalFormat("###,###.######");
     out.println("<div class=\"section\" id=\"gene_correlation\">");
@@ -17,9 +16,6 @@
     DoubleRange range1 = new DoubleRange (0.1, 0.5);
     DoubleRange range2 = new DoubleRange (0.5, 2);
     DoubleRange range3 = new DoubleRange (2, 10);
-
-    //OddsRatioTemp utilTemp = new OddsRatioTemp(dataSummary);
-    //out.println("<P>R Code:  <br>" + utilTemp.getRCommand() + "</P>");
     
     if (geneWithScoreList.size() == 2) {
         GeneWithScore gene0 = geneWithScoreList.get(0);
