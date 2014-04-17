@@ -68,8 +68,9 @@ String jsonStudies = JSONValue.toJSONString(studies);
     <div>
         <label><b>Cancer studies (sequenced cases):</b></label>
         <div style="float:right">
-        <button id="select-none-studies">select none</button>
-        <button id="select-all-studies">select all</button>
+        <button id="select-pan-cancer">Select PanCan</button>
+        <button id="select-none-studies">Select none</button>
+        <button id="select-all-studies">Select all</button>
         </div>
         </br>
         <div id="cancer-study-selection"></div>
@@ -199,7 +200,36 @@ String jsonStudies = JSONValue.toJSONString(studies);
 <script type="text/javascript" src="js/src/heatmap.js"></script>
 
 <script type="text/javascript">
-var jsonStudies = <%=jsonStudies%>;
+var jsonStudies = (function(){
+    return _.filter(<%=jsonStudies%>,function(s){
+        if (s['sequenced']>0) return true;
+    }).sort(function(a,b){
+        return a['id'].localeCompare(b['id']);
+    });
+})();
+var panCanStudies = (function(){
+    var ret = {};
+    var mapTypeTCGAStudy = {}; // one the last one with the same type
+    // add tcga studies
+    var patt = new RegExp("^[^_]+_tcga");
+    jsonStudies.forEach(function(study){
+        var id = study['id'];
+        var type = patt.exec(id);
+        if (type) {
+            mapTypeTCGAStudy[type] = [id];
+        }
+    });
+    for (var type in mapTypeTCGAStudy) {
+        ret[mapTypeTCGAStudy[type]] = true;
+    }
+    
+    jsonStudies.forEach(function(study){
+        var id = study['id'];
+        var ref = study['reference'];
+        if (ref && id.indexOf("_tcga")===-1) ret[id]=true;
+    });
+    return ret;
+})();
     
 // This is for the moustache-like templates
 // prevents collisions with JSP tags
@@ -288,13 +318,8 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
     template: template("cancer-study"),
     render: function() {
         this.$el.html(this.template(this.model.attributes));
-            
-        if (this.model.get('sequenced')>0) {
-            if (this.model.get('id').search(/_tcga$/)>=0)
-                this.$('option').attr('selected','selected'); // tcga provisonal
-            if (this.model.get('reference') && this.model.get('id').search(/(_tcga_pub)/)===-1)
-                this.$('option').attr('selected','selected'); // published non-tcga
-        }
+        if (this.model.get('id') in panCanStudies)
+            this.$('option').attr('selected','selected');
             
         return this;
     }
@@ -709,6 +734,18 @@ function addCancerStudyFrequencyTooltip() {
 }
 
 function addSelectionButtonsListeners() {
+    $("#select-pan-cancer").click(function() {
+        $("#cancer-study-select option").each(function(index){
+            if ($(this)[0].value in panCanStudies)
+                $(this).attr('selected',"selected");
+            else
+                $(this).removeAttr('selected');
+        });
+        
+        $('#cancer-study-select').trigger('chosen:updated');
+        return false;
+    });
+    
     $("#select-none-studies").click(function() {
         $("#cancer-study-select option").removeAttr('selected');
         $('#cancer-study-select').trigger('chosen:updated');
