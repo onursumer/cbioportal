@@ -200,8 +200,9 @@ String jsonStudies = JSONValue.toJSONString(studies);
 <script type="text/javascript" src="js/src/heatmap.js"></script>
 
 <script type="text/javascript">
-var jsonStudies = (function(){
-    return _.filter(<%=jsonStudies%>,function(s){
+var jsonStudies = <%=jsonStudies%>;
+var sortedJsonStudies = (function(){
+    return _.filter(jsonStudies,function(s){
         if (s['sequenced']>0) return true;
     }).sort(function(a,b){
         return a['id'].localeCompare(b['id']);
@@ -212,7 +213,7 @@ var panCanStudies = (function(){
     var mapTypeTCGAStudy = {}; // one the last one with the same type
     // add tcga studies
     var patt = new RegExp("^[^_]+_tcga");
-    jsonStudies.forEach(function(study){
+    sortedJsonStudies.forEach(function(study){
         var id = study['id'];
         var type = patt.exec(id);
         if (type) {
@@ -223,7 +224,7 @@ var panCanStudies = (function(){
         ret[mapTypeTCGAStudy[type]] = true;
     }
     
-    jsonStudies.forEach(function(study){
+    sortedJsonStudies.forEach(function(study){
         var id = study['id'];
         var ref = study['reference'];
         if (ref && id.indexOf("_tcga")===-1) ret[id]=true;
@@ -295,8 +296,8 @@ AlteredGene.Form = Backbone.View.extend({
 AlteredGene.CancerStudies.View = Backbone.View.extend({
     initialize: function() {
         this.cancerStudies = new AlteredGene.CancerStudies();
-        for (var study in jsonStudies) {
-            this.cancerStudies.add(jsonStudies[study]);
+        for (var study in sortedJsonStudies) {
+            this.cancerStudies.add(sortedJsonStudies[study]);
         }
     },
     render: function() {
