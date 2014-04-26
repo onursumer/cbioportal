@@ -227,7 +227,7 @@ var panCanStudies = (function(){
     sortedJsonStudies.forEach(function(study){
         var id = study['id'];
         var ref = study['reference'];
-        if (ref && id.indexOf("_tcga")===-1) ret[id]=true;
+        if (ref && id.indexOf("_tcga")===-1 && id.indexOf("cellline_")===-1) ret[id]=true;
     });
     return ret;
 })();
