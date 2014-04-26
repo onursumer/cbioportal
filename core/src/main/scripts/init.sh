@@ -31,7 +31,7 @@
 ./importCosmicData.pl $PORTAL_DATA_HOME/reference-data/CosmicCodingMuts.vcf
 
 # PDB Uniprot Mapping
-## ./convertPdbUniprotMappingFromMaDb.py --host [host] --user [user] --passwd [passwd] --db [db] --output $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
+## ./convertPdbUniprotMappingFromMaDb.py --host [host] --user [user] --passwd [passwd] --db [db] --output $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping-from-ma.txt
 ./importPdbUniprotResidueMapping.pl $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt
 
 # PDB Uniprot Mapping from Sifts
@@ -39,11 +39,11 @@
 ./importPdbUniprotResidueMappingFromSifts.pl $PORTAL_DATA_HOME/reference-data/pdb_chain_uniprot.tsv $PORTAL_DATA_HOME/reference-data/pdb_chain_human.tsv $PORTAL_DATA_HOME/reference-data/pdb-cache
 
 # ptm in 3D structures
-# ./calculatePDBPTMData.pl ptm $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb_chain_human.tsv $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 0.4
+# ./calculatePDBPTMData.pl ptm $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping-from-ma.txt $PORTAL_DATA_HOME/reference-data/pdb_chain_human.tsv $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 0.4
 ./importPdbPtmData.pl $PORTAL_DATA_HOME/reference-data/pdb-ptms.txt
 
 # Protein contact map
-## ./calculatePDBPTMData.pl contact-map $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping.txt $PORTAL_DATA_HOME/reference-data/pdb_chain_human.tsv $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 5.0
+## ./calculatePDBPTMData.pl contact-map $PORTAL_DATA_HOME/reference-data/pdb-uniprot-residue-mapping-from-ma.txt $PORTAL_DATA_HOME/reference-data/pdb_chain_human.tsv $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt $PORTAL_DATA_HOME/reference-data/pdb-cache/ 5.0
 ./importProteinContactMap.pl $PORTAL_DATA_HOME/reference-data/pdb-contact-map.txt
 
 # PTM data
