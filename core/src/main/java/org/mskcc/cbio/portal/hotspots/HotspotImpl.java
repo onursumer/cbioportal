@@ -110,6 +110,7 @@ public class HotspotImpl implements Hotspot {
             return;
         }
         mutations.add(mutation);
+        // do not added residues because we may only want to label part of the residues
         CancerStudy cancerStudy = DaoCancerStudy.getCancerStudyByInternalId(
                 DaoGeneticProfile.getGeneticProfileById(mutation.getGeneticProfileId()).getCancerStudyId());
         samples.add(new SampleImpl(mutation.getCaseId(), cancerStudy));

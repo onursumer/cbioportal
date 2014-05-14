@@ -56,19 +56,22 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
             // only return hotspot above sample threshold
             if (hotspot.getSamples().size()>=parameters.getThresholdSamples()) {
                 if (parameters.getSeperateByProteinChangesForSingleResidueHotspot()) {
-                    Map<String, Hotspot> mapProteinChangeHotspot = new HashMap<String, Hotspot>();
+                    Map<String, HotspotImpl> mapProteinChangeHotspot = new HashMap<String, HotspotImpl>();
                     for (ExtendedMutation mutation : hotspot.getMutations()) {
                         String proteinChange = mutation.getProteinChange();
-                        Hotspot hs = mapProteinChangeHotspot.get(proteinChange);
+                        HotspotImpl hs = mapProteinChangeHotspot.get(proteinChange);
                         if (hs==null) {
-                            hs = new HotspotImpl(protein);
+                            hs = new HotspotImpl(protein, hotspot.getResidues());
+                            hs.setLabel(protein.getGene().getHugoGeneSymbolAllCaps()+" "+proteinChange);
                             mapProteinChangeHotspot.put(proteinChange, hs);
                         }
                         hs.addMutation(mutation);
                     }
                     
                     for (Hotspot hs : mapProteinChangeHotspot.values()) {
-                        hotspotsOnAProtein.add(hs);
+                        if (hs.getSamples().size()>=parameters.getThresholdSamples()) {
+                            hotspotsOnAProtein.add(hs);
+                        }
                     }
                 } else {
                     hotspotsOnAProtein.add(hotspot);
