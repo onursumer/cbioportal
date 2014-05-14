@@ -102,6 +102,11 @@ String jsonStudies = JSONValue.toJSONString(studies);
         </select>
         </label>
     </div>
+    <div>
+        <label id="separate-by-protein-change-label">
+        <input type="checkbox" id="separate-by-protein-change-checkbox">&nbsp;Separate single hotpots by protein change
+        </label>
+    </div>
     <br/>
     <div>       
         <label id="linear-window-label"><b>Window size (linear hotspots)</b>
@@ -270,6 +275,7 @@ AlteredGene.Form = Backbone.View.extend({
         var genes = $.trim(this.$('#gene-textarea').val()).split(/\s+/).join(",");
         var hotspot_type = this.$('#hotspot-type-select').val();
         var mutation_type = this.$('#mutation-type-select').val();
+        var separate_by_protein_change = this.$('separate-by-protein-change-checkbox').prop('checked'); 
         var window_linear = this.$('#linear-window-input').val();
         var distance_3d = this.$('#3d-distance-select').val();
         var include_mismatches_3d = this.$('#3d-include-mismatch-checkbox').prop('checked');
@@ -283,6 +289,7 @@ AlteredGene.Form = Backbone.View.extend({
                         +"&genes="+genes
                         +"&threshold_samples="+threshold
                         +"&threshold_hypermutator="+thresholdHyper
+                        +"&separate_by_protein_change="+separate_by_protein_change
                         +"&window_linear="+window_linear
                         +(distance_3d==="extended"?"&threshold_distance_3d=5":"&threshold_distance_error_3d=0.5")
                         +"&include_mismatches_3d="+(include_mismatches_3d?"yes":"no")

@@ -107,6 +107,18 @@ public interface HotspotDetectiveParameters {
     
     /**
      * 
+     * @return true if separate hotspots with different protein changes even on the same spot
+     */
+    public boolean getSeperateByProteinChangesForSingleResidueHotspot();
+    
+    /**
+     * 
+     * @param b 
+     */
+    public void setSeperateByProteinChangesForSingleResidueHotspot(boolean b);
+    
+    /**
+     * 
      * @return 
      */
     public int getLinearSpotWindowSize();

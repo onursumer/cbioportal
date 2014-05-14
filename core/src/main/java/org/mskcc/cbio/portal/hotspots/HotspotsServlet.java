@@ -66,6 +66,7 @@ public class HotspotsServlet extends HttpServlet {
     public static final String THRESHOLD_DISTANCE_ERROR_CONTACT_MAP = "threshold_distance_error_3d";
     public static final String THRESHOLD_UNIPROT_PDB_ALIGNMENT_IDENTP = "threshold_identp_3d";
     public static final String LINEAR_HOTSPOT_WINDOW = "window_linear";
+    public static final String SINGLE_HOTSPOT_SEPARATE_BY_PROTEIN_CHANGE = "separate_by_protein_change";
     
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
@@ -123,6 +124,8 @@ public class HotspotsServlet extends HttpServlet {
                 
             HotspotDetective hotspotDetective;
             if (hotspotType.equalsIgnoreCase("single")) {
+                boolean separateByProteinChange = Boolean.parseBoolean(request.getParameter(SINGLE_HOTSPOT_SEPARATE_BY_PROTEIN_CHANGE));
+                hotspotDetectiveParameters.setSeperateByProteinChangesForSingleResidueHotspot(separateByProteinChange);
                 hotspotDetective = new SingleHotspotDetective(hotspotDetectiveParameters);
             } else if (hotspotType.equalsIgnoreCase("linear")) {
                 int window = Integer.parseInt(request.getParameter(LINEAR_HOTSPOT_WINDOW));

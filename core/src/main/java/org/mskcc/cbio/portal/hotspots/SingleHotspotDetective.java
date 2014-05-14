@@ -27,9 +27,11 @@
 package org.mskcc.cbio.portal.hotspots;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.mskcc.cbio.portal.model.ExtendedMutation;
 
 /**
  *
@@ -53,7 +55,24 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
         for (Hotspot hotspot : mapResidueHotspot.values()) {
             // only return hotspot above sample threshold
             if (hotspot.getSamples().size()>=parameters.getThresholdSamples()) {
-                hotspotsOnAProtein.add(hotspot);
+                if (parameters.getSeperateByProteinChangesForSingleResidueHotspot()) {
+                    Map<String, Hotspot> mapProteinChangeHotspot = new HashMap<String, Hotspot>();
+                    for (ExtendedMutation mutation : hotspot.getMutations()) {
+                        String proteinChange = mutation.getProteinChange();
+                        Hotspot hs = mapProteinChangeHotspot.get(proteinChange);
+                        if (hs==null) {
+                            hs = new HotspotImpl(protein);
+                            mapProteinChangeHotspot.put(proteinChange, hs);
+                        }
+                        hs.addMutation(mutation);
+                    }
+                    
+                    for (Hotspot hs : mapProteinChangeHotspot.values()) {
+                        hotspotsOnAProtein.add(hs);
+                    }
+                } else {
+                    hotspotsOnAProtein.add(hotspot);
+                }
             }
         }
         return Collections.singletonMap(protein, hotspotsOnAProtein);

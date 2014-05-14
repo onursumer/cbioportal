@@ -39,6 +39,7 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     private Collection<Long>  excludeEntrezGeneIds;
     private int thresholdHyperMutator = -1;
     private int thresholdSamples;
+    private boolean seperateByProteinChangesForSingleResidueHotspot;
     private int linearSpotWindowSize;
     private double distanceThresholdFor3DHotspots;
     private double distanceErrorThresholdFor3DHotspots;
@@ -153,5 +154,15 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     @Override
     public void setIncludingMismatchesFor3DHotspots(boolean includeMismatches) {
         this.includingMismatchesFor3DHotspots = includeMismatches;
+    }
+
+    @Override
+    public boolean getSeperateByProteinChangesForSingleResidueHotspot() {
+        return seperateByProteinChangesForSingleResidueHotspot;
+    }
+
+    @Override
+    public void setSeperateByProteinChangesForSingleResidueHotspot(boolean b) {
+        this.seperateByProteinChangesForSingleResidueHotspot = b;
     }
 }
