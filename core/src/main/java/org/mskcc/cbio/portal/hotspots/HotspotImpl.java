@@ -205,7 +205,7 @@ public class HotspotImpl implements Hotspot {
     public int hashCode() {
         int hash = 7;
         hash = 43 * hash + (this.protein != null ? this.protein.hashCode() : 0);
-        hash = 43 * hash + (this.residues != null ? this.residues.hashCode() : 0);
+        hash = 43 * hash + (this.mutations != null ? this.mutations.hashCode() : 0);
         return hash;
     }
 
@@ -221,7 +221,7 @@ public class HotspotImpl implements Hotspot {
         if (this.protein != other.protein && (this.protein == null || !this.protein.equals(other.protein))) {
             return false;
         }
-        if (this.residues != other.residues && (this.residues == null || !this.residues.equals(other.residues))) {
+        if (this.mutations != other.mutations && (this.mutations == null || !this.mutations.equals(other.mutations))) {
             return false;
         }
         return true;
