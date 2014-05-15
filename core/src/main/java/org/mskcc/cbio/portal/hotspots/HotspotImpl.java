@@ -145,7 +145,7 @@ public class HotspotImpl implements Hotspot {
         String sequence = protein.getUniprotSequence();
         Map<Integer, Set<ExtendedMutation>> mapResidueMuations = getMapResidueMutations();
         for (Integer res : residues) {
-            if (sequence!=null) {
+            if (sequence!=null&&sequence.length()>=res) {
                 sb.append(sequence.charAt(res-1));
             }
             sb.append(res.toString());
