@@ -26,6 +26,11 @@
 **/
 package org.mskcc.cbio.portal.hotspots;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.biojava3.core.sequence.compound.AminoAcidCompound;
+import org.biojava3.core.sequence.compound.AminoAcidCompoundSet;
+import org.biojava3.core.sequence.loader.UniprotProxySequenceReader;
 import org.mskcc.cbio.portal.model.CanonicalGene;
 
 /**
@@ -93,6 +98,26 @@ public class MutatedProteinImpl implements MutatedProtein {
     public final void setNumberOfMutations(int numberOfMutations) {
         this.numberOfMutations = numberOfMutations;
     }
+
+    private static Map<String, String> uniprotSequences = new HashMap<String, String>();
+    
+    @Override
+    public String getUniprotSequence() {
+        if (!uniprotSequences.containsKey(uniprotAcc)) {
+            String seq = null;
+            try {
+                UniprotProxySequenceReader<AminoAcidCompound> uniprotSequence
+                        = new UniprotProxySequenceReader<AminoAcidCompound>(uniprotAcc,
+                                AminoAcidCompoundSet.getAminoAcidCompoundSet());
+                seq = uniprotSequence.getSequenceAsString();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            uniprotSequences.put(uniprotAcc, seq);
+        }
+        
+        return uniprotSequences.get(uniprotAcc);
+    }    
 
     @Override
     public int hashCode() {

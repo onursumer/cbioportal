@@ -60,6 +60,12 @@ public interface MutatedProtein {
     
     /**
      * 
+     * @return 
+     */
+    public String getUniprotSequence();
+    
+    /**
+     * 
      */
     public void setProteinLength(int proteinLegnth);
     
