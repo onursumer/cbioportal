@@ -120,7 +120,7 @@ public class DaoPfamGraphics
                         Map<String,String> map = new HashMap<String,String>();
 			while (rs.next())
 			{
-				map.put(rs.getString("UNIPROT_ID"), rs.getString("JSON_DATA"));
+				map.put(rs.getString("UNIPROT_ACC"), rs.getString("JSON_DATA"));
 			}
 
 			return map;
