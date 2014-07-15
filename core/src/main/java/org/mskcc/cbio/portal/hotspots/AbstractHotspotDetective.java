@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -168,11 +169,22 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 
             }
             
+            removeNonrecurrentHotspots(mapResidueHotspot);
             recordHotspots(currProtein, mapResidueHotspot);
         } catch (SQLException e) {
             throw new HotspotException(e);
         } finally {
             JdbcUtil.closeAll(AbstractHotspotDetective.class, con, pstmt, rs);
+        }
+    }
+    
+    private void removeNonrecurrentHotspots(Map<Integer, Hotspot> mapResidueHotspot) {
+        Iterator<Map.Entry<Integer, Hotspot>> it = mapResidueHotspot.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, Hotspot> entry = it.next();
+            if (entry.getValue().getResidues().size()<=1) {
+                it.remove();
+            }
         }
     }
     
