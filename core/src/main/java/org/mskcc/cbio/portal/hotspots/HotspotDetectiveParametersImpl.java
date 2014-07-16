@@ -45,6 +45,7 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     private double distanceErrorThresholdFor3DHotspots;
     private double identpThresholdFor3DHotspots;
     private boolean includingMismatchesFor3DHotspots;
+    private int prefilterThresholdSamplesOnSingleResidue;
 
     @Override
     public Collection<Integer> getCancerStudyIds() {
@@ -164,5 +165,15 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     @Override
     public void setSeperateByProteinChangesForSingleResidueHotspot(boolean b) {
         this.seperateByProteinChangesForSingleResidueHotspot = b;
+    }
+
+    @Override
+    public int getPrefilterThresholdSamplesOnSingleResidue() {
+        return prefilterThresholdSamplesOnSingleResidue;
+    }
+
+    @Override
+    public void setPrefilterThresholdSamplesOnSingleResidue(int prefilterThresholdSamplesOnSingleResidue) {
+        this.prefilterThresholdSamplesOnSingleResidue = prefilterThresholdSamplesOnSingleResidue;
     }
 }

@@ -153,6 +153,11 @@ String jsonStudies = JSONValue.toJSONString(studies);
         <input type="checkbox" id="exclude-hypermutator-checkbox">&nbsp;Exclude hypermutated samples (&le;1000 nonsynonymous mutations)
         </label>
     </div>
+    <div>
+        <label id="prefilter-recurrence-label">
+        <input type="checkbox" id="prefilter-recurrence-checkbox">&nbsp;Exclude a residue if mutated in less than <input type='text' id='prefilter-recurrence-input' value="2"> samples.
+        </label>
+    </div>
     <br/>
     <div>
         <button type="submit">Submit</button>
@@ -284,11 +289,13 @@ AlteredGene.Form = Backbone.View.extend({
         // var ptm_type = 'PHOSPHORYLATION,UBIQUITINATION,SUMOYLATION,ACETYLATION';
         var threshold = this.$('#threshold-number-samples-input').val();
         var thresholdHyper = this.$('#exclude-hypermutator-checkbox').prop('checked') ? 1000 : -1;
+        var thresholdPrefilterRecurrence = this.$('#prefilter-recurrence-checkbox').prop('checked') ? $('#prefilter-recurrence-input').val() : 0;
         var routerTo = "submit/hotspot_type="+hotspot_type
                         +"&mutation_type="+mutation_type.join(",")
                         +"&genes="+genes
                         +"&threshold_samples="+threshold
                         +"&threshold_hypermutator="+thresholdHyper
+                        +"&threshold_prefilter_recurrence="+thresholdPrefilterRecurrence
                         +"&separate_by_protein_change="+separate_by_protein_change
                         +"&window_linear="+window_linear
                         +(distance_3d==="extended"?"&threshold_distance_3d=5":"&threshold_distance_error_3d=0.5")

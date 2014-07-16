@@ -106,6 +106,14 @@ public interface HotspotDetectiveParameters {
     public void setThresholdSamples(int thresholdSamples);
     
     /**
+     * Use this for prefilter hotspots on single residue
+     * @return 
+     */
+    public int getPrefilterThresholdSamplesOnSingleResidue();
+    
+    public void setPrefilterThresholdSamplesOnSingleResidue(int prefilterThresholdSamplesOnSingleResidue);
+    
+    /**
      * 
      * @return true if separate hotspots with different protein changes even on the same spot
      */
