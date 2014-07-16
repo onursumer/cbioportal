@@ -168,10 +168,6 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                 }
                 
             }
-            
-            if (parameters.getPrefilterThresholdSamplesOnSingleResidue()>1) {
-                removeNonrecurrentHotspots(mapResidueHotspot);
-            }
             recordHotspots(currProtein, mapResidueHotspot);
         } catch (SQLException e) {
             throw new HotspotException(e);
@@ -192,6 +188,10 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     
     private void recordHotspots(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) throws HotspotException {
         if (!mapResidueHotspot.isEmpty()) { // skip first one
+            if (parameters.getPrefilterThresholdSamplesOnSingleResidue()>1) {
+                removeNonrecurrentHotspots(mapResidueHotspot);
+            }
+            
             // process all hotspots
             Map<MutatedProtein, Set<Hotspot>> mapHotspots = processSingleHotspotsOnAProtein(protein, mapResidueHotspot);
             for (Map.Entry<MutatedProtein, Set<Hotspot>> entry : mapHotspots.entrySet()) {
