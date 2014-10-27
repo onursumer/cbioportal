@@ -184,4 +184,16 @@ public interface HotspotDetectiveParameters {
      * @param includeMismatches 
      */
     public void setIncludingMismatchesFor3DHotspots(boolean includeMismatches);
+    
+    /**
+     * 
+     * @return 
+     */
+    public boolean getMergeOverlappingHotspots();
+    
+    /**
+     * 
+     * @param mergeOverlappingHotspots 
+     */
+    public void setMergeOverlappingHotspots(boolean mergeOverlappingHotspots);
 }

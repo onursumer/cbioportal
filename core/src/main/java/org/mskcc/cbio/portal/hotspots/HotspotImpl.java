@@ -191,18 +191,15 @@ public class HotspotImpl implements Hotspot {
                 return Double.NaN;
             }
 
-            double p = 1.0 * hotspotLength / proteinLength;
-
-            int numberOfMutationInHotspot = getMutations().size();
-            int numberOfAllMutations = protein.getNumberOfMutations();
-            pvalue = binomialTest(numberOfAllMutations, numberOfMutationInHotspot, p);
+            pvalue = binomialTest(getMutations().size(), protein.getNumberOfMutations(), hotspotLength, proteinLength);
         }
         return pvalue;
     }
     
-    private double binomialTest(int n, int x, double p) {
-        BinomialDistribution distribution = new BinomialDistribution(n, p);
-        return 1- distribution.cumulativeProbability(x-1);
+    private double binomialTest(int numberOfAllMutations, int numberOfMutationInHotspot, int hotspotLength, int proteinLength) {
+        double p = 1.0 * hotspotLength / proteinLength;
+        BinomialDistribution distribution = new BinomialDistribution(numberOfAllMutations, p);
+        return 1- distribution.cumulativeProbability(numberOfMutationInHotspot-1);
     }
 
     @Override
