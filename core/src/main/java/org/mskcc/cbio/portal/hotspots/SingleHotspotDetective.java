@@ -39,7 +39,7 @@ import org.mskcc.cbio.portal.model.ExtendedMutation;
  */
 public class SingleHotspotDetective extends AbstractHotspotDetective {
 
-    public SingleHotspotDetective(HotspotDetectiveParameters parameters) {
+    public SingleHotspotDetective(HotspotDetectiveParameters parameters) throws HotspotException {
         super(parameters);
     }
     
@@ -61,7 +61,7 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
                         String proteinChange = mutation.getProteinChange();
                         HotspotImpl hs = mapProteinChangeHotspot.get(proteinChange);
                         if (hs==null) {
-                            hs = new HotspotImpl(protein, hotspot.getResidues());
+                            hs = new HotspotImpl(protein, numberOfsequencedSamples, hotspot.getResidues());
                             hs.setLabel(protein.getGene().getHugoGeneSymbolAllCaps()+" "+proteinChange);
                             mapProteinChangeHotspot.put(proteinChange, hs);
                         }

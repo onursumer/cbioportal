@@ -40,7 +40,7 @@ import java.util.Set;
  */
 public class LinearHotspotDetective extends AbstractHotspotDetective {
 
-    public LinearHotspotDetective(HotspotDetectiveParameters parameters) {
+    public LinearHotspotDetective(HotspotDetectiveParameters parameters) throws HotspotException {
         super(parameters);
     }
     
@@ -56,7 +56,7 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
         List<Integer> hotspotCenters = findLocalMaximum(protein, hotspotOnAProtein);
         Set<Hotspot> hotspotsOnAProtein = new HashSet<Hotspot>();
         for (Integer center : hotspotCenters) {
-            Hotspot hs = new HotspotImpl(protein);
+            Hotspot hs = new HotspotImpl(protein, numberOfsequencedSamples);
             int window = parameters.getLinearSpotWindowSize();
             for (int w=-window; w<=window; w++) {
                 hs.mergeHotspot(mapResidueHotspot.get(center+w));

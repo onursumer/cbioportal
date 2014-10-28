@@ -38,19 +38,19 @@ import java.util.SortedSet;
 public class Hotspot3DImpl extends HotspotImpl implements Hotspot3D {
     private Set<Hotspot> hotspots3D;
     
-    public Hotspot3DImpl(MutatedProtein protein) {
-        super(protein);
+    public Hotspot3DImpl(MutatedProtein protein, int numberOfsequencedSamples) {
+        super(protein, numberOfsequencedSamples);
         this.hotspots3D = new HashSet<Hotspot>();
     }
     
-    public Hotspot3DImpl(MutatedProtein protein, SortedSet<Integer> residues) {
-        super(protein, residues);
+    public Hotspot3DImpl(MutatedProtein protein, int numberOfsequencedSamples, SortedSet<Integer> residues) {
+        super(protein, numberOfsequencedSamples, residues);
         this.hotspots3D = new HashSet<Hotspot>();
     }
     
-    public Hotspot3DImpl(MutatedProtein protein, SortedSet<Integer> residues, Set<Hotspot> hotspots3D) {
+    public Hotspot3DImpl(MutatedProtein protein, int numberOfsequencedSamples, SortedSet<Integer> residues, Set<Hotspot> hotspots3D) {
         // assume that all of them on the same protein and residues
-        super(protein, residues);
+        super(protein, numberOfsequencedSamples, residues);
         this.hotspots3D = hotspots3D;
     }
     

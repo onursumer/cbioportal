@@ -33,8 +33,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.math3.distribution.BinomialDistribution;
+import org.apache.commons.math3.special.Beta;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
 import org.mskcc.cbio.portal.model.CancerStudy;
@@ -50,10 +50,11 @@ public class HotspotImpl implements Hotspot {
     private Set<ExtendedMutation> mutations;
     private Set<Sample> samples;
     private String label;
+    private int numberOfSeqeuncedSamples;
     protected double pvalue;
     
-    public HotspotImpl(MutatedProtein protein) {
-        this(protein, new TreeSet<Integer>());
+    public HotspotImpl(MutatedProtein protein, int numberOfSeqeuncedSamples) {
+        this(protein, numberOfSeqeuncedSamples, new TreeSet<Integer>());
     }
 
     /**
@@ -62,8 +63,9 @@ public class HotspotImpl implements Hotspot {
      * @param residues
      * @param label 
      */
-    public HotspotImpl(MutatedProtein protein, SortedSet<Integer> residues) {
+    public HotspotImpl(MutatedProtein protein, int numberOfSeqeuncedSamples, SortedSet<Integer> residues) {
         this.protein = protein;
+        this.numberOfSeqeuncedSamples = numberOfSeqeuncedSamples;
         this.residues = residues;
         this.mutations = new HashSet<ExtendedMutation>();
         this.samples = new HashSet<Sample>();
@@ -136,7 +138,7 @@ public class HotspotImpl implements Hotspot {
     @Override
     public String getLabel() {
         if (label != null) {
-            return label;
+            return label+" (p="+String.format("%6.3e", getPValue()) + ")";
         }
         
         StringBuilder sb = new StringBuilder();
@@ -154,7 +156,7 @@ public class HotspotImpl implements Hotspot {
         }
         sb.deleteCharAt(sb.length()-1);
         
-        // + " (p="+String.format("%6.3e", getPValue()) + ")";
+        sb.append(" (p="+String.format("%6.3e", getPValue()) + ")");
 
         return sb.toString();
     }
@@ -191,7 +193,7 @@ public class HotspotImpl implements Hotspot {
                 return Double.NaN;
             }
 
-            pvalue = binomialTest(getMutations().size(), protein.getNumberOfMutations(), hotspotLength, proteinLength);
+            pvalue = negativeBionomialTest(getMutations().size(), protein.getNumberOfMutations(), hotspotLength, proteinLength);
         }
         return pvalue;
     }
@@ -200,6 +202,13 @@ public class HotspotImpl implements Hotspot {
         double p = 1.0 * hotspotLength / proteinLength;
         BinomialDistribution distribution = new BinomialDistribution(numberOfAllMutations, p);
         return 1- distribution.cumulativeProbability(numberOfMutationInHotspot-1);
+    }
+    
+    private double negativeBionomialTest(int numberOfAllMutations, int numberOfMutationInHotspot, int hotspotLength, int proteinLength) {
+        double p = 1.0 * numberOfAllMutations / proteinLength / numberOfSeqeuncedSamples;
+        int k = numberOfMutationInHotspot;
+        int r = hotspotLength*numberOfSeqeuncedSamples - numberOfMutationInHotspot;
+        return 1 - Beta.regularizedBeta(p, k+1, r);
     }
 
     @Override
@@ -226,5 +235,10 @@ public class HotspotImpl implements Hotspot {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public int getNumberOfSequencedSamples() {
+        return numberOfSeqeuncedSamples;
     }
 }

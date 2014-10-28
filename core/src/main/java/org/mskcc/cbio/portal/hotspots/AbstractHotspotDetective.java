@@ -65,15 +65,17 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     protected HotspotDetectiveParameters parameters;
     
     private Set<Hotspot> hotspots;
+    protected int numberOfsequencedSamples;
     protected Map<MutatedProtein, Integer> numberOfAllMutationOnProteins = new HashMap<MutatedProtein, Integer>();
 
-    public AbstractHotspotDetective(HotspotDetectiveParameters parameters) {
+    public AbstractHotspotDetective(HotspotDetectiveParameters parameters) throws HotspotException {
         setParameters(parameters);
     }
 
     @Override
-    public final void setParameters(HotspotDetectiveParameters parameters) {
+    public final void setParameters(HotspotDetectiveParameters parameters) throws HotspotException {
         this.parameters = parameters;
+        numberOfsequencedSamples = getNumberOfSequencedSamples();
     }
 
     /**
@@ -82,7 +84,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
      * @return 
      */
     protected abstract Map<MutatedProtein, Set<Hotspot>> processSingleHotspotsOnAProtein(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) throws HotspotException;
-    
+   
     @Override
     public void detectHotspot() throws HotspotException {
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
@@ -120,7 +122,6 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             MutatedProtein currProtein = null;
             Map<Integer, Hotspot> mapResidueHotspot = new HashMap<Integer, Hotspot>();
             
-            int count = 0;
             while (rs.next()) {
                 int geneticProfileId = rs.getInt("GENETIC_PROFILE_ID");
                 String uniprotId = rs.getString("ONCOTATOR_UNIPROT_ENTRY_NAME");
@@ -152,7 +153,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                     for (int res=start; res<=end; res++) {
                         Hotspot hotspot = mapResidueHotspot.get(res);
                         if (hotspot==null) {
-                            hotspot = new HotspotImpl(currProtein, new TreeSet<Integer>(Arrays.asList(res)));
+                            hotspot = new HotspotImpl(currProtein, numberOfsequencedSamples, new TreeSet<Integer>(Arrays.asList(res)));
                             mapResidueHotspot.put(res, hotspot);
                         }
 
@@ -187,6 +188,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     }
     
     private void recordHotspots(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) throws HotspotException {
+        System.out.println(protein.getGene().getHugoGeneSymbolAllCaps());
         if (!mapResidueHotspot.isEmpty()) { // skip first one
             if (parameters.getPrefilterThresholdSamplesOnSingleResidue()>1) {
                 removeNonrecurrentHotspots(mapResidueHotspot);
@@ -329,4 +331,34 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
             method.releaseConnection();
         }
     }
+    
+    private static final Map<Collection<Integer>, Integer> mapStudysSamples = new HashMap<Collection<Integer>, Integer>();
+    
+    private int getNumberOfSequencedSamples() throws HotspotException {
+        Integer ret = mapStudysSamples.get(parameters.getCancerStudyIds());
+        if (ret!=null) {
+            return ret;
+        }
+        
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = JdbcUtil.getDbConnection(AbstractHotspotDetective.class);
+            String sql = "SELECT count(distinct CANCER_STUDY_ID, CASE_ID) FROM mutation, genetic_profile "
+                    + "WHERE mutation.genetic_profile_id=genetic_profile.genetic_profile_id "
+                    + "and CANCER_STUDY_ID IN ("+StringUtils.join(parameters.getCancerStudyIds(),",")+") ";
+            pstmt = con.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            rs.next();
+            ret = rs.getInt(1);
+            mapStudysSamples.put(parameters.getCancerStudyIds(), ret);
+            return ret;
+        } catch (SQLException e) {
+            throw new HotspotException(e);
+        } finally {
+            JdbcUtil.closeAll(AbstractHotspotDetective.class, con, pstmt, rs);
+        }
+    }
+    
 }

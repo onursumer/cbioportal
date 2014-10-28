@@ -67,9 +67,16 @@ public interface Hotspot {
     public void addMutation(ExtendedMutation mutation);
     
     /**
-     * Get samples.
+     * 
+     * @return samples mutated in this hotspot
      */
     public Set<Sample> getSamples();
+    
+    /**
+     * 
+     * @return number of all sequenced samples
+     */
+    public int getNumberOfSequencedSamples();
     
     /**
      * 
