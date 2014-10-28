@@ -139,7 +139,7 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
                 List<PdbUniprotAlignment> alignments = entryMapAlignments.getValue();
                 
                 OneToOneMap<Integer, Integer> pdbUniprotResidueMapping = getPdbUniprotResidueMapping(alignments);
-                protein3D.setProteinLength(pdbUniprotResidueMapping.size()); // only mapped residues
+//                protein3D.setProteinLength(pdbUniprotResidueMapping.size()); // only mapped residues
                 
                 // only retain the mapped mutated residues
                 pdbUniprotResidueMapping.retainByValue(residues);

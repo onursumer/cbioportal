@@ -188,8 +188,8 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     }
     
     private void recordHotspots(MutatedProtein protein, Map<Integer, Hotspot> mapResidueHotspot) throws HotspotException {
-        System.out.println(protein.getGene().getHugoGeneSymbolAllCaps());
         if (!mapResidueHotspot.isEmpty()) { // skip first one
+            System.out.println(protein.getGene().getHugoGeneSymbolAllCaps());
             if (parameters.getPrefilterThresholdSamplesOnSingleResidue()>1) {
                 removeNonrecurrentHotspots(mapResidueHotspot);
             }

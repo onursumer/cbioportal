@@ -39,6 +39,7 @@ import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
 import org.mskcc.cbio.portal.model.CancerStudy;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
+//import umontreal.iro.lecuyer.probdist.NegativeBinomialDist;
 
 /**
  *
@@ -193,23 +194,24 @@ public class HotspotImpl implements Hotspot {
                 return Double.NaN;
             }
 
-            pvalue = negativeBionomialTest(getMutations().size(), protein.getNumberOfMutations(), hotspotLength, proteinLength);
+            pvalue = binomialTest(getMutations().size(), protein.getNumberOfMutations(), hotspotLength, proteinLength);
         }
         return pvalue;
     }
     
-    private double binomialTest(int numberOfAllMutations, int numberOfMutationInHotspot, int hotspotLength, int proteinLength) {
+    private double binomialTest(int numberOfMutationInHotspot, int numberOfAllMutations, int hotspotLength, int proteinLength) {
         double p = 1.0 * hotspotLength / proteinLength;
         BinomialDistribution distribution = new BinomialDistribution(numberOfAllMutations, p);
         return 1- distribution.cumulativeProbability(numberOfMutationInHotspot-1);
     }
     
-    private double negativeBionomialTest(int numberOfAllMutations, int numberOfMutationInHotspot, int hotspotLength, int proteinLength) {
-        double p = 1.0 * numberOfAllMutations / proteinLength / numberOfSeqeuncedSamples;
-        int k = numberOfMutationInHotspot;
-        int r = hotspotLength*numberOfSeqeuncedSamples - numberOfMutationInHotspot;
-        return 1 - Beta.regularizedBeta(p, k+1, r);
-    }
+//    private double negativeBinomialTest(int numberOfMutationInHotspot, int numberOfAllMutations, int hotspotLength, int proteinLength) {
+//        double p = 1.0 * numberOfAllMutations / proteinLength / numberOfSeqeuncedSamples;
+//        int r = numberOfMutationInHotspot;
+//        int k = hotspotLength*numberOfSeqeuncedSamples - r;
+//        return NegativeBinomialDist.cdf(k, p, r);
+////        return 1 - Beta.regularizedBeta(p, k+1, r);
+//    }
 
     @Override
     public int hashCode() {
