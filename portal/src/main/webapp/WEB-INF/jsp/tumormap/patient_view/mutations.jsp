@@ -152,6 +152,21 @@
                                 if (tip) {
                                     ret = "<span class='"+table_id+"-tip' alt='"+tip+"'>"+ret+"</span>";
                                 }
+                                if(mutations.colExists('oncokb')){
+                                    if(Object.keys(mutations.getValue(source[0], 'oncokb').gene).length > 0) {
+                                        var _gene = mutations.getValue(source[0], 'oncokb').gene,
+                                            _tip = '';
+                                    
+                                        if(_gene.summary) {
+                                            _tip += '<b>Summary</b><br/>' + _gene.summary + '<br/>';
+                                        }
+                                        if(_gene.background) {
+                                            _tip += '<b>Background</b><br/>' + _gene.background + '<br/>';
+                                        }
+                                        ret += "&nbsp;<span class='"+table_id+"-tip' alt='"+_tip+"'><img width='12' height='12' src='images/file.svg'/></span>";
+                                    }
+                                    
+                                }
                                 return ret;
                             } else {
                                 return mutations.getValue(source[0], "gene");
@@ -172,10 +187,20 @@
                                 if (mutations.getValue(source[0],'status')==="Germline")
                                     ret += "&nbsp;<span style='background-color:red;font-size:x-small;' class='"
                                             +table_id+"-tip' alt='Germline mutation'>Germline</span>";
-                                
-//                                if (true){
-//                                    ret += "&nbsp;<a target='_blank' href='http://miso-dev.cbio.mskcc.org:28080/oncokb/#/variant?hugoSymbol="+mutations.getValue(source[0], 'gene')+"&alteration="+mutations.getValue(source[0], 'aa')+"'><img width='10' height='10' src='images/external-link-ltr-icon.png'/></a>";
-//                                }
+                                if(mutations.colExists('oncokb')){
+                                    if(mutations.getValue(source[0], 'oncokb').alteration.length >0) {
+                                        var _alterations = mutations.getValue(source[0], 'oncokb').alteration,
+                                            _tip = '';
+                                        for(var i=0, altsL=_alterations.length; i<altsL; i++) {
+                                            _tip += '<b>'+_alterations[i].knownEffect + '</b><br/>' + _alterations[i].description + '<br/>';
+                                        }
+                                        if (mutations.getValue(source[0], 'oncokb').oncogenic){
+                                            _tip += '<a target="_blank" href="'+oncokbUrl+'#/variant?hugoSymbol='+mutations.getValue(source[0], 'gene')+'&alteration='+mutations.getValue(source[0], 'aa')+'">More Info on OnckKB</a>';
+                                        }
+                                        ret += "&nbsp;<span class='"+table_id+"-tip' alt='"+_tip+"'><img width='12' height='12' src='images/file.svg'/></span>";
+                                    }
+                                    
+                                }
                                 return ret;
                             } else {
                                 return mutations.getValue(source[0], 'aa');
