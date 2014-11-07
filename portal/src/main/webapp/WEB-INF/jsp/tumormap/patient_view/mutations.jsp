@@ -3,8 +3,9 @@
 <%@ page import="org.mskcc.cbio.portal.dao.DaoMutSig" %>
 
 <script type="text/javascript" src="js/lib/igv_webstart.js?<%=GlobalProperties.getAppVersion()%>"></script>
-
 <script type="text/javascript" src="js/src/patient-view/PancanMutationHistogram.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/src/patient-view/GetEvidence.js?<%=GlobalProperties.getAppVersion()%>"></script>
+
 <link href="css/mutationMapper.min.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet"/>
 
 <script type="text/javascript">
@@ -171,6 +172,10 @@
                                 if (mutations.getValue(source[0],'status')==="Germline")
                                     ret += "&nbsp;<span style='background-color:red;font-size:x-small;' class='"
                                             +table_id+"-tip' alt='Germline mutation'>Germline</span>";
+                                
+//                                if (true){
+//                                    ret += "&nbsp;<a target='_blank' href='http://miso-dev.cbio.mskcc.org:28080/oncokb/#/variant?hugoSymbol="+mutations.getValue(source[0], 'gene')+"&alteration="+mutations.getValue(source[0], 'aa')+"'><img width='10' height='10' src='images/external-link-ltr-icon.png'/></a>";
+//                                }
                                 return ret;
                             } else {
                                 return mutations.getValue(source[0], 'aa');
@@ -966,105 +971,108 @@
                 determineOverviewMutations(data);
                 genomicEventObs.mutations.setData(data);
                 genomicEventObs.fire('mutations-built');
-
-                // summary table
-                buildMutationsDataTable(genomicEventObs.mutations,genomicEventObs.mutations.getEventIds(true), 'mutation_summary_table', 
-                            '<"H"<"mutation-summary-table-name">fr>t<"F"<"mutation-show-more"><"datatable-paging"pl>>', 25, "No mutation events of interest", true);
-                var numFiltered = genomicEventObs.mutations.getNumEvents(true);
-                var numAll = genomicEventObs.mutations.getNumEvents(false);
-                 $('.mutation-show-more').html("<a href='#mutations' onclick='switchToTab(\"tab_mutations\");return false;'\n\
-                      title='Show more mutations of this patient'>Show all "
-                        +numAll+" mutations</a>");
-                $('.mutation-show-more').addClass('datatable-show-more');
-                var mutationSummary;
-                if (numAll===numFiltered) {
-                    mutationSummary = ""+numAll+" mutations";
-                } else {
-                    mutationSummary = "Mutations of interest"
-                     +(numAll==0?"":(" ("
-                        +numFiltered
-                        +" of <a href='#mutations' onclick='switchToTab(\"tab_mutations\");return false;'\n\
-                         title='Show more mutations of this patient'>"
-                        +numAll
-                        +"</a>)"))
-                     +" <img id='mutations-summary-help' src='images/help.png' \n\
-                        title='This table contains somatic mutations in genes that are \n\
-                        <ul><li>either annotated cancer genes</li>\n\
-                        <li>or recurrently mutated, namely\n\
-                            <ul><li>MutSig Q < 0.05, if MutSig results are available</li>\n\
-                            <li>otherwise, mutated in > 5% of samples in the study with &ge; 50 samples</li></ul> </li>\n\
-                        <li>or with > 5 overlapping entries in COSMIC.</li></ul>'/>";
-                }
-                $('.mutation-summary-table-name').html(mutationSummary);
-                $('#mutations-summary-help').qtip({
-                    content: { attr: 'title' },
-                    style: { classes: 'qtip-light qtip-rounded' },
-                    position: { my:'top center',at:'bottom center',viewport: $(window) }
-                });
-                $('.mutation-summary-table-name').addClass("datatable-name");
-                $('#mutation_summary_wrapper_table').show();
-                $('#mutation_summary_wait').remove();
                 
-                // mutations
-                buildMutationsDataTable(genomicEventObs.mutations,genomicEventObs.mutations.getEventIds(false),
-                    'mutation_table', '<"H"<"all-mutation-table-name">fr>t<"F"C<"datatable-paging"pil>>', 100, "No mutation events", false);
-                $('.all-mutation-table-name').html(
-                    ""+genomicEventObs.mutations.getNumEvents()+" nonsynonymous mutations");
-                $('.all-mutation-table-name').addClass("datatable-name");
-                $('#mutation_wrapper_table').show();
-                $('#mutation_wait').remove();
+                var callback = function(genomicEventObs) {
+                    // summary table
+                    buildMutationsDataTable(genomicEventObs.mutations,genomicEventObs.mutations.getEventIds(true), 'mutation_summary_table', 
+                                '<"H"<"mutation-summary-table-name">fr>t<"F"<"mutation-show-more"><"datatable-paging"pl>>', 25, "No mutation events of interest", true);
+                    var numFiltered = genomicEventObs.mutations.getNumEvents(true);
+                    var numAll = genomicEventObs.mutations.getNumEvents(false);
+                     $('.mutation-show-more').html("<a href='#mutations' onclick='switchToTab(\"tab_mutations\");return false;'\n\
+                          title='Show more mutations of this patient'>Show all "
+                            +numAll+" mutations</a>");
+                    $('.mutation-show-more').addClass('datatable-show-more');
+                    var mutationSummary;
+                    if (numAll===numFiltered) {
+                        mutationSummary = ""+numAll+" mutations";
+                    } else {
+                        mutationSummary = "Mutations of interest"
+                         +(numAll==0?"":(" ("
+                            +numFiltered
+                            +" of <a href='#mutations' onclick='switchToTab(\"tab_mutations\");return false;'\n\
+                             title='Show more mutations of this patient'>"
+                            +numAll
+                            +"</a>)"))
+                         +" <img id='mutations-summary-help' src='images/help.png' \n\
+                            title='This table contains somatic mutations in genes that are \n\
+                            <ul><li>either annotated cancer genes</li>\n\
+                            <li>or recurrently mutated, namely\n\
+                                <ul><li>MutSig Q < 0.05, if MutSig results are available</li>\n\
+                                <li>otherwise, mutated in > 5% of samples in the study with &ge; 50 samples</li></ul> </li>\n\
+                            <li>or with > 5 overlapping entries in COSMIC.</li></ul>'/>";
+                    }
+                    $('.mutation-summary-table-name').html(mutationSummary);
+                    $('#mutations-summary-help').qtip({
+                        content: { attr: 'title' },
+                        style: { classes: 'qtip-light qtip-rounded' },
+                        position: { my:'top center',at:'bottom center',viewport: $(window) }
+                    });
+                    $('.mutation-summary-table-name').addClass("datatable-name");
+                    $('#mutation_summary_wrapper_table').show();
+                    $('#mutation_summary_wait').remove();
 
-                var pancanMutationsUrl = "pancancerMutations.json";
-                var byKeywordResponse = [];
-                var byHugoResponse = [];
+                    // mutations
+                    buildMutationsDataTable(genomicEventObs.mutations,genomicEventObs.mutations.getEventIds(false),
+                        'mutation_table', '<"H"<"all-mutation-table-name">fr>t<"F"C<"datatable-paging"pil>>', 100, "No mutation events", false);
+                    $('.all-mutation-table-name').html(
+                        ""+genomicEventObs.mutations.getNumEvents()+" nonsynonymous mutations");
+                    $('.all-mutation-table-name').addClass("datatable-name");
+                    $('#mutation_wrapper_table').show();
+                    $('#mutation_wait').remove();
 
-                function munge(response, key) {
-                    // munge data to get it into the format: keyword -> corresponding datum
-                    return d3.nest().key(function(d) { return d[key]; }).entries(response)
-                            .reduce(function(acc, next) { acc[next.key] = next.values; return acc;}, {});
-                }
+                    var pancanMutationsUrl = "pancancerMutations.json";
+                    var byKeywordResponse = [];
+                    var byHugoResponse = [];
 
-                var splitJobs = function(cmd, reqData, type) {
-                    var jobs = [];
-                    var batchSize = 1000;
-
-                    var numOfBatches = Math.ceil(reqData.length / batchSize);
-                    for(var b=0; b<numOfBatches; b++) {
-                        var first = b*batchSize;
-                        var last = Math.min((b+1)*batchSize, reqData.length);
-
-                        var accData = reqData.slice(first, last).join(",");
-
-                        jobs.push(
-                                $.post(pancanMutationsUrl,
-                                        {
-                                            cmd: cmd,
-                                            q: accData
-                                        }, function(batchData) {
-                                            if(cmd == "byKeywords") {
-                                                byKeywordResponse = byKeywordResponse.concat(batchData);
-                                            } else if( cmd == "byHugos") {
-                                                byHugoResponse = byHugoResponse.concat(batchData);
-                                            } else {
-                                                console.trace("Ooops! Something is wrong!");
-                                            }
-                                        }
-                                )
-                        );
-
+                    function munge(response, key) {
+                        // munge data to get it into the format: keyword -> corresponding datum
+                        return d3.nest().key(function(d) { return d[key]; }).entries(response)
+                                .reduce(function(acc, next) { acc[next.key] = next.values; return acc;}, {});
                     }
 
-                    return jobs;
-                };
+                    var splitJobs = function(cmd, reqData, type) {
+                        var jobs = [];
+                        var batchSize = 1000;
 
-                var jobs = splitJobs("byKeywords", genomicEventObs.mutations.data.key)
-                                .concat(splitJobs("byHugos", genomicEventObs.mutations.data.gene));
-                $.when.apply($, jobs).done(function() {
-                    genomicEventObs.pancan_mutation_frequencies.setData(
-                            _.extend(munge(byKeywordResponse, "keyword"), munge(byHugoResponse, "hugo")));
-                    genomicEventObs.fire("pancan-mutation-frequency-built");
-                });
+                        var numOfBatches = Math.ceil(reqData.length / batchSize);
+                        for(var b=0; b<numOfBatches; b++) {
+                            var first = b*batchSize;
+                            var last = Math.min((b+1)*batchSize, reqData.length);
 
+                            var accData = reqData.slice(first, last).join(",");
+
+                            jobs.push(
+                                    $.post(pancanMutationsUrl,
+                                            {
+                                                cmd: cmd,
+                                                q: accData
+                                            }, function(batchData) {
+                                                if(cmd == "byKeywords") {
+                                                    byKeywordResponse = byKeywordResponse.concat(batchData);
+                                                } else if( cmd == "byHugos") {
+                                                    byHugoResponse = byHugoResponse.concat(batchData);
+                                                } else {
+                                                    console.trace("Ooops! Something is wrong!");
+                                                }
+                                            }
+                                    )
+                            );
+
+                        }
+
+                        return jobs;
+                    };
+
+                    var jobs = splitJobs("byKeywords", genomicEventObs.mutations.data.key)
+                                    .concat(splitJobs("byHugos", genomicEventObs.mutations.data.gene));
+                    $.when.apply($, jobs).done(function() {
+                        genomicEventObs.pancan_mutation_frequencies.setData(
+                                _.extend(munge(byKeywordResponse, "keyword"), munge(byHugoResponse, "hugo")));
+                        genomicEventObs.fire("pancan-mutation-frequency-built");
+                    });
+                }
+                
+                GetEvidence.init(genomicEventObs, callback);
             }
             ,"json"
         );
