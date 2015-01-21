@@ -3,17 +3,15 @@ var LoadingJS = (function(){
     //Tmp include public libraries in here, will change JSarray to empty array
     //before merge study view to default branch
     var JSPublic = [
-                    'dc',
-                    'crossfilter',
-                    'dataTables.fixedColumns',
                     'util/StudyViewBoilerplate',
-                    'd3.layout.cloud',
-                    'js/src/survival-curve/survivalCurveProxy.js',
-                    'js/src/survival-curve/component/survivalCurve.js',
-                    'js/src/survival-curve/component/confidenceIntervals.js',
-                    'js/src/survival-curve/component/kmEstimator.js',
-                    'js/src/survival-curve/component/logRankTest.js',
-                    'js/src/survival-curve/component/boilerPlate.js'];
+                    'js/src/survival-tab/survivalCurveProxy.js',
+                    'js/src/survival-tab/component/survivalCurve.js',
+                    'js/src/survival-tab/component/confidenceIntervals.js',
+                    'js/src/survival-tab/component/kmEstimator.js',
+                    'js/src/survival-tab/component/logRankTest.js',
+                    'js/src/survival-tab/component/boilerPlate.js',
+                    'js/lib/FileSaver.min.js'
+                ];
     
     //As input for RequireJS
     var JSarray = [];
@@ -22,7 +20,7 @@ var LoadingJS = (function(){
     var callbackFunc = "";
     
     //Put all self created js files into array
-    function ConstructJSarray() {
+    function constructJSarray() {
         var _key;
         
         var _folder = {
@@ -31,19 +29,18 @@ var LoadingJS = (function(){
                     'PieChart', 
                     'BarChart', 
                     'DataTable',
-                    'AddCharts'
+                    'AddCharts',
+                    'Table'
                 ],
                 data: ['StudyViewProxy'],
                 util: [
                     'FnGetColumnData',
-                    'FnColumnFilter',
-                    'FnSetFilteringDelay',
-                    'StudyViewUtil'
+                    'StudyViewUtil',
+                    'StudyViewPrototypes'
                 ],
                 view: [
                     'StudyViewInitCharts', 
                     'StudyViewInitDataTable',
-                    'StudyViewInitMiddleComponents',
                     'StudyViewInitTopComponents',
                     'StudyViewInitScatterPlot',
                     'StudyViewInitIntroJS',
@@ -52,7 +49,8 @@ var LoadingJS = (function(){
                     'StudyViewInitMutationsTab',
                     'StudyViewInitCNATab',
                     'StudyViewInitClinicalTab',
-                    'StudyViewSurvivalPlotView'
+                    'StudyViewSurvivalPlotView',
+                    'StudyViewInitTables'
                 ],
                 controller: [
                     'StudyViewMainController',
@@ -75,8 +73,13 @@ var LoadingJS = (function(){
     }
     
     function main(){
-        ConstructJSarray();
-
+        constructJSarray();
+        
+        //Add appVerion after all included js files
+        require.config({
+            urlArgs: appVersion
+        });
+        
         //After loding JS files, run Study View Controller
         require(JSPublic,function(){
              require(JSarray, function(){

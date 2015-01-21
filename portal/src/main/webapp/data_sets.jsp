@@ -36,10 +36,9 @@
             <td width="100%">
                 <h1>Data Sets</h1>
            <div class="markdown">
-           <p>
 			  <%
 			     if (dataSetsHeader != null) {
-				     out.println("<p>" + dataSetsHeader + "<br><br></p>");
+				     out.println("<p>" + dataSetsHeader + "<br></p>");
                  }
 				 out.println("<table style='display:none;' cellpadding='0' cellspacing='0' border='0' class='display' id='data-set-table'>");
 				 out.println("<thead><tr>");
@@ -117,7 +116,6 @@
 				     out.println("<br><br>" + dataSetsFooter + "</p>");
                  }
 			  %>
-			</p>
           </div> 
             </td>
         </tr>
@@ -137,8 +135,8 @@
 <jsp:include page="WEB-INF/jsp/global/xdebug.jsp" flush="true" />
 
 <style type="text/css" title="currentStyle"> 
-        @import "css/data_table_jui.css";
-        @import "css/data_table_ColVis.css";
+        @import "css/data_table_jui.css?<%=GlobalProperties.getAppVersion()%>";
+        @import "css/data_table_ColVis.css?<%=GlobalProperties.getAppVersion()%>";
         .ColVis {
                 float: left;
                 margin-bottom: 0
@@ -155,6 +153,12 @@
         .div.datatable-paging {
                 width: auto;
                 float: right;
+        }
+        table.display thead th{
+            border: 1px solid #d3d3d3;
+            background: #e6e6e6 url(images/ui-bg_glass_75_e6e6e6_1x400.png) 50% 50% repeat-x;
+            font-weight: bold;
+            color: #555555;
         }
 </style>
 

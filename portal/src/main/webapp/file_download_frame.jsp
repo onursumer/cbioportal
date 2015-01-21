@@ -1,10 +1,12 @@
+<%@ page import="org.mskcc.cbio.portal.util.GlobalProperties" %>
 <!DOCTYPE HTML>
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 
-	<script type="text/javascript" src="js/lib/jquery.min.js"></script>
-	<script type="text/javascript" src="js/src/cbio-util.js"></script>
+	<script type="text/javascript" src="js/lib/jquery.min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+	<script type="text/javascript" src="js/src/cbio-util.js?<%=GlobalProperties.getAppVersion()%>"></script>
+	<script type="text/javascript" src="js/src/download-util.js?<%=GlobalProperties.getAppVersion()%>"></script>
 
 	<script type="text/javascript">
 		function _processMessage(event)
@@ -21,7 +23,7 @@
 			var params = data.servletParams;
 
 			// submit the download form with the provided parameters
-			cbio.util.submitDownload(name, params, ".file-download-form-container form");
+			cbio.download.submitDownload(name, params, ".file-download-form-container form");
 		}
 
 		window.addEventListener("message", _processMessage, false);

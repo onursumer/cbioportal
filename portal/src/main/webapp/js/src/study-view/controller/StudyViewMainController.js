@@ -10,12 +10,17 @@
 
 var StudyViewMainController = (function() {
     var callbackFunc = function (_data) {
-        StudyViewSummaryTabController.init(_data);
-        StudyViewClinicalTabController.init(_data);
-        if (StudyViewParams.params.mutationProfileId){
-            StudyViewMutationsTabController.init();
+        for(var i=1, tabsL = $('#study-tabs').find('li').length; i < tabsL; i++) {
+            $('#study-tabs').tabs('enable', i);
         }
-        StudyViewCNATabController.init();
+        StudyViewPrototypes.init();
+        if(!(_data.attr.length === 1 && _data.attr[0].attr_id === 'CASE_ID')) {
+            StudyViewSummaryTabController.init(_data);
+        }else {
+            $("#dc-plots-loading-wait").css('display', 'none');
+            $("#dc-plots").append("<div style='width:100%'>"+
+                "There isn't any information for this study.</div>");
+        }
     };
     
     return {

@@ -1,3 +1,8 @@
+# October 24, 2014
+* Added 2 published studies:
+    * [Prostate Adenocarcinoma-CNA data (MSKCC, PNAS 2014)](index.do?cancer_study_id=prad_mskcc_2014)
+    * [Prostate Adenocarcinoma Organoids (MSKCC, Cell 2014)](study.do?cancer_study_id=prad_mskcc_cheny1_organoids_2014)
+
 # May 12, 2014
 * Improved study summary page including survival analysis based on clinical attributes
 <br/>![Study view](images/previews/study_view.png)
@@ -26,7 +31,6 @@
 # September 5, 2013:
 
 * Linked to BAM files for single mutations via IGV.
-* [New standalone oncoprint tool](tools.jsp)
 * Updated COSMIC data (v66 Release)
 * Improved / interactive visualization on the "Protein changes" tab
 * Enhanced mutation diagrams: color-coding by mutation time and syncing with table filters
@@ -39,7 +43,7 @@
 * Multi-gene correlation plots.
 * Variant allele frequency distribution plots for individual tumor samples.
 * Tissue images for TCGA samples in the patient view, via [Digital Slide Archive](http://cancer.digitalslidearchive.net/). [Example](case.do?cancer_study_id=prad_tcga&case_id=TCGA-CH-5788#images).
-* Support for multiple tumor samples for a single patient. [Example](case.do?cancer_study_id=prad_mich&patient_id=WA43).
+* Support for multiple tumor samples for a single patient. [Example](case.do?cancer_study_id=prad_mich&case_id=WA43).
 
 # July 16, 2013
 

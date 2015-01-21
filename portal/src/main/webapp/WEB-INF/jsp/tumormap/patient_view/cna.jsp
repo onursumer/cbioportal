@@ -217,6 +217,8 @@
                     addNoteTooltip("."+table_id+"-tip");
                     addDrugsTooltip("."+table_id+"-drug-tip", 'top right', 'bottom center');
                 },
+                "bPaginate": true,
+                "sPaginationType": "two_button",
                 "aaSorting": [[cnaTableIndices['altrate'],'desc']],
                 "oLanguage": {
                     "sInfo": "&nbsp;&nbsp;(_START_ to _END_ of _TOTAL_)&nbsp;&nbsp;",
@@ -323,7 +325,7 @@
     $(document).ready(function(){
         $('#cna_wrapper_table').hide();
         $('#cna_id_filter_msg').hide();
-        var params = {<%=PatientView.CASE_ID%>:caseIdsStr,
+        var params = {<%=PatientView.SAMPLE_ID%>:caseIdsStr,
             <%=PatientView.CNA_PROFILE%>:cnaProfileId
         };
         
@@ -349,7 +351,7 @@
                 var numFiltered = genomicEventObs.cnas.getNumEvents(true);
                 var numAll = genomicEventObs.cnas.getNumEvents(false);
                 if (numAll>0) {
-                    $('.cna-show-more').html("<a href='#cna' onclick='switchToTab(\"cna\");return false;' \n\
+                    $('.cna-show-more').html("<a href='#cna' onclick='switchToTab(\"tab_cna\");return false;' \n\
                         title='Show more copy number alterations of this patient'>Show all "
                         +numAll+" CNAs</a>");
                     $('.cna-show-more').addClass('datatable-show-more');
@@ -358,7 +360,7 @@
                     "CNA of interest"
                     +(numAll==0?"":(" ("
                         +numFiltered
-                        +" of <a href='#cna' onclick='switchToTab(\"cna\");return false;'\n\
+                        +" of <a href='#cna' onclick='switchToTab(\"tab_cna\");return false;'\n\
                          title='Show more copy number alterations of this patient'>"
                         +numAll
                         +"</a>)"))

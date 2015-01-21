@@ -35,16 +35,11 @@
 <jsp:include page="global/header.jsp" flush="true"/>
 
 <!-- for now, let's include these guys here and prevent clashes with the rest of the portal -->
-<script type="text/javascript" src="js/src/crosscancer.js"></script>
-<link href="css/data_table_ColVis.css" type="text/css" rel="stylesheet" />
-<link href="css/data_table_jui.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_details.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_table.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_3d.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_diagram.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_pdb_panel.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_pdb_table.css" type="text/css" rel="stylesheet" />
-<link href="css/crosscancer.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="js/src/crosscancer.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<link href="css/data_table_ColVis.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet" />
+<link href="css/data_table_jui.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet" />
+<link href="css/mutationMapper.min.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet" />
+<link href="css/crosscancer.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet" />
 
 <%
     // Means that user landed on this page with the old way.
@@ -64,20 +59,14 @@
         <td>
 
             <div id="results_container">
-                <p><a href=""
-                      title="Modify your original query.  Recommended over hitting your browser's back button."
-                      id="toggle_query_form">
-                    <span class='query-toggle ui-icon ui-icon-triangle-1-e'
-                          style='float:left;'></span>
-                    <span class='query-toggle ui-icon ui-icon-triangle-1-s'
-                          style='float:left; display:none;'></span><b>Modify Query</b></a>
-
-                <p/>
-
-                <div style="margin-left:5px;display:none;" id="query_form_on_results_page">
-                    <%@ include file="query_form.jsp" %>
+                <div id='modify_query' style='margin:20px;'>
+                    <button type='button' class='btn btn-primary' data-toggle='button' id='modify_query_btn'>
+                        Modify Query
+                    </button>
+                    <div style="margin-left:5px;display:none;" id="query_form_on_results_page">
+                        <%@ include file="query_form.jsp" %>
+                    </div>
                 </div>
-
                 <div id="crosscancer-container">
                 </div>
             </div>
@@ -86,6 +75,23 @@
     </tr>
 </table>
 
+<script>
+    //Set Event listener for the modify query button (expand the hidden form)
+    $("#modify_query_btn").click(function () {
+        $("#query_form_on_results_page").toggle();
+        if($("#modify_query_btn").hasClass("active")) {
+            $("#modify_query_btn").removeClass("active");
+        } else {
+            $("#modify_query_btn").addClass("active");    
+        }
+    });
+    $("#toggle_query_form").click(function(event) {
+        event.preventDefault();
+        $('#query_form_on_results_page').toggle();
+        //  Toggle the icons
+        $(".query-toggle").toggle();
+    });
+</script>
 
 <!-- Crosscancer templates -->
 <script type="text/template" id="cross-cancer-main-tmpl">

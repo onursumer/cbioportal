@@ -28,13 +28,14 @@ var StudyViewInitScatterPlot = (function() {
                     _scatterPlotDatumTmp.x_val = _value['COPY_NUMBER_ALTERATIONS'];
                     _scatterPlotDatumTmp.y_val = _value['MUTATION_COUNT'];
                     _scatterPlotDatumTmp.case_id = _value['CASE_ID'];
-                    _scatterPlotDatumTmp.qtip = "Case ID: <strong>" +
-                        "<a href='tumormap.do?case_id=" +
+                    _scatterPlotDatumTmp.qtip = "# of mutations:  <strong>"+
+                        _value['MUTATION_COUNT'] + 
+                        "</strong></br>Fraction of CNA: <strong>"+
+                        cbio.util.toPrecision(_value['COPY_NUMBER_ALTERATIONS'],2,0.01)+
+                        "<br><a href='case.do?sample_id=" +
                         _value['CASE_ID'] + "&cancer_study_id=" +
                         StudyViewParams.params.studyId + "' target='_blank'>" + 
-                        _value['CASE_ID'] + "</a></strong> ("+ 
-                        cbio.util.toPrecision(_value['COPY_NUMBER_ALTERATIONS'],2,0.01) + 
-                        ", " + _value['MUTATION_COUNT']+")";
+                        _value['CASE_ID'] + "</a></strong>";
                     scatterPlotArr.push(_scatterPlotDatumTmp);
             }
         }
@@ -60,76 +61,129 @@ var StudyViewInitScatterPlot = (function() {
             scatterPlot.jointClickCallback(scatterPlotClickCallBack);
             
             if(scatterPlotDataAttr.max_x > 1000){
-                $("#" + scatterPlotOptions.names.log_scale_x).attr('checked',true);
+//                $("#" + scatterPlotOptions.names.log_scale_x).attr('checked',true);
+                scatterPlot.setAxisXLogFlag(true);
                 scatterPlot.updateScaleX(scatterPlotOptions.names.log_scale_x);
             }
             if(scatterPlotDataAttr.max_y > 1000){
-                $("#" + scatterPlotOptions.names.log_scale_y).attr('checked',true);
+//                $("#" + scatterPlotOptions.names.log_scale_y).attr('checked',true);
+                scatterPlot.setAxisYLogFlag(true);
                 scatterPlot.updateScaleY(scatterPlotOptions.names.log_scale_y);
             }
            
-            $("#" + scatterPlotOptions.names.log_scale_x).change(function() {
-                scatterPlot.updateScaleX(scatterPlotOptions.names.log_scale_x);
-            });
-            $("#" + scatterPlotOptions.names.log_scale_y).change(function() {
-                scatterPlot.updateScaleY(scatterPlotOptions.names.log_scale_y);
-            });
+//            $("#" + scatterPlotOptions.names.log_scale_x).change(function() {
+//                scatterPlot.updateScaleX(scatterPlotOptions.names.log_scale_x);
+//            });
+//            $("#" + scatterPlotOptions.names.log_scale_y).change(function() {
+//                scatterPlot.updateScaleY(scatterPlotOptions.names.log_scale_y);
+//            });
             
             StudyViewUtil
                     .showHideDivision("#study-view-scatter-plot", 
-                                    "#study-view-scatter-plot-header");
-            
-            $("#study-view-scatter-plot-menu-icon").unbind("click");
-            $("#study-view-scatter-plot-menu-icon").click(function() {
-                var _side = $("#study-view-scatter-plot-side");
-                var _display = _side.css('display');
-                if (_display === "none") {
-                    StudyViewUtil.changePosition("#study-view-scatter-plot", 
-                                    "#study-view-scatter-plot-side",
-                                    "#dc-plots");
-                    _side.css('display', 'block');
-                } else {
-                    _side.css('display', 'none');
+                                    "#study-view-scatter-plot-header", 0);
+            StudyViewUtil
+                    .showHideDivision("#study-view-scatter-plot", 
+                                    "#plots-title-x-checkbox", 0);
+            StudyViewUtil
+                    .showHideDivision("#study-view-scatter-plot", 
+                                    "#plots-title-y-checkbox", 0);
+                                    
+            $('#study-view-scatter-plot-download-icon').qtip('destroy', true);
+            $('#study-view-scatter-plot-download-icon').qtip({
+                id: "#study-view-scatter-plot-download-icon-qtip",
+                style: { classes: 'qtip-light qtip-rounded qtip-shadow qtip-lightyellow'  },
+                show: {event: "click"},
+                hide: {fixed:true, delay: 100, event: "mouseout"},
+                position: {my:'top center',at:'bottom center', viewport: $(window)},
+                content: {
+                    text:   "<div style='display:inline-block;float:left;margin: 0 2px'>"+
+                            "<button  id='study-view-scatter-plot-pdf'>PDF</button>"+          
+                            "</div>"+
+                            "<div style='display:inline-block;float:left;margin: 0 2px'>"+
+                            "<button  id='study-view-scatter-plot-svg'>SVG</button>"+
+                            "</div>"
+                },
+                events: {
+                    render: function(event, api) {
+                        $("#study-view-scatter-plot-pdf", api.elements.tooltip).click(function(){
+                            setSVGElementValue("study-view-scatter-plot-body-svg",
+                                "study-view-scatter-plot-pdf-value",
+                                scatterPlotOptions,
+                                _title,{
+                                    filename: "Scatter_Plot_result-"+ StudyViewParams.params.studyId +".pdf",
+                                    contentType: "application/pdf",
+                                    servletName: "svgtopdf.do"
+                                });
+                        });
+                        $("#study-view-scatter-plot-svg", api.elements.tooltip).click(function(){
+                            setSVGElementValue("study-view-scatter-plot-body-svg",
+                                "study-view-scatter-plot-svg-value",
+                                scatterPlotOptions,
+                                _title, {
+                                    filename: "Scatter_Plot_result-"+ StudyViewParams.params.studyId +".svg"
+                                });
+                        });
+                    }
                 }
             });
             
-            $("#study-view-scatter-plot-pdf").submit(function(){
-                setSVGElementValue("study-view-scatter-plot-body-svg",
-                    "study-view-scatter-plot-pdf-value",
-                    scatterPlotOptions,
-                    _title);
-            });
-            $("#study-view-scatter-plot-svg").submit(function(){
-                setSVGElementValue("study-view-scatter-plot-body-svg",
-                    "study-view-scatter-plot-svg-value",
-                    scatterPlotOptions,
-                    _title);
-            });
+            
+//            $("#study-view-scatter-plot-menu-icon").unbind("click");
+//            $("#study-view-scatter-plot-menu-icon").click(function() {
+//                var _side = $("#study-view-scatter-plot-side");
+//                var _display = _side.css('display');
+//                if (_display === "none") {
+//                    StudyViewUtil.changePosition("#study-view-scatter-plot", 
+//                                    "#study-view-scatter-plot-side",
+//                                    "#dc-plots");
+//                    _side.css('display', 'block');
+//                } else {
+//                    _side.css('display', 'none');
+//                }
+//            });
+            
+//            $("#study-view-scatter-plot-pdf").submit(function(){
+//                setSVGElementValue("study-view-scatter-plot-body-svg",
+//                    "study-view-scatter-plot-pdf-value",
+//                    scatterPlotOptions,
+//                    _title);
+//            });
+//            $("#study-view-scatter-plot-svg").submit(function(){
+//                setSVGElementValue("study-view-scatter-plot-body-svg",
+//                    "study-view-scatter-plot-svg-value",
+//                    scatterPlotOptions,
+//                    _title);
+//            });
         }else{
             $('#study-view-scatter-plot').css('display','none');
         }
     }
     
-    function setSVGElementValue(_svgParentDivId,_idNeedToSetValue,scatterPlotDataAttr, _title){
+    function setSVGElementValue(_svgParentDivId,_idNeedToSetValue,scatterPlotDataAttr, _title, downloadOptions){
         var svgElement;
         
         $("#" + _svgParentDivId + " .plots-title-x-help").remove();
         $("#" + _svgParentDivId + " .plots-title-y-help").remove();
-        
+        $("#" + _svgParentDivId + " #plots-title-x-checkbox").remove();
+        $("#" + _svgParentDivId + " #plots-title-y-checkbox").remove();
+        $("#" + _svgParentDivId + " .plots-title-x")
+            .attr('x', 
+                Number($("#" + _svgParentDivId + " .plots-title-x").attr('x')) + 15);
         //Remove x/y title help icon first.
         svgElement = $("#" + _svgParentDivId + " svg").html();
         svgElement = "<svg><g><text text-anchor='middle' x='220' y='30' " +
                 "style='font-weight:bold'>" + _title + 
                 "</text></g><g transform='translate(0,40)'>" + 
                 svgElement + "</g></svg>";
-        $("#" + _idNeedToSetValue).val(svgElement);
+                            
+        cbio.download.initDownload(
+            svgElement, downloadOptions);
+    
         scatterPlot.updateTitleHelp(scatterPlotDataAttr.names.log_scale_x, scatterPlotDataAttr.names.log_scale_y);
     }
     
     function initPage(){
         $("#study-view-charts").append(StudyViewBoilerplate.scatterPlotDiv);
-        $("#study-view-scatter-plot-pdf-name").val("Scatter_Plot_result-"+ StudyViewParams.params.studyId +".pdf");
-        $("#study-view-scatter-plot-svg-name").val("Scatter_Plot_result-"+ StudyViewParams.params.studyId +".svg");
         $("#study-view-scatter-plot-header").css('display', 'none');
     }
     
@@ -184,12 +238,12 @@ var StudyViewInitScatterPlot = (function() {
         var _style = [];
         
         if(initStatus){
-            for(var i=0 ; i< StudyViewParams.params.caseIds.length ; i++){
+            for(var i=0 ; i< StudyViewParams.params.sampleIds.length ; i++){
                 var styleDatum = {};
 
-                styleDatum.case_id = StudyViewParams.params.caseIds[i];
-                if(_selectedCaseIds.length !== StudyViewParams.params.caseIds.length){
-                    if(_selectedCaseIds.indexOf(StudyViewParams.params.caseIds[i]) !== -1){
+                styleDatum.case_id = StudyViewParams.params.sampleIds[i];
+                if(_selectedCaseIds.length !== StudyViewParams.params.sampleIds.length){
+                    if(_selectedCaseIds.indexOf(StudyViewParams.params.sampleIds[i]) !== -1){
                         if(clickedCaseId !== ''){
                             styleDatum.fill = '#2986e2';
                             styleDatum.stroke = 'red';
@@ -245,18 +299,18 @@ var StudyViewInitScatterPlot = (function() {
             shiftClickedCaseIds = [];
             clickedCaseId = '';
             
-            var oTable = $("#dataTable").dataTable();
-
-            $(oTable.fnSettings().aoData).each(function (){
-                if($(this.nTr).hasClass('row_selected')){
-                    $(this.nTr).removeClass('row_selected');
-                    if($(this.nTr).hasClass('odd')){
-                       $(this.nTr).css('background-color','#E2E4FF'); 
-                    }else{
-                        $(this.nTr).css('background-color','white');
-                    }
-                }
-            });
+//            var oTable = $("#dataTable").dataTable();
+//
+//            $(oTable.fnSettings().aoData).each(function (){
+//                if($(this.nTr).hasClass('row_selected')){
+//                    $(this.nTr).removeClass('row_selected');
+//                    if($(this.nTr).hasClass('odd')){
+//                       $(this.nTr).css('background-color','#E2E4FF'); 
+//                    }else{
+//                        $(this.nTr).css('background-color','white');
+//                    }
+//                }
+//            });
         }
         
         

@@ -65,8 +65,6 @@ $(document).ready(function(){
          caseSetSelectionOverriddenByUser = false; // reset
          console.log("#select_cancer_type change ( cancerStudySelected() )");
          cancerStudySelected();
-         console.log("#select_cancer_type change ( reviewCurrentSelections() )");
-         reviewCurrentSelections();
          
          caseSetSelected();
          $('#custom_case_set_ids').empty(); // reset the custom case set textarea
@@ -87,16 +85,6 @@ $(document).ready(function(){
     $("#json_cancer_studies").click(function(event) {
       event.preventDefault();
       $('#cancer_results').toggle();
-    });
-
-    //  Set up Event Handler for View/Hide Query Form, when it is on the results page
-    $("#toggle_query_form").click(function(event) {
-      event.preventDefault();
-      $('#query_form_on_results_page').toggle();
-
-      //  Toggle the icons
-      $(".query-toggle").toggle();
-
     });
 
     //  Set up an Event Handler to intercept form submission
@@ -138,6 +126,30 @@ $(document).ready(function(){
 });  //  end document ready function
 
 
+//  Load study Meta Data, i.e. everything except the name, which we load earlier to
+//  	populate the dropdown menu.
+function loadStudyMetaData(cancerStudyId) {
+    console.log("loadStudyMetaData ("+cancerStudyId+")");
+    $('.main_query_panel').fadeTo("fast",0.6);
+	
+    $.getJSON("portal_meta_data.json?study_id="+cancerStudyId, function(json){
+        window.metaDataJson.cancer_studies[cancerStudyId] = json;
+        updateCancerStudyInformation(cancerStudyId);
+        $('.main_query_panel').stop().fadeTo("fast",1);
+    });
+}
+
+// Load geneset gene list
+function loadGeneList(geneSetId) {
+    $('.main_query_panel').fadeTo("fast",0.6);
+
+    $.getJSON("portal_meta_data.json?geneset_id="+geneSetId.replace(/\//g,""), function(json){
+        window.metaDataJson.gene_sets[geneSetId].gene_list = json.list;
+        $("#gene_list").val(json.list);
+        $('.main_query_panel').stop().fadeTo("fast",1);
+    });
+}
+	
 //  Load Portal JSON Meta Data, while showing loader image
 function loadMetaData() {
     $('#load').remove();
@@ -150,13 +162,19 @@ function loadMetaData() {
 
     function loadContent() {
         //  Get Portal JSON Meta Data via JQuery AJAX
-        jQuery.getJSON("portal_meta_data.json",function(json){
+        jQuery.getJSON("portal_meta_data.json?partial_studies=true&partial_genesets=true",function(json){
             //  Store JSON Data in global variable for later use
             window.metaDataJson = json;
 
-            //  Add Meta Data to current page
-            addMetaDataToPage();
-            showNewContent();
+            // Load data of selected study right at the outset before continuing
+            $.getJSON("portal_meta_data.json?study_id="+window.cancer_study_id_selected, function(json) {
+                console.log("Loading metadata for "+window.cancer_study_id_selected);
+                // this code should be about the same as in loadStudyMetaData
+                window.metaDataJson.cancer_studies[window.cancer_study_id_selected] = json;
+                //  Add Meta Data to current page
+                addMetaDataToPage();
+                showNewContent();
+            });
         });
     }
 
@@ -220,48 +238,51 @@ function makeDefaultSelections(){
 // and sets the visibility of each step based on current selections
 function reviewCurrentSelections(){
 
-   // Unless the download tab has been chosen or 'All Cancer Studies' is
-   // selected, iterate through checkboxes to see if any are selected; if not,
-   // make default selections
-   if (window.tab_index != "tab_download" && $("#select_cancer_type").val() != 'all'){
-        var setDefaults = true;
+   //HACK TO DEAL WITH ASYNCHRONOUS STUFF SO WE DONT DO THIS UNTIL AFTER METADATA ADDED
+   if (window.metaDataAdded === true) {  
+    // Unless the download tab has been chosen or 'All Cancer Studies' is
+    // selected, iterate through checkboxes to see if any are selected; if not,
+    // make default selections
+    if (window.tab_index != "tab_download" && $("#select_cancer_type").val() != 'all'){
+         var setDefaults = true;
 
-        // if no checkboxes are checked, make default selections
-        $('input:checkbox').each(function(){
-            if ($(this).prop('checked')){
-                setDefaults = false;
-                return;
-            }
-        });
+         // if no checkboxes are checked, make default selections
+         $('#genomic_profiles input:checkbox').each(function(){
+             if ($(this).prop('checked')){
+                 setDefaults = false;
+                 return;
+             }
+         });
 
-        if (setDefaults){
-            console.log("reviewCurrentSelections ( makeDefaultSelections() )");
-            makeDefaultSelections();
-        }
-   } 
+         if (setDefaults){
+             console.log("reviewCurrentSelections ( makeDefaultSelections() )");
+             makeDefaultSelections();
+         }
+    } 
 
-   updateDefaultCaseList();
+    updateDefaultCaseList();
 
-   // determine whether mRNA threshold field should be shown or hidden
-   // based on which, if any mRNA profiles are selected
-   toggleThresholdPanel($("." + PROFILE_MRNA_EXPRESSION+"[type=checkbox]"), PROFILE_MRNA_EXPRESSION, "#z_score_threshold");
+    // determine whether mRNA threshold field should be shown or hidden
+    // based on which, if any mRNA profiles are selected
+    toggleThresholdPanel($("." + PROFILE_MRNA_EXPRESSION+"[type=checkbox]"), PROFILE_MRNA_EXPRESSION, "#z_score_threshold");
 
-   // similarly with RPPA
-   toggleThresholdPanel($("." + PROFILE_RPPA+"[type=checkbox]"), PROFILE_RPPA, "#rppa_score_threshold");
+    // similarly with RPPA
+    toggleThresholdPanel($("." + PROFILE_RPPA+"[type=checkbox]"), PROFILE_RPPA, "#rppa_score_threshold");
 
-   // determine whether optional arguments section should be shown or hidden
-//   if ($("#optional_args > input").length >= 1){
-//       $("#optional_args > input").each(function(){
-//           if ($(this).prop('checked')){
-//               // hide/show is ugly, but not sure exactly how toggle works
-//               // and couldn't get it to work.. this will do for now
-//               $("#step5 > .step_header > .ui-icon-triangle-1-e").hide();
-//               $("#step5 > .step_header > .ui-icon-triangle-1-s").show();
-//               $("#optional_args").toggle();
-//               return;
-//           }
-//       });
-//   }
+    // determine whether optional arguments section should be shown or hidden
+ //   if ($("#optional_args > input").length >= 1){
+ //       $("#optional_args > input").each(function(){
+ //           if ($(this).prop('checked')){
+ //               // hide/show is ugly, but not sure exactly how toggle works
+ //               // and couldn't get it to work.. this will do for now
+ //               $("#step5 > .step_header > .ui-icon-triangle-1-e").hide();
+ //               $("#step5 > .step_header > .ui-icon-triangle-1-s").show();
+ //               $("#optional_args").toggle();
+ //               return;
+ //           }
+ //       });
+ //   }
+   }
 }
 
 //  Determine whether to submit a cross-cancer query or
@@ -271,8 +292,12 @@ function chooseAction() {
     $("#exp_error_box").remove();
 
     if ($("#select_cancer_type").val() == 'all') {
-        $("#main_form").get(0).setAttribute('action','cross_cancer.do');
-
+        if ($("#tab_index").val() == 'tab_download') {
+            $("#main_form").get(0).setAttribute('action','index.do');
+        }
+        else {
+            $("#main_form").get(0).setAttribute('action','cross_cancer.do');
+        }
         if ( haveExpInQuery ) {
             createAnEXPError("Expression filtering in the gene list is not supported when doing cross cancer queries.");
             return false;
@@ -460,20 +485,8 @@ function updateCaseListSmart() {
     );
 }
 
-//  Triggered when a cancer study has been selected, either by the user
-//  or programatically.
-function cancerStudySelected() {
-
-    //  make sure submit button is enabled unless determined otherwise by lack of data
-    $("#main_submit").attr("disabled",false);
-
-    var cancerStudyId = $("#select_cancer_type").val();
-
-    if( !cancerStudyId ) {
-        $("#select_cancer_type option:first").prop("selected",true);
-        cancerStudyId = $("#select_cancer_type").val();
-    }
-
+// Called when and only when a cancer study is selected from the dropdown menu
+function updateCancerStudyInformation(cancerStudyId) {
     var cancer_study = window.metaDataJson.cancer_studies[cancerStudyId];
 
     // toggle every time a new cancer study is selected
@@ -569,7 +582,8 @@ function cancerStudySelected() {
     // Set default selections and make sure all steps are visible
     console.log("cancerStudySelected ( singleCancerStudySelected() )");
     singleCancerStudySelected();
-    
+    console.log("cancerStudySelected ( reviewCurrentSelections() )");
+    reviewCurrentSelections();
     // check if cancer study has a clinical_free_form data to filter,
     // if there is data to filter, then enable "build custom case set" link,
     // otherwise disable the button
@@ -613,9 +627,30 @@ function cancerStudySelected() {
 					edgeOffset: 10,
 					maxWidth: 100});
 				
-				$("#build_custom_case_set").show();
+				$("#build_custom_case_set").hide();//.show(); temporarily disabled build case list
 			}
 		});
+}
+//  Triggered when a cancer study has been selected, either by the user
+//  or programatically.
+function cancerStudySelected() {
+
+    //  make sure submit button is enabled unless determined otherwise by lack of data
+    $("#main_submit").attr("disabled",false);
+
+    var cancerStudyId = $("#select_cancer_type").val();
+
+    if( !cancerStudyId ) {
+        $("#select_cancer_type option:first").prop("selected",true);
+        cancerStudyId = $("#select_cancer_type").val();
+    }
+
+    if (window.metaDataJson.cancer_studies[cancerStudyId].partial==="true") {
+            console.log("cancerStudySelected( loadStudyMetaData )");
+	    loadStudyMetaData(cancerStudyId);
+    } else {
+	    updateCancerStudyInformation(cancerStudyId);
+    }
 }
 
 //  Triggered when a case set has been selected, either by the user
@@ -641,11 +676,15 @@ function geneSetSelected() {
     //  Get the selected ID from the pull-down menu
     var geneSetId = $("#select_gene_set").val();
 
-    //  Get the gene set meta data from global JSON variable
-    var gene_set = window.metaDataJson.gene_sets[geneSetId];
+    if (window.metaDataJson.gene_sets[geneSetId].gene_list == "") {
+        loadGeneList(geneSetId);
+    } else {
+        //  Get the gene set meta data from global JSON variable
+        var gene_set = window.metaDataJson.gene_sets[geneSetId];
 
-    //  Set the gene list text area
-    $("#gene_list").val(gene_set.gene_list);
+        //  Set the gene list text area
+        $("#gene_list").val(gene_set.gene_list);
+    }
 }
 
 //  Adds Meta Data to the Page.
@@ -656,40 +695,162 @@ function addMetaDataToPage() {
 
     var cancerTypeContainer = $("#select_cancer_type");
 
-    // First create the groups and sort'em
-    var orderedTypes = [];
-    jQuery.each(json.type_of_cancers, function(key, typeStr) {
-        orderedTypes.push({ key: key, name: typeStr });
-    });
-
-    orderedTypes.sort(function(a, b) {
-        return a.name.localeCompare(b.name);
-    });
-    // Then add them in alphanumeric order
-    for(var j=0; j < orderedTypes.length; j ++) {
-        $("<optgroup id='"+ orderedTypes[j].key + "-study-group' label='" + orderedTypes[j].name + "'></optgroup>")
-            .appendTo(cancerTypeContainer);
+    // Construct oncotree
+    var oncotree = {'tissue':{code:'tissue', studies:[], children:[], parent: false, desc_studies_count:0, tissue:''}};
+    var parents = json.parent_type_of_cancers;
+    // First add everything to the tree
+    for (var tumortype in parents) {
+	if (parents.hasOwnProperty(tumortype)) {
+		oncotree[tumortype] = {code:tumortype, studies:[], children:[], parent: false, desc_studies_count: 0, tissue: false};
+	}
     }
-
-    //  Then iterate through all cancer studies and append each to the corresponding group
-    jQuery.each(json.cancer_studies,function(key,cancer_study){
-        //  Append to Cancer Study Pull-Down Menu
-        var addCancerStudy = true;
-
-        //  If the tab index is selected, and this is the all cancer studies option, do not show
-        if (window.tab_index == "tab_download" && key == "all") {
-            addCancerStudy = false;
-        }
-        if (addCancerStudy) {
-            console.log("Adding Cancer Study:  " + cancer_study.name);
-            var newOption = $("<option value='" + key + "'>" + cancer_study.name + "</option>");
-            if(key == "all") {
-                cancerTypeContainer.prepend(newOption);
-            } else {
-                $("#" + cancer_study.type_of_cancer + "-study-group").append(newOption);
+    // Link parents and insert initial tissue info
+    for (var tumortype in oncotree) {
+	if (oncotree.hasOwnProperty(tumortype) && tumortype !== 'tissue') {
+		oncotree[tumortype].parent = oncotree[parents[tumortype]];
+		oncotree[tumortype].parent.children.push(oncotree[tumortype]);
+		if (parents[tumortype] === "tissue") {
+			oncotree[tumortype].tissue = tumortype;
+		}
+	}
+    }
+    // Insert tissue information in a "union-find" type way
+    for (var elt in oncotree) {
+        if (oncotree.hasOwnProperty(elt) && elt !== 'tissue') {
+            var to_modify = [];
+            var currelt = oncotree[elt];
+            while (!currelt.tissue && currelt.code !== 'tissue') {
+                to_modify.push(currelt);
+                currelt = currelt.parent;
+            }
+            for (var i=0; i<to_modify.length; i++) {
+                to_modify[i].tissue = currelt.tissue;
             }
         }
-    });  //  end 1st for each cancer study loop
+    }
+    // Add studies to tree, and climb up adding one to each level's descendant studies
+    // DMP hack
+    var dmp_studies = [];
+    for (var study in json.cancer_studies) {
+	if (study.indexOf("mskimpact") !== -1) {
+		// DMP hack
+		dmp_studies.push(study);
+	} else if (json.cancer_studies.hasOwnProperty(study) && study !== 'all') { // don't re-add 'all'
+            try {
+                var code = json.cancer_studies[study].type_of_cancer.toLowerCase();
+                oncotree[code].studies.push(study);
+                var node = oncotree[code];
+                while (node) {
+                    node.desc_studies_count += 1;
+                    node = node.parent;
+                }
+            } catch (err) {
+                console.log("Unable to add study");
+                console.log(json.cancer_studies[study]);
+            }
+        }
+    }
+    // Sort dmp by number if there is one in the name
+    dmp_studies.sort(function(a,b) {
+	var matchA = a.match(/\d+/);
+	var matchB = b.match(/\d+/);
+	var numberA = (matchA === null ? NaN : parseInt(a.match(/\d+/)[0], 10));
+	var numberB = (matchB === null ? NaN : parseInt(b.match(/\d+/)[0], 10));
+	if (isNaN(numberA) && isNaN(numberB)) {
+		return a.localeCompare(b);
+	} else if (isNaN(numberA)) {
+		return -1;
+	} else if (isNaN(numberB)) {
+		return 1;
+	} else {
+		return numberA-numberB;
+	}
+    });
+    dmp_studies.reverse();
+    // Sort all the children alphabetically
+    for (var node in oncotree) {
+        if (oncotree.hasOwnProperty(node)) {
+            oncotree[node].children.sort(function(a,b) {
+                try {
+                    return json.type_of_cancers[a.code].localeCompare(json.type_of_cancers[b.code]);
+                } catch(err) {
+                    return a.code.localeCompare(b.code);
+                }
+            });
+            oncotree[node].studies.sort(function(a,b) {
+                return a.localeCompare(b);
+            });
+        }
+    }
+    // First add 'all' study
+    if ('all' in json.cancer_studies) {
+        cancerTypeContainer.prepend($("<option value='all'>"+json.cancer_studies['all'].name+"</option>"));
+    }
+    var margin_inc = 12;
+    var tissue_color = '#7f7f7f';
+    var cancer_color = '#5f5f5f';
+    // Next add the dmps
+    $("<option value='mskcc-dmp-study-group' style='font-weight:bold; margin-left:0px; color:"+tissue_color+";'"
+    + "data-depth='0' data-is-group-header='true' data-tree-id='mskcc-dmp' disabled>MSKCC DMP</option>").appendTo(cancerTypeContainer);
+    for (var i=0; i<dmp_studies.length; i++) {	    
+	    var dmp_study = json.cancer_studies[dmp_studies[i]];
+	$("<option style='margin-left:"+margin_inc+"px' data-depth='1' value='"+dmp_studies[i]+"'"+
+		    " data-description='"+dmp_study.description.replace(/["'\\]/g,"")+"' data-parent='mskcc-dmp'>"+
+		dmp_study.name+"</option>").appendTo(cancerTypeContainer);
+    }
+    // Add groups recursively
+    var addStudyGroups = function(root, depth) {
+        if (root.desc_studies_count === 0) {
+            // don't insert if no study
+            return false;
+        }
+        
+        var margin = margin_inc*(+(depth > 0));
+        var margin_children = margin + margin_inc;
+        
+        
+        var color = (depth === 0 ? tissue_color : cancer_color);
+        
+        var label = json.type_of_cancers[root.code] || root.code;
+	label = label.split("_").map(function(x) { return (x.length > 0 ? x[0].toUpperCase()+x.slice(1) : x);}).join(" "); // capitalize and replace underscores with spaces
+        if (root.code !== "tissue" && !(depth > 0 && root.studies.length === 0)) {
+            // don't insert a group element if A. this is the root of the tree, B. depth > 0 and there are no studies at this level
+            $("<option value='" + root.code + "-study-group'"+
+                    "style='font-weight:bold; margin-left:"+margin+"px; color:"+color+";'"+
+                    "data-depth='"+depth+"' "+
+                    "data-is-group-header='true' "+
+                    "data-tree-id='"+ root.code +"' "
+                    + (root.parent.code === 'tissue' ? "" : "data-parent='"+root.tissue+"' ")
+                    +"disabled>"
+                +label 
+                + "</option>").appendTo(cancerTypeContainer);
+        }
+        // Add all studies
+        for (var i=0; i<root.studies.length; i++) {
+            // jQuery.each(json.cancer_studies,function(key,cancer_study){
+            //  Append to Cancer Study Pull-Down Menu
+	    //  If the tab index is selected, and this is the all cancer studies option, do not show
+            var addCancerStudy = !(window.tab_index === "tab_download" && root.studies[i] === "all");
+
+            if (addCancerStudy) {
+                var key = root.studies[i];
+                var cancer_study = json.cancer_studies[key];
+                console.log("Adding Cancer Study:  " + cancer_study.name);
+                var newOption = $("<option style='margin-left:"+margin_children+"px'"
+                                    +"data-depth='"+(depth+1)
+                                    +"' value='" + key +"'"
+                                    +"data-description='"+cancer_study.description.replace(/["'\\]/g,"")+"' "
+                                    +"data-parent='"+root.code+"' "
+                                    +">" +cancer_study.name + "</option>");
+                cancerTypeContainer.append(newOption);
+            }
+        }
+        // Recur down
+        for (var i=0; i<root.children.length; i++) {
+            addStudyGroups(root.children[i], depth+1);
+        }
+    };
+    addStudyGroups(oncotree["tissue"], -1);
 
     //  Add Gene Sets to Pull-down Menu
     jQuery.each(json.gene_sets,function(key,gene_set){
@@ -740,6 +901,9 @@ function addMetaDataToPage() {
         }
     });  //  end for each genomic profile option
 
+    
+    // HACK TO DEAL WITH ASYNCHRONOUS STUFF
+    window.metaDataAdded = true;
     // determine whether any selections have already been made
     // to make sure all of the fields are shown/hidden as appropriate
     console.log("addMetaDataToPage ( reviewCurrentSelections() )");

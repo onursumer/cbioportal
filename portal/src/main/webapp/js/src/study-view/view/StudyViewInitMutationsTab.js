@@ -5,7 +5,7 @@ var StudyViewInitMutationsTab = (function(){
         data = _data;
         $('#gistic_wrapper_table').hide();
         loadMutatedGenes(
-            StudyViewParams.params.cancerStudyId, 
+            StudyViewParams.params.studyId, 
             StudyViewParams.params.mutationProfileId, 
             StudyViewParams.params.hasMutSig
         );
@@ -31,7 +31,7 @@ var StudyViewInitMutationsTab = (function(){
             "bScrollCollapse": true,
             "sScrollX": "100%",
             "sScrollXInner": "100%",
-            "sDom": '<"H"<"smg-table-name">fr>t>',
+            "sDom": '<<"H"<"smg-table-name">fr>t>',
             "bJQueryUI": true,
             "bDestroy": true,
             "aaData": ix,
@@ -49,7 +49,7 @@ var StudyViewInitMutationsTab = (function(){
                         } else if (type==='display') {
                             var gene = data[source[0]]['gene_symbol'];
                             return '<a href="index.do?Action=Submit&genetic_profile_ids='
-                                +mutationProfileId+'&case_set_id='+cancerStudyId+'_all&cancer_study_id='+cancerStudyId
+                                +StudyViewParams.params.mutationProfileId+'&case_set_id='+StudyViewParams.params.caseSetId+'&cancer_study_id='+StudyViewParams.params.studyId
                                 +'&gene_list='+gene+'&tab_index=tab_visualize&#mutation_details">'+gene+'</a>';
                         } else {
                             return data[source[0]]['gene_symbol'];

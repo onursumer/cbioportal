@@ -1,5 +1,7 @@
 
-  <script src="js/src/patient-view/clinical-timeline.js"></script>
+<%@ page import="org.mskcc.cbio.portal.util.GlobalProperties" %>
+
+  <script src="js/src/patient-view/clinical-timeline.js?<%=GlobalProperties.getAppVersion()%>"></script>
 
   <style type="text/css">
     .axis path,
@@ -40,6 +42,7 @@
             var caseId = caseIds[i];
             var clinicalData = clinicalDataMap[caseId];
             var su2cSampleId = guessClinicalData(clinicalData,["SU2C_SAMPLE_ID"]);
+            if (!su2cSampleId) su2cSampleId = caseId;
             fillColorAndLabelForCase(d3.select('.timeline-'+su2cSampleId),caseId);
         }
     }
@@ -71,8 +74,8 @@
     });
   </script>
 
-  <fieldset style="border-width: 1px; border-color: #ccc; border-style: solid;">
-  <legend style="color:#1974b8;">Clinical Events</legend>
+  <fieldset class="fieldset-border">
+  <legend class="legend-border">Clinical Events</legend>
   <div id="timeline-container" style="display:hidden">
   <div id="timeline">
   

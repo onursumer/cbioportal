@@ -8,6 +8,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 
 <%if(request.getAttribute("tumormap")!=null){%>
 <jsp:include page="css_include_standard.jsp" flush="true" />
@@ -21,8 +22,6 @@
     <script type="text/javascript">
         $(document).ready(function(){
             $(".oncoprint_help").tipTip({defaultPosition: "right", delay:"100", edgeOffset: 25});
-
-
         });
     </script>
     <title><%= request.getAttribute(QueryBuilder.HTML_TITLE)%></title>
@@ -75,9 +74,9 @@
                                                 <a href="news.jsp">News</a>
                                             </li>
                                             <% } %>
-                                            <!--li class="internal">
+                                            <li class="internal">
                                                 <a href="tools.jsp">Tools</a>
-                                            </li-->
+                                            </li>
                                             <li class="internal">
                                                 <a href="about_us.jsp">About</a>
                                             </li>
@@ -86,9 +85,9 @@
 					    <a href="visualize_your_data.jsp" float="right"><b><i>VISUALIZE YOUR DATA</i></b></a>
 					    </li>
 					    
-                                            <li class="internal" style="float:right">
+                                            <!--li class="internal" style="float:right">
 					    <a href="jobs.jsp" float="right"><b><i>JOBS</i></b></a>
-					    </li>
+					    </li-->
                                         </ul>
                                     </td>
                                 </tr>

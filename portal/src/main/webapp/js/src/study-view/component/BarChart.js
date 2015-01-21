@@ -61,7 +61,7 @@ var BarChart = function(){
         numOfGroups = 10,
         divider = 1,
         chartWidth = 370,
-        chartHeight = 180,
+        chartHeight = 125,
         hasEmptyValue = false;
             
     var postFilterCallback,
@@ -76,12 +76,12 @@ var BarChart = function(){
                 var _currentFilters = barChart.filters();
 
                 if(_currentFilters.length === 0){
-                    $("#" + DIV.mainDiv + " .study-view-dc-chart-change")
+                    $("#"+DIV.chartDiv+"-reload-icon")
                                 .css('display','none');
                     $("#" + DIV.mainDiv)
                             .css({'border-width':'1px', 'border-style':'solid'});
                 }else{
-                    $("#" + DIV.mainDiv + " .study-view-dc-chart-change")
+                    $("#"+DIV.chartDiv+"-reload-icon")
                                 .css('display','block');
                     $("#" + DIV.mainDiv)
                             .css({'border-width':'2px', 'border-style':'inset'});
@@ -107,7 +107,7 @@ var BarChart = function(){
                     $(this).css('display', 'block');
                 });
             }
-            $("#"+DIV.chartDiv +"-title-wrapper").width('85%');
+//            $("#"+DIV.chartDiv +"-title-wrapper").width('85%');
         }, function(){
             $(_listenedDiv).css('z-index', '0');
             for ( var i = 0; i < _targetLength; i++) {
@@ -115,23 +115,75 @@ var BarChart = function(){
                     $(this).css('display', 'none');
                 });
             }
-            $("#"+DIV.chartDiv +"-title-wrapper").width('100%');
+//            $("#"+DIV.chartDiv +"-title-wrapper").width('100%');
         });
     }
     
     //Add all listener events
     function addEvents() {
-        $("#"+DIV.chartDiv+"-pdf").submit(function(){
-            setSVGElementValue(DIV.chartDiv,
-                DIV.chartDiv+"-pdf-value");
+        $('#' + DIV.chartDiv + '-download-icon').qtip('destroy', true);
+        $('#'+  DIV.chartDiv+'-plot-data').qtip('destroy', true);
+        $('#' + DIV.chartDiv + '-download-icon-wrapper').qtip('destroy', true);
+        
+        //Add qtip for download icon when mouse over
+        $('#' + DIV.chartDiv + '-download-icon-wrapper').qtip({
+            style: { classes: 'qtip-light qtip-rounded qtip-shadow qtip-lightyellow'  },
+            show: {event: "mouseover", delay: 0},
+            hide: {fixed:true, delay: 100, event: "mouseout"},
+            position: {my:'bottom left',at:'top right', viewport: $(window)},
+            content: {
+                text:   "Download"
+            }
         });
-        $("#"+DIV.chartDiv+"-svg").submit(function(){
-            setSVGElementValue(DIV.chartDiv,
-                DIV.chartDiv+"-svg-value");
+        
+        //Add qtip for survival icon
+        $('#'+  DIV.chartDiv+'-plot-data').qtip({
+            style:  { classes: 'qtip-light qtip-rounded qtip-shadow qtip-lightyellow'  },
+            show:   {event: "mouseover"},
+            hide:   {fixed:true, delay: 0, event: "mouseout"},
+            position:   {my:'bottom left',at:'top right', viewport: $(window)},
+            content:    "Survival analysis"
+        });
+        
+        //Add qtip for download icon when mouse click
+        $('#' + DIV.chartDiv + '-download-icon').qtip({
+            style: { classes: 'qtip-light qtip-rounded qtip-shadow qtip-lightyellow'  },
+            show: {event: "click", delay: 0},
+            hide: {fixed:true, delay: 100, event: "mouseout "},
+            position: {my:'top center',at:'bottom center', viewport: $(window)},
+            content: {
+                text:   "<div style='display:inline-block;float:left;margin: 0 2px'>"+
+                        "<button  id='"+DIV.chartDiv+"-pdf'>PDF</button>"+          
+                        "</div>"+
+                        "<div style='display:inline-block;float:left;margin: 0 2px'>"+
+                        "<button  id='"+DIV.chartDiv+"-svg'>SVG</button>"+
+                        "</div>"
+            },
+            events: {
+                show: function() {
+                    $('#' + DIV.chartDiv + '-download-icon-wrapper').qtip('api').hide();
+                },
+                render: function(event, api) {
+                    $("#"+DIV.chartDiv+"-pdf", api.elements.tooltip).click(function(){
+                        setSVGElementValue(DIV.chartDiv,
+                            DIV.chartDiv+"-pdf-value", {
+                                filename: StudyViewParams.params.studyId + "_" +param.selectedAttr+".pdf",
+                                contentType: "application/pdf",
+                                servletName: "svgtopdf.do"
+                            });
+                    });
+                    $("#"+DIV.chartDiv+"-svg", api.elements.tooltip).click(function(){
+                        setSVGElementValue(DIV.chartDiv,
+                            DIV.chartDiv+"-svg-value", {
+                                filename: StudyViewParams.params.studyId + "_" +param.selectedAttr+".svg",
+                            });
+                    });
+                }
+            }
         });
         
         showHideDivision("#"+DIV.mainDiv, 
-                            ["#"+DIV.chartDiv+"-side"], 200);
+                            ["#"+DIV.chartDiv+"-side"], 0);
         showHideDivision("#"+DIV.mainDiv, 
                             ["#"+DIV.chartDiv+"-header"], 0);
     
@@ -181,6 +233,11 @@ var BarChart = function(){
 
             });
         }
+    
+        $("#"+DIV.chartDiv+"-reload-icon").click(function() {
+            barChart.filterAll();
+            dc.redrawAll();
+        });
     }
     
     function changeBarColor() {
@@ -247,7 +304,7 @@ var BarChart = function(){
     //Bar chart SVG style is controled by CSS file. In order to change 
     //brush and deselected bar, this function is designed to change the svg
     //style, save svg and delete added style.
-    function setSVGElementValue(_svgParentDivId,_idNeedToSetValue){
+    function setSVGElementValue(_svgParentDivId,_idNeedToSetValue, downloadOptions){
         var _svgElement;
         
         var _svg = $("#" + _svgParentDivId + " svg");
@@ -318,14 +375,15 @@ var BarChart = function(){
             _svgElement = parseSVG(_svg.html());
         }
         
-        $("#" + _idNeedToSetValue)
-                .val("<svg width='370' height='200'>"+
+        var svg = "<svg width='370' height='200'>"+
                     "<g><text x='180' y='20' style='font-weight: bold; "+
                     "text-anchor: middle'>"+
                     param.selectedAttrDisplay+"</text></g>"+
-                    "<g transform='translate(0, 20)'>"+_svgElement + "</g></svg>");
-       
+                    "<g transform='translate(0, 20)'>"+_svgElement + "</g></svg>";
         
+        cbio.download.initDownload(
+            svg, downloadOptions);
+            
         //Remove added styles
         _brush.find('rect.extent')
                 .css({
@@ -408,39 +466,34 @@ var BarChart = function(){
        }
         
         if(param.plotDataButtonFlag) {
-            _plotDataDiv = "<input type='button' id='"+DIV.chartDiv+"-plot-data' "+
-                "style='clear:right;float:right;font-size:10px' value='Survival' />";
+//            _plotDataDiv = "<input type='button' id='"+DIV.chartDiv+"-plot-data' "+
+//                "style='clear:right;float:right;font-size:10px' value='Survival' />";
+            _plotDataDiv = "<img id='"+
+                                DIV.chartDiv+"-plot-data' class='study-view-survival-icon' src='images/survival_icon.svg'/>";
         }else {
             _plotDataDiv = "";
         }
         
-        var contentHTML = "<div id=\"" + DIV.chartDiv + 
+        var contentHTML = "<div id='"+DIV.chartDiv +"-title-wrapper' "+
+                "style='height: 18px; width: 100%'><div style='float:right' "+
+                "id='"+DIV.chartDiv+"-header'>"+
+//                "<a href='javascript:StudyViewInitCharts.getChartsByID("+ 
+//                param.chartID +").getChart().filterAll();" +
+//                "dc.redrawAll();'>"+
+//                "<span title='Reset Chart' class='study-view-dc-chart-change'>"+
+//                "RESET</span></a>"+
+                "<img id='"+ DIV.chartDiv +"-reload-icon' class='study-view-title-icon hidden hover' src='images/reload-alt.svg'/>"+    
+                _logCheckBox +
+                _plotDataDiv +
+                "<div id='"+ DIV.chartDiv+"-download-icon-wrapper' class='study-view-download-icon'><img id='"+ 
+                DIV.chartDiv+"-download-icon' style='float:left' src='images/in.svg'/></div>"+
+                "<img class='study-view-drag-icon' src='images/move.svg'/>"+
+                "<span chartID="+param.chartID+" class='study-view-dc-chart-delete'>x</span>"+
+                "</div></div><div id=\"" + DIV.chartDiv + 
                 "\" class='"+ param.className +"'  oValue='" + param.selectedAttr + "," + 
                 param.selectedAttrDisplay + ",bar'>"+
                 "<div id='"+DIV.chartDiv+"-side' class='study-view-pdf-svg-side bar'>"+
-                _plotDataDiv +
-                "<form style='clear:right;float:right;display:inline-block;' action='svgtopdf.do' method='post' id='"+DIV.chartDiv+"-pdf'>"+
-                "<input type='hidden' name='svgelement' id='"+DIV.chartDiv+"-pdf-value'>"+
-                "<input type='hidden' name='filetype' value='pdf'>"+
-                "<input type='hidden' id='"+DIV.chartDiv+"-pdf-name' name='filename' value='"+StudyViewParams.params.studyId + "_" +param.selectedAttr+".pdf'>"+
-                "<input type='submit' style='font-size:10px' value='PDF'>"+          
-                "</form>"+
-                "<form style='clear:right;float:right;display:inline-block' action='svgtopdf.do' method='post' id='"+DIV.chartDiv+"-svg'>"+
-                "<input type='hidden' name='svgelement' id='"+DIV.chartDiv+"-svg-value'>"+
-                "<input type='hidden' name='filetype' value='svg'>"+
-                "<input type='hidden' id='"+DIV.chartDiv+"-svg-name' name='filename' value='"+StudyViewParams.params.studyId + "_" +param.selectedAttr+".svg'>"+
-                "<input type='submit' style='font-size:10px' value='SVG'></form>"+
-                "</div><div id='"+DIV.chartDiv +"-title-wrapper' "+
-                "style='height: 18px; width: 100%'><div style='float:right' "+
-                "id='"+DIV.chartDiv+"-header'>"+
-                "<a href='javascript:StudyViewInitCharts.getChartsByID("+ 
-                param.chartID +").getChart().filterAll();" +
-                "dc.redrawAll();'>"+
-                "<span title='Reset Chart' class='study-view-dc-chart-change'>"+
-                "RESET</span></a>"+_logCheckBox +
-                "<img class='study-view-drag-icon' src='images/move.svg'/>"+
-                "<span class='study-view-dc-chart-delete'>x</span>"+
-                "</div></div></div>"+
+                "</div></div>"+
                 "<div style='width:100%; float:center;text-align:center;'>"+
                 "<chartTitleH4>" + param.selectedAttrDisplay + "</chartTitleH4></div>";
         
@@ -557,14 +610,14 @@ var BarChart = function(){
             startPoint = (parseInt(param.distanceArray.min / 0.2)-1) * 0.2;
             emptyValueMapping = _tmpMaxDomain +0.2;
         
-        }else if( distanceMinMax > 1 ){
+        }else if( distanceMinMax >= 1 ){
             
             seperateDistance = (parseInt(distanceMinMax / (numOfGroups * divider)) + 1) * divider;
             _tmpMaxDomain = (parseInt(param.distanceArray.max / seperateDistance) + 1) * seperateDistance;
             startPoint = parseInt(param.distanceArray.min / seperateDistance) * seperateDistance;
             emptyValueMapping = _tmpMaxDomain+seperateDistance;
             
-        }else if( distanceMinMax < 1 && param.distanceArray.min >=0 ){
+        }else if( distanceMinMax < 1 && param.distanceArray.min >=0 && param.distanceArray.max <= 1){
             
             seperateDistance = 0.1;
             startPoint = 0;

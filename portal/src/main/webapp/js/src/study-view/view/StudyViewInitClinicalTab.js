@@ -5,13 +5,13 @@ var StudyViewInitClinicalTab = (function(){
     var dataTable;
     
     
-    function init(_tableID, _data){
+    function init(_tableID, _tableContainerId, _data){
 //        tableID = _tableID;
 //        aaData = _aaData;
 //        aoColumns = _aoColumns;
         dataTable = new DataTable();
-        dataTable.init(_tableID, _data);
-        
+        dataTable.init(_tableID, _tableContainerId, _data);
+        dataTable.updateFrozedColStyle();
         //initDataTable();
     }
     

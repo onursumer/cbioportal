@@ -133,8 +133,8 @@ if (cancerStudyViewError!=null) {
 <jsp:include page="../global/xdebug.jsp" flush="true" />    
 
 <style type="text/css">
-        @import "css/data_table_jui.css";
-        @import "css/data_table_ColVis.css";
+        @import "css/data_table_jui.css?<%=GlobalProperties.getAppVersion()%>";
+        @import "css/data_table_ColVis.css?<%=GlobalProperties.getAppVersion()%>";
         .ColVis {
                 float: left;
                 margin-bottom: 0
@@ -163,7 +163,7 @@ if (cancerStudyViewError!=null) {
         }
 </style>
 
-<script type="text/javascript" src="js/src/cancer-study-view/load-clinical-data.js"></script>
+<script type="text/javascript" src="js/src/cancer-study-view/load-clinical-data.js?<%=GlobalProperties.getAppVersion()%>"></script>
 
 <script type="text/javascript">
 var cancerStudyId = '<%=cancerStudy.getCancerStudyStableId()%>';
@@ -174,91 +174,38 @@ var hasMutSig = <%=hasMutSig%>;
 var caseSetId = '<%=caseSetId%>';
 var caseIds = <%=jsonCaseIds%>;
 var cancer_study_id = cancerStudyId; //Some components using this as global ID
+var appVersion = <%=GlobalProperties.getAppVersion()%>;
 
-$(document).ready(function(){
-    setUpStudyTabs();
-    initTabs();
+$("#study-tabs").tabs({disabled: true});
+$("#study-tabs").tabs("enable", 0);
+
+$('#study-tab-clinical-a').click(function(){
+    if (!$(this).parent().hasClass('ui-state-disabled') && !$(this).hasClass("tab-clicked")) {
+        //First time: adjust the width of data table;
+        $("#clinical-data-table-loading-wait").css('display', 'block');
+        $("#clinical-data-table-div").css('display','none');
+        setTimeout(function () {
+            $("#clinical-data-table-div").css('display','block');
+            StudyViewClinicalTabController.init();
+            $("#clinical-data-table-loading-wait").css('display', 'none');
+            $('#study-tab-clinical-a').addClass("tab-clicked");
+        }, 200);
+    }
 });
 
-function setUpStudyTabs() {
-    $('#study-tabs').tabs();
-    $('#study-tabs').show();
-}
+$('#study-tab-mutations-a').click(function(){
+    if (!$(this).parent().hasClass('ui-state-disabled') && !$(this).hasClass("tab-clicked")) {
+        StudyViewMutationsTabController.init();
+        $(this).addClass("tab-clicked");
+    }
+});
 
-function initTabs() {
-    var tabContainers = $('.study-section');
-    var tabLoaded = false;
-    var maxX = 0;
-    tabContainers.hide().filter(':first').show();
-
-    $('.study-tab').click(function () {
-        tabContainers.hide();
-        tabContainers.filter(this.hash).show();
-        $('.study-tab').removeClass('selected');
-        $(this).addClass('selected');
-        
-        /*
-        if($( "#study-tabs" ).tabs( "option", "active" ) === 1){
-            var oTable = $('#dataTable').dataTable();
-            if ( oTable.length > 0 ) {
-                var rotationAngle = 315;
-                var radians = Math.PI * (rotationAngle/180);
-                var numColumns = oTable.fnSettings().aoColumns.length;
-                if(!tabLoaded){
-                    for(var i =1;i<=numColumns ; i++){
-                        var rotatedX = $("table.dataTable>thead>tr>th:nth-child("+i+")").width();
-                        if(rotatedX > maxX)
-                            maxX = rotatedX;
-                    }
-                    maxX -= 28;
-                    for(var i =1;i<=numColumns ; i++){
-                        $("table.dataTable>thead>tr>th:nth-child("+i+")").height(maxX/Math.cos(radians));
-                    }
-                    tabLoaded = true;
-                }else {
-                    for(var i =1;i<=numColumns ; i++){
-                        $("table.dataTable>thead>tr>th:nth-child("+i+")").height(maxX/Math.cos(radians));
-                    }
-                }
-                oTable.fnAdjustColumnSizing();
-                new FixedColumns( oTable);
-                $(".DTFC_LeftBodyLiner").css("overflow-y","hidden");
-                $(".dataTables_scroll").css("overflow-x","scroll");
-                $(".DTFC_LeftHeadWrapper").css("background-color","white");
-            }else{
-                console.log("No DataTable");
-            }
-        }
-        */
-        return false;
-    }).filter(':first').click();
-}
-
-function switchToTab(toTab) {
-    $('.study-section').hide();
-    $('.study-section#'+toTab).show();
-    $('#study-tabs').tabs("option",
-		"active",
-		$('#study-tabs ul a[href="#'+toTab+'"]').parent().index());
-}
-
-function getRefererCaseId() {
-    //var match = /case_id=([^&]+)/.exec(document.referrer);
-    //return match ? match[1] : null;
-    var idStr = /^#?case_ids=(.+)/.exec(location.hash);
-    if (!idStr) return null;
-    var ids = {};
-    idStr[1].split(/[ ,]+/).forEach(function(id) {
-        ids[id] = true;
-    });
-    return ids;
-}
-
-function formatPatientLink(caseId,cancerStudyId,isPatient) {
-    return caseId===null?"":'<a title="Go to patient-centric view" href="case.do?cancer_study_id='
-            +cancerStudyId+'&'+(isPatient?'patient_id':'case_id')+'='+caseId+'">'+caseId+'</a>';
-}
-
+$('#study-tab-cna-a').click(function(){
+    if (!$(this).parent().hasClass('ui-state-disabled') && !$(this).hasClass("tab-clicked")) {
+        StudyViewCNATabController.init();
+        $(this).addClass("tab-clicked");
+    }
+});
 </script>
 
 </body>
