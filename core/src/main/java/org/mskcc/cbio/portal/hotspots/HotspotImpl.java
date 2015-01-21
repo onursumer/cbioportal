@@ -34,11 +34,13 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import org.apache.commons.math3.distribution.BinomialDistribution;
-import org.apache.commons.math3.special.Beta;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
+import org.mskcc.cbio.portal.dao.DaoPatient;
+import org.mskcc.cbio.portal.dao.DaoSample;
 import org.mskcc.cbio.portal.model.CancerStudy;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
+import org.mskcc.cbio.portal.model.Patient;
 //import umontreal.iro.lecuyer.probdist.NegativeBinomialDist;
 
 /**
@@ -49,9 +51,9 @@ public class HotspotImpl implements Hotspot {
     private MutatedProtein protein;
     private SortedSet<Integer> residues;
     private Set<ExtendedMutation> mutations;
-    private Set<Sample> samples;
+    private Set<Patient> patients;
     private String label;
-    private int numberOfSeqeuncedSamples;
+    private int numberOfSequencedPatients;
     protected double pvalue;
     
     public HotspotImpl(MutatedProtein protein, int numberOfSeqeuncedSamples) {
@@ -66,10 +68,10 @@ public class HotspotImpl implements Hotspot {
      */
     public HotspotImpl(MutatedProtein protein, int numberOfSeqeuncedSamples, SortedSet<Integer> residues) {
         this.protein = protein;
-        this.numberOfSeqeuncedSamples = numberOfSeqeuncedSamples;
+        this.numberOfSequencedPatients = numberOfSeqeuncedSamples;
         this.residues = residues;
         this.mutations = new HashSet<ExtendedMutation>();
-        this.samples = new HashSet<Sample>();
+        this.patients = new HashSet<Patient>();
         this.pvalue = Double.NaN;
     }
     
@@ -114,14 +116,14 @@ public class HotspotImpl implements Hotspot {
         }
         mutations.add(mutation);
         // do not added residues because we may only want to label part of the residues
-        CancerStudy cancerStudy = DaoCancerStudy.getCancerStudyByInternalId(
-                DaoGeneticProfile.getGeneticProfileById(mutation.getGeneticProfileId()).getCancerStudyId());
-        samples.add(new SampleImpl(mutation.getCaseId(), cancerStudy));
+        Patient patient = DaoPatient.getPatientById(
+                DaoSample.getSampleById(mutation.getSampleId()).getInternalPatientId());
+        patients.add(patient);
     }
 
     @Override
-    public Set<Sample> getSamples() {
-        return Collections.unmodifiableSet(samples);
+    public Set<Patient> getPatients() {
+        return Collections.unmodifiableSet(patients);
     }
 
     /**
@@ -240,7 +242,7 @@ public class HotspotImpl implements Hotspot {
     }
 
     @Override
-    public int getNumberOfSequencedSamples() {
-        return numberOfSeqeuncedSamples;
+    public int getNumberOfSequencedPatients() {
+        return numberOfSequencedPatients;
     }
 }

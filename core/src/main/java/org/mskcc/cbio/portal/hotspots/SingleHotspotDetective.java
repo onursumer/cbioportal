@@ -54,7 +54,7 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
         Set<Hotspot> hotspotsOnAProtein = new HashSet<Hotspot>();
         for (Hotspot hotspot : mapResidueHotspot.values()) {
             // only return hotspot above sample threshold
-            if (hotspot.getSamples().size()>=parameters.getThresholdSamples()) {
+            if (hotspot.getPatients().size()>=parameters.getThresholdSamples()) {
                 if (parameters.getSeperateByProteinChangesForSingleResidueHotspot()) {
                     Map<String, HotspotImpl> mapProteinChangeHotspot = new HashMap<String, HotspotImpl>();
                     for (ExtendedMutation mutation : hotspot.getMutations()) {
@@ -69,7 +69,7 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
                     }
                     
                     for (Hotspot hs : mapProteinChangeHotspot.values()) {
-                        if (hs.getSamples().size()>=parameters.getThresholdSamples()) {
+                        if (hs.getPatients().size()>=parameters.getThresholdSamples()) {
                             hotspotsOnAProtein.add(hs);
                         }
                     }

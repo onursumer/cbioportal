@@ -29,6 +29,7 @@ package org.mskcc.cbio.portal.hotspots;
 import java.util.Set;
 import java.util.SortedSet;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
+import org.mskcc.cbio.portal.model.Patient;
 
 /**
  *
@@ -70,13 +71,13 @@ public interface Hotspot {
      * 
      * @return samples mutated in this hotspot
      */
-    public Set<Sample> getSamples();
+    public Set<Patient> getPatients();
     
     /**
      * 
      * @return number of all sequenced samples
      */
-    public int getNumberOfSequencedSamples();
+    public int getNumberOfSequencedPatients();
     
     /**
      * 

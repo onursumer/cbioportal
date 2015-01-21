@@ -131,7 +131,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                     continue;
                 }
                 
-                String caseId = rs.getString("CASE_ID");
+                int sampleId = rs.getInt("SAMPLE_ID");
                 String aaChange = rs.getString("PROTEIN_CHANGE");
                 
                 CanonicalGene gene = daoGeneOptimized.getGene(rs.getLong("ENTREZ_GENE_ID"));
@@ -158,7 +158,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                         }
 
                         ExtendedMutation mutation = new ExtendedMutation();
-                        mutation.setCaseId(caseId);
+                        mutation.setSampleId(sampleId);
                         mutation.setGeneticProfileId(geneticProfileId);
                         mutation.setProteinChange(aaChange);
                         mutation.setGene(gene);
@@ -181,7 +181,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         Iterator<Map.Entry<Integer, Hotspot>> it = mapResidueHotspot.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Integer, Hotspot> entry = it.next();
-            if (entry.getValue().getSamples().size()<parameters.getPrefilterThresholdSamplesOnSingleResidue()) {
+            if (entry.getValue().getPatients().size()<parameters.getPrefilterThresholdSamplesOnSingleResidue()) {
                 it.remove();
             }
         }

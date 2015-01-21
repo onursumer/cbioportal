@@ -120,7 +120,7 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
         int lenProtein = getLargestMutatedResidue(hotspotOnAProtein);
         int[] array = new int[lenProtein+2];
         for (Hotspot hotspot : hotspotOnAProtein) {
-            array[hotspot.getResidues().first()] += hotspot.getSamples().size();
+            array[hotspot.getResidues().first()] += hotspot.getPatients().size();
         }
         return array;
     }

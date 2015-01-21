@@ -73,7 +73,7 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
                     hotspot3D.mergeHotspot(mapResidueHotspot.get(residue));
                 }
                 
-                if (hotspot3D.getSamples().size()>=parameters.getThresholdSamples()) {
+                if (hotspot3D.getPatients().size()>=parameters.getThresholdSamples()) {
                     Set<Hotspot> hotsports3D = mapResiduesHotspots3D.get(residues);
                     if (hotsports3D==null) {
                         hotsports3D = new HashSet<Hotspot>();
