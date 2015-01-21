@@ -714,19 +714,6 @@ CREATE TABLE `clinical_trial_keywords` (
   FOREIGN KEY (`PROTOCOLID`) REFERENCES `clinical_trials` (`PROTOCOLID`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
-drop table IF EXISTS ptm_annotation;
-CREATE TABLE `ptm_annotation` (
-  `PTM_ANNOTATION_ID` int(255) NOT NULL auto_increment,
-  `UNIPROT_ID` varchar(255) NOT NULL,
-  `SYMBOL` varchar(255) NOT NULL,
-  `RESIDUE` int(5) NOT NULL,
-  `TYPE` varchar(20) NOT NULL COMMENT 'e.g. phosphorylation, acelytation, ubiquitination',
-  `ENZYME` varchar(512) DEFAULT NULL,
-  `NOTE` text DEFAULT NULL,
-  PRIMARY KEY (`PTM_ANNOTATION_ID`),
-  UNIQUE (`UNIPROT_ID`,`RESIDUE`,`TYPE`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 COMMENT='PTM annotations from public domain such as PhosphoSitePlus and UniProt';
-
 drop table IF EXISTS pdb_uniprot_residue_mapping;
 CREATE TABLE `pdb_uniprot_residue_mapping` (
   `ALIGNMENT_ID` int NOT NULL,
@@ -759,20 +746,6 @@ CREATE TABLE `pdb_uniprot_alignment` (
   KEY(`PDB_ID`, `CHAIN`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
 
-drop table if EXISTS protein_contact_map;
-CREATE TABLE `protein_contact_map` (
-  `PDB_ID` char(4) NOT NULL,
-  `CHAIN` char(1) NOT NULL,
-  `RESIDUE1` int(11) NOT NULL,
-  `ATOM1` varchar(10) DEFAULT NULL,
-  `RESIDUE2` int(11) NOT NULL,
-  `ATOM2` varchar(10) DEFAULT NULL,
-  `DISTANCE` float DEFAULT NULL,
-  `DISTANCE_ERROR` float DEFAULT NULL, # DISTANCE - Covalent bond length
-  PRIMARY KEY (`PDB_ID`,`CHAIN`,`RESIDUE1`,`RESIDUE2`),
-  KEY (`PDB_ID`,`CHAIN`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
-
 drop table IF EXISTS clinical_event;
 CREATE TABLE `clinical_event` (
   `CLINICAL_EVENT_ID` int NOT NULL auto_increment,
@@ -793,6 +766,20 @@ CREATE TABLE `clinical_event_data` (
   FOREIGN KEY (`CLINICAL_EVENT_ID`) REFERENCES `clinical_event` (`CLINICAL_EVENT_ID`) ON DELETE CASCADE
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
+drop table if EXISTS protein_contact_map;
+CREATE TABLE `protein_contact_map` (
+  `PDB_ID` char(4) NOT NULL,
+  `CHAIN` char(1) NOT NULL,
+  `RESIDUE1` int(11) NOT NULL,
+  `ATOM1` varchar(10) DEFAULT NULL,
+  `RESIDUE2` int(11) NOT NULL,
+  `ATOM2` varchar(10) DEFAULT NULL,
+  `DISTANCE` float DEFAULT NULL,
+  `DISTANCE_ERROR` float DEFAULT NULL, # DISTANCE - Covalent bond length
+  PRIMARY KEY (`PDB_ID`,`CHAIN`,`RESIDUE1`,`RESIDUE2`),
+  KEY (`PDB_ID`,`CHAIN`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;
+
 drop table if EXISTS pdb_ptm_data;
 CREATE TABLE `pdb_ptm_data` (
   `PDB_ID` char(4) NOT NULL,
@@ -801,3 +788,16 @@ CREATE TABLE `pdb_ptm_data` (
   `RESIDUES` varchar(200) NOT NULL,
   KEY (`PDB_ID`, `CHAIN`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+drop table IF EXISTS ptm_annotation;
+CREATE TABLE `ptm_annotation` (
+  `PTM_ANNOTATION_ID` int(255) NOT NULL auto_increment,
+  `UNIPROT_ID` varchar(255) NOT NULL,
+  `SYMBOL` varchar(255) NOT NULL,
+  `RESIDUE` int(5) NOT NULL,
+  `TYPE` varchar(20) NOT NULL COMMENT 'e.g. phosphorylation, acelytation, ubiquitination',
+  `ENZYME` varchar(512) DEFAULT NULL,
+  `NOTE` text DEFAULT NULL,
+  PRIMARY KEY (`PTM_ANNOTATION_ID`),
+  UNIQUE (`UNIPROT_ID`,`RESIDUE`,`TYPE`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1 COMMENT='PTM annotations from public domain such as PhosphoSitePlus and UniProt';
