@@ -78,7 +78,7 @@
                                     <li>DOWN: expression down</li>
                                 </ul>
                             </li>
-                            <li style="display:none">RPPA - please use one of the two events below: 
+                            <li>RPPA - please use one of the two events below: 
                                 <ul>
                                     <li>PROT-UP: RPPA Upregulation</li>
                                     <li>PROT-DOWN: RPPA Downregulation</li>
