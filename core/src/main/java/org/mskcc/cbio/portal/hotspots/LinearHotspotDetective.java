@@ -56,7 +56,7 @@ public class LinearHotspotDetective extends AbstractHotspotDetective {
         List<Integer> hotspotCenters = findLocalMaximum(protein, hotspotOnAProtein);
         Set<Hotspot> hotspotsOnAProtein = new HashSet<Hotspot>();
         for (Integer center : hotspotCenters) {
-            Hotspot hs = new HotspotImpl(protein, numberOfsequencedSamples);
+            Hotspot hs = new HotspotImpl(protein, numberOfsequencedCases);
             int window = parameters.getLinearSpotWindowSize();
             for (int w=-window; w<=window; w++) {
                 hs.mergeHotspot(mapResidueHotspot.get(center+w));

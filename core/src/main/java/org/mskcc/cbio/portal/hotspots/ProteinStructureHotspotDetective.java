@@ -68,7 +68,7 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
             MutatedProtein3D protein3D = entryContactMaps.getKey();
             Map<Integer, SortedSet<Integer>> contactMap = entryContactMaps.getValue();
             for (SortedSet<Integer> residues : cleanResiduesSet(contactMap.values())) { // remove redundancy
-                Hotspot hotspot3D = new HotspotImpl(protein3D, numberOfsequencedSamples, residues);
+                Hotspot hotspot3D = new HotspotImpl(protein3D, numberOfsequencedCases, residues);
                 for (int residue : residues) {
                     hotspot3D.mergeHotspot(mapResidueHotspot.get(residue));
                 }
@@ -93,7 +93,7 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
         for (Map.Entry<SortedSet<Integer>,Set<Hotspot>> entryMapResiduesHotspots3D : mapResiduesHotspots3D.entrySet()) {
             SortedSet<Integer> residues = entryMapResiduesHotspots3D.getKey();
             Set<Hotspot> hotspots = entryMapResiduesHotspots3D.getValue();
-            Hotspot3D hotspot3D = new Hotspot3DImpl(protein, numberOfsequencedSamples, residues, hotspots);
+            Hotspot3D hotspot3D = new Hotspot3DImpl(protein, numberOfsequencedCases, residues, hotspots);
             hotspot3D.mergeHotspot(hotspots.iterator().next()); // add mutations
             hotspots3D.add(hotspot3D);
         }

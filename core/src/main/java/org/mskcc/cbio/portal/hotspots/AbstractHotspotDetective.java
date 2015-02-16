@@ -65,7 +65,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     protected HotspotDetectiveParameters parameters;
     
     private Set<Hotspot> hotspots;
-    protected int numberOfsequencedSamples;
+    protected int numberOfsequencedCases;
     protected Map<MutatedProtein, Integer> numberOfAllMutationOnProteins = new HashMap<MutatedProtein, Integer>();
 
     public AbstractHotspotDetective(HotspotDetectiveParameters parameters) throws HotspotException {
@@ -75,7 +75,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     @Override
     public final void setParameters(HotspotDetectiveParameters parameters) throws HotspotException {
         this.parameters = parameters;
-        numberOfsequencedSamples = getNumberOfSequencedSamples();
+        numberOfsequencedCases = getNumberOfSequencedCases();
     }
 
     /**
@@ -93,17 +93,17 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(AbstractHotspotDetective.class);
-            String sql = "SELECT  gp.`GENETIC_PROFILE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, cme.`CASE_ID`, "
+            String sql = "SELECT  gp.`GENETIC_PROFILE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, m.`SAMPLE_ID`, "
                     + "`PROTEIN_CHANGE`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
-                    + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp ";
+                    + "FROM  `mutation_event` me, `mutation` m, `genetic_profile` gp ";
             if (parameters.getThresholdHyperMutator()>0) {
                 sql += ",mutation_count tmc ";
             }
-            sql += "WHERE me.MUTATION_EVENT_ID=cme.MUTATION_EVENT_ID "
-                    + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
+            sql += "WHERE me.MUTATION_EVENT_ID=m.MUTATION_EVENT_ID "
+                    + "AND m.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+StringUtils.join(parameters.getCancerStudyIds(),",")+") ";
             if (parameters.getThresholdHyperMutator()>0) {
-                sql += "AND tmc.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` AND tmc.`CASE_ID`=cme.`CASE_ID` AND MUTATION_COUNT<" + parameters.getThresholdHyperMutator() + " ";
+                sql += "AND tmc.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` AND tmc.`SAMPLE_ID`=m.`SAMPLE_ID` AND MUTATION_COUNT<" + parameters.getThresholdHyperMutator() + " ";
             }
             if (parameters.getMutationTypes()!=null && !parameters.getMutationTypes().isEmpty()) {
                 sql += "AND (`KEYWORD` LIKE '%"+StringUtils.join(parameters.getMutationTypes(),"' OR `KEYWORD` LIKE '%") +"') ";;
@@ -153,7 +153,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                     for (int res=start; res<=end; res++) {
                         Hotspot hotspot = mapResidueHotspot.get(res);
                         if (hotspot==null) {
-                            hotspot = new HotspotImpl(currProtein, numberOfsequencedSamples, new TreeSet<Integer>(Arrays.asList(res)));
+                            hotspot = new HotspotImpl(currProtein, numberOfsequencedCases, new TreeSet<Integer>(Arrays.asList(res)));
                             mapResidueHotspot.put(res, hotspot);
                         }
 
@@ -334,7 +334,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
     
     private static final Map<Collection<Integer>, Integer> mapStudysSamples = new HashMap<Collection<Integer>, Integer>();
     
-    private int getNumberOfSequencedSamples() throws HotspotException {
+    private int getNumberOfSequencedCases() throws HotspotException {
         Integer ret = mapStudysSamples.get(parameters.getCancerStudyIds());
         if (ret!=null) {
             return ret;
@@ -345,9 +345,9 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(AbstractHotspotDetective.class);
-            String sql = "SELECT count(distinct CANCER_STUDY_ID, CASE_ID) FROM mutation, genetic_profile "
-                    + "WHERE mutation.genetic_profile_id=genetic_profile.genetic_profile_id "
-                    + "and CANCER_STUDY_ID IN ("+StringUtils.join(parameters.getCancerStudyIds(),",")+") ";
+            String sql = "SELECT count(distinct PATIENT_ID) FROM mutation, sample, patient "
+                    + "WHERE mutation.SAMPLE_ID=sample.INTERNAL_ID and sample.PATIENT_ID=patient.INTERNAL_ID "
+                    + "AND CANCER_STUDY_ID IN ("+StringUtils.join(parameters.getCancerStudyIds(),",")+") ";
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             rs.next();

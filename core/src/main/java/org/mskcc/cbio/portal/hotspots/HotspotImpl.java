@@ -159,7 +159,7 @@ public class HotspotImpl implements Hotspot {
         }
         sb.deleteCharAt(sb.length()-1);
         
-        sb.append(" (p="+String.format("%6.3e", getPValue()) + ")");
+        //sb.append(" (p="+String.format("%6.3e", getPValue()) + ")");
 
         return sb.toString();
     }

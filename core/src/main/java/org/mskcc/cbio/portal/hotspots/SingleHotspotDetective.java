@@ -61,7 +61,7 @@ public class SingleHotspotDetective extends AbstractHotspotDetective {
                         String proteinChange = mutation.getProteinChange();
                         HotspotImpl hs = mapProteinChangeHotspot.get(proteinChange);
                         if (hs==null) {
-                            hs = new HotspotImpl(protein, numberOfsequencedSamples, hotspot.getResidues());
+                            hs = new HotspotImpl(protein, numberOfsequencedCases, hotspot.getResidues());
                             hs.setLabel(protein.getGene().getHugoGeneSymbolAllCaps()+" "+proteinChange);
                             mapProteinChangeHotspot.put(proteinChange, hs);
                         }
