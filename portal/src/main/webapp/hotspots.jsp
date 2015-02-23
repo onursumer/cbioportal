@@ -97,7 +97,7 @@ String jsonStudies = JSONValue.toJSONString(studies);
         <label id="mutation-type-label"><b>Mutation type: </b>
         <select id="mutation-type-select" data-placeholder="Choose mutation types..." multiple>
         <option value="missense" selected="selected">Missense</option>
-        <option value="inframe">Inframe</option>
+        <option value="insertion,deletion">Inframe</option>
         <option value="truncating">Truncating</option>
         </select>
         </label>

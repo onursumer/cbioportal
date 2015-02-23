@@ -148,9 +148,7 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
                     continue;
                 }
                 
-                Map<Integer, Set<Integer>> pdbContactMap = DaoProteinContactMap.getProteinContactMap(protein3D.getPdbId(), protein3D.getPdbChain(),
-                        pdbUniprotResidueMapping.getKeySet(), parameters.getDistanceThresholdFor3DHotspots(),
-                        parameters.getDistanceErrorThresholdFor3DHotspots());
+                Map<Integer, Set<Integer>> pdbContactMap = getPdbContactMap(protein3D, pdbUniprotResidueMapping.getKeySet());
                 
                 Map<Integer, SortedSet<Integer>> contactMap = new HashMap<Integer, SortedSet<Integer>>(pdbContactMap.size());
                 for (Map.Entry<Integer, Set<Integer>> entryPdbContactMap : pdbContactMap.entrySet()) {
@@ -175,6 +173,12 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
         } catch (DaoException e) {
             throw new HotspotException(e);
         }
+    }
+    
+    private Map<Integer, Set<Integer>> getPdbContactMap(MutatedProtein3D protein3D, Set<Integer> residues) throws DaoException {
+        return DaoProteinContactMap.getProteinContactMap(protein3D.getPdbId(), protein3D.getPdbChain(),
+                        residues, parameters.getDistanceThresholdFor3DHotspots(),
+                        parameters.getDistanceErrorThresholdFor3DHotspots());
     }
     
     private OneToOneMap<Integer, Integer> getPdbUniprotResidueMapping(List<PdbUniprotAlignment> alignments) throws HotspotException {

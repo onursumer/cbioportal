@@ -141,7 +141,7 @@ public class HotspotImpl implements Hotspot {
     @Override
     public String getLabel() {
         if (label != null) {
-            return label+" (p="+String.format("%6.3e", getPValue()) + ")";
+            return label;//+" (p="+String.format("%6.3e", getPValue()) + ")";
         }
         
         StringBuilder sb = new StringBuilder();
@@ -150,11 +150,13 @@ public class HotspotImpl implements Hotspot {
         String sequence = protein.getUniprotSequence();
         Map<Integer, Set<ExtendedMutation>> mapResidueMuations = getMapResidueMutations();
         for (Integer res : residues) {
-            if (sequence!=null&&sequence.length()>=res) {
-                sb.append(sequence.charAt(res-1));
-            }
-            sb.append(res.toString());
             Set<ExtendedMutation> muts = mapResidueMuations.get(res);
+            String aa = guessAminoAcid(res, muts);
+            if (aa==null&&sequence!=null&&sequence.length()>=res) {
+                aa = sequence.substring(res-1,res);
+            }
+            sb.append(aa);
+            sb.append(res.toString());
             sb.append("(").append(muts==null?0:muts.size()).append(");");
         }
         sb.deleteCharAt(sb.length()-1);
@@ -162,6 +164,16 @@ public class HotspotImpl implements Hotspot {
         //sb.append(" (p="+String.format("%6.3e", getPValue()) + ")");
 
         return sb.toString();
+    }
+    
+    private String guessAminoAcid(int start, Set<ExtendedMutation> mutations) {
+        for (ExtendedMutation mutation : mutations) {
+            String proteinChange = mutation.getProteinChange();
+            if (proteinChange.matches("([A-Z\\*])"+start+".*")) {
+                return proteinChange.substring(0,1);
+            }
+        }
+        return null;
     }
     
     private Map<Integer, Set<ExtendedMutation>> getMapResidueMutations() {
