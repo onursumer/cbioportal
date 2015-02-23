@@ -162,9 +162,13 @@ public class HotspotsServlet extends HttpServlet {
 //            } else if (type.equalsIgnoreCase("truncating-sep")) {
 //                 mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
 //                    studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
-//            } else if (type.equalsIgnoreCase("pdb-ptm")) {
-//                mapKeywordStudyCaseMut = DaoMutation.getMutatationPdbPTMStatistics(
-//                        studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
+            } else if (hotspotType.equalsIgnoreCase("3d-ptm")) {
+                String strThresholdIdentp = request.getParameter(THRESHOLD_UNIPROT_PDB_ALIGNMENT_IDENTP);
+                double thresholdIdentp = strThresholdIdentp==null?0:Double.parseDouble(strThresholdIdentp);
+                hotspotDetectiveParameters.setIdentpThresholdFor3DHotspots(thresholdIdentp);
+                hotspotDetectiveParameters.setIncludingMismatchesFor3DHotspots(false);
+                
+                 hotspotDetective = new PTM3DHotspotDetective(hotspotDetectiveParameters);
             } else {
                 throw new IllegalStateException("wrong hotspot type: "+hotspotType);
             }

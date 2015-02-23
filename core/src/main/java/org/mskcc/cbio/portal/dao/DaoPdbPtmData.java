@@ -30,9 +30,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 /**
@@ -61,7 +63,7 @@ public class DaoPdbPtmData {
      * @param residues
      * @return Map<set <contacting residues>, ptm description>
      */
-    public static Map<Set<Integer>,String> getPdbPtmModules(String pdbId, String chain) throws DaoException {
+    public static Map<SortedSet<Integer>,String> getPdbPtmModules(String pdbId, String chain, Set<Integer> anyResidues) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -74,14 +76,16 @@ public class DaoPdbPtmData {
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
             
-            Map<Set<Integer>,String> map = new HashMap<Set<Integer>,String>();
+            Map<SortedSet<Integer>,String> map = new HashMap<SortedSet<Integer>,String>();
             
             while (rs.next()) {
-                Set<Integer> residues = new TreeSet<Integer>();
+                SortedSet<Integer> residues = new TreeSet<Integer>();
                 for (String str : rs.getString(1).split(",")) {
                     residues.add(Integer.parseInt(str));
                 }
-                map.put(residues, rs.getString(2));
+                if (anyResidues==null || !Collections.disjoint(residues, anyResidues)) {
+                    map.put(residues, rs.getString(2));
+                }
             }
             
             return map;

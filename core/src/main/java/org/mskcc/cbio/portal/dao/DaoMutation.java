@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import org.mskcc.cbio.portal.model.*;
 import org.mskcc.cbio.portal.util.MutationKeywordUtils;
@@ -1338,8 +1339,8 @@ public final class DaoMutation {
                     public Set<Hotspot> find3DHotspots(Map<Integer,Integer> mapPositionSamples,
                         int thresholdSamples, String pdbId, String chainId) throws DaoException {
                         Set<Hotspot> hotspots = new HashSet<Hotspot>();
-                        Map<Set<Integer>,String> ptmModules = DaoPdbPtmData.getPdbPtmModules(pdbId, chainId);
-                        for (Map.Entry<Set<Integer>,String> entry : ptmModules.entrySet()) {
+                        Map<SortedSet<Integer>, String> ptmModules = DaoPdbPtmData.getPdbPtmModules(pdbId, chainId, null);
+                        for (Map.Entry<SortedSet<Integer>, String> entry : ptmModules.entrySet()) {
                             Set<Integer> residues = entry.getKey();
                             int samples = 0;
                             for (Integer res : residues) {

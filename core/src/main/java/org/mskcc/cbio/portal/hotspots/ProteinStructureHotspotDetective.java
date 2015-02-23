@@ -74,13 +74,13 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
                 }
                 
                 if (hotspot3D.getPatients().size()>=parameters.getThresholdSamples()) {
-                    Set<Hotspot> hotsports3D = mapResiduesHotspots3D.get(residues);
-                    if (hotsports3D==null) {
-                        hotsports3D = new HashSet<Hotspot>();
-                        mapResiduesHotspots3D.put(residues, hotsports3D);
+                    Set<Hotspot> hotspots3D = mapResiduesHotspots3D.get(residues);
+                    if (hotspots3D==null) {
+                        hotspots3D = new HashSet<Hotspot>();
+                        mapResiduesHotspots3D.put(residues, hotspots3D);
                     }
                     
-                    hotsports3D.add(hotspot3D);
+                    hotspots3D.add(hotspot3D);
                 }
             }
         }
@@ -210,7 +210,7 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
         }
     }
     
-    private Map<MutatedProtein3D,List<PdbUniprotAlignment>> getPdbUniprotAlignments(MutatedProtein protein) throws HotspotException {
+    protected Map<MutatedProtein3D,List<PdbUniprotAlignment>> getPdbUniprotAlignments(MutatedProtein protein) throws HotspotException {
         try {
             List<PdbUniprotAlignment> alignments = DaoPdbUniprotResidueMapping.getAlignments(protein.getUniprotId(),
                     Double.valueOf(parameters.getIdentpThresholdFor3DHotspots()).floatValue());
@@ -233,7 +233,7 @@ public class ProteinStructureHotspotDetective extends AbstractHotspotDetective {
         }
     }
     
-    private final class OneToOneMap<K, V> {
+    protected final class OneToOneMap<K, V> {
         private Map<K, V> keyToValMap;
         private Map<V, K> valToKeyMap;
         
