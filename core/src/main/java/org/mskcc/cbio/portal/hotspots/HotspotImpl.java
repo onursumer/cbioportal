@@ -151,7 +151,12 @@ public class HotspotImpl implements Hotspot {
         Map<Integer, Set<ExtendedMutation>> mapResidueMuations = getMapResidueMutations();
         for (Integer res : residues) {
             Set<ExtendedMutation> muts = mapResidueMuations.get(res);
-            String aa = guessAminoAcid(res, muts);
+            String aa = null;
+            try {
+                aa = guessAminoAcid(res, muts);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             if (aa==null&&sequence!=null&&sequence.length()>=res) {
                 aa = sequence.substring(res-1,res);
             }
