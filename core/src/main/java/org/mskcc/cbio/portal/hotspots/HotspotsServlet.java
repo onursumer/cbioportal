@@ -153,12 +153,11 @@ public class HotspotsServlet extends HttpServlet {
                 hotspotDetectiveParameters.setIncludingMismatchesFor3DHotspots(false);
                 
                 hotspotDetective = new ProteinStructureHotspotDetective(hotspotDetectiveParameters);
-//            } else if (type.startsWith("ptm-effect")) {
-//                int thresholdDis = Integer.parseInt(request.getParameter(THRESHOLD_DISTANCE_PTM_MUTATION));
+            } else if (hotspotType.startsWith("ptm")) {
+                int thresholdDis = Integer.parseInt(request.getParameter(PTM_HOTSPOT_WINDOW));
 //                String ptmType = request.getParameter(PTM_TYPE);
-//                mapKeywordStudyCaseMut = DaoMutation.getPtmEffectStatistics(
-//                    studyIds.toString(), ptmType==null?null:ptmType.split("[, ]+"),
-//                    thresholdDis, threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);
+                hotspotDetectiveParameters.setLinearSpotWindowSize(thresholdDis);
+                hotspotDetective = new PTMHotspotDetective(hotspotDetectiveParameters);
 //            } else if (type.equalsIgnoreCase("truncating-sep")) {
 //                 mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
 //                    studyIds.toString(), threshold, concatEntrezGeneIds, concatExcludeEntrezGeneIds);

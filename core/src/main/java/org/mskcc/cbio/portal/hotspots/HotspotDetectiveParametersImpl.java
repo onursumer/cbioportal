@@ -41,6 +41,7 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     private int thresholdSamples;
     private boolean seperateByProteinChangesForSingleResidueHotspot;
     private int linearSpotWindowSize;
+    private int ptmHotspotWindowSize;
     private double distanceThresholdFor3DHotspots;
     private double distanceErrorThresholdFor3DHotspots;
     private double identpThresholdFor3DHotspots;
@@ -186,5 +187,15 @@ public class HotspotDetectiveParametersImpl implements HotspotDetectiveParameter
     @Override
     public void setMergeOverlappingHotspots(boolean mergeOverlappingHotspots) {
         this.mergeOverlappingHotspots = mergeOverlappingHotspots;
+    }
+
+    @Override
+    public void setPtmHotspotWindowSize(int ptmHotspotWindowSize) {
+        this.ptmHotspotWindowSize = ptmHotspotWindowSize;
+    }
+
+    @Override
+    public int getPtmHotspotWindowSize() {
+        return ptmHotspotWindowSize;
     }
 }

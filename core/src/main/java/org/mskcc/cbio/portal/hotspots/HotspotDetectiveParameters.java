@@ -139,6 +139,18 @@ public interface HotspotDetectiveParameters {
     
     /**
      * 
+     * @param  
+     */
+    public void setPtmHotspotWindowSize(int ptmHotspotWindowSize);
+    
+    /**
+     * 
+     * @param  
+     */
+    public int getPtmHotspotWindowSize();
+    
+    /**
+     * 
      * @return 
      */
     public double getDistanceThresholdFor3DHotspots();
