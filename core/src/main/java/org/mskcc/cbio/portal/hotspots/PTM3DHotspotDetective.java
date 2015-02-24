@@ -94,7 +94,9 @@ public class PTM3DHotspotDetective extends ProteinStructureHotspotDetective {
             SortedSet<Integer> residues = entryMapResiduesHotspots3D.getKey();
             Set<Hotspot> hotspots = entryMapResiduesHotspots3D.getValue();
             Hotspot3D hotspot3D = new Hotspot3DImpl(protein, numberOfsequencedCases, residues, hotspots);
-            hotspot3D.mergeHotspot(hotspots.iterator().next()); // add mutations
+            Hotspot hs = hotspots.iterator().next();
+            hotspot3D.mergeHotspot(hs); // add mutations
+            hotspot3D.setLabel(hs.getLabel()+" "+hotspot3D.getLabel());
             hotspots3D.add(hotspot3D);
         }
         
