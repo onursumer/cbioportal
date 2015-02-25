@@ -156,7 +156,7 @@ public class HotspotsServlet extends HttpServlet {
             } else if (hotspotType.startsWith("ptm")) {
                 int thresholdDis = Integer.parseInt(request.getParameter(PTM_HOTSPOT_WINDOW));
 //                String ptmType = request.getParameter(PTM_TYPE);
-                hotspotDetectiveParameters.setLinearSpotWindowSize(thresholdDis);
+                hotspotDetectiveParameters.setPtmHotspotWindowSize(thresholdDis);
                 hotspotDetective = new PTMHotspotDetective(hotspotDetectiveParameters);
 //            } else if (type.equalsIgnoreCase("truncating-sep")) {
 //                 mapKeywordStudyCaseMut = DaoMutation.getTruncatingMutatationStatistics(
