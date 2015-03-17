@@ -40,7 +40,7 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
-class BiotabFetcherImpl extends FetcherBaseImpl implements Fetcher
+public class BiotabFetcherImpl extends FetcherBaseImpl implements Fetcher
 {
     private static final int READ_TIMEOUT = 60000; // ms
     private static final int NO_REVISION_FOUND = -1;
@@ -81,7 +81,7 @@ class BiotabFetcherImpl extends FetcherBaseImpl implements Fetcher
 	}
 
     @Override
-	public void fetch(String dataSource, String desiredRunDate) throws Exception
+	public void fetch(String dataSource, String desiredRunDate, boolean updateStudiesWorksheet) throws Exception
     {
 
 		logMessage(LOG, "fetch(), dateSource" + dataSource);
@@ -136,7 +136,7 @@ class BiotabFetcherImpl extends FetcherBaseImpl implements Fetcher
 
     private String getURLToFileIndex(String tumorType)
     {
-        return (tcgaClinicalURL.replace(TUMOR_TYPE_REGEX, tumorType));
+        return (tcgaClinicalURL.replace(TUMOR_TYPE_REGEX, tumorType.toLowerCase()));
     }
 
     private Pattern getRevisionPattern(String tumorType)
@@ -171,7 +171,7 @@ class BiotabFetcherImpl extends FetcherBaseImpl implements Fetcher
 
     private String getURLToFile(String tumorType, String revision)
     {
-        return (tcgaClinicalURL.replace(TUMOR_TYPE_REGEX, tumorType) +
+        return (tcgaClinicalURL.replace(TUMOR_TYPE_REGEX, tumorType.toLowerCase()) +
                 tcgaClinicalFilename.replace(TUMOR_TYPE_REGEX, tumorType.toUpperCase()).replace(REVISION_REGEX, revision));
     }
 

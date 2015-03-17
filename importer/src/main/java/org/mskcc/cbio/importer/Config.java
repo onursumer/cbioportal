@@ -40,6 +40,7 @@ public interface Config {
 	 * @return Collection<TumorTypeMetadata>
 	 */
 	Collection<TumorTypeMetadata> getTumorTypeMetadata(String tumorType);
+	public TCGATumorTypeMetadata getTCGATumorTypeMetadata(String oncotreeCode);
 
 	/**
 	 * Function to get tumor types to download as String[]
@@ -167,6 +168,8 @@ public interface Config {
 	 */
 	Collection<DataSourcesMetadata> getDataSourcesMetadata(String dataSource);
 
+	Collection<CancerStudyMetadata> getAllCancerStudyMetadata();
+
 	/**
 	 * Gets all the cancer studies for a given portal.
 	 *
@@ -189,6 +192,11 @@ public interface Config {
 	 * @return Collection<FoundationMetadata>
 	 */
 	Collection<FoundationMetadata> getFoundationMetadata();
+
+    /**
+     * return the collection of icgc metadata objects
+     */
+    Collection<IcgcMetadata> getIcgcMetadata();
         
    /**
     * Returns a list of cancer study names which incorporate the supplied
@@ -198,4 +206,8 @@ public interface Config {
     * @return 
     */
     List<String> findCancerStudiesBySubstring(String substring);
+
+
+   void updateCancerStudyAttributes(String cancerStudy, Map<String,String> properties);
+   void insertCancerStudyAttributes(Map<String,String> properties);
 }
