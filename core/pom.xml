@@ -16,14 +16,14 @@
   <description>Core libraries shared among other modules</description>
   
   <repositories>
-        <repository>
+        <!--repository>
 		<id>biojava-maven-repo</id>
 		<name>BioJava repository</name>
 		<url>http://www.biojava.org/download/maven/</url>
 		<releases>
 			<enabled>true</enabled>
 		</releases>
-	</repository>
+	</repository-->
         <!--repository>
             <id>biopax.releases</id>
             <name>BioPAX Repository at Sourceforge</name>
@@ -199,18 +199,18 @@
         <!-- BioJava3 -->
         <dependency>
                 <groupId>org.biojava</groupId>
-                <artifactId>biojava3-core</artifactId>
-                <version>3.0.7</version>
+                <artifactId>biojava-core</artifactId>
+                <version>4.0.0</version>
         </dependency>
         <dependency>
                 <groupId>org.biojava</groupId>
-                <artifactId>biojava3-structure</artifactId>
-                <version>3.0.7</version>
+                <artifactId>biojava-structure</artifactId>
+                <version>4.0.0</version>
         </dependency>
         <dependency>
                 <groupId>org.biojava</groupId>
-                <artifactId>biojava3-modfinder</artifactId>
-                <version>3.0.7</version>
+                <artifactId>biojava-modfinder</artifactId>
+                <version>4.0.0</version>
         </dependency>
 
     <!-- Mockito -->
