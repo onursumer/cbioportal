@@ -212,7 +212,7 @@ public class CalculatePDBPTMData {
             Structure struc = null;
             try {
                 struc = atomCache.getStructure(pdbId);
-            } catch (StructureException ex) {
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
             if (struc==null) {
