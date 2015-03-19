@@ -12,7 +12,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.log4j.Logger;
-import org.apache.logging.log4j.util.PropertiesUtil;
 import org.mskcc.cbio.importer.persistence.staging.StagingCommonNames;
 import rx.Observable;
 import rx.Subscriber;

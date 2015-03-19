@@ -36,22 +36,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import org.biojava.nbio.structure.Atom;
-import org.biojava.nbio.structure.Chain;
-import org.biojava.nbio.structure.Group;
-import org.biojava.nbio.structure.Structure;
-import org.biojava.nbio.structure.StructureException;
-import org.biojava.nbio.structure.align.util.AtomCache;
-import org.biojava.nbio.structure.io.FileParsingParameters;
-import org.biojava.nbio.protmod.ModificationCategory;
-import org.biojava.nbio.protmod.ProteinModification;
-import org.biojava.nbio.protmod.ProteinModificationRegistry;
-import org.biojava.nbio.protmod.structure.ModifiedCompound;
-import org.biojava.nbio.protmod.structure.ProteinModificationIdentifier;
-import org.biojava.nbio.protmod.structure.StructureAtom;
-import org.biojava.nbio.protmod.structure.StructureAtomLinkage;
-import org.biojava.nbio.protmod.structure.StructureGroup;
-import org.biojava.nbio.protmod.structure.StructureUtil;
+import org.biojava.bio.structure.Atom;
+import org.biojava.bio.structure.Chain;
+import org.biojava.bio.structure.Group;
+import org.biojava.bio.structure.Structure;
+import org.biojava.bio.structure.StructureException;
+import org.biojava.bio.structure.align.util.AtomCache;
+import org.biojava.bio.structure.io.FileParsingParameters;
+import org.biojava3.protmod.ModificationCategory;
+import org.biojava3.protmod.ProteinModification;
+import org.biojava3.protmod.ProteinModificationRegistry;
+import org.biojava3.protmod.structure.ModifiedCompound;
+import org.biojava3.protmod.structure.ProteinModificationIdentifier;
+import org.biojava3.protmod.structure.StructureAtom;
+import org.biojava3.protmod.structure.StructureAtomLinkage;
+import org.biojava3.protmod.structure.StructureGroup;
+import org.biojava3.protmod.structure.StructureUtil;
 
 /**
  *
