@@ -28,9 +28,9 @@ package org.mskcc.cbio.portal.hotspots;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.biojava3.core.sequence.compound.AminoAcidCompound;
-import org.biojava3.core.sequence.compound.AminoAcidCompoundSet;
-import org.biojava3.core.sequence.loader.UniprotProxySequenceReader;
+import org.biojava.nbio.core.sequence.compound.AminoAcidCompound;
+import org.biojava.nbio.core.sequence.compound.AminoAcidCompoundSet;
+import org.biojava.nbio.core.sequence.loader.UniprotProxySequenceReader;
 import org.mskcc.cbio.portal.model.CanonicalGene;
 
 /**
