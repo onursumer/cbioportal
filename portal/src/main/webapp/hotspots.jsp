@@ -68,9 +68,11 @@ String jsonStudies = JSONValue.toJSONString(studies);
     <div>
         <label><b>Cancer studies (sequenced cases):</b></label>
         <div style="float:right">
-        <button id="select-pan-cancer">Select PanCan</button>
-        <button id="select-none-studies">Select none</button>
-        <button id="select-all-studies">Select all</button>
+        Select: 
+        <button id="select-pan-cancer">PanCan</button>
+        <button id="select-tcga-pan-cancer">TCGA</button>
+        <button id="select-none-studies">None</button>
+        <button id="select-all-studies">All</button>
         </div>
         </br>
         <div id="cancer-study-selection"></div>
@@ -239,6 +241,10 @@ var panCanStudies = (function(){
         var ref = study['reference'];
         if (ref && id.indexOf("_tcga")===-1 && id.indexOf("cellline_")===-1) ret[id]=true;
     });
+    
+    if (ret["paad_tcga"])
+        ret["paad_tcga"] = false;
+    
     return ret;
 })();
     
@@ -333,7 +339,7 @@ AlteredGene.CancerStudy.View = Backbone.View.extend({
     template: template("cancer-study"),
     render: function() {
         this.$el.html(this.template(this.model.attributes));
-        if (this.model.get('id') in panCanStudies)
+        if (panCanStudies[this.model.get('id')])
             this.$('option').attr('selected','selected');
             
         return this;
@@ -751,7 +757,19 @@ function addCancerStudyFrequencyTooltip() {
 function addSelectionButtonsListeners() {
     $("#select-pan-cancer").click(function() {
         $("#cancer-study-select option").each(function(index){
-            if ($(this)[0].value in panCanStudies)
+            if (panCanStudies[$(this)[0].value])
+                $(this).attr('selected',"selected");
+            else
+                $(this).removeAttr('selected');
+        });
+        
+        $('#cancer-study-select').trigger('chosen:updated');
+        return false;
+    });
+    
+    $("#select-tcga-pan-cancer").click(function() {
+        $("#cancer-study-select option").each(function(index){
+            if (panCanStudies[$(this)[0].value] && $(this)[0].value.indexOf("_tcga")>=0)
                 $(this).attr('selected',"selected");
             else
                 $(this).removeAttr('selected');
