@@ -44,6 +44,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
 import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
+import org.mskcc.cbio.portal.dao.DaoSample;
 import org.mskcc.cbio.portal.model.CancerStudy;
 import org.mskcc.cbio.portal.model.CanonicalGene;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
@@ -189,12 +190,12 @@ public class HotspotsServlet extends HttpServlet {
                     map1.put(cancerStudy, map2);
                 }
                 
-                String caseId = mutation.getCaseId();
+                String sampleId = DaoSample.getSampleById(mutation.getSampleId()).getStableId();
                 
-                Set<String> aaChanges = map2.get(caseId);
+                Set<String> aaChanges = map2.get(sampleId);
                 if (aaChanges==null) {
                     aaChanges = new HashSet<String>();
-                    map2.put(caseId, aaChanges);
+                    map2.put(sampleId, aaChanges);
                 }
                 aaChanges.add(mutation.getProteinChange());
             }

@@ -37,6 +37,7 @@ import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.special.Beta;
 import org.mskcc.cbio.portal.dao.DaoCancerStudy;
 import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
+import org.mskcc.cbio.portal.dao.DaoSample;
 import org.mskcc.cbio.portal.model.CancerStudy;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
 //import umontreal.iro.lecuyer.probdist.NegativeBinomialDist;
@@ -116,7 +117,7 @@ public class HotspotImpl implements Hotspot {
         // do not added residues because we may only want to label part of the residues
         CancerStudy cancerStudy = DaoCancerStudy.getCancerStudyByInternalId(
                 DaoGeneticProfile.getGeneticProfileById(mutation.getGeneticProfileId()).getCancerStudyId());
-        samples.add(new SampleImpl(mutation.getCaseId(), cancerStudy));
+        samples.add(new SampleImpl(DaoSample.getSampleById(mutation.getSampleId()).getStableId(), cancerStudy));
     }
 
     @Override

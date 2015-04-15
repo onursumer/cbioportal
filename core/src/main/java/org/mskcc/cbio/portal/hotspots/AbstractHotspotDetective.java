@@ -93,7 +93,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(AbstractHotspotDetective.class);
-            String sql = "SELECT  gp.`GENETIC_PROFILE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, cme.`CASE_ID`, "
+            String sql = "SELECT  gp.`GENETIC_PROFILE_ID`, `ONCOTATOR_UNIPROT_ENTRY_NAME`, `ONCOTATOR_UNIPROT_ACCESSION`, cme.`SAMPLE_ID`, "
                     + "`PROTEIN_CHANGE`, `ONCOTATOR_PROTEIN_POS_START`, `ONCOTATOR_PROTEIN_POS_END`, me.`ENTREZ_GENE_ID` "
                     + "FROM  `mutation_event` me, `mutation` cme, `genetic_profile` gp ";
             if (parameters.getThresholdHyperMutator()>0) {
@@ -103,7 +103,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                     + "AND cme.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` "
                     + "AND gp.`CANCER_STUDY_ID` IN ("+StringUtils.join(parameters.getCancerStudyIds(),",")+") ";
             if (parameters.getThresholdHyperMutator()>0) {
-                sql += "AND tmc.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` AND tmc.`CASE_ID`=cme.`CASE_ID` AND MUTATION_COUNT<" + parameters.getThresholdHyperMutator() + " ";
+                sql += "AND tmc.`GENETIC_PROFILE_ID`=gp.`GENETIC_PROFILE_ID` AND tmc.`SAMPLE_ID`=cme.`SAMPLE_ID` AND MUTATION_COUNT<" + parameters.getThresholdHyperMutator() + " ";
             }
             if (parameters.getMutationTypes()!=null && !parameters.getMutationTypes().isEmpty()) {
                 sql += "AND (`KEYWORD` LIKE '%"+StringUtils.join(parameters.getMutationTypes(),"' OR `KEYWORD` LIKE '%") +"') ";;
@@ -131,7 +131,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                     continue;
                 }
                 
-                String caseId = rs.getString("CASE_ID");
+                int sampleId = rs.getInt("SAMPLE_ID");
                 String aaChange = rs.getString("PROTEIN_CHANGE");
                 
                 CanonicalGene gene = daoGeneOptimized.getGene(rs.getLong("ENTREZ_GENE_ID"));
@@ -158,7 +158,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
                         }
 
                         ExtendedMutation mutation = new ExtendedMutation();
-                        mutation.setCaseId(caseId);
+                        mutation.setSampleId(sampleId);
                         mutation.setGeneticProfileId(geneticProfileId);
                         mutation.setProteinChange(aaChange);
                         mutation.setGene(gene);
@@ -345,7 +345,7 @@ public abstract class AbstractHotspotDetective implements HotspotDetective {
         ResultSet rs = null;
         try {
             con = JdbcUtil.getDbConnection(AbstractHotspotDetective.class);
-            String sql = "SELECT count(distinct CANCER_STUDY_ID, CASE_ID) FROM mutation, genetic_profile "
+            String sql = "SELECT count(distinct CANCER_STUDY_ID, SAMPLE_ID) FROM mutation, genetic_profile "
                     + "WHERE mutation.genetic_profile_id=genetic_profile.genetic_profile_id "
                     + "and CANCER_STUDY_ID IN ("+StringUtils.join(parameters.getCancerStudyIds(),",")+") ";
             pstmt = con.prepareStatement(sql);

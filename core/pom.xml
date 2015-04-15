@@ -196,6 +196,11 @@
         <artifactId>biojava3-structure</artifactId>
         <version>3.0.7</version>
     </dependency>
+    <dependency>
+        <groupId>org.biojava</groupId>
+        <artifactId>biojava3-modfinder</artifactId>
+        <version>3.0.7</version>
+    </dependency>
 
     <!-- Mockito -->
     <dependency>
