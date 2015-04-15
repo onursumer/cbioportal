@@ -412,21 +412,16 @@ cbio.util = (function() {
         arrayToAssociatedArrayIndices: arrayToAssociatedArrayIndices,
         alterAxesAttrForPDFConverter: alterAxesAttrForPDFConverter,
         lcss: lcss,
-<<<<<<< HEAD
         size: size,
-	    browser: detectBrowser(), // returning the browser object, not the function itself
-	    getWindowOrigin: getOrigin,
-	    safeProperty: safeProperty,
-	    autoHideOnMouseLeave: autoHideOnMouseLeave,
-=======
-	    b64ToByteArrays: b64ToByteArrays,
-        browser: detectBrowser(), // returning the browser object, not the function itself
-        getWindowOrigin: getOrigin,
->>>>>>> master
+	browser: detectBrowser(), // returning the browser object, not the function itself
+	getWindowOrigin: getOrigin,
+	safeProperty: safeProperty,
+	autoHideOnMouseLeave: autoHideOnMouseLeave,
+        b64ToByteArrays: b64ToByteArrays,
         sortByAttribute: sortByAttribute,
         swapElement: swapElement,
-	    getTargetWindow: getTargetWindow,
-	    getTargetDocument: getTargetDocument,
+	getTargetWindow: getTargetWindow,
+	getTargetDocument: getTargetDocument,
         getLinkToPatientView: getLinkToPatientView,
         getLinkToSampleView: getLinkToSampleView
     };
