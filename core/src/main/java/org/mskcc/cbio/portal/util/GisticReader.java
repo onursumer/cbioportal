@@ -1,18 +1,33 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.util;
@@ -138,67 +153,74 @@ public class GisticReader {
 
         line = buf.readLine();
         while (line != null) {
-
-            fields = line.split("\t");
-
-            Gistic gistic = new Gistic();
-            gistic.setCancerStudyId(cancerStudyId);
-
-			try {
-				gistic.setChromosome(Integer.parseInt(fields[chromosomeField]));
-			}
-			catch (NumberFormatException e) {
-				System.err.println("Ignoring row with chromosome number: " + fields[chromosomeField]);
-				line = buf.readLine();
-				continue;
-			}
-            gistic.setPeakStart(Integer.parseInt(fields[peakStartField]));
-            gistic.setPeakEnd(Integer.parseInt(fields[peakEndField]));
-
-            int amp = Integer.parseInt(fields[ampField]);
-            gistic.setAmp(amp == 1);
-
-            gistic.setCytoband(fields[cytobandField]);
-            gistic.setqValue((Float.parseFloat(fields[qvalField])));
-
-            // -- parse genes --
-
-            // parse out '[' and ']' chars and         ** Do these brackets have meaning? **
-            String[] _genes = fields[genesField].replace("[","")
-                    .replace("]", "")
-                    .split(",");
-
-            // map _genes to list of CanonicalGenes
-            ArrayList<CanonicalGene> genes = new ArrayList<CanonicalGene>();
-            DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
-            for (String gene : _genes) {
-
-                CanonicalGene canonicalGene = daoGene.getNonAmbiguousGene(gene);
-
-                if (canonicalGene == null) {
-                    canonicalGene = new CanonicalGene(gene);
-
-//                    System.out.println("gene not found, skipping: " + gene);
-//                    throw new DaoException("gene not found: " + gene);
-                }
-
-                if (canonicalGene.isMicroRNA()) {
-                    System.err.println("ignoring miRNA: " + canonicalGene.getHugoGeneSymbolAllCaps());
-                    continue;
-                }
-
-                genes.add(canonicalGene);
+            Gistic gistic;
+            try {
+                gistic = this.parseLine(line, cancerStudyId, chromosomeField, peakStartField, peakEndField, genesField, qvalField, ampField, cytobandField);
+                gistics.add(gistic);
+            } catch(Exception e) {
+                e.printStackTrace();
             }
-            // -- end parse genes --
-
-            gistic.setGenes_in_ROI(genes);
-
-            gistics.add(gistic);
             line = buf.readLine();
         }
 
         buf.close();
         reader.close();
         return gistics;
+    }
+    
+    private Gistic parseLine(String line, int cancerStudyId, int chromosomeField, int peakStartField, int peakEndField, int genesField, int qvalField, int ampField, int cytobandField) {
+        String[] fields = line.split("\t");
+
+        Gistic gistic = new Gistic();
+        gistic.setCancerStudyId(cancerStudyId);
+
+        if (fields[chromosomeField].equalsIgnoreCase("X"))
+            fields[chromosomeField] = "23";
+        if (fields[chromosomeField].equalsIgnoreCase("Y"))
+            fields[chromosomeField] = "24";
+        gistic.setChromosome(Integer.parseInt(fields[chromosomeField]));
+
+        gistic.setPeakStart(Integer.parseInt(fields[peakStartField]));
+        gistic.setPeakEnd(Integer.parseInt(fields[peakEndField]));
+
+        int amp = Integer.parseInt(fields[ampField]);
+        gistic.setAmp(amp == 1);
+
+        gistic.setCytoband(fields[cytobandField]);
+        gistic.setqValue((Float.parseFloat(fields[qvalField])));
+
+        // -- parse genes --
+
+        // parse out '[' and ']' chars and         ** Do these brackets have meaning? **
+        String[] _genes = fields[genesField].replace("[","")
+                .replace("]", "")
+                .split(",");
+
+        // map _genes to list of CanonicalGenes
+        ArrayList<CanonicalGene> genes = new ArrayList<CanonicalGene>();
+        DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
+        for (String gene : _genes) {
+
+            CanonicalGene canonicalGene = daoGene.getNonAmbiguousGene(gene);
+
+            if (canonicalGene == null) {
+                canonicalGene = new CanonicalGene(gene);
+
+//                    System.out.println("gene not found, skipping: " + gene);
+//                    throw new DaoException("gene not found: " + gene);
+            }
+
+            if (canonicalGene.isMicroRNA()) {
+                System.err.println("ignoring miRNA: " + canonicalGene.getHugoGeneSymbolAllCaps());
+                continue;
+            }
+
+            genes.add(canonicalGene);
+        }
+        // -- end parse genes --
+
+        gistic.setGenes_in_ROI(genes);
+
+        return gistic;
     }
 }

@@ -1,22 +1,53 @@
+<%--
+ - Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ -
+ - This library is distributed in the hope that it will be useful, but WITHOUT
+ - ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ - FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ - is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ - obligations to provide maintenance, support, updates, enhancements or
+ - modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ - liable to any party for direct, indirect, special, incidental or
+ - consequential damages, including lost profits, arising out of the use of this
+ - software and its documentation, even if Memorial Sloan-Kettering Cancer
+ - Center has been advised of the possibility of such damage.
+ --%>
+
+<%--
+ - This file is part of cBioPortal.
+ -
+ - cBioPortal is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as
+ - published by the Free Software Foundation, either version 3 of the
+ - License.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--%>
+
 <%@ include file="global/global_variables.jsp" %>
+
 <jsp:include page="global/header.jsp" flush="true" />
 
-<%
-    String smry = cancerStudyName +
-            "/" + caseSetName + ": (" +
-            mergedCaseListSize + ")" + "/" +
-            geneSetName + "/" + geneWithScoreList.size() +
-            (geneWithScoreList.size() == 1?"gene":"genes");
-%>
-
-<p>
-    <div class='gene_set_summary'>
-        Gene Set / Pathway is altered in <%=percentCasesAffected%> of all cases. <br>
+<div class='main_smry'>
+    <div id='main_smry_stat_div' style='float:right;margin-right:15px;margin-bottom:-5px;width:50%;text-align:right;'></div>
+    <div id='main_smry_info_div'>
+        <table style='margin-left:0px;width=40%;margin-top:-10px;margin-bottom:-5px;' >
+            <tr>
+                <td><div id='main_smry_modify_query_btn'><div></td>
+                <td><div id='main_smry_query_div' style='padding-left: 5px;'></div></td>
+            </tr>
+        </table>
     </div>
-</p>
-<p>
-    <small><strong><%=smry%></strong></small>
-</p>
+    <div style="margin-left:5px;display:none;margin-top:-5px;" id="query_form_on_results_page">
+        <%@ include file="query_form.jsp" %>
+    </div>
+</div>
 
 <%
     if (warningUnion.size() > 0) {
@@ -43,22 +74,6 @@
         out.println ("</div>");
     } else {
 %>
-
-<script type="text/javascript">
-    $(document).ready(function(){
-        // Init Tool Tips
-        $("#toggle_query_form").tipTip();
-    });
-</script>
-
-<p><a href="" title="Modify your original query.  Recommended over hitting your browser's back button." id="toggle_query_form">
-    <span class='query-toggle ui-icon ui-icon-triangle-1-e' style='float:left;'></span>
-    <span class='query-toggle ui-icon ui-icon-triangle-1-s' style='float:left; display:none;'></span><b>Modify Query</b></a>
-<p/>
-
-<div style="margin-left:5px;display:none;" id="query_form_on_results_page">
-    <%@ include file="query_form.jsp" %>
-</div>
 
 <div id="tabs">
     <ul>
@@ -122,7 +137,7 @@
             out.println ("<li><a href='#summary' class='result-tab' title='Compact visualization of genomic alterations'>OncoPrint</a></li>");
 
             if (computeLogOddsRatio && geneWithScoreList.size() > 1) {
-                out.println ("<li><a href='#gene_correlation' class='result-tab' title='Mutual exclusivity and co-occurrence analysis'>"
+                out.println ("<li><a href='#mutex' class='result-tab' title='Mutual exclusivity and co-occurrence analysis'>"
                 + "Mutual Exclusivity</a></li>");
             }
 
@@ -145,7 +160,7 @@
                 + "Protein Changes</a></li>");
             }
 
-            if (clinicalDataList != null && clinicalDataList.size() > 0) {
+            if (has_survival) {
                 out.println ("<li><a href='#survival' class='result-tab' title='Survival analysis and Kaplan-Meier curves'>"
                 + "Survival</a></li>");
             }
@@ -166,7 +181,7 @@
             out.println ("<div class=\"section\" id=\"bookmark_email\">");
 
             // diable bookmark link if case set is user-defined
-            if (caseSetId.equals("-1"))
+            if (patientSetId.equals("-1"))
             {
                 out.println("<br>");
                 out.println("<h4>The bookmark option is not available for user-defined case lists.</h4>");
@@ -190,7 +205,6 @@
         <div class="section" id="summary">
             <% //contents of fingerprint.jsp now come from attribute on request object %>
             <%@ include file="oncoprint/main.jsp" %>
-            <%@ include file="gene_info.jsp" %>
         </div>
 
             <% if ( has_mrna && (has_copy_no || has_methylation || has_copy_no) ) { %>
@@ -201,14 +215,14 @@
         <%@ include file="igv.jsp" %>
             <% } %>
 
-            <% if (clinicalDataList != null && clinicalDataList.size() > 0) { %>
+            <% if (has_survival) { %>
         <%@ include file="survival_tab.jsp" %>
             <% } %>
 
             <% if (computeLogOddsRatio && geneWithScoreList.size() > 1) { %>
-        <%@ include file="correlation.jsp" %>
+                <%@ include file="mutex_tab.jsp" %>
             <% } %>
-
+            
             <% if (mutationDetailLimitReached != null) {
         out.println("<div class=\"section\" id=\"mutation_details\">");
         out.println("<P>To retrieve mutation details, please specify "
@@ -227,12 +241,12 @@
             <%@ include file="networks.jsp" %>
         <% } %>
 
-        <%@ include file="data_download.jsp" %>
-        <%@ include file="image_tabs_data.jsp" %>
-        
         <% if (showCoexpTab) { %>
             <%@ include file="co_expression.jsp" %>
         <% } %>
+
+        <%@ include file="data_download.jsp" %>
+        <%@ include file="image_tabs_data.jsp" %>
 
 </div> <!-- end tabs div -->
 <% } %>
@@ -252,19 +266,22 @@
 </form>
 
 <script type="text/javascript">
-	// initially hide network tab
-	$("div.section#network").attr('style', 'height: 0px; width: 0px; visibility: hidden;');
+    // initially hide network tab
+    $("div.section#network").attr('style', 'height: 0px; width: 0px; visibility: hidden;');
 
-	// it is better to check selected tab after document gets ready
-	$(document).ready(function() {
-		// check if network tab is initially selected
-		// TODO this depends on aria-hidden attribute which may not be safe...
-		if ($("div.section#network").attr('aria-hidden') == "false")
-		{
-			// make the network tab visible...
-			$("div.section#network").removeAttr('style');
-		}
-	});
+    // it is better to check selected tab after document gets ready
+    $(document).ready(function() {
+
+        $("#toggle_query_form").tipTip();
+        // check if network tab is initially selected
+        // TODO this depends on aria-hidden attribute which may not be safe...
+        
+        if ($("div.section#network").attr('aria-hidden') == "false"){
+            // make the network tab visible...
+            $("div.section#network").removeAttr('style');
+        }
+
+    });
 
     // to fix problem of flash repainting
     $("a.result-tab").click(function(){
@@ -272,7 +289,7 @@
         if($(this).attr("href")=="#network") {
             $("div.section#network").removeAttr('style');
         } else {
-	        // since we never allow display:none we should adjust visibility, height, and width properties
+            // since we never allow display:none we should adjust visibility, height, and width properties
             $("div.section#network").attr('style', 'height: 0px; width: 0px; visibility: hidden;');
         }
     });
@@ -280,6 +297,22 @@
     //  Set up Tip-Tip Event Handler for Genomic Profiles help
     $(".result-tab").tipTip({defaultPosition: "bottom", delay:"100", edgeOffset: 10, maxWidth: 200});
 </script>
+
+
+<style type="text/css">
+    input[type="checkbox"]  {
+        margin: 5px;
+    }
+    input[type="radio"]  {
+        margin: 3px;
+    }
+    button {
+        margin: 3px;
+    }
+    [class*="ui-button-text"] {
+        margin: 3px;
+    }
+</style>
 
 </body>
 </html>

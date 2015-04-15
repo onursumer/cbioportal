@@ -1,9 +1,41 @@
+<%--
+ - Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ -
+ - This library is distributed in the hope that it will be useful, but WITHOUT
+ - ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ - FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ - is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ - obligations to provide maintenance, support, updates, enhancements or
+ - modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ - liable to any party for direct, indirect, special, incidental or
+ - consequential damages, including lost profits, arising out of the use of this
+ - software and its documentation, even if Memorial Sloan-Kettering Cancer
+ - Center has been advised of the possibility of such damage.
+ --%>
+
+<%--
+ - This file is part of cBioPortal.
+ -
+ - cBioPortal is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as
+ - published by the Free Software Foundation, either version 3 of the
+ - License.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--%>
+
 <%@ page import="org.mskcc.cbio.portal.util.GlobalProperties" %>
 <%@ page import="org.mskcc.cbio.portal.util.DataSetsUtil" %> 
 <%@ page import="org.mskcc.cbio.portal.model.CancerStudyStats" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
+
 <%
    String examplesHtml = GlobalProperties.getProperty("examples_right_column");
    if (examplesHtml == null) {
@@ -11,39 +43,17 @@
    } else {
 	   examplesHtml = "../../../content/" + examplesHtml;
    }
-
-   DataSetsUtil dataSetsUtil = null;
-   List<CancerStudyStats> cancerStudyStats = null;
-   if (GlobalProperties.showRightNavDataSets()) {
-	   dataSetsUtil = new DataSetsUtil();
-	   try {
-		   cancerStudyStats = dataSetsUtil.getCancerStudyStats();
-	   }
-	   catch (Exception e) {
-		   cancerStudyStats = new ArrayList<CancerStudyStats>();
-	   }
-   }
 %>
 
-    <!-- Display Sign Out Button for Real (Non-Anonymous) User -->
-    <sec:authorize access="!hasRole('ROLE_ANONYMOUS')">
-        <table width="100%">
-	<tr>
-        <td align="right" style="font-size:10px;">
-            You are logged in as <sec:authentication property='principal.name' />. <a href="j_spring_security_logout">Sign out</a>.
-        </td>
-        </tr>
-    </table>
-    </sec:authorize>
+
 <div id="right_side">
     
     
     <h3>What's New</h3>
 
     <p>
-    &bull;<a href="jobs.jsp"> We are hiring a <b>Front End Engineer</b></a><br>
-    &bull;<a href="jobs.jsp"> We are hiring a <b>Data Curator</b></a><br>
-    &bull;<a href="news.jsp"> <b>New data and features released</b></a>
+    &bull;<a href="news.jsp"> <b>New data and features released</b></a><br/>
+    &bull;<a href="tools.jsp"> <b>New tools released</b></a>
     </p>
     
     <form action="http://groups.google.com/group/cbioportal-news/boxsubscribe">
@@ -57,16 +67,26 @@
 if (GlobalProperties.showRightNavDataSets()) {
 %>
     <h3>Data Sets</h3>
-<%
-    out.println("<P>The Portal contains data for <b>" + dataSetsUtil.getTotalNumberOfSamples() + " tumor samples from " +
-                     cancerStudyStats.size() + " cancer studies.</b> [<a href='data_sets.jsp'>Details.</a>]</p>");
-%>
+    <p id="portal_data_stats_copy"></p>
     <div id='rightmenu-stats-box'></div>
 	<script type="text/javascript">
 		$(document).ready( function() {
-			$.getJSON("portal_meta_data.json", function(json) {
-				RightMenuStudyStatsUtil.plotTree(json);
-			});
+                        var plotTree = function(json) {
+                            var totalNumSamples = Object.keys(json.cancer_studies).map(function(x) { 
+                                return (x === 'all' ? 0 : json.cancer_studies[x].num_samples);
+                            }).reduce(function(acc, currVal) {
+                                return acc+currVal;
+                            }, 0);
+                            var numStudies = Object.keys(json.cancer_studies).length - 1; // subtract one for the cross-cancer "study"
+                            $("#portal_data_stats_copy").html("The Portal contains data for <b>" + totalNumSamples + " tumor samples from " +
+                                    numStudies + " cancer studies.</b> [<a href='data_sets.jsp'>Details</a>]</p>");
+                            RightMenuStudyStatsUtil.plotTree(json);
+			};
+                        if (window.metaDataPromise) {
+                            window.metaDataPromise.then(plotTree);
+                        } else {
+                            $.getJSON("portal_meta_data.json?partial_studies=true&partial_genesets=true", plotTree);
+                        }
 		});
 	</script>
 <%

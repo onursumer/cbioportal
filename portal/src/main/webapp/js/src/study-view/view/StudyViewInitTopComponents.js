@@ -1,11 +1,35 @@
 /*
- * View for Top Components 
- * 
- *                                       
- * @authur: Hongxin Zhang
- * @date: Mar. 2014
- * 
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
  */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 
 var StudyViewInitTopComponents = (function() {
     function liClickCallBack(_id, _text) {
@@ -39,26 +63,12 @@ var StudyViewInitTopComponents = (function() {
             //StudyViewInitCharts.redrawScatter();
             
             dc.redrawAll();
+            StudyViewInitTables.clearAllSelected();
             StudyViewInitCharts.resetBars();
             StudyViewInitCharts.redrawSpecialPlots();
             setTimeout(function() {
                 StudyViewInitScatterPlot.setclearFlag(false);
             }, StudyViewParams.summaryParams.transitionDuration);
-            
-//            $(StudyViewInitDataTable
-//                    .getDataTable()
-//                    .getDataTable()
-//                    .fnSettings()
-//                    .aoData).each(function (){
-//                if($(this.nTr).hasClass('row_selected')){
-//                    $(this.nTr).removeClass('row_selected');
-//                    if($(this.nTr).hasClass('odd')){
-//                       $(this.nTr).css('background-color','#E2E4FF'); 
-//                    }else{
-//                        $(this.nTr).css('background-color','white');
-//                    }
-//                }
-//            });
             StudyViewInitCharts.changeHeader();
         });
         
@@ -71,6 +81,20 @@ var StudyViewInitTopComponents = (function() {
         
         $("#study-view-tutorial").click(function() {
             StudyViewInitIntroJS.init();
+        });
+
+        $("#study-view-header-left-4").click(function() {
+            var _url;
+            var _selectedCaseIds = StudyViewInitCharts.getSelectedCasesID();
+            var _selectedPatientIds = StudyViewProxy.getPatientIdsBySampleIds(_selectedCaseIds);
+            
+            _selectedPatientIds = _selectedPatientIds.sort();
+            _url =  "case.do?cancer_study_id="+
+                    StudyViewParams.params.studyId+
+                    "&case_id="+_selectedPatientIds[0]+
+                    "#nav_case_ids="+_selectedPatientIds.join(",");
+            
+            window.open(_url);
         });
     }
     
@@ -93,7 +117,11 @@ var StudyViewInitTopComponents = (function() {
         //StudyViewWindowEvents will return the page scrolling status, if the
         //header is on the top of page windowScorlled = false.
 //        windowScolled = StudyViewWindowEvents.getScrollStatus();
-         
+     
+
+        $("#study-view-header-left-1").css('display','block');
+        $("#study-view-header-left-4").css('display','block');
+        
         if(_resultLength === _numOfCases){
             var _hasFilter = false,
                 _plotDataFlag = StudyViewInitCharts.getPlotDataFlag();
@@ -106,19 +134,21 @@ var StudyViewInitTopComponents = (function() {
             }
             if(_hasFilter){
                 $("#study-view-header-left-0").css('display','none');
-                $("#study-view-header-left-1").css('display','block');
+                $("#study-view-header-left-1").val('Query selected samples');
+                $("#study-view-header-left-4").val('View selected cases');
                 $("#study-view-header-left-2").css('display','block');
                 $("#study-view-header-left-3").css('display','block');
-                $("#study-view-header-left-3").text(_resultLength + " cases are selected.");
-                $("#study-view-header-left-case-ids").val(_caseID.join(" "));
+                $("#study-view-header-left-3").text(_resultLength + " samples are selected.");
             }else if(_plotDataFlag){
                 $("#study-view-header-left-0").css('display','block');
-                $("#study-view-header-left-1").css('display','none');
+                $("#study-view-header-left-1").val('Query all samples');
+                $("#study-view-header-left-4").val('View all cases');
                 $("#study-view-header-left-2").css('display','block');
                 $("#study-view-header-left-3").css('display','none');
             }else {
                 $("#study-view-header-left-0").css('display','block');
-                $("#study-view-header-left-1").css('display','none');
+                $("#study-view-header-left-1").val('Query all samples');
+                $("#study-view-header-left-4").val('View all cases');
                 $("#study-view-header-left-2").css('display','none');
                 $("#study-view-header-left-3").css('display','none');
             }
@@ -126,56 +156,35 @@ var StudyViewInitTopComponents = (function() {
             if(_resultLength === 0){
                 $("#study-view-header-left-0").css('display','none');
                 $("#study-view-header-left-1").css('display','none');
+                $("#study-view-header-left-4").css('display','none');
                 $("#study-view-header-left-2").css('display','block');
                 $("#study-view-header-left-3").css('display','block');
-//                $("#study-view-header-left-2").text('Reset');
-                $("#study-view-header-left-3").text("No case is selected.");
+                $("#study-view-header-left-3").text("No samples are selected.");
                 $("#study-view-header-left-2").val('Reset all');
-//                if(windowScolled){
-//                    $("#study-view-header-left-2").css('left','0');
-//                    $("#study-view-header-left-3").css('left','0');
-//                }else{
-//                    $("#study-view-header-left-2").css('left','0');
-//                    $("#study-view-header-left-3").css('left','80px');
-//                }
-                $("#study-view-header-left-case-ids").val(_caseID.join(" "));
             }else if(_resultLength === 1){
                 $("#study-view-header-left-0").css('display','none');
-                $("#study-view-header-left-1").css('display','none');
+                $("#study-view-header-left-1").val('Query selected samples');
+                $("#study-view-header-left-4").css('display','none');
                 $("#study-view-header-left-2").css('display','block');
                 $("#study-view-header-left-3").css('display','block');
-//                $("#study-view-header-left-2").css('left','0');
-//                $("#study-view-header-left-2").text('Reset all');
                 $("#study-view-header-left-2").val('Reset all');
                 $("#study-view-header-left-3").html("");
-//                if(windowScolled){
-//                    $("#study-view-header-left-3").css('left','0');
-//                }else{
-////                    $("#study-view-header-left-3").css('left','100px');
-//                    $("#study-view-header-left-3").css('left','70px');
-//                }
                 $("#study-view-header-left-3")
-                        .append("<a title='Go to patient-centric view' " + 
-                        "href='case.do?cancer_study_id=" + StudyViewParams.params.studyId +
-                        "&amp;case_id=" + _caseID[0] + "'><span style='color: red'>" + _caseID[0] + 
+                        .append("<a title='Go to sample view' href='"
+                        + cbio.util.getLinkToSampleView(StudyViewParams.params.studyId, _caseID[0])
+                        + "'><span style='color: red'>" + _caseID[0] + 
                         "</span></a>" + " is selected.");                
             }else{
                 $("#study-view-header-left-0").css('display','none');
-                $("#study-view-header-left-1").css('display','block');
+                $("#study-view-header-left-1").val('Query selected samples');
+                $("#study-view-header-left-4").val('View selected cases');
                 $("#study-view-header-left-2").css('display','block');
                 $("#study-view-header-left-3").css('display','block');
                 $("#study-view-header-left-2").val('Reset all');
-//              $("#study-view-header-left-2").text('Reset all');
-//                if(windowScolled){
-//                    $("#study-view-header-left-3").css('left','0');
-//                }else{
-//                    $("#study-view-header-left-3").css('left','260px');
-////                    $("#study-view-header-left-3").css('left','310px');
-//                }
-                $("#study-view-header-left-3").text(_resultLength + " cases are selected.");
-                $("#study-view-header-left-case-ids").val(_caseID.join(" "));
+                $("#study-view-header-left-3").text(_resultLength + " samples are selected.");
             }
         }
+        $("#study-view-header-left-case-ids").val(_caseID.join(" "));
     }
     
     function initAddCharts() {
@@ -191,6 +200,7 @@ var StudyViewInitTopComponents = (function() {
         $("#study-view-header-function").append(_newElement);
         $("#study-view-header-function").append(StudyViewBoilerplate.customDialogDiv);
         $("#study-view-header-left-cancer_study-ids").val(StudyViewParams.params.studyId);
+        $("#study-view-header-left-case-ids").val(StudyViewParams.params.sampleIds.join(" "));
         //$("#study-view-header-function").append(StudyViewBoilerplate.tutorialDiv);
         _headerLeftQtip.position.target = $(window);
         _headerLeftQtip.content.text = $('#study-view-case-select-custom-dialog');

@@ -1,36 +1,43 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.dao;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-import org.mskcc.cbio.portal.util.FileUtil;
-import org.mskcc.cbio.portal.util.GlobalProperties;
+import org.mskcc.cbio.portal.util.*;
+import org.apache.commons.io.FileUtils;
+
+import java.io.*;
+import java.sql.*;
+import java.util.*;
 
 /**
  * To speed up CGDS data loading, bulk load from files using MySQL "LOAD DATA INFILE" functionality.
@@ -103,9 +110,7 @@ public class MySQLbulkLoader {
     */
    private void openTempFile(String tableName) throws IOException {
 
-      // TODO: create special directory for temp dbms load files; perhaps make OS portable
-      String tmp = GlobalProperties.getTemporaryDir();
-      tempFileHandle = File.createTempFile( tableName, tempTableSuffix, new File(tmp) );
+      tempFileHandle = File.createTempFile( tableName, tempTableSuffix, FileUtils.getTempDirectory() );
 
       tempFileName = tempFileHandle.getAbsolutePath();
 
@@ -191,13 +196,14 @@ public class MySQLbulkLoader {
          con = JdbcUtil.getDbConnection(MySQLbulkLoader.class);
          stmt = con.createStatement();
          
-         // will throw error if attempts to overwrite primary keys in table
-         String command = "LOAD DATA LOCAL INFILE '" + tempFileName + "' INTO TABLE " + tableName;
+         // will throw error if attempts to overwrite primary keys in table (except for clinical data)
+         String replace = (processingClinicalData()) ? " REPLACE" : "";
+         String command = "LOAD DATA LOCAL INFILE '" + tempFileName + "'" + replace + " INTO TABLE " + tableName;
          stmt.execute( command );
          int updateCount = stmt.getUpdateCount();
          System.out.println(""+updateCount+" records inserted into "+tableName);
          int nLines = FileUtil.getNumLines(tempFileHandle);
-         if (nLines!=updateCount) {
+         if (nLines!=updateCount && !processingClinicalData()) {
              System.err.println("Error: but there are "+nLines+" lines in the temp file "+tempFileName);
          } else {
              tempFileHandle.delete();
@@ -234,5 +240,10 @@ public class MySQLbulkLoader {
    public static void bulkLoadOff() {
       MySQLbulkLoader.bulkLoad = false;
    }
-   
+
+   private boolean processingClinicalData()
+   {
+      return (tempFileName.contains(DaoClinicalData.SAMPLE_TABLE) ||
+              tempFileName.contains(DaoClinicalData.PATIENT_TABLE));
+   }
 }

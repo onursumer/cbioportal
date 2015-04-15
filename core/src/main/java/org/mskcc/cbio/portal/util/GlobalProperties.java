@@ -1,19 +1,35 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 package org.mskcc.cbio.portal.util;
 
 import org.mskcc.cbio.portal.servlet.QueryBuilder;
@@ -48,9 +64,12 @@ public class GlobalProperties {
     public static final String BITLY_API_KEY = "bitly.api_key";
     public static final String INCLUDE_NETWORKS = "include_networks";
     public static final String GOOGLE_ANALYTICS_PROFILE_ID = "google_analytics_profile_id";
+    public static final String GENOMESPACE = "genomespace";
 
     public static final String APP_NAME = "app.name";
     public static final String DEFAULT_APP_NAME = "public_portal";
+    
+    public static final String APP_VERSION = "app.version";
 
     public static final String SKIN_TITLE = "skin.title";
     public static final String DEFAULT_SKIN_TITLE = "cBioPortal for Cancer Genomics";
@@ -75,9 +94,8 @@ public class GlobalProperties {
     public static final String PATIENT_VIEW_DIGITAL_SLIDE_IFRAME_URL = "digitalslidearchive.iframe.url";
     public static final String PATIENT_VIEW_DIGITAL_SLIDE_META_URL = "digitalslidearchive.meta.url";
     public static final String PATIENT_VIEW_TCGA_PATH_REPORT_URL = "tcga_path_report.url";
+    public static final String ONCOKB_URL = "oncokb.url";
     
-    public static final String TEMPORARY_DIR = "temporary_dir";
-
     private static Log LOG = LogFactory.getLog(GlobalProperties.class);
     private static Properties properties = initializeProperties();
     private static Properties initializeProperties()
@@ -177,7 +195,13 @@ public class GlobalProperties {
 
     public static boolean usersMustAuthenticate()
     {
-		return Boolean.parseBoolean(properties.getProperty(AUTHENTICATE));
+        String prop = properties.getProperty(AUTHENTICATE);
+        return (!prop.isEmpty() && !prop.equals("false"));
+    }
+
+    public static String authenticationMethod()
+    {
+        return properties.getProperty(AUTHENTICATE);
     }
 
 	public static boolean usersMustBeAuthorized()
@@ -189,6 +213,12 @@ public class GlobalProperties {
     {
         String appName = properties.getProperty(APP_NAME);
         return (appName == null) ? DEFAULT_APP_NAME : appName;
+    }
+
+    public static String getAppVersion()
+    {
+        String appVersion = properties.getProperty(APP_VERSION);
+        return (appVersion == null) ? "1.0" : appVersion;
     }
 
     public static String getTitle()
@@ -233,6 +263,11 @@ public class GlobalProperties {
     public static String getGoogleAnalyticsProfileId()
     {
         return properties.getProperty(GOOGLE_ANALYTICS_PROFILE_ID);
+    }
+
+    public static boolean genomespaceEnabled()
+    {
+        return Boolean.parseBoolean(properties.getProperty(GENOMESPACE));
     }
 
     public static boolean showPlaceholderInPatientView()
@@ -300,7 +335,14 @@ public class GlobalProperties {
     public static String getLinkToPatientView(String caseId, String cancerStudyId)
     {
         return "case.do?" + QueryBuilder.CANCER_STUDY_ID + "=" + cancerStudyId
-                 + "&"+ org.mskcc.cbio.portal.servlet.PatientView.CASE_ID + "=" + caseId;
+                 //+ "&"+ org.mskcc.cbio.portal.servlet.PatientView.PATIENT_ID + "=" + caseId;
+                 + "&"+ org.mskcc.cbio.portal.servlet.PatientView.SAMPLE_ID + "=" + caseId;
+    }
+
+    public static String getLinkToSampleView(String caseId, String cancerStudyId)
+    {
+        return "case.do?" + QueryBuilder.CANCER_STUDY_ID + "=" + cancerStudyId
+                 + "&"+ org.mskcc.cbio.portal.servlet.PatientView.SAMPLE_ID + "=" + caseId;
     }
 
     public static String getLinkToCancerStudyView(String cancerStudyId)
@@ -332,14 +374,25 @@ public class GlobalProperties {
         return url+caseId;
     }
 
-    public static String getTCGAPathReportUrl(String typeOfCancer)
+    public static String[] getTCGAPathReportUrl(String typeOfCancer)
     {
         String url = GlobalProperties.getProperty(PATIENT_VIEW_TCGA_PATH_REPORT_URL);
-        return (url==null) ? null : url.replace("{cancer.type}", typeOfCancer);
+        if (url == null) {
+            return null;
+        }
+        
+        if (typeOfCancer.equalsIgnoreCase("coadread")) {
+            return new String[] {
+                url.replace("{cancer.type}", "coad"),
+                url.replace("{cancer.type}", "read")
+            };
+        }
+        
+        return new String[] {url.replace("{cancer.type}", typeOfCancer)};
     }
     
-    public static String getTemporaryDir() {
-        String tmp = GlobalProperties.getProperty(TEMPORARY_DIR);
-        return tmp == null || tmp.isEmpty() ? "/tmp" : tmp;
+    public static String getOncoKBUrl()
+    {
+        return properties.getProperty(ONCOKB_URL);
     }
 }

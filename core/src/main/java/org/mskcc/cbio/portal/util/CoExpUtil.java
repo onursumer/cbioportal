@@ -1,3 +1,35 @@
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package org.mskcc.cbio.portal.util;
 
 import java.util.*;
@@ -9,22 +41,22 @@ import org.mskcc.cbio.portal.dao.*;
 
 public class CoExpUtil {
 
-    public static ArrayList<String> getCaseIds(String caseSetId, String caseIdsKey) {
+    public static ArrayList<String> getPatientIds(String patientSetId, String patientIdsKey) {
 		try {
-			DaoCaseList daoCaseList = new DaoCaseList();
-            CaseList caseList;
-            ArrayList<String> caseIdList = new ArrayList<String>();
-            if (caseSetId.equals("-1")) {
-                String strCaseIds = CaseSetUtil.getCaseIds(caseIdsKey);
-                String[] caseArray = strCaseIds.split("\\s+");
-                for (String item : caseArray) {
-                    caseIdList.add(item);
+			DaoPatientList daoPatientList = new DaoPatientList();
+            PatientList patientList;
+            ArrayList<String> patientIdList = new ArrayList<String>();
+            if (patientSetId.equals("-1")) {
+                String strPatientIds = PatientSetUtil.getPatientIds(patientIdsKey);
+                String[] patientArray = strPatientIds.split("\\s+");
+                for (String item : patientArray) {
+                    patientIdList.add(item);
                 }
             } else {
-                caseList = daoCaseList.getCaseListByStableId(caseSetId);
-                caseIdList = caseList.getCaseList();
+                patientList = daoPatientList.getPatientListByStableId(patientSetId);
+                patientIdList = patientList.getPatientList();
             }
-			return caseIdList;
+			return patientIdList;
         } catch (DaoException e) {
             System.out.println("Caught Dao Exception: " + e.getMessage());
 			return null;
@@ -51,22 +83,26 @@ public class CoExpUtil {
         return final_gp;
     }
 
-    public static Map<Long,double[]> getExpressionMap(int profileId, String caseSetId, String caseIdsKey) throws DaoException {
-        //Filter out cases with no values
-        ArrayList<String> caseIds = getCaseIds(caseSetId, caseIdsKey);
-        caseIds.retainAll(DaoCaseProfile.getAllCaseIdsInProfile(profileId));
+    public static Map<Long,double[]> getExpressionMap(int profileId, String patientSetId, String patientIdsKey) throws DaoException {
+        
+        GeneticProfile gp = DaoGeneticProfile.getGeneticProfileById(profileId);
+        List<String> stableSampleIds = getPatientIds(patientSetId, patientIdsKey);
+        List<Integer> sampleIds = new ArrayList<Integer>();
+        for(String sampleId : stableSampleIds) {
+            Sample sample = DaoSample.getSampleByCancerStudyAndSampleId(gp.getCancerStudyId(), sampleId);   
+            sampleIds.add(sample.getInternalId()); 
+        }   
+        sampleIds.retainAll(DaoSampleProfile.getAllSampleIdsInProfile(profileId));
 
         DaoGeneticAlteration daoGeneticAlteration = DaoGeneticAlteration.getInstance();
-
-        Map<Long, HashMap<String, String>> mapStr = daoGeneticAlteration.getGeneticAlterationMap(profileId, null);
+        Map<Long, HashMap<Integer, String>> mapStr = daoGeneticAlteration.getGeneticAlterationMap(profileId, null);
         Map<Long, double[]> map = new HashMap<Long, double[]>(mapStr.size());
-        for (Map.Entry<Long, HashMap<String, String>> entry : mapStr.entrySet()) {
+        for (Map.Entry<Long, HashMap<Integer, String>> entry : mapStr.entrySet()) {
             Long gene = entry.getKey();
-            Map<String, String> mapCaseValueStr = entry.getValue();
-            double[] values = new double[caseIds.size()];
-            boolean isValid = true;
-            for (int i = 0; i < caseIds.size(); i++) {
-                String caseId = caseIds.get(i);
+            Map<Integer, String> mapCaseValueStr = entry.getValue();
+            double[] values = new double[sampleIds.size()];
+            for (int i = 0; i < sampleIds.size(); i++) {
+                Integer caseId = sampleIds.get(i);
                 String value = mapCaseValueStr.get(caseId);
                 Double d;
                 try {
@@ -74,17 +110,12 @@ public class CoExpUtil {
                 } catch (Exception e) {
                     d = Double.NaN;
                 }
-                // if (d!=null && !d.isNaN()) {
-                     values[i]=d;
-                // } else {
-                //     isValid = false;
-                //     break;
-                // }
+                values[i]=d;
             }
-            // if (isValid) {
-                 map.put(gene, values);
-            // }
+                 
+            map.put(gene, values);
         }
+
         return map;
     }
 	

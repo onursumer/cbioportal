@@ -1,3 +1,35 @@
+<%--
+ - Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ -
+ - This library is distributed in the hope that it will be useful, but WITHOUT
+ - ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ - FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ - is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ - obligations to provide maintenance, support, updates, enhancements or
+ - modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ - liable to any party for direct, indirect, special, incidental or
+ - consequential damages, including lost profits, arising out of the use of this
+ - software and its documentation, even if Memorial Sloan-Kettering Cancer
+ - Center has been advised of the possibility of such damage.
+ --%>
+
+<%--
+ - This file is part of cBioPortal.
+ -
+ - cBioPortal is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as
+ - published by the Free Software Foundation, either version 3 of the
+ - License.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--%>
+
 <%@ page import="org.mskcc.cbio.portal.servlet.SimilarPatientsJSON" %>
 
 <%if(showPlaceHoder){%>
@@ -10,10 +42,10 @@ A genomic overview with events aligned across patients goes here...
         var cna = events['<%=SimilarPatientsJSON.CNA%>'];
         var s = [];
         if (mut != null) {
-            s.push('<a href="#" onclick="filterMutationsTableByIds(\''+idRegEx(mut)+'\');switchToTab(\'mutations\');return false;">'+mut.length+' mutations</a>');
+            s.push('<a href="#" onclick="filterMutationsTableByIds(\''+idRegEx(mut)+'\');switchToTab(\'tab_mutations\');return false;">'+mut.length+' mutations</a>');
         }
         if (cna != null) {
-            s.push('<a href="#" onclick="filterCnaTableByIds(\''+idRegEx(cna)+'\');switchToTab(\'cna\');return false;">'+cna.length+' copy number alterations</a>');
+            s.push('<a href="#" onclick="filterCnaTableByIds(\''+idRegEx(cna)+'\');switchToTab(\'tab_cna\');return false;">'+cna.length+' copy number alterations</a>');
         }
         return s.join("<br/>");
     }
@@ -44,9 +76,9 @@ A genomic overview with events aligned across patients goes here...
                             if (type==='set') {
                                 source[0]=value;
                             } else if (type==='display') {
-                                var patientId = source[ 0 ];
+                                var caseId = source[ 0 ];
                                 var study = source[ 1 ];
-                                return formatPatientLink(patientId,study);
+                                return "<a href='"+cbio.util.getLinkToSampleView(study,caseId)+"'>"+caseId+"</a>";
                             } else {
                                 return source[0];
                             }
@@ -87,6 +119,8 @@ A genomic overview with events aligned across patients goes here...
                         }
                     }
                 ],
+                "bPaginate": true,
+                "sPaginationType": "two_button",
                 "aaSorting": [[2,'desc']],
                 "oLanguage": {
                     "sInfo": "&nbsp;&nbsp;(_START_ to _END_ of _TOTAL_)&nbsp;&nbsp;",
@@ -105,7 +139,7 @@ A genomic overview with events aligned across patients goes here...
     }
     
     function ajaxBuildSimilarPatientsDataTable() {
-        var params = {<%=PatientView.CASE_ID%>:caseIdsStr,cancer_study_id:cancerStudyId};
+        var params = {<%=PatientView.SAMPLE_ID%>:caseIdsStr,cancer_study_id:cancerStudyId};
         if (genomicEventObs.hasMut) {
             params['<%=SimilarPatientsJSON.MUTATION%>'] = genomicEventObs.mutations.getEventIds(true).join(',');
         }

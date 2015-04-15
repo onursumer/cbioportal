@@ -1,18 +1,33 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.scripts;
@@ -149,12 +164,41 @@ public class ImportGeneData {
         
         return bitSet.cardinality();
     }
+    
+    static void importSuppGeneData(ProgressMonitor pMonitor, File suppGeneFile) throws IOException, DaoException {
+        MySQLbulkLoader.bulkLoadOff();
+        FileReader reader = new FileReader(suppGeneFile);
+        BufferedReader buf = new BufferedReader(reader);
+        String line;
+        DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
+        while ((line = buf.readLine()) != null) {
+            if (pMonitor != null) {
+                pMonitor.incrementCurValue();
+                ConsoleUtil.showProgress(pMonitor);
+            }
+            if (!line.startsWith("#")) {
+                String parts[] = line.split("\t");
+                CanonicalGene gene = new CanonicalGene(parts[0]);
+                if (!parts[1].isEmpty()) {
+                    gene.setType(parts[1]);
+                }
+                if (!parts[2].isEmpty()) {
+                    gene.setCytoband(parts[2]);
+                }
+                if (!parts[3].isEmpty()) {
+                    gene.setLength(Integer.parseInt(parts[3]));
+                }
+                daoGene.addGene(gene);
+            }
+        }
+        reader.close(); 
+    }
 
     public static void main(String[] args) throws Exception {
         DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
         daoGene.deleteAllRecords();
         if (args.length == 0) {
-            System.out.println("command line usage:  importGenes.pl <ncbi_genes.txt> <microrna.txt> <all_exon_loci.bed>");
+            System.out.println("command line usage:  importGenes.pl <ncbi_genes.txt> <supp-genes.txt> <microrna.txt> <all_exon_loci.bed>");
             return;
         }
         ProgressMonitor pMonitor = new ProgressMonitor();
@@ -171,16 +215,25 @@ public class ImportGeneData {
         System.err.println("Done.");
         
         if (args.length>=2) {
-            File miRNAFile = new File(args[1]);
+            File suppGeneFile = new File(args[1]);
+            System.out.println("Reading supp. gene data from:  " + suppGeneFile.getAbsolutePath());
+            numLines = FileUtil.getNumLines(suppGeneFile);
+            System.out.println(" --> total number of lines:  " + numLines);
+            pMonitor.setMaxValue(numLines);
+            ImportGeneData.importSuppGeneData(pMonitor, suppGeneFile);
+        }
+        
+        if (args.length>=3) {
+            File miRNAFile = new File(args[2]);
             System.out.println("Reading miRNA data from:  " + miRNAFile.getAbsolutePath());
             numLines = FileUtil.getNumLines(miRNAFile);
             System.out.println(" --> total number of lines:  " + numLines);
             pMonitor.setMaxValue(numLines);
             ImportMicroRNAIDs.importData(pMonitor, miRNAFile);
-        }
+    }
         
-        if (args.length>=3) {
-            File lociFile = new File(args[2]);
+        if (args.length>=4) {
+            File lociFile = new File(args[3]);
             System.out.println("Reading loci data from:  " + lociFile.getAbsolutePath());
             numLines = FileUtil.getNumLines(lociFile);
             System.out.println(" --> total number of lines:  " + numLines);

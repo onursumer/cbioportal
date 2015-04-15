@@ -1,29 +1,35 @@
 /*
- * Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2.1 of the License, or
- * any later version.
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center
- * has been advised of the possibility of such damage.  See
- * the GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this library; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
  */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 
 // makes a Pancancer Mutation Histogram on the DOM el.
 // parameters:
@@ -46,14 +52,14 @@ function PancanMutationHistogram(byKeywordData, byGeneData, cancer_study_meta_da
     params = params || {};
     if (params.sparkline) {
         params = _.extend({
-            margin: {top: 0, right: 0, bottom: 0, left: 0},
+            margin: {top: -12, right: 0, bottom: 0, left: 0},
             width: 30,
             height: 12,
             this_cancer_study: undefined
         }, params);
     } else {
         params = _.extend({
-            margin: {top: 43, right: 10, bottom: 20, left: 40},
+            margin: {top:6, right: 10, bottom: 20, left: 40},
             width: 600,
             height: 300,
             this_cancer_study: undefined
@@ -189,7 +195,7 @@ function PancanMutationHistogram(byKeywordData, byGeneData, cancer_study_meta_da
                 count: 0,
                 cancer_type: cancer_study2meta_data[cancer_study].cancer_type,
                 num_sequenced_samples: cancer_study2meta_data[cancer_study].num_sequenced_samples
-            }
+            };
         }
 
         return _.chain(all_cancer_studies)
@@ -335,27 +341,6 @@ function PancanMutationHistogram(byKeywordData, byGeneData, cancer_study_meta_da
 
     var hugo_gene_name = _.find(layers[0], function(d) { return d.hugo !== undefined; }).hugo;
     var keyword = _.find(layers[0], function(d) { return d.keyword !== undefined; }).keyword;
-    
-    // title
-    var title_string = hugo_gene_name + " mutations across all cancer studies";
-    svg.append('text')
-        .text(title_string)
-        .attr('x', 10)
-        .attr('y', -28)
-        .style("font-family", "Helvetica Neue, Helvetica, Arial, sans-serif")
-        .style("font-size", "18px");
-
-    // count
-    var count_string = countText({count:totalByKeyword}, {count:totalByGene}, totalSequenced);
-    svg.append('foreignobject')
-        .attr('x', 10)
-        .attr('y', -23)
-        .attr('width',400)
-        .attr('height',30)
-        .append("xhtml:body")
-        .style("font-family", "Helvetica Neue, Helvetica, Arial, sans-serif")
-        .style("font-size", "11px")
-        .html(count_string);
 
     // star the current cancer study if this_cancer_study is provided.
     if (!_.isUndefined(params.this_cancer_study)) {
@@ -454,6 +439,7 @@ function PancanMutationHistogram(byKeywordData, byGeneData, cancer_study_meta_da
 
     return {
         el: el,
-        qtip: qtip
+        qtip: qtip,
+        overallCountText: function() {return countText({count:totalByKeyword}, {count:totalByGene}, totalSequenced);}
     };
 };

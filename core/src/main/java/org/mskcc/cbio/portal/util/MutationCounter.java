@@ -1,18 +1,33 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.util;
@@ -29,22 +44,22 @@ import java.text.DecimalFormat;
  * @author Ethan Cerami.
  */
 public class MutationCounter {
-    private int numCasesWithSomaticMutation = 0;
-    private int numCasesWithGermlineMutation = 0;
-    private int numCasesWithMutation = 0;
+    private int numSamplesWithSomaticMutation = 0;
+    private int numSamplesWithGermlineMutation = 0;
+    private int numSamplesWithMutation = 0;
     private ExtendedMutationMap mutationMap;
     private String gene;
 
-    private int totalNumCases;
+    private int totalNumSamples;
 
     public MutationCounter (String gene, ExtendedMutationMap mutationMap) {
         this.gene = gene;
         this.mutationMap = mutationMap;
-        totalNumCases = mutationMap.getCaseList().size();
-        for (String caseId:  mutationMap.getCaseList()) {
-            if (caseIsMutated(caseId)) {
-                numCasesWithMutation++;
-                MutationStatus mutationStatus = getMutationStatus (caseId);
+        totalNumSamples = mutationMap.getSampleList().size();
+        for (Integer sampleId:  mutationMap.getSampleList()) {
+            if (sampleIsMutated(sampleId)) {
+                numSamplesWithMutation++;
+                MutationStatus mutationStatus = getMutationStatus(sampleId);
                 incrementCounters(mutationStatus);
             }
         }
@@ -66,33 +81,33 @@ public class MutationCounter {
     }
 
     public double getSomaticMutationRate() {
-        return numCasesWithSomaticMutation / (float) totalNumCases;
+        return numSamplesWithSomaticMutation / (float) totalNumSamples;
     }
 
     public double getGermlineMutationRate() {
-        return numCasesWithGermlineMutation / (float) totalNumCases;
+        return numSamplesWithGermlineMutation / (float) totalNumSamples;
     }
 
     public double getMutationRate() {
-        return numCasesWithMutation / (float) totalNumCases;
+        return numSamplesWithMutation / (float) totalNumSamples;
     }
 
     private void incrementCounters(MutationStatus mutationStatus) {
-        if (mutationStatus.isCaseGermlineMutated()) {
-            numCasesWithGermlineMutation++;
+        if (mutationStatus.isSampleGermlineMutated()) {
+            numSamplesWithGermlineMutation++;
         }
-        if (mutationStatus.isCaseSomaticallyMutated()) {
-            numCasesWithSomaticMutation++;
+        if (mutationStatus.isSampleSomaticallyMutated()) {
+            numSamplesWithSomaticMutation++;
         }
     }
 
-    private boolean caseIsMutated(String caseId) {
-        ArrayList<ExtendedMutation> mutationList = mutationMap.getExtendedMutations(gene, caseId);
+    private boolean sampleIsMutated(Integer sampleId) {
+        ArrayList<ExtendedMutation> mutationList = mutationMap.getExtendedMutations(gene, sampleId);
         return mutationList != null && mutationList.size() > 0;
     }
 
-    private MutationStatus getMutationStatus(String caseId) {
-        ArrayList<ExtendedMutation> mutationList = mutationMap.getExtendedMutations(gene, caseId);
+    private MutationStatus getMutationStatus(Integer sampleId) {
+        ArrayList<ExtendedMutation> mutationList = mutationMap.getExtendedMutations(gene, sampleId);
         MutationStatus mutationStatus = new MutationStatus();
         for (ExtendedMutation mutation:  mutationList) {
             setMutationStatus(mutation, mutationStatus);
@@ -113,7 +128,7 @@ class MutationStatus {
     private boolean germlineMutated;
     private boolean somaticMutated;
 
-    public boolean isCaseGermlineMutated() {
+    public boolean isSampleGermlineMutated() {
         return germlineMutated;
     }
 
@@ -121,7 +136,7 @@ class MutationStatus {
         this.germlineMutated = germlineMutated;
     }
 
-    public boolean isCaseSomaticallyMutated() {
+    public boolean isSampleSomaticallyMutated() {
         return somaticMutated;
     }
 

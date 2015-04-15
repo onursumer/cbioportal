@@ -1,38 +1,44 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.scripts;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import joptsimple.OptionSpec;
 import org.mskcc.cbio.portal.dao.*;
-import org.mskcc.cbio.portal.model.CancerStudy;
-import org.mskcc.cbio.portal.model.CanonicalGene;
-import org.mskcc.cbio.portal.model.GeneticProfile;
+import org.mskcc.cbio.portal.model.*;
+
+import java.io.*;
+import java.text.*;
+import java.util.*;
+import joptsimple.*;
 
 /**
  * Export all profile data to tsv files suitable for downloading.
@@ -146,16 +152,16 @@ public class ExportDataForDownload {
                StringBuffer monitorOutput = new StringBuffer();
                monitorOutput.append( "\tProcessing " + aGeneticProfile.getProfileName() );
 
-               ArrayList<String> theCaseIds =
-                  DaoCaseProfile.getAllCaseIdsInProfile( aGeneticProfile.getGeneticProfileId() );
+               ArrayList<Integer> internalSampleIds =
+                  DaoSampleProfile.getAllSampleIdsInProfile( aGeneticProfile.getGeneticProfileId() );
 
                // don't write empty files
-               if( 0 == theCaseIds.size() ){
-                  monitorOutput.append( "\tNo cases ... skipping.\n" );
+               if( 0 == internalSampleIds.size() ){
+                  monitorOutput.append( "\tNo samples ... skipping.\n" );
                   System.out.println( monitorOutput.toString() );
                   continue;
                }
-               monitorOutput.append( ", with " + theCaseIds.size() + " cases" );
+               monitorOutput.append( ", with " + internalSampleIds.size() + " cases" );
                
                //  TODO:  The code below needs to be updated to get genes in each type of profile
                ArrayList< Long > theGenes = null;
@@ -187,15 +193,16 @@ public class ExportDataForDownload {
                
                // write header row
                out.print( "Hugo Gene Symbol\tGene ID");
-               for( String aCase : theCaseIds ){
-                  out.print( "\t" + aCase );
+               for(Integer sampleId : internalSampleIds){
+                  Sample s = DaoSample.getSampleById(sampleId);
+                  out.print( "\t" + s.getStableId());
                }
                out.println( );
 
                DaoGeneticAlteration aDaoGeneticAlteration = DaoGeneticAlteration.getInstance();               
                int genesWithoutSymbols = 0;
                for( Long aGeneID : theGenes ){
-                  HashMap<String, String> theGeneticAlterationMap =
+                  HashMap<Integer, String> theGeneticAlterationMap =
                      aDaoGeneticAlteration.getGeneticAlterationMap( aGeneticProfile.getGeneticProfileId(),
                              aGeneID.longValue() );
                   
@@ -210,8 +217,8 @@ public class ExportDataForDownload {
                   out.print( "\t" + aGeneID.longValue() );
                   
                   // output data
-                  for( String aCase : theCaseIds ){
-                     String value = theGeneticAlterationMap.get(aCase);
+                  for(Integer sampleId : internalSampleIds){
+                     String value = theGeneticAlterationMap.get(sampleId);
                      out.print( "\t" );
                      if( null == value ){
                         out.print(NOT_AVAILABLE);
@@ -230,7 +237,7 @@ public class ExportDataForDownload {
                monitorOutput.append( "\tWrote " + pathname + "\n" );
                
                long duration = System.currentTimeMillis() - start;
-               monitorOutput.append( "\tProcessed " + ((1000L*(long)theGenes.size()*(long)theCaseIds.size())/duration)
+               monitorOutput.append( "\tProcessed " + ((1000L*(long)theGenes.size()*(long)internalSampleIds.size())/duration)
                        + " values per second.\n");
 
                System.out.println( monitorOutput.toString() );

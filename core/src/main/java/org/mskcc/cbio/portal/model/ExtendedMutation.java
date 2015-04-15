@@ -1,19 +1,33 @@
 /*
- * Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.model;
@@ -336,7 +350,7 @@ public final class ExtendedMutation
 
     private MutationEvent event;
     private int geneticProfileId;
-    private String caseId;
+    private int sampleId;
     private String sequencingCenter;
     private String sequencer;
     private String mutationStatus;
@@ -463,12 +477,12 @@ public final class ExtendedMutation
         this.geneticProfileId = geneticProfileId;
     }
 
-    public String getCaseId() {
-        return caseId;
+    public int getSampleId() {
+        return sampleId;
     }
 
-    public void setCaseId(String caseId) {
-        this.caseId = caseId;
+    public void setSampleId(int sampleId) {
+        this.sampleId = sampleId;
     }
 
     public String getChr() {
@@ -919,7 +933,7 @@ public final class ExtendedMutation
         int hash = 7;
         hash = 79 * hash + (this.event != null ? this.event.hashCode() : 0);
         hash = 79 * hash + this.geneticProfileId;
-        hash = 79 * hash + (this.caseId != null ? this.caseId.hashCode() : 0);
+        hash = 79 * hash;
         return hash;
     }
 
@@ -938,7 +952,7 @@ public final class ExtendedMutation
         if (this.geneticProfileId != other.geneticProfileId) {
             return false;
         }
-        if ((this.caseId == null) ? (other.caseId != null) : !this.caseId.equals(other.caseId)) {
+        if (this.sampleId != other.sampleId) {
             return false;
         }
         return true;

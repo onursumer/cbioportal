@@ -1,18 +1,33 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.mut_diagram;
@@ -73,7 +88,7 @@ public final class TestPileup {
     public void testPileupSingleMutation() {
         ExtendedMutation mutation = new ExtendedMutation();
         mutation.setProteinChange("A123K");
-        mutation.setCaseId("caseId");
+        mutation.setSampleId(1);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation));
         assertNotNull(pileups);
@@ -86,16 +101,16 @@ public final class TestPileup {
     }
 
     @Test
-    public void testPileupMultipleMutationsSameLocationDifferentCaseIds() {
+    public void testPileupMultipleMutationsSameLocationDifferentSampleIds() {
         ExtendedMutation mutation0 = new ExtendedMutation();
         ExtendedMutation mutation1 = new ExtendedMutation();
         ExtendedMutation mutation2 = new ExtendedMutation();
         mutation0.setProteinChange("A123K");
         mutation1.setProteinChange("A123K");
         mutation2.setProteinChange("A123K");
-        mutation0.setCaseId("caseId0");
-        mutation1.setCaseId("caseId1");
-        mutation2.setCaseId("caseId2");
+        mutation0.setSampleId(1);
+        mutation1.setSampleId(2);
+        mutation2.setSampleId(3);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation0, mutation1, mutation2));
         assertNotNull(pileups);
@@ -108,16 +123,16 @@ public final class TestPileup {
     }
 
     @Test
-    public void testPileupMultipleMutationsSameLocationSameCaseIds() {
+    public void testPileupMultipleMutationsSameLocationSameSampleIds() {
         ExtendedMutation mutation0 = new ExtendedMutation();
         ExtendedMutation mutation1 = new ExtendedMutation();
         ExtendedMutation mutation2 = new ExtendedMutation();
         mutation0.setProteinChange("A123K");
         mutation1.setProteinChange("A123K");
         mutation2.setProteinChange("A123K");
-        mutation0.setCaseId("caseId");
-        mutation1.setCaseId("caseId");
-        mutation2.setCaseId("caseId");
+        mutation0.setSampleId(1);
+        mutation1.setSampleId(1);
+        mutation2.setSampleId(1);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation0, mutation1, mutation2));
         assertNotNull(pileups);
@@ -130,16 +145,16 @@ public final class TestPileup {
     }
 
     @Test
-    public void testPileupMultipleMutationsSameLocationNullCaseId() {
+    public void testPileupMultipleMutationsSameLocationNullSampleId() {
         ExtendedMutation mutation0 = new ExtendedMutation();
         ExtendedMutation mutation1 = new ExtendedMutation();
         ExtendedMutation mutation2 = new ExtendedMutation();
         mutation0.setProteinChange("A123K");
         mutation1.setProteinChange("A123K");
         mutation2.setProteinChange("A123K");
-        mutation0.setCaseId("caseId0");
-        mutation1.setCaseId(null);
-        mutation2.setCaseId("caseId2");
+        mutation0.setSampleId(1);
+        mutation1.setSampleId(2);
+        mutation2.setSampleId(3);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation0, mutation1, mutation2));
         assertNotNull(pileups);
@@ -159,9 +174,9 @@ public final class TestPileup {
         mutation0.setProteinChange("A123K");
         mutation1.setProteinChange("A123K");
         mutation2.setProteinChange("A123G");
-        mutation0.setCaseId("caseId0");
-        mutation1.setCaseId("caseId1");
-        mutation2.setCaseId("caseId2");
+        mutation0.setSampleId(1);
+        mutation1.setSampleId(2);
+        mutation2.setSampleId(3);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation0, mutation1, mutation2));
         assertNotNull(pileups);
@@ -175,16 +190,16 @@ public final class TestPileup {
 
     @Test
     // not sure this could happen, unless one caseId can have different phases
-    public void testPileupMultipleMutationsSameLocationDifferentAminoAcidChangeSameCaseIds() {
+    public void testPileupMultipleMutationsSameLocationDifferentAminoAcidChangeSameSampleIds() {
         ExtendedMutation mutation0 = new ExtendedMutation();
         ExtendedMutation mutation1 = new ExtendedMutation();
         ExtendedMutation mutation2 = new ExtendedMutation();
         mutation0.setProteinChange("A123K");
         mutation1.setProteinChange("A123K");
         mutation2.setProteinChange("A123G");
-        mutation0.setCaseId("caseId");
-        mutation1.setCaseId("caseId");
-        mutation2.setCaseId("caseId");
+        mutation0.setSampleId(1);
+        mutation1.setSampleId(1);
+        mutation2.setSampleId(1);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation0, mutation1, mutation2));
         assertNotNull(pileups);
@@ -204,9 +219,9 @@ public final class TestPileup {
         mutation0.setProteinChange("A123K");
         mutation1.setProteinChange("A123K");
         mutation2.setProteinChange("K234G");
-        mutation0.setCaseId("caseId0");
-        mutation1.setCaseId("caseId1");
-        mutation2.setCaseId("caseId2");
+        mutation0.setSampleId(1);
+        mutation1.setSampleId(2);
+        mutation2.setSampleId(3);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation0, mutation1, mutation2));
         assertNotNull(pileups);
@@ -233,9 +248,9 @@ public final class TestPileup {
         mutation0.setProteinChange("A123K");
         mutation1.setProteinChange("missense");
         mutation2.setProteinChange("A123K");
-        mutation0.setCaseId("caseId0");
-        mutation1.setCaseId("caseId1");
-        mutation2.setCaseId("caseId2");
+        mutation0.setSampleId(1);
+        mutation1.setSampleId(2);
+        mutation2.setSampleId(3);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation0, mutation1, mutation2));
         assertNotNull(pileups);
@@ -255,9 +270,9 @@ public final class TestPileup {
         mutation0.setProteinChange("A123K");
         mutation1.setProteinChange(null);
         mutation2.setProteinChange("A123K");
-        mutation0.setCaseId("caseId0");
-        mutation1.setCaseId("caseId1");
-        mutation2.setCaseId("caseId2");
+        mutation0.setSampleId(1);
+        mutation1.setSampleId(2);
+        mutation2.setSampleId(3);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation0, mutation1, mutation2));
         assertNotNull(pileups);
@@ -273,7 +288,7 @@ public final class TestPileup {
     public void testPileupsLowercasePDotSAnimoAcidPosition() {
         ExtendedMutation mutation = new ExtendedMutation();
         mutation.setProteinChange("p.S310F");
-        mutation.setCaseId("caseId");
+        mutation.setSampleId(1);
 
         List<Pileup> pileups = Pileup.pileup(ImmutableList.of(mutation));
         assertNotNull(pileups);

@@ -1,3 +1,35 @@
+<%--
+ - Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ -
+ - This library is distributed in the hope that it will be useful, but WITHOUT
+ - ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ - FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ - is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ - obligations to provide maintenance, support, updates, enhancements or
+ - modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ - liable to any party for direct, indirect, special, incidental or
+ - consequential damages, including lost profits, arising out of the use of this
+ - software and its documentation, even if Memorial Sloan-Kettering Cancer
+ - Center has been advised of the possibility of such damage.
+ --%>
+
+<%--
+ - This file is part of cBioPortal.
+ -
+ - cBioPortal is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as
+ - published by the Free Software Foundation, either version 3 of the
+ - License.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--%>
+
 <%@ page import="org.mskcc.cbio.portal.servlet.QueryBuilder" %>
 <%@ page import="org.mskcc.cbio.portal.servlet.ServletXssUtil" %>
 <%@ page import="org.mskcc.cbio.portal.util.GlobalProperties" %>
@@ -18,15 +50,19 @@
     }
 
 	String geneList = request.getParameter(QueryBuilder.GENE_LIST);
+        String cancerStudyList = request.getParameter(QueryBuilder.CANCER_STUDY_LIST);
 
 	// we need the raw gene list
 	if (request instanceof XssRequestWrapper)
 	{
 		geneList = ((XssRequestWrapper)request).getRawParameter(QueryBuilder.GENE_LIST);
+                cancerStudyList = ((XssRequestWrapper)request).getRawParameter(QueryBuilder.CANCER_STUDY_LIST);
 	}
 
 	geneList = geneList.replaceAll("\n", " ").replaceAll("\r", "").replaceAll("/", "_");
 	geneList = servletXssUtil.getCleanerInput(geneList);
+
+        
 
     String bitlyUser = GlobalProperties.getBitlyUser();
     String bitlyKey = GlobalProperties.getBitlyApiKey();
@@ -35,16 +71,11 @@
 <jsp:include page="global/header.jsp" flush="true"/>
 
 <!-- for now, let's include these guys here and prevent clashes with the rest of the portal -->
-<script type="text/javascript" src="js/src/crosscancer.js"></script>
-<link href="css/data_table_ColVis.css" type="text/css" rel="stylesheet" />
-<link href="css/data_table_jui.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_details.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_table.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_3d.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_diagram.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_pdb_panel.css" type="text/css" rel="stylesheet" />
-<link href="css/mutation/mutation_pdb_table.css" type="text/css" rel="stylesheet" />
-<link href="css/crosscancer.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" src="js/src/crosscancer.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<link href="css/data_table_ColVis.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet" />
+<link href="css/data_table_jui.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet" />
+<link href="css/mutationMapper.min.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet" />
+<link href="css/crosscancer.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet" />
 
 <%
     // Means that user landed on this page with the old way.
@@ -52,7 +83,7 @@
 %>
 
 <script type="text/javascript">
-    window.location.hash = "crosscancer/overview/<%=dataPriority%>/<%=geneList%>";
+    window.location.hash = "crosscancer/overview/<%=dataPriority%>/<%=geneList%>/<%=cancerStudyList%>";
 </script>
 
 <%
@@ -64,20 +95,14 @@
         <td>
 
             <div id="results_container">
-                <p><a href=""
-                      title="Modify your original query.  Recommended over hitting your browser's back button."
-                      id="toggle_query_form">
-                    <span class='query-toggle ui-icon ui-icon-triangle-1-e'
-                          style='float:left;'></span>
-                    <span class='query-toggle ui-icon ui-icon-triangle-1-s'
-                          style='float:left; display:none;'></span><b>Modify Query</b></a>
-
-                <p/>
-
-                <div style="margin-left:5px;display:none;" id="query_form_on_results_page">
-                    <%@ include file="query_form.jsp" %>
+                <div id='modify_query' style='margin:20px;'>
+                    <button type='button' class='btn btn-primary' data-toggle='button' id='modify_query_btn'>
+                        Modify Query
+                    </button>
+                    <div style="margin-left:5px;display:none;" id="query_form_on_results_page">
+                        <%@ include file="query_form.jsp" %>
+                    </div>
                 </div>
-
                 <div id="crosscancer-container">
                 </div>
             </div>
@@ -86,6 +111,23 @@
     </tr>
 </table>
 
+<script>
+    //Set Event listener for the modify query button (expand the hidden form)
+    $("#modify_query_btn").click(function () {
+        $("#query_form_on_results_page").toggle();
+        if($("#modify_query_btn").hasClass("active")) {
+            $("#modify_query_btn").removeClass("active");
+        } else {
+            $("#modify_query_btn").addClass("active");    
+        }
+    });
+    $("#toggle_query_form").click(function(event) {
+        event.preventDefault();
+        $('#query_form_on_results_page').toggle();
+        //  Toggle the icons
+        $(".query-toggle").toggle();
+    });
+</script>
 
 <!-- Crosscancer templates -->
 <script type="text/template" id="cross-cancer-main-tmpl">

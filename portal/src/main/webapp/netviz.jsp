@@ -1,3 +1,35 @@
+<%--
+ - Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ -
+ - This library is distributed in the hope that it will be useful, but WITHOUT
+ - ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ - FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ - is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ - obligations to provide maintenance, support, updates, enhancements or
+ - modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ - liable to any party for direct, indirect, special, incidental or
+ - consequential damages, including lost profits, arising out of the use of this
+ - software and its documentation, even if Memorial Sloan-Kettering Cancer
+ - Center has been advised of the possibility of such damage.
+ --%>
+
+<%--
+ - This file is part of cBioPortal.
+ -
+ - cBioPortal is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as
+ - published by the Free Software Foundation, either version 3 of the
+ - License.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--%>
+
 <%@ page import="java.io.BufferedReader" %>
 <%@ page import="java.io.ByteArrayInputStream" %>
 <%@ page import="java.io.InputStream" %>
@@ -8,36 +40,38 @@
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="org.apache.commons.fileupload.FileItem" %>
 <%@ page import="org.apache.commons.codec.binary.Base64" %>
+<%@ page import="org.mskcc.cbio.portal.util.XssRequestWrapper" %>
+
 <html>
 <body>
 
     <jsp:include page="WEB-INF/jsp/global/css_include.jsp" flush="true" />
 
-<link href="css/network/network_ui.css" type="text/css" rel="stylesheet"/>
+<link href="css/network/network_ui.css?<%=GlobalProperties.getAppVersion()%>" type="text/css" rel="stylesheet"/>
 
 
-<script type="text/javascript" src="js/lib/jquery.min.js"></script>
-<script type="text/javascript" src="js/lib/jquery-migrate.js"></script>
-<script type="text/javascript" src="js/lib/jquery.tipTip.minified.js"></script>
-<script type="text/javascript" src="js/lib/jquery.address.min.js"></script>
-<script type="text/javascript" src="js/lib/jquery-ui.min.js"></script>
-<script type="text/javascript" src="js/lib/responsiveslides.min.js"></script>
-<script type="text/javascript" src="js/lib/jquery.quovolver.mini.js"></script>
-<script type="text/javascript" src="js/lib/jquery.expander.min.js"></script>
-<script type="text/javascript" src="js/lib/underscore-min.js"></script>
-<script type="text/javascript" src="js/lib/backbone-min.js"></script>
-<script type="text/javascript" src="js/lib/cytoscape_web/AC_OETags.min.js"></script>
-<script type="text/javascript" src="js/lib/cytoscape_web/cytoscapeweb.min.js"></script>
+<script type="text/javascript" src="js/lib/jquery.min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/jquery-migrate.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/jquery.tipTip.minified.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/jquery.address.min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/jquery-ui.min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/responsiveslides.min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/jquery.quovolver.mini.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/jquery.expander.min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/underscore-min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/backbone-min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/cytoscape_web/AC_OETags.min.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/lib/cytoscape_web/cytoscapeweb.min.js?<%=GlobalProperties.getAppVersion()%>"></script>
 
-<script type="text/javascript" src="js/src/network/network-visualization.js"></script>
-<script type="text/javascript" src="js/src/network/network-viz.js"></script>
+<script type="text/javascript" src="js/src/network/network-visualization.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/src/network/network-viz.js?<%=GlobalProperties.getAppVersion()%>"></script>
 
 <jsp:include page="WEB-INF/jsp/network_views.jsp"/>
 
 <table width="100%" cellspacing="0px" cellpadding="2px" border="0px">
 	<tr valign="middle">
 		<td valign="middle" width="25%">
-			<a href="http://www.mskcc.org"><img src="images/mskcc_logo_3d_grey.jpg" alt="MSKCC Logo"></a>
+			<a href="http://www.mskcc.org"><img src="images/mskcc_logo_3d_grey.jpg" height="50px" alt="MSKCC Logo"></a>
 		</td>
 		<td valign="middle" width="50%">
 			<span id="header_site_name">
@@ -67,6 +101,12 @@ String graphml = null;
 
 if (format!=null) {
     graphml = request.getParameter("graphml");
+
+	if (request instanceof XssRequestWrapper)
+	{
+		graphml = ((XssRequestWrapper)request).getRawParameter("graphml");
+	}
+
     if (graphml!=null&&!graphml.isEmpty()) {
         if (!format.equalsIgnoreCase("graphml")) {
             try {
@@ -131,9 +171,9 @@ if (graphml!=null&&!graphml.isEmpty()) {
     boolean showProfileData = "true".equalsIgnoreCase(request.getParameter("show_profile_data"));
 
     String msgs = request.getParameter("msg");
-    if (msgs!=null) {
-        msgs = StringEscapeUtils.escapeJavaScript(msgs);
-    }
+//    if (msgs!=null) {
+//        msgs = StringEscapeUtils.escapeJavaScript(msgs);
+//    }
 %>
 
 <script type="text/javascript">

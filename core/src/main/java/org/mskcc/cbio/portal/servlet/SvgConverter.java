@@ -1,9 +1,42 @@
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package org.mskcc.cbio.portal.servlet;
 
 import java.io.*;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.batik.transcoder.Transcoder;
 import org.apache.batik.transcoder.TranscoderException;
@@ -71,7 +104,6 @@ public class SvgConverter extends HttpServlet {
 
         String format = httpServletRequest.getParameter("filetype");
         String xml = httpServletRequest.getParameter("svgelement");
-        String filename = httpServletRequest.getParameter("filename");
 
 	    // TODO - update antisamy.xml to support svg-xml
 	    if (httpServletRequest instanceof XssRequestWrapper)
@@ -79,116 +111,39 @@ public class SvgConverter extends HttpServlet {
 		    xml = ((XssRequestWrapper) httpServletRequest).getRawParameter("svgelement");
 	    }
 
-        String xmlHeader = "<?xml version='1.0'?>";
-        xml = xmlHeader + xml;
-        if(!xml.contains("svg xmlns")) {
-            xml = xml.replace("<svg", "<svg xmlns='http://www.w3.org/2000/svg' version='1.1'");
-        }
-
-        if (filename == null || filename.length() == 0) {
-            filename = DEFAULT_FILENAME;
-        }
-
-        if (format.equals("pdf")) {
-            convertToPDF(httpServletResponse, xml, filename);
-        } else if (format.equals("svg")) {
-            convertToSVG(httpServletResponse, xml, filename);
-        }
+	    if (format.equals("pdf_data"))
+	    {
+		    convertToPDF(httpServletResponse, xml);
+	    }
     }
 
-    /**
-     * Return svg xml as it is for downloading
-     *
-     * @param response
-     * @param xml
-     * @throws ServletException
-     * @throws IOException
-     */
-    private void convertToSVG(HttpServletResponse response, String xml, String filename)
-            throws ServletException, IOException {
-        try {
-            response.setContentType("application/svg+xml");
-            response.setHeader("content-disposition", "inline; filename=" + filename);
-            PrintWriter writer = response.getWriter();
-            try {
-                writer.write(xml);
-            }
-            finally {
-                writer.flush();
-                writer.close();
-            }
-        }
-        catch (Exception e) {
-            System.err.println(e.toString());
-        }
-    }
-
-    /**
-     * Convert svg xml to pdf and writes it to the response
-     *
-     * @param response
-     * @param xml
-     * @throws ServletException
-     * @throws IOException
-     */
-    private void convertToPDF(HttpServletResponse response, String xml, String filename)
-            throws ServletException, IOException {
-        OutputStream out = response.getOutputStream();
-        try {
-            InputStream is = new ByteArrayInputStream(xml.getBytes());
-            TranscoderInput input = new TranscoderInput(is);
-            TranscoderOutput output = new TranscoderOutput(out);
-            Transcoder transcoder = new PDFTranscoder();
-            transcoder.addTranscodingHint(PDFTranscoder.KEY_XML_PARSER_CLASSNAME, "org.apache.xerces.parsers.SAXParser");
-            response.setContentType("application/force-download");
-            response.setHeader("content-disposition", "inline; filename=" + filename);
-            transcoder.transcode(input, output);
-        } catch (Exception e) {
-            System.err.println(e.toString());
-        }
-    }
-
-    /**
-     * Convert svg xml to PNG and writes it to the response
-     *
-     * @param response
-     * @param xml
-     * @throws ServletException
-     * @throws IOException
-     */
-    private void convertToPNG(HttpServletResponse response, String xml) throws ServletException, IOException {
-        OutputStream out = response.getOutputStream();
-        try {
-            InputStream is = new ByteArrayInputStream(xml.getBytes());
-            TranscoderInput input = new TranscoderInput(is);
-            TranscoderOutput output = new TranscoderOutput(out);
-            PNGTranscoder transcoder = new PNGTranscoder();
-            transcoder.addTranscodingHint(PNGTranscoder.KEY_XML_PARSER_CLASSNAME, "org.apache.xerces.parsers.SAXParser");
-            transcoder.addTranscodingHint( PNGTranscoder.KEY_WIDTH, new Float(1500));
-            transcoder.addTranscodingHint( PNGTranscoder.KEY_HEIGHT, new Float(1500));
-            response.setContentType("application/png");
-            response.setHeader("content-disposition", "inline; filename=plots.png");
-            transcoder.transcode(input, output);
-        } catch (Exception e) {
-            System.err.println(e.toString());
-        }
-    }
-
-    /**
-     * Method called when exception occurs.
-     *
-     * @param servletContext ServletContext
-     * @param request HttpServletRequest
-     * @param response HttpServletResponse
-     * @param xdebug XDebug
-     */
-    private static void forwardToErrorPage(ServletContext servletContext,
-                                           HttpServletRequest request,
-                                           HttpServletResponse response,
-                                           XDebug xdebug) throws ServletException, IOException {
-
-        request.setAttribute("xdebug_object", xdebug);
-        RequestDispatcher dispatcher = servletContext.getRequestDispatcher("/WEB-INF/jsp/error.jsp");
-        dispatcher.forward(request, response);
-    }
+	/**
+	 * Converts svg xml to pdf and writes it to the response as
+	 * a Base 64 encoded string.
+	 *
+	 * @param response
+	 * @param xml
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void convertToPDF(HttpServletResponse response, String xml)
+			throws ServletException, IOException {
+		OutputStream out = response.getOutputStream();
+		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+		try {
+			InputStream is = new ByteArrayInputStream(xml.getBytes());
+			TranscoderInput input = new TranscoderInput(is);
+			TranscoderOutput output = new TranscoderOutput(byteOut);
+			Transcoder transcoder = new PDFTranscoder();
+			transcoder.addTranscodingHint(
+					PDFTranscoder.KEY_XML_PARSER_CLASSNAME,
+					"org.apache.xerces.parsers.SAXParser");
+			response.setContentType("application/pdf");
+			transcoder.transcode(input, output);
+			byteOut.close();
+			out.write(Base64.encodeBase64(byteOut.toByteArray()));
+		} catch (Exception e) {
+			System.err.println(e.toString());
+		}
+	}
 }

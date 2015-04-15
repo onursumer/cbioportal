@@ -1,9 +1,35 @@
-/**
- * Constructor for the network visualization class.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * @param divId     target div id for this visualization.
- * @constructor
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
  */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 function NetworkVis(divId)
 {
     // div id for the network vis html content
@@ -1837,7 +1863,7 @@ NetworkVis.prototype._defaultOptsArray = function()
  */
 NetworkVis.prototype._xrefArray = function()
 {
-    var linkMap = new Array();
+    var linkMap = {};
 
     // TODO find missing links (Nucleotide Sequence Database)
     //linkMap["refseq"] =   "http://www.genome.jp/dbget-bin/www_bget?refseq:";
@@ -1879,7 +1905,7 @@ NetworkVis.prototype._xrefArray = function()
  */
 NetworkVis.prototype._edgeTypeArray = function()
 {
-    var typeArray = new Array();
+    var typeArray = {};
 
     // by default every edge type is visible
     typeArray[this.IN_SAME_COMPONENT] = true;
@@ -1898,7 +1924,7 @@ NetworkVis.prototype._edgeTypeArray = function()
  */
 NetworkVis.prototype._edgeSourceArray = function()
 {
-    var sourceArray = new Array();
+    var sourceArray = {};
 
     // dynamically collect all sources
 
@@ -1934,7 +1960,7 @@ NetworkVis.prototype._edgeSourceArray = function()
  */
 NetworkVis.prototype._geneWeightArray = function(coeff)
 {
-    var weightArray = new Array();
+    var weightArray = {};
 
     if (coeff > 1)
     {
@@ -2760,7 +2786,7 @@ NetworkVis.prototype._refreshRelationsTab = function()
     var edges = this._vis.edges();
 
     // initialize percentages of each edge type
-    var percentages = new Array();
+    var percentages = {};
 
     percentages[this.IN_SAME_COMPONENT] = 0;
     percentages[this.REACTS_WITH] = 0;
@@ -2950,6 +2976,10 @@ NetworkVis.prototype._initControlFunctions = function()
         self._saveAsPng();
     };
 
+	var saveAsSvg = function() {
+		self._saveAsSvg();
+	};
+
     var openProperties = function() {
         self._openProperties();
     };
@@ -3006,7 +3036,7 @@ NetworkVis.prototype._initControlFunctions = function()
         self.handleMenuEvent(evt.target.id);
     };
 
-    this._controlFunctions = new Array();
+    this._controlFunctions = {};
 
     //_controlFunctions["hide_selected"] = _hideSelected;
     this._controlFunctions["hide_selected"] = filterSelectedGenes;
@@ -3020,7 +3050,7 @@ NetworkVis.prototype._initControlFunctions = function()
     this._controlFunctions["remove_disconnected"] = toggleRemoveDisconnected;
     this._controlFunctions["show_profile_data"] = toggleProfileData;
     this._controlFunctions["save_as_png"] = saveAsPng;
-    //_controlFunctions["save_as_svg"] = _saveAsSvg;
+	//this._controlFunctions["save_as_svg"] = saveAsSvg;
     this._controlFunctions["layout_properties"] = openProperties;
     this._controlFunctions["highlight_neighbors"] = highlightNeighbors;
     this._controlFunctions["remove_highlights"] = removeHighlights;
@@ -3365,7 +3395,8 @@ NetworkVis.prototype._toggleProfileData = function()
  */
 NetworkVis.prototype._saveAsPng = function()
 {
-    this._vis.exportNetwork('png', 'export_network.jsp?type=png');
+	var content = cbio.util.b64ToByteArrays(this._vis.png());
+	cbio.download.clientSideDownload(content, "network.png", "image/png");
 };
 
 /**
@@ -3373,7 +3404,12 @@ NetworkVis.prototype._saveAsPng = function()
  */
 NetworkVis.prototype._saveAsSvg = function()
 {
-    this._vis.exportNetwork('svg', 'export_network.jsp?type=svg');
+	var downloadOpts = {
+		filename: "network.svg",
+		preProcess: null
+	};
+
+	cbio.download.initDownload(this._vis.svg(), downloadOpts);
 };
 
 /**

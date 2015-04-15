@@ -1,19 +1,49 @@
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 
 var LoadingJS = (function(){
     //Tmp include public libraries in here, will change JSarray to empty array
     //before merge study view to default branch
     var JSPublic = [
-                    'dc',
-                    'crossfilter',
-                    'dataTables.fixedColumns',
                     'util/StudyViewBoilerplate',
-                    'd3.layout.cloud',
-                    'js/src/survival-curve/survivalCurveProxy.js',
-                    'js/src/survival-curve/component/survivalCurve.js',
-                    'js/src/survival-curve/component/confidenceIntervals.js',
-                    'js/src/survival-curve/component/kmEstimator.js',
-                    'js/src/survival-curve/component/logRankTest.js',
-                    'js/src/survival-curve/component/boilerPlate.js'];
+                    'js/src/survival-tab/survivalCurveProxy.js',
+                    'js/src/survival-tab/component/survivalCurve.js',
+                    'js/src/survival-tab/component/confidenceIntervals.js',
+                    'js/src/survival-tab/component/kmEstimator.js',
+                    'js/src/survival-tab/component/logRankTest.js',
+                    'js/src/survival-tab/component/boilerPlate.js',
+                    'js/lib/FileSaver.min.js'
+                ];
     
     //As input for RequireJS
     var JSarray = [];
@@ -22,7 +52,7 @@ var LoadingJS = (function(){
     var callbackFunc = "";
     
     //Put all self created js files into array
-    function ConstructJSarray() {
+    function constructJSarray() {
         var _key;
         
         var _folder = {
@@ -31,19 +61,18 @@ var LoadingJS = (function(){
                     'PieChart', 
                     'BarChart', 
                     'DataTable',
-                    'AddCharts'
+                    'AddCharts',
+                    'Table'
                 ],
                 data: ['StudyViewProxy'],
                 util: [
                     'FnGetColumnData',
-                    'FnColumnFilter',
-                    'FnSetFilteringDelay',
-                    'StudyViewUtil'
+                    'StudyViewUtil',
+                    'StudyViewPrototypes'
                 ],
                 view: [
                     'StudyViewInitCharts', 
                     'StudyViewInitDataTable',
-                    'StudyViewInitMiddleComponents',
                     'StudyViewInitTopComponents',
                     'StudyViewInitScatterPlot',
                     'StudyViewInitIntroJS',
@@ -52,7 +81,8 @@ var LoadingJS = (function(){
                     'StudyViewInitMutationsTab',
                     'StudyViewInitCNATab',
                     'StudyViewInitClinicalTab',
-                    'StudyViewSurvivalPlotView'
+                    'StudyViewSurvivalPlotView',
+                    'StudyViewInitTables'
                 ],
                 controller: [
                     'StudyViewMainController',
@@ -75,8 +105,13 @@ var LoadingJS = (function(){
     }
     
     function main(){
-        ConstructJSarray();
-
+        constructJSarray();
+        
+        //Add appVerion after all included js files
+        require.config({
+            urlArgs: appVersion
+        });
+        
         //After loding JS files, run Study View Controller
         require(JSPublic,function(){
              require(JSarray, function(){

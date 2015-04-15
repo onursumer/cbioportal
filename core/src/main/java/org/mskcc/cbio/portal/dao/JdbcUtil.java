@@ -1,35 +1,49 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.dao;
 
-import org.mskcc.cbio.portal.util.DatabaseProperties;
-import org.mskcc.cbio.portal.util.GlobalProperties;
+import org.mskcc.cbio.portal.util.*;
 
-import org.apache.commons.dbcp.BasicDataSource;
-import org.apache.commons.dbcp.DelegatingPreparedStatement;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.beans.factory.BeanCreationException;
 
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
-import javax.naming.InitialContext;
+import java.util.*;
 import javax.sql.DataSource;
+import javax.naming.InitialContext;
 
 /**
  * Connection Utility for JDBC.
@@ -85,84 +99,31 @@ public class JdbcUtil {
         return con;
     }
 
-    private static DataSource initDataSource() {
-
-        DataSource ds = initDataSourceTomcat();
-
-        try {
-            if (ds!=null) {
-                ds.getConnection();
-            }
-        }
-        catch (Exception e) {
-            ds = null;
-        }
-
-        if (ds == null) {
-            ds = initDataSourceDirect();
-        }
-
-        activeConnectionCount = new HashMap<String,Integer>();
-
-        return ds;
-    }
-
-    private static DataSource initDataSourceTomcat() {
-        String tomcatResourceName = GlobalProperties.getProperty("db.tomcat_resource_name");
-        if (null == tomcatResourceName || tomcatResourceName.isEmpty()) {
-            return null;
-        }
-        
-
+    private static DataSource initDataSource()
+    {
         DataSource ds = null;
-        activeConnectionCount = new HashMap<String,Integer>();
-       
+        ApplicationContext ctx = null;
         try {
-            InitialContext cxt = new InitialContext();
-            if (cxt == null) {
-                throw new Exception("Context for creating data source not found!");
-            }
-            ds = (DataSource)cxt.lookup( "java:/comp/env/" + GlobalProperties.getProperty("db.tomcat_resource_name") );
-            if (ds == null) {
-                throw new Exception("Data source not found!");
-            }
+            ctx = getContext("jndi");
+            ds = (DataSource)ctx.getBean("businessDataSource");
         }
         catch (Exception e) {
-            logMessage(e.getMessage());
+            logMessage("Problem creating jndi datasource, opening dbcp datasource.");
+            ctx = getContext("dbcp");
+            ds = (DataSource)ctx.getBean("businessDataSource");
         }
+
+        activeConnectionCount = new HashMap<String,Integer>();
 
         return ds;
     }
 
-    /**
-     * Initializes Data Source.
-     */
-    private static DataSource initDataSourceDirect() {
-
-        DatabaseProperties dbProperties = DatabaseProperties.getInstance();
-        String host = dbProperties.getDbHost();
-        String userName = dbProperties.getDbUser();
-        String password = dbProperties.getDbPassword();
-        String database = dbProperties.getDbName();
-        String driverClassname = dbProperties.getDbDriverClassName();
-
-        String url =
-                "jdbc:mysql://" + host + "/" + database
-                        + "?user=" + userName + "&password=" + password
-                        + "&zeroDateTimeBehavior=convertToNull";
-        
-        //  Set up poolable data source
-        BasicDataSource ds = new BasicDataSource();
-        ds.setDriverClassName(driverClassname);
-        ds.setUsername(userName);
-        ds.setPassword(password);
-        ds.setUrl(url);
-
-        //  By pooling/reusing PreparedStatements, we get a major performance gain
-        ds.setPoolPreparedStatements(true);
-        ds.setMaxActive(MAX_JDBC_CONNECTIONS);
-
-        return ds;
+    private static ApplicationContext getContext(String profile)
+    {
+        ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-business.xml");
+        ctx.getEnvironment().setActiveProfiles(profile);
+        ctx.refresh();
+        return ctx; 
     }
 
     /**
@@ -250,31 +211,6 @@ public class JdbcUtil {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    /**
-     * Gets the SQL string statement associated with a PreparedStatement.
-     * <p/>
-     * This method compensates for a bug in the DBCP Code.  DBCP wraps an
-     * original PreparedStatement object, but when you call toString() on the
-     * wrapper, it returns a generic String representation that does not include
-     * the actual SQL code which gets executed.  To get around this bug, this
-     * method checks to see if we have a DBCP wrapper.  If we do, we get the
-     * original delegate, and properly call its toString() method.  This
-     * results in the actual SQL statement sent to the database.
-     *
-     * @param pstmt PreparedStatement Object.
-     * @return toString value.
-     */
-    public static String getSqlQuery(PreparedStatement pstmt) {
-        if (pstmt instanceof DelegatingPreparedStatement) {
-            DelegatingPreparedStatement dp =
-                    (DelegatingPreparedStatement) pstmt;
-            Statement delegate = dp.getDelegate();
-            return delegate.toString();
-        } else {
-            return pstmt.toString();
         }
     }
 

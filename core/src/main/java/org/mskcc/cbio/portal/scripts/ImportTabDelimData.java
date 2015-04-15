@@ -1,29 +1,49 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.scripts;
 
-import java.io.*;
-import java.util.*;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.log4j.Logger;
 import org.mskcc.cbio.portal.dao.*;
 import org.mskcc.cbio.portal.model.*;
 import org.mskcc.cbio.portal.util.*;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.log4j.Logger;
+
+import java.io.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Code to Import Copy Number Alteration or MRNA Expression Data.
@@ -99,33 +119,40 @@ public class ImportTabDelimData {
         String headerLine = buf.readLine();
         String parts[] = headerLine.split("\t");
 
-        int caseStartIndex = getStartIndex(parts);
+        int sampleStartIndex = getStartIndex(parts);
         int hugoSymbolIndex = getHugoSymbolIndex(parts);
         int entrezGeneIdIndex = getEntrezGeneIdIndex(parts);
         
-        String caseIds[];
-
+        String sampleIds[];
         //  Branch, depending on targetLine setting
         if (targetLine == null) {
-            caseIds = new String[parts.length - caseStartIndex];
-            System.arraycopy(parts, caseStartIndex, caseIds, 0, parts.length - caseStartIndex);
+            sampleIds = new String[parts.length - sampleStartIndex];
+            System.arraycopy(parts, sampleStartIndex, sampleIds, 0, parts.length - sampleStartIndex);
         } else {
-            caseIds = new String[parts.length - caseStartIndex];
-            System.arraycopy(parts, caseStartIndex, caseIds, 0, parts.length - caseStartIndex);
+            sampleIds = new String[parts.length - sampleStartIndex];
+            System.arraycopy(parts, sampleStartIndex, sampleIds, 0, parts.length - sampleStartIndex);
         }
-		convertBarcodes(caseIds);
-        pMonitor.setCurrentMessage("Import tab delimited data for " + caseIds.length + " cases.");
+        ImportDataUtil.addPatients(sampleIds, geneticProfileId);
+        ImportDataUtil.addSamples(sampleIds, geneticProfileId);
+        pMonitor.setCurrentMessage("Import tab delimited data for " + sampleIds.length + " samples.");
 
-        // Add Cases to the Database
-        ArrayList <String> orderedCaseList = new ArrayList<String>();
-        for (int i = 0; i < caseIds.length; i++) {
-            if (!DaoCaseProfile.caseExistsInGeneticProfile(caseIds[i],
-                    geneticProfileId)) {
-                DaoCaseProfile.addCaseProfile(caseIds[i], geneticProfileId);
-            }
-            orderedCaseList.add(caseIds[i]);
+        // Add Samples to the Database
+        ArrayList <Integer> orderedSampleList = new ArrayList<Integer>();
+        ArrayList <Integer> filteredSampleIndices = new ArrayList<Integer>();
+        for (int i = 0; i < sampleIds.length; i++) {
+           Sample sample = DaoSample.getSampleByCancerStudyAndSampleId(geneticProfile.getCancerStudyId(),
+                                                                       StableIdUtil.getSampleId(sampleIds[i]));
+           if (sample == null) {
+                assert StableIdUtil.isNormal(sampleIds[i]);
+                filteredSampleIndices.add(i);
+                continue;
+           }
+           if (!DaoSampleProfile.sampleExistsInGeneticProfile(sample.getInternalId(), geneticProfileId)) {
+               DaoSampleProfile.addSampleProfile(sample.getInternalId(), geneticProfileId);
+           }
+           orderedSampleList.add(sample.getInternalId());
         }
-        DaoGeneticProfileCases.addGeneticProfileCases(geneticProfileId, orderedCaseList);
+        DaoGeneticProfileSamples.addGeneticProfileSamples(geneticProfileId, orderedSampleList);
 
         String line = buf.readLine();
         int numRecordsStored = 0;
@@ -137,6 +164,9 @@ public class ImportTabDelimData {
         boolean discritizedCnaProfile = geneticProfile!=null
                                         && geneticProfile.getGeneticAlterationType() == GeneticAlterationType.COPY_NUMBER_ALTERATION
                                         && geneticProfile.showProfileInAnalysisTab();
+        boolean rppaProfile = geneticProfile!=null
+                                && geneticProfile.getGeneticAlterationType() == GeneticAlterationType.PROTEIN_LEVEL
+                                && "Composite.Element.Ref".equalsIgnoreCase(parts[0]);
 
         Map<CnaEvent.Event, CnaEvent.Event> existingCnaEvents = null;
         long cnaEventId = 0;
@@ -168,7 +198,8 @@ public class ImportTabDelimData {
                                 + ") than the headers(" + lenParts + "): \n"+parts[0]);
                     }
                 }
-                String values[] = (String[]) ArrayUtils.subarray(parts, caseStartIndex, parts.length>lenParts?lenParts:parts.length);
+                String values[] = (String[]) ArrayUtils.subarray(parts, sampleStartIndex, parts.length>lenParts?lenParts:parts.length);
+                values = filterOutNormalValues(filteredSampleIndices, values);
 
                 String hugo = parts[hugoSymbolIndex];
                 if (hugo!=null && hugo.isEmpty()) {
@@ -202,16 +233,20 @@ public class ImportTabDelimData {
                         } 
                         
                         if (genes==null && hugo != null) {
-                            // deal with multiple symbols separate by |, use the first one
-                            int ix = hugo.indexOf("|");
-                            if (ix>0) {
-                                hugo = hugo.substring(0, ix);
-                            }
+                            if (rppaProfile) {
+                                genes = parseRPPAGenes(hugo);
+                            } else {
+                                // deal with multiple symbols separate by |, use the first one
+                                int ix = hugo.indexOf("|");
+                                if (ix>0) {
+                                    hugo = hugo.substring(0, ix);
+                                }
 
-                            genes = daoGene.guessGene(hugo);
+                                genes = daoGene.guessGene(hugo);
+                            }
                         }
 
-                        if (genes == null) {
+                        if (genes == null || genes.isEmpty()) {
                             genes = Collections.emptyList();
                         }
 
@@ -235,7 +270,6 @@ public class ImportTabDelimData {
                                         + "and all tab-delimited data associated with it!");
                                 }
                             } else if (genes.size()==1) {
-                                storeGeneticAlterations(values, daoGeneticAlteration, genes.get(0));
                                 if (discritizedCnaProfile) {
                                     long entrezGeneId = genes.get(0).getEntrezGeneId();
                                     int n = values.length;
@@ -243,12 +277,18 @@ public class ImportTabDelimData {
                                         System.out.println();
                                     int i = values[0].equals(""+entrezGeneId) ? 1:0;
                                     for (; i<n; i++) {
+                                        
+                                        // temporary solution -- change partial deletion back to full deletion.
+                                        if (values[i].equals(GeneticAlterationType.PARTIAL_DELETION)) {
+                                            values[i] = GeneticAlterationType.HOMOZYGOUS_DELETION;
+                                        }
+                                        
                                         if (values[i].equals(GeneticAlterationType.AMPLIFICATION) 
                                                // || values[i].equals(GeneticAlterationType.GAIN)
                                                // || values[i].equals(GeneticAlterationType.ZERO)
                                                // || values[i].equals(GeneticAlterationType.HEMIZYGOUS_DELETION)
                                                 || values[i].equals(GeneticAlterationType.HOMOZYGOUS_DELETION)) {
-                                            CnaEvent cnaEvent = new CnaEvent(orderedCaseList.get(i), geneticProfileId, entrezGeneId, Short.parseShort(values[i]));
+                                            CnaEvent cnaEvent = new CnaEvent(orderedSampleList.get(i), geneticProfileId, entrezGeneId, Short.parseShort(values[i]));
                                             
                                             if (existingCnaEvents.containsKey(cnaEvent.getEvent())) {
                                                 cnaEvent.setEventId(existingCnaEvents.get(cnaEvent.getEvent()).getEventId());
@@ -261,6 +301,7 @@ public class ImportTabDelimData {
                                         }
                                     }
                                 }
+                                storeGeneticAlterations(values, daoGeneticAlteration, genes.get(0));
                                 
                                 numRecordsStored++;
                             } else {
@@ -298,6 +339,53 @@ public class ImportTabDelimData {
         }
     }
     
+    private List<CanonicalGene> parseRPPAGenes(String antibodyWithGene) throws DaoException {
+        DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
+        String[] parts = antibodyWithGene.split("\\|");
+        String[] symbols = parts[0].split(" ");
+        String arrayId = parts[1];
+        
+        List<CanonicalGene> genes = new ArrayList<CanonicalGene>();
+        for (String symbol : symbols) {
+            CanonicalGene gene = daoGene.getNonAmbiguousGene(symbol);
+            if (gene!=null) {
+                genes.add(gene);
+            }
+        }
+        
+        Pattern p = Pattern.compile("(p[STY][0-9]+)");
+        Matcher m = p.matcher(arrayId);
+        String type, residue;
+        if (!m.find()) {
+            type = "protein_level";
+            return genes;
+        } else {
+            type = "phosphorylation";
+            residue = m.group(1);
+            return importPhosphoGene(genes, residue);
+        }
+    }
+    
+    private List<CanonicalGene> importPhosphoGene(List<CanonicalGene> genes, String residue) throws DaoException {
+        DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
+        List<CanonicalGene> phosphoGenes = new ArrayList<CanonicalGene>();
+        for (CanonicalGene gene : genes) {
+            Set<String> aliases = new HashSet<String>();
+            aliases.add("rppa-phospho");
+            aliases.add("phosphoprotein");
+            aliases.add("phospho"+gene.getStandardSymbol());
+            String phosphoSymbol = gene.getStandardSymbol()+"_"+residue;
+            CanonicalGene phosphoGene = daoGene.getGene(phosphoSymbol);
+            if (phosphoGene==null) {
+                phosphoGene = new CanonicalGene(phosphoSymbol, aliases);
+                phosphoGene.setType(CanonicalGene.PHOSPHOPROTEIN_TYPE);
+                daoGene.addGene(phosphoGene);
+            }
+            phosphoGenes.add(phosphoGene);
+        }
+        return phosphoGenes;
+    }
+    
     private int getHugoSymbolIndex(String[] headers) {
         return targetLine==null ? 0 : 1;
     }
@@ -320,7 +408,8 @@ public class ImportTabDelimData {
                     !h.equalsIgnoreCase("Hugo_Symbol") &&
                     !h.equalsIgnoreCase("Entrez_Gene_Id") &&
                     !h.equalsIgnoreCase("Locus ID") &&
-                    !h.equalsIgnoreCase("Cytoband")) {
+                    !h.equalsIgnoreCase("Cytoband") &&
+                    !h.equalsIgnoreCase("Composite.Element.Ref")) {
                 return i;
             }
         }
@@ -328,10 +417,14 @@ public class ImportTabDelimData {
         return startIndex;
     }
 
-	private void convertBarcodes(String caseIds[])
-	{
-		for (int lc = 0; lc < caseIds.length; lc++) {
-			caseIds[lc] = CaseIdUtil.getCaseId(caseIds[lc]);
-		}
-	}
+    private String[] filterOutNormalValues(ArrayList <Integer> filteredSampleIndices, String[] values)
+    {
+        ArrayList<String> filteredValues = new ArrayList<String>();
+        for (int lc = 0; lc < values.length; lc++) {
+            if (!filteredSampleIndices.contains(lc)) {
+                filteredValues.add(values[lc]);
+            }
+        }
+        return filteredValues.toArray(new String[filteredValues.size()]);
+    }
 }

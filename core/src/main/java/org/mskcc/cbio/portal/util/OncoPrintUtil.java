@@ -1,6 +1,38 @@
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package org.mskcc.cbio.portal.util;
 
-import org.mskcc.cbio.portal.model.CaseList;
+import org.mskcc.cbio.portal.model.PatientList;
 
 import java.util.Formatter;
 import java.util.List;
@@ -8,19 +40,19 @@ import java.util.List;
 public class OncoPrintUtil {
 
     /**
-     * Constructs the OncoPrint case set description.
+     * Constructs the OncoPrint patient set description.
      *
-     * @param caseSetId String
-     * @param caseSets List<CaseList>
+     * @param patientSetId String
+     * @param patientSets List<PatientList>
      *
      * @return String
      */
-    public static String getCaseSetDescription(String caseSetId, List<CaseList> caseSets) {
+    public static String getPatientSetDescription(String patientSetId, List<PatientList> patientSets) {
 
         StringBuilder builder = new StringBuilder();
-        for (CaseList caseSet : caseSets) {
-            if (caseSetId.equals(caseSet.getStableId())) {
-                builder.append(caseSet.getName() + ": " + caseSet.getDescription());
+        for (PatientList patientSet : patientSets) {
+            if (patientSetId.equals(patientSet.getStableId())) {
+                builder.append(patientSet.getName() + ": " + patientSet.getDescription());
             }
         }
         return builder.toString();

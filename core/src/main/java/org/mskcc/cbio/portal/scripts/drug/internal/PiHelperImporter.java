@@ -1,19 +1,33 @@
 /*
- * Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.scripts.drug.internal;
@@ -34,7 +48,6 @@ import java.util.Scanner;
 
 public class PiHelperImporter extends AbstractDrugInfoImporter {
     private static final String separator = "\t";
-    private static final Log log = LogFactory.getLog(PiHelperImporter.class);
 
     private InputStream drugInfoFile;
     private InputStream drugTargetsFile;
@@ -106,13 +119,12 @@ public class PiHelperImporter extends AbstractDrugInfoImporter {
             String refs = tokens[4].trim();
 
             Drug drug = nameToDrugMap.get(drugName);
-            assert drug != null;
 
-            if(drug == DRUG_SKIP)
+            if(drug==null || drug == DRUG_SKIP)
                 continue;
 
-            List<CanonicalGene> genes = daoGeneOptimized.guessGene(geneSymbol);
-            for (CanonicalGene gene : genes) {
+            CanonicalGene gene = daoGeneOptimized.getNonAmbiguousGene(geneSymbol);
+            if (gene!=null) {
                 daoDrugInteraction.addDrugInteraction(
                         drug,
                         gene,
@@ -126,7 +138,7 @@ public class PiHelperImporter extends AbstractDrugInfoImporter {
 
         scanner.close();
 
-        log.info("Number of drug-targets imported: " + saved);
+        System.out.println("Number of drug-targets imported: " + saved);
     }
 
     private void importDrugs() throws Exception {
@@ -139,9 +151,23 @@ public class PiHelperImporter extends AbstractDrugInfoImporter {
             if(line.startsWith("#")) continue;
             if((++lineNo) == 1) continue;
 
-            String[] t = line.split(separator, -1);
+            try {
+                importDrug(line);
+            } catch (Exception e) {
+                System.err.println("Failed to load drug "+line);
+                e.printStackTrace();
+            }
+
+        }
+
+        scanner.close();
+
+        System.out.println("Number of drugs imported: " + nameToDrugMap.keySet().size());
+    }
+    
+    private void importDrug(String line) throws DaoException {
+        String[] t = line.split(separator, -1);
             assert t.length ==  12;
-            if(t.length < 12) continue;
             /*
                 0 PiHelper_Drug_ID
                 1 Drug_Name
@@ -177,11 +203,5 @@ public class PiHelperImporter extends AbstractDrugInfoImporter {
                 getDrugDao().addDrug(drug);
                 nameToDrugMap.put(drug.getName(), drug);
             }
-
-        }
-
-        scanner.close();
-
-        log.info("Number of drugs imported: " + nameToDrugMap.keySet().size());
     }
 }

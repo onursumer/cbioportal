@@ -1,19 +1,45 @@
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package org.mskcc.cbio.portal.servlet;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.*;
 import org.apache.log4j.Logger;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONValue;
+import org.json.simple.*;
 import org.mskcc.cbio.portal.dao.*;
-import org.mskcc.cbio.portal.model.CancerStudy;
-import org.mskcc.cbio.portal.model.Case;
+import org.mskcc.cbio.portal.model.*;
 
 /**
  *
@@ -38,27 +64,27 @@ public class SimilarPatientsJSON extends HttpServlet {
 
         String strMutations = request.getParameter(MUTATION);
         String strCna = request.getParameter(CNA);
-        String patient = request.getParameter(PatientView.CASE_ID);
+        String sample = request.getParameter(PatientView.SAMPLE_ID);
         String cancerStudyId = request.getParameter(QueryBuilder.CANCER_STUDY_ID);
         
         try {
             CancerStudy cancerStudy = DaoCancerStudy.getCancerStudyByStableId(cancerStudyId);
             if (cancerStudy!=null) {
-                Case _case = DaoCase.getCase(patient, cancerStudy.getInternalId());
-                if (_case!=null) {
-                    Map<Case, Set<Long>> similarMutations;
+                Sample _sample = DaoSample.getSampleByCancerStudyAndSampleId(cancerStudy.getInternalId(), sample);
+                if (_sample!=null) {
+                    Map<Sample, Set<Long>> similarMutations;
                     if (strMutations==null||strMutations.isEmpty()) {
                         similarMutations = Collections.emptyMap();
                     } else {
-                        similarMutations = DaoMutation.getSimilarCasesWithMutationsByKeywords(strMutations);
-                        similarMutations.remove(_case);
+                        similarMutations = DaoMutation.getSimilarSamplesWithMutationsByKeywords(strMutations);
+                        similarMutations.remove(_sample);
                     }
-                    Map<Case, Set<Long>> similarCnas;
+                    Map<Sample, Set<Long>> similarCnas;
                     if (strCna==null||strCna.isEmpty()) {
                         similarCnas = Collections.emptyMap();
                     } else {
-                        similarCnas = DaoCnaEvent.getCasesWithAlterations(strCna);
-                        similarCnas.remove(_case);
+                        similarCnas = DaoCnaEvent.getSamplesWithAlterations(strCna);
+                        similarCnas.remove(_sample);
                     }
 
                     export(table, similarMutations, similarCnas);
@@ -90,19 +116,19 @@ public class SimilarPatientsJSON extends HttpServlet {
 //        return ret;
 //    }
     
-    private void export(JSONArray table, Map<Case, Set<Long>> similarMutations, Map<Case, Set<Long>> similarCnas) 
+    private void export(JSONArray table, Map<Sample, Set<Long>> similarMutations, Map<Sample, Set<Long>> similarCnas) 
             throws DaoException {
-        Set<Case> patients = new HashSet<Case>();
-        patients.addAll(similarMutations.keySet());
-        patients.addAll(similarCnas.keySet());
-        for (Case patient : patients) {
+        Set<Sample> samples = new HashSet<Sample>();
+        samples.addAll(similarMutations.keySet());
+        samples.addAll(similarCnas.keySet());
+        for (Sample sample : samples) {
             JSONArray row = new JSONArray();
-            row.add(patient.getCaseId());
+            row.add(sample.getStableId());
             
             String[] cancerStudy = {"unknown","unknown"};
             try {
-                CancerStudy study = DaoCancerStudy.getCancerStudyByInternalId(
-                    patient.getCancerStudyId());
+                Patient patient = DaoPatient.getPatientById(sample.getInternalPatientId());
+                CancerStudy study = patient.getCancerStudy();
                 cancerStudy[0] = study.getCancerStudyStableId();
                 cancerStudy[1] = study.getName();
             } catch (Exception e) {
@@ -112,12 +138,12 @@ public class SimilarPatientsJSON extends HttpServlet {
             row.add(Arrays.asList(cancerStudy));
             Map<String,Set<Long>> events = new HashMap<String,Set<Long>>(2);
             
-            Set<Long> mutations = similarMutations.get(patient);
+            Set<Long> mutations = similarMutations.get(sample);
             if (mutations != null) {
                 events.put(MUTATION, mutations);
             }
             
-            Set<Long> cna = similarCnas.get(patient);
+            Set<Long> cna = similarCnas.get(sample);
             if (cna != null) {
                 events.put(CNA, cna);
             }

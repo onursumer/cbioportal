@@ -1,44 +1,48 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.servlet;
 
+import org.mskcc.cbio.portal.model.*;
+import org.mskcc.cbio.portal.web_api.*;
 import org.mskcc.cbio.portal.util.XDebug;
-import org.mskcc.cbio.portal.model.LinkOutRequest;
-import org.mskcc.cbio.portal.web_api.GetGeneticProfiles;
-import org.mskcc.cbio.portal.web_api.GetCaseLists;
-import org.mskcc.cbio.portal.model.GeneticProfile;
-import org.mskcc.cbio.portal.model.CaseList;
-import org.mskcc.cbio.portal.model.CategorizedGeneticProfileSet;
-import org.mskcc.cbio.portal.model.AnnotatedCaseSets;
 import org.mskcc.cbio.portal.dao.DaoException;
-import org.mskcc.cbio.portal.web_api.ProtocolException;
+
 import org.apache.commons.collections15.iterators.IteratorEnumeration;
 
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.ServletException;
-import javax.servlet.ServletContext;
-import javax.servlet.RequestDispatcher;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
 
 /**
  * Central Servlet for Stable LinkOuts.
@@ -76,29 +80,53 @@ public class LinkOut extends HttpServlet {
         PrintWriter writer = httpServletResponse.getWriter();
         try {
             LinkOutRequest linkOutRequest = new LinkOutRequest(httpServletRequest);
-            String cancerStudyId = linkOutRequest.getCancerStudyId();
-            String output = linkOutRequest.getReport();
-            String geneList = linkOutRequest.getGeneList();
-            HashMap<String, GeneticProfile> defaultGeneticProfileSet = getDefaultGeneticProfileSet(cancerStudyId);
-            CaseList defaultCaseList = getDefaultCaseList(cancerStudyId);
-            ForwardingRequest forwardingRequest = new ForwardingRequest(httpServletRequest);
-            createForwardingUrl(forwardingRequest, cancerStudyId, geneList, defaultGeneticProfileSet,
-                defaultCaseList, output);
-            ServletContext context = getServletContext();
-            RequestDispatcher dispatcher = context.getRequestDispatcher("/index.do");
-            dispatcher.forward(forwardingRequest, httpServletResponse);
-        } catch(ProtocolException e) {
-            writer.write("Link out error:  " + e.getMsg());
+            if (linkOutRequest.isIsCrossCancerQuery()) {
+                handleCrossCancerLink(linkOutRequest, httpServletRequest, httpServletResponse);
+            } else {
+                handleStudySpecificLink(linkOutRequest, httpServletRequest, httpServletResponse);
+            }
         } catch (Exception e) {
-            writer.write("Link out error:  " + e.toString());
+            writer.write("Link out error:  " + e.getMessage());
         }
     }
+    
+    private void handleCrossCancerLink(LinkOutRequest linkOutRequest,
+            HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
+            throws Exception {
+        String geneList = linkOutRequest.getGeneList();
+        ForwardingRequest forwardingRequest = new ForwardingRequest(httpServletRequest);
+        createCrossCancerForwardingUrl(forwardingRequest, geneList);
+        ServletContext context = getServletContext();
+        RequestDispatcher dispatcher = context.getRequestDispatcher("/cross_cancer.do");
+        dispatcher.forward(forwardingRequest, httpServletResponse);
+    }
 
-    private void createForwardingUrl(ForwardingRequest forwardingRequest, String cancerStudyId, String geneList,
-            HashMap<String, GeneticProfile> defaultGeneticProfileSet, CaseList defaultCaseList, String output) {
+    private void createCrossCancerForwardingUrl(ForwardingRequest forwardingRequest, String geneList) {
+        forwardingRequest.setParameterValue(QueryBuilder.GENE_LIST , geneList);
+        forwardingRequest.setParameterValue(QueryBuilder.ACTION_NAME, QueryBuilder.ACTION_SUBMIT);
+    }
+    
+    private void handleStudySpecificLink(LinkOutRequest linkOutRequest,
+            HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
+            throws Exception {
+        String cancerStudyId = linkOutRequest.getCancerStudyId();
+        String output = linkOutRequest.getReport();
+        String geneList = linkOutRequest.getGeneList();
+        HashMap<String, GeneticProfile> defaultGeneticProfileSet = getDefaultGeneticProfileSet(cancerStudyId);
+        PatientList defaultCaseList = getDefaultPatientList(cancerStudyId);
+        ForwardingRequest forwardingRequest = new ForwardingRequest(httpServletRequest);
+        createStudySpecificForwardingUrl(forwardingRequest, cancerStudyId, geneList, defaultGeneticProfileSet,
+            defaultCaseList, output);
+        ServletContext context = getServletContext();
+        RequestDispatcher dispatcher = context.getRequestDispatcher("/index.do");
+        dispatcher.forward(forwardingRequest, httpServletResponse);
+    }
+
+    private void createStudySpecificForwardingUrl(ForwardingRequest forwardingRequest, String cancerStudyId, String geneList,
+            HashMap<String, GeneticProfile> defaultGeneticProfileSet, PatientList defaultPatientList, String output) {
         forwardingRequest.setParameterValue(QueryBuilder.GENE_LIST , geneList);
         forwardingRequest.setParameterValue(QueryBuilder.CANCER_STUDY_ID, cancerStudyId);
-        forwardingRequest.setParameterValue(QueryBuilder.CASE_SET_ID, defaultCaseList.getStableId());
+        forwardingRequest.setParameterValue(QueryBuilder.CASE_SET_ID, defaultPatientList.getStableId());
 
         List<String> geneticProfileList = new ArrayList<String>();
         for (String geneticProfileId:  defaultGeneticProfileSet.keySet()) {
@@ -114,14 +142,14 @@ public class LinkOut extends HttpServlet {
         }
     }
 
-    private CaseList getDefaultCaseList(String cancerStudyId) throws DaoException {
-        ArrayList<CaseList> caseSetList = GetCaseLists.getCaseLists(cancerStudyId);
-        AnnotatedCaseSets annotatedCaseSets = new AnnotatedCaseSets(caseSetList);
-        CaseList defaultCaseList = annotatedCaseSets.getDefaultCaseList();
-        if (defaultCaseList == null) {
-            throw new DaoException("Could not determine case set for:  " + cancerStudyId);
+    private PatientList getDefaultPatientList(String cancerStudyId) throws DaoException {
+        ArrayList<PatientList> patientSetList = GetPatientLists.getPatientLists(cancerStudyId);
+        AnnotatedPatientSets annotatedPatientSets = new AnnotatedPatientSets(patientSetList);
+        PatientList defaultPatientList = annotatedPatientSets.getDefaultPatientList();
+        if (defaultPatientList == null) {
+            throw new DaoException("Could not determine patient set for:  " + cancerStudyId);
         }
-        return defaultCaseList;
+        return defaultPatientList;
     }
 
     private HashMap<String, GeneticProfile> getDefaultGeneticProfileSet(String cancerStudyId) throws DaoException {

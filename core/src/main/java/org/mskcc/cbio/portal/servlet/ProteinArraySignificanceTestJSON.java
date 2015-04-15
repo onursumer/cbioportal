@@ -1,20 +1,34 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
-*/
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
 
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package org.mskcc.cbio.portal.servlet;
 
@@ -56,14 +70,6 @@ import org.mskcc.cbio.portal.web_api.GetProteinArrayData;
 public class ProteinArraySignificanceTestJSON extends HttpServlet {
     private static Logger logger = Logger.getLogger(ProteinArraySignificanceTestJSON.class);
 
-    public static final String CANCER_STUDY_ID = "cancer_study_id";
-    public static final String HEAT_MAP = "heat_map";
-    public static final String GENE = "gene";
-    public static final String ALTERATION_TYPE = "alteration";
-    public static final String ANTIBODY_TYPE = "antibody";
-    public static final String EXCLUDE_ANTIBODY_TYPE = "exclude_antibody";
-    public static final String DATA_SCALE = "data_scale";
-    
     /** 
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
      * @param request servlet request
@@ -73,79 +79,74 @@ public class ProteinArraySignificanceTestJSON extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-//        try {
-            JSONArray table = new JSONArray();
 
-            // get heat map
-            String cancerStudyStableId = request.getParameter(CANCER_STUDY_ID);
-            String heatMap = request.getParameter(HEAT_MAP);
-            String gene = request.getParameter(GENE);
-            String alterationType = request.getParameter(ALTERATION_TYPE);
-            String antibodyType = request.getParameter(ANTIBODY_TYPE);
-            String excludeAntibodyType = request.getParameter(EXCLUDE_ANTIBODY_TYPE);
-            String strDataScale = request.getParameter(DATA_SCALE);
+        JSONArray table = new JSONArray();
 
-	        // TODO filtered heat map breaks the parsing, we need the raw parameter
-	        // (alternatively, we can change the parsing method)
-		    if (request instanceof XssRequestWrapper)
-		    {
-			    heatMap = ((XssRequestWrapper)request).getRawParameter(HEAT_MAP);
-		    }
+        String cancerStudyStableId = request.getParameter("cancer_study_id");
+        String heatMap = request.getParameter("heat_map");
+        String gene = request.getParameter("gene");
+        String alterationType = request.getParameter("alteration");
+        String antibodyType = request.getParameter("antibody");
+        String excludeAntibodyType = request.getParameter("exclude_antibody");
+        String strDataScale = request.getParameter("data_scale");
 
-            double dataScale = strDataScale==null?0:Double.parseDouble(strDataScale);
+        // TODO filtered heat map breaks the parsing, we need the raw parameter
+        // (alternatively, we can change the parsing method)
+        if (request instanceof XssRequestWrapper)
+        {
+            heatMap = ((XssRequestWrapper)request).getRawParameter("heat_map");
+        }
 
-            Collection<String> antibodyTypes;
-            if (antibodyType==null) {
-                if (excludeAntibodyType == null) {
-                    antibodyTypes = null; // include all
-                } else {
-                    try {
-                        antibodyTypes = GetProteinArrayData.getProteinArrayTypes();
-                        antibodyTypes.removeAll(Arrays.asList(excludeAntibodyType.split(" ")));
-                    } catch (DaoException e) {
-                        throw new ServletException(e);
-                    }
-                }
+        double dataScale = strDataScale==null ? 0 : Double.parseDouble(strDataScale);
+
+        Collection<String> antibodyTypes;
+        if (antibodyType==null) {
+            if (excludeAntibodyType == null) {
+                antibodyTypes = null; // include all
             } else {
-                antibodyTypes = Arrays.asList(antibodyType.split(" "));
-            }
-
-            String[] heatMapLines = heatMap.split("\r?\n");
-            String[] genes = heatMapLines[0].split("\t");
-            genes[0] = "Any";
-            Set<String> allCases = getAllCases(heatMapLines);
-            Map<String,Set<String>>[] alteredCases = getAlteredCases(heatMapLines, genes, gene, alterationType);
-
-            Map<String,ProteinArrayInfo> proteinArrays;
-            Map<String,Map<String,Double>> proteinArrayData;
-            try {
-                int cancerStudyId = DaoCancerStudy.getCancerStudyByStableId(cancerStudyStableId).getInternalId();
-                proteinArrays = GetProteinArrayData.getProteinArrayInfo(cancerStudyId, null, antibodyTypes);
-                proteinArrayData = GetProteinArrayData.getProteinArrayData(cancerStudyId, proteinArrays.keySet(), allCases);
-            } catch (DaoException e) {
-                throw new ServletException(e);
-            }
-
-            if (gene==null) {        
-                for (int i=0; i<genes.length; i++) {
-                    export(table, genes[i], alteredCases[i], proteinArrays, proteinArrayData, dataScale);
+                try {
+                    antibodyTypes = GetProteinArrayData.getProteinArrayTypes();
+                    antibodyTypes.removeAll(Arrays.asList(excludeAntibodyType.split(" ")));
+                } catch (DaoException e) {
+                    throw new ServletException(e);
                 }
-            } else {
-                export(table, gene, alteredCases[0], proteinArrays, proteinArrayData, dataScale);
             }
+        } else {
+            antibodyTypes = Arrays.asList(antibodyType.split(" "));
+        }
 
-            response.setContentType("application/json");
-            PrintWriter out = response.getWriter();
-            try {
-                JSONValue.writeJSONString(table, out);
-                //out.print(JSONValue.toJSONString(table));
-            } finally {            
-                out.close();
+        String[] heatMapLines = heatMap.split("\r?\n");
+        String[] genes = heatMapLines[0].split("\t");
+        genes[0] = "Any";
+        Set<String> allCases = getAllCases(heatMapLines);
+        Map<String,Set<String>>[] alteredCases = getAlteredCases(heatMapLines, genes, gene, alterationType);
+
+        Map<String,ProteinArrayInfo> proteinArrays;
+        Map<String,Map<String,Double>> proteinArrayData;
+        try {
+            int cancerStudyId = DaoCancerStudy.getCancerStudyByStableId(cancerStudyStableId).getInternalId();
+            proteinArrays = GetProteinArrayData.getProteinArrayInfo(cancerStudyId, null, antibodyTypes);
+            proteinArrayData = GetProteinArrayData.getProteinArrayData(cancerStudyId, proteinArrays.keySet(), allCases);
+        } catch (DaoException e) {
+            throw new ServletException(e);
+        }
+
+        if (gene==null) {        
+            for (int i=0; i<genes.length; i++) {
+                export(table, genes[i], alteredCases[i], proteinArrays, proteinArrayData, dataScale);
             }
-//        } catch (Exception e) {
-//            logger.error(e.getMessage());
-//            response.getWriter().write(e.getMessage());
-//        }
+        } else {
+            export(table, gene, alteredCases[0], proteinArrays, proteinArrayData, dataScale);
+        }
+
+        response.setContentType("application/json");
+        PrintWriter out = response.getWriter();
+        try {
+            JSONValue.writeJSONString(table, out);
+        } finally {            
+            out.close();
+        }
+
     }
     
     private void export(JSONArray table,

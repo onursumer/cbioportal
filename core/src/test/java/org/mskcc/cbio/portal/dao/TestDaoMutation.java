@@ -1,29 +1,43 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.dao;
 
-import junit.framework.TestCase;
+import org.mskcc.cbio.portal.model.*;
 import org.mskcc.cbio.portal.scripts.ResetDatabase;
-import org.mskcc.cbio.portal.model.ExtendedMutation;
-import org.mskcc.cbio.portal.model.CanonicalGene;
 
-import java.util.ArrayList;
-import java.util.Set;
+import junit.framework.TestCase;
+
+import java.util.*;
 
 /**
  * JUnit tests for DaoMutation class.
@@ -42,13 +56,14 @@ public class TestDaoMutation extends TestCase {
 		daoGene.addGene(blahGene);
 
 		ResetDatabase.resetDatabase();
+        createSamples();
 
 		ExtendedMutation mutation = new ExtendedMutation();
 
                 mutation.setMutationEventId(1);
                 mutation.setKeyword("key");
 		mutation.setGeneticProfileId(1);
-		mutation.setCaseId("1234");
+		mutation.setSampleId(1);
 		mutation.setGene(blahGene);
 		mutation.setValidationStatus("validated");
 		mutation.setMutationStatus("somatic");
@@ -105,7 +120,7 @@ public class TestDaoMutation extends TestCase {
 		if( MySQLbulkLoader.isBulkLoad()){
                     MySQLbulkLoader.flushAll();
 		}
-		ArrayList<ExtendedMutation> mutationList = DaoMutation.getMutations(1, "1234", 321);
+		ArrayList<ExtendedMutation> mutationList = DaoMutation.getMutations(1, 1, 321);
 		validateMutation(mutationList.get(0));
 
 		//  Test the getGenesInProfile method
@@ -121,7 +136,7 @@ public class TestDaoMutation extends TestCase {
 
 	private void validateMutation(ExtendedMutation mutation) {
 		assertEquals (1, mutation.getGeneticProfileId());
-		assertEquals ("1234", mutation.getCaseId());
+		assertEquals (1, mutation.getSampleId());
 		assertEquals (321, mutation.getEntrezGeneId());
 		assertEquals ("validated", mutation.getValidationStatus());
 		assertEquals ("somatic", mutation.getMutationStatus());
@@ -171,4 +186,12 @@ public class TestDaoMutation extends TestCase {
 		assertEquals(678, mutation.getOncotatorProteinPosEnd());
 		assertEquals (true, mutation.isCanonicalTranscript());
 	}
+
+    private void createSamples() throws DaoException {
+        CancerStudy study = new CancerStudy("study", "description", "id", "brca", true);
+        Patient p = new Patient(study, "TCGA-1");
+        int pId = DaoPatient.addPatient(p);
+        Sample s = new Sample("1234", pId, "type");
+        DaoSample.addSample(s);
+    }
 }

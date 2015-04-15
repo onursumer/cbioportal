@@ -1,25 +1,45 @@
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 package org.mskcc.cbio.portal.servlet;
 
 import java.io.IOException;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.*;
+import javax.servlet.http.*;
 import org.apache.log4j.Logger;
-import org.mskcc.cbio.portal.dao.DaoCancerStudy;
-import org.mskcc.cbio.portal.dao.DaoCaseList;
-import org.mskcc.cbio.portal.dao.DaoException;
-import org.mskcc.cbio.portal.dao.DaoGeneticProfile;
-import org.mskcc.cbio.portal.model.CancerStudy;
-import org.mskcc.cbio.portal.model.CaseList;
-import org.mskcc.cbio.portal.model.GeneticProfile;
-import org.mskcc.cbio.portal.util.AccessControl;
-import org.mskcc.cbio.portal.util.XDebug;
+import org.mskcc.cbio.portal.dao.*;
+import org.mskcc.cbio.portal.model.*;
+import org.mskcc.cbio.portal.util.*;
 import org.owasp.validator.html.PolicyException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  *
@@ -32,7 +52,7 @@ public class CancerStudyView extends HttpServlet {
     public static final String MUTATION_PROFILE = "mutation_profile";
     public static final String CNA_PROFILE = "cna_profile";
     
-    private static final DaoCaseList daoCaseList = new DaoCaseList();
+    private static final DaoPatientList daoPatientList = new DaoPatientList();
 
     // class which process access control to cancer studies
     private AccessControl accessControl;
@@ -45,10 +65,7 @@ public class CancerStudyView extends HttpServlet {
     @Override
     public void init() throws ServletException {
         super.init();
-
-		ApplicationContext context =
-			new ClassPathXmlApplicationContext("classpath:applicationContext-security.xml");
-		accessControl = (AccessControl)context.getBean("accessControl");
+		accessControl = SpringUtil.getAccessControl();
     }
     
     /** 
@@ -108,20 +125,20 @@ public class CancerStudyView extends HttpServlet {
             return false;
         }
         
-        String caseListId = (String)request.getAttribute(QueryBuilder.CASE_SET_ID);
-        if (caseListId==null) {
-            caseListId = cancerStudy.getCancerStudyStableId()+"_all";
-            request.setAttribute(QueryBuilder.CASE_SET_ID, caseListId);
+        String patientListId = (String)request.getAttribute(QueryBuilder.CASE_SET_ID);
+        if (patientListId==null) {
+            patientListId = cancerStudy.getCancerStudyStableId()+"_all";
+            request.setAttribute(QueryBuilder.CASE_SET_ID, patientListId);
         }
         
-        CaseList caseList = daoCaseList.getCaseListByStableId(caseListId);
-        if (caseList==null) {
+        PatientList patientList = daoPatientList.getPatientListByStableId(patientListId);
+        if (patientList==null) {
             request.setAttribute(ERROR,
-                    "Could not find case list of '" + caseListId + "'. ");
+                    "Could not find patient list of '" + patientListId + "'. ");
             return false;
         }
         
-        request.setAttribute(QueryBuilder.CASE_IDS, caseList.getCaseList());
+        request.setAttribute(QueryBuilder.CASE_IDS, patientList.getPatientList());
         
         request.setAttribute(CANCER_STUDY, cancerStudy);
         request.setAttribute(QueryBuilder.HTML_TITLE, cancerStudy.getName());

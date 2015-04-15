@@ -1,10 +1,42 @@
-<script type="text/javascript" src="js/src/coExpression.js"></script>
-<script type="text/javascript" src="js/src/plots-view/PlotsBoilerplate.js"></script>
-<script type="text/javascript" src="js/src/plots-view/data/CoexpPlotsProxy.js"></script>
-<script type="text/javascript" src="js/src/plots-view/view/CoexpPlotsView.js"></script>
-<script type="text/javascript" src="js/src/plots-view/CoexpPlots.js"></script>
-<script type="text/javascript" src="js/src/plots-view/component/ScatterPlots.js"></script>
-<script type="text/javascript" src="js/src/plots-view/component/PlotsHeader.js"></script>
+<%--
+ - Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ -
+ - This library is distributed in the hope that it will be useful, but WITHOUT
+ - ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ - FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ - is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ - obligations to provide maintenance, support, updates, enhancements or
+ - modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ - liable to any party for direct, indirect, special, incidental or
+ - consequential damages, including lost profits, arising out of the use of this
+ - software and its documentation, even if Memorial Sloan-Kettering Cancer
+ - Center has been advised of the possibility of such damage.
+ --%>
+
+<%--
+ - This file is part of cBioPortal.
+ -
+ - cBioPortal is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as
+ - published by the Free Software Foundation, either version 3 of the
+ - License.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--%>
+
+<script type="text/javascript" src="js/src/co-exp/coExpression.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/src/co-exp/components/PlotsHeader.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/src/co-exp/components/ScatterPlots.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/src/co-exp/data/CoexpPlotsProxy.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/src/co-exp/view/CoexpPlotsView.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/src/co-exp/view/components/CoexpPlots.js?<%=GlobalProperties.getAppVersion()%>"></script>
+<script type="text/javascript" src="js/src/co-exp/view/components/PlotsBoilerplate.js?<%=GlobalProperties.getAppVersion()%>"></script>
 
 <style>
     #coexp .coexp-table-filter-custom {
@@ -76,12 +108,15 @@
         if ($("#coexp").is(":visible")) {
             CoExpView.init();
             coexp_tab_init = true;
+        } else {
+            $(window).trigger("resize");
         }
         $("#tabs").bind("tabsactivate", function(event, ui) {
             if (ui.newTab.text().trim().toLowerCase() === "co-expression") {
                 if (coexp_tab_init === false) {
                     CoExpView.init();
                     coexp_tab_init = true;
+                    $(window).trigger("resize");
                 } else {
                     $(window).trigger("resize");
                 }

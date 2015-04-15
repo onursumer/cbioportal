@@ -31,11 +31,18 @@ $MARKDOWN -x toc about_us_target.markdown > ../../webapp/content/about_us_target
 
 $MARKDOWN -x toc examples_acc.markdown > ../../webapp/content/examples_acc.html
 
+$MARKDOWN -x toc examples_kras.markdown > ../../webapp/content/examples_kras.html
+
+$MARKDOWN -x toc examples_genie.markdown > ../../webapp/content/examples_genie.html
+
 $MARKDOWN -x toc examples_glioma.markdown > ../../webapp/content/examples_glioma.html
 
 $MARKDOWN -x toc visualize_your_data.markdown > ../../webapp/content/visualize_your_data.html
 
 $MARKDOWN -x toc data_sets_public_right_column.markdown > ../../webapp/content/data_sets_public_right_column.html
+
+$MARKDOWN -x toc release_notes_oncoprinter.markdown > ../../webapp/content/release_notes_oncoprinter.html
+$MARKDOWN -x toc release_notes_mutation_mapper.markdown > ../../webapp/content/release_notes_mutation_mapper.html
 
 cp data_sets_tcga.html ../../webapp/content/
 cp data_sets_su2c.html ../../webapp/content/

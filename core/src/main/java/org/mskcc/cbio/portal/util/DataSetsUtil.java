@@ -1,35 +1,42 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-// package
 package org.mskcc.cbio.portal.util;
 
 // imports
-import org.mskcc.cbio.portal.dao.DaoCaseList;
-import org.mskcc.cbio.portal.dao.DaoException;
+import org.mskcc.cbio.portal.dao.*;
+import org.mskcc.cbio.portal.model.*;
 import org.mskcc.cbio.portal.util.AccessControl;
-import org.mskcc.cbio.portal.model.CaseList;
-import org.mskcc.cbio.portal.model.CancerStudy;
-import org.mskcc.cbio.portal.model.CancerStudyStats;
-import org.mskcc.cbio.portal.model.GeneticProfile;
 import org.mskcc.cbio.portal.web_api.ProtocolException;
-
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.util.List;
 import java.util.HashSet;
@@ -43,7 +50,7 @@ import java.util.ArrayList;
 public class DataSetsUtil {
 
 	// ref to our access control object
-	private static AccessControl accessControl = initializeAccessControl();
+	private static AccessControl accessControl = SpringUtil.getAccessControl();
 
 	// ref to total number of samples for al cancer studies
 	private Integer totalNumberOfSamples;
@@ -51,8 +58,9 @@ public class DataSetsUtil {
 	// ref to our list of cancer study stats & total num of samples
 	private List<CancerStudyStats> cancerStudyStats;
 
-	// ref to case list DAO
-	private DaoCaseList daoCaseList;
+	private DaoSample daoSample;
+	private DaoPatient daoPatient;
+	private DaoPatientList daoPatientList;
 
 	/**
 	 * Constructor (private).
@@ -60,7 +68,9 @@ public class DataSetsUtil {
 	public DataSetsUtil() {
 
 		try {
-			daoCaseList = new DaoCaseList();
+			daoSample = new DaoSample();
+			daoPatient = new DaoPatient();
+			daoPatientList = new DaoPatientList();
 			// totalNumberOfSamples will be set while computing stats
 			totalNumberOfSamples = 0;
 			cancerStudyStats = computeCancerStudyStats();
@@ -136,21 +146,18 @@ public class DataSetsUtil {
 		return toReturn;
 	}
 
-	/** 
-	 * Initializes the AccessControl member.
-	 */
-	protected static final AccessControl initializeAccessControl() {
-		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:applicationContext-security.xml");
-		return (AccessControl)context.getBean("accessControl");
-	}
+	private int getCount(CancerStudy cancerStudy, String patientListSuffix) throws DaoException
+	{
+		int count = 0;
+		
+		String patientListID = cancerStudy.getCancerStudyStableId() + patientListSuffix;
+		PatientList desiredPatientList = daoPatientList.getPatientListByStableId(patientListID);
 
-	private int getCount(CancerStudy cancerStudy, String caseListSuffix) throws DaoException {
+		if (desiredPatientList != null) {
+			// NOTE - as of 12/12/14, patient lists contain sample ids
+			count = desiredPatientList.getPatientList().size();
+		}
 		
-		String caseListID = cancerStudy.getCancerStudyStableId() + caseListSuffix;
-		CaseList desiredCaseList = daoCaseList.getCaseListByStableId(caseListID);
-		
-		// outta here
-		return (desiredCaseList != null) ? desiredCaseList.getCaseList().size() : 0;
+		return count;
 	}
 }

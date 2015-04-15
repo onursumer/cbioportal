@@ -1,23 +1,37 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.dao;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -117,9 +131,9 @@ public class DaoMicroRnaAlteration {
      * @return microRNA Value.
      * @throws DaoException Database Error.
      */
-    public String getMicroRnaAlteration(int geneticProfileId, String caseId,
+    public String getMicroRnaAlteration(int geneticProfileId, int sampleId,
             String microRnaId) throws DaoException {
-        return getMicroRnaAlterationMap(geneticProfileId, microRnaId).get(caseId);
+        return getMicroRnaAlterationMap(geneticProfileId, microRnaId).get(sampleId);
     }
 
     /**
@@ -129,17 +143,17 @@ public class DaoMicroRnaAlteration {
      * @return HashMap of microRNA values, keyed by Case ID.
      * @throws DaoException Database Error.
      */
-    public HashMap<String, String> getMicroRnaAlterationMap(int geneticProfileId,
+    public HashMap<Integer, String> getMicroRnaAlterationMap(int geneticProfileId,
             String microRnaId) throws DaoException {
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        HashMap<String, String> map = new HashMap<String, String>();
+        HashMap<Integer, String> map = new HashMap<Integer, String>();
 
-        ArrayList<String> orderedCaseList = DaoGeneticProfileCases.getOrderedCaseList
+        ArrayList<Integer> orderedSampleList = DaoGeneticProfileSamples.getOrderedSampleList
                 (geneticProfileId);
-        if (orderedCaseList == null || orderedCaseList.size() ==0) {
-            throw new IllegalArgumentException ("Could not find any cases for genetic" +
+        if (orderedSampleList == null || orderedSampleList.size() ==0) {
+            throw new IllegalArgumentException ("Could not find any samples for genetic" +
                     " profile ID:  " + geneticProfileId);
         }
 
@@ -156,8 +170,8 @@ public class DaoMicroRnaAlteration {
                 String valueParts[] = values.split(DELIM);
                 for (int i=0; i<valueParts.length; i++) {
                     String value = valueParts[i];
-                    String caseId = orderedCaseList.get(i);
-                    map.put(caseId, value);
+                    Integer sampleId = orderedSampleList.get(i);
+                    map.put(sampleId, value);
                 }
             }
             return map;

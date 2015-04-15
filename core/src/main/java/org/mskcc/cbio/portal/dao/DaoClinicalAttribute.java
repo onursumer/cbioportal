@@ -1,29 +1,45 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.dao;
 
+import org.mskcc.cbio.portal.model.*;
+
 import com.google.inject.internal.Join;
-import org.mskcc.cbio.portal.model.CancerStudy;
-import org.mskcc.cbio.portal.model.ClinicalAttribute;
+import org.apache.commons.lang.StringUtils;
 
 import java.sql.*;
 import java.util.*;
-import org.apache.commons.lang.StringUtils;
+import org.mskcc.cbio.portal.util.InternalIdUtil;
 
 /**
  * Data Access Object for `clinical_attribute` table
@@ -43,12 +59,16 @@ public class DaoClinicalAttribute {
                             "`ATTR_ID`," +
                             "`DISPLAY_NAME`," +
                             "`DESCRIPTION`," +
-                            "`DATATYPE`)" +
-                            " VALUES(?,?,?,?)");
+                            "`DATATYPE`," +
+                            "`PATIENT_ATTRIBUTE`," +
+                            "`PRIORITY`)" +
+                            " VALUES(?,?,?,?,?,?)");
             pstmt.setString(1, attr.getAttrId());
             pstmt.setString(2, attr.getDisplayName());
             pstmt.setString(3, attr.getDescription());
             pstmt.setString(4, attr.getDatatype());
+            pstmt.setBoolean(5, attr.isPatientAttribute());
+            pstmt.setString(6, attr.getPriority());
             return pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new DaoException(e);
@@ -59,9 +79,11 @@ public class DaoClinicalAttribute {
 
     private static ClinicalAttribute unpack(ResultSet rs) throws SQLException {
         return new ClinicalAttribute(rs.getString("ATTR_ID"),
-                rs.getString("DISPLAY_NAME"),
-                rs.getString("DESCRIPTION"),
-                rs.getString("DATATYPE"));
+                                     rs.getString("DISPLAY_NAME"),
+                                     rs.getString("DESCRIPTION"),
+                                     rs.getString("DATATYPE"),
+                                     rs.getBoolean("PATIENT_ATTRIBUTE"),
+                                     rs.getString("PRIORITY"));
     }
     
     public static ClinicalAttribute getDatum(String attrId) throws DaoException {
@@ -74,6 +96,9 @@ public class DaoClinicalAttribute {
     }
 
     public static List<ClinicalAttribute> getDatum(Collection<String> attrIds) throws DaoException {
+        if(attrIds == null || attrIds.isEmpty() ) {
+            return Collections.emptyList();
+        }
         Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -98,6 +123,18 @@ public class DaoClinicalAttribute {
         }
     }
 
+    public static List<ClinicalAttribute> getDataByStudy(int cancerStudyId) throws DaoException
+    {
+        List<ClinicalAttribute> attrs = new ArrayList<ClinicalAttribute>();
+        List<Integer> patientIds = InternalIdUtil.getInternalPatientIds(cancerStudyId);
+        attrs.addAll(getDataByInternalIds(patientIds, "clinical_patient"));
+        
+        List<Integer> sampleIds = InternalIdUtil.getInternalNonNormalSampleIds(cancerStudyId);
+        attrs.addAll(getDataByInternalIds(sampleIds, "clinical_sample"));
+        
+        return attrs;
+    }
+
     /**
      * Gets all the clinical attributes for a particular set of samples
      * Looks in the clinical table for all records associated with any of the samples, extracts and uniques
@@ -107,23 +144,21 @@ public class DaoClinicalAttribute {
      * @return
      * @throws DaoException
      */
-    public static List<ClinicalAttribute> getDataBySamples(int cancerStudyId, Set<String> sampleIdSet) throws DaoException {
+    private static List<ClinicalAttribute> getDataByInternalIds(List<Integer> internalIds, String table) throws DaoException {
         
         Connection con = null;
         ResultSet rs = null;
 		PreparedStatement pstmt = null;
 
-        String sql = "SELECT DISTINCT ATTR_ID FROM clinical"
-                + " WHERE `CANCER_STUDY_ID`= "+cancerStudyId
-                + " AND `CASE_ID` IN ('"
-                + StringUtils.join(sampleIdSet, "','") + "')";
+        String sql = ("SELECT DISTINCT ATTR_ID FROM " + table
+                + " WHERE INTERNAL_ID IN " +
+                      "(" + StringUtils.join(internalIds, ",") + ")");
 
         Set<String> attrIds = new HashSet<String>();
         try {
             con = JdbcUtil.getDbConnection(DaoClinicalAttribute.class);
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
-
             
              while(rs.next()) {
                 attrIds.add(rs.getString("ATTR_ID"));

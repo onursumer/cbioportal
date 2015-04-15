@@ -1,23 +1,51 @@
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package org.mskcc.cbio.portal.servlet;
-
-import java.io.*;
-import java.util.*;
-import java.lang.Float;
-
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
-import org.codehaus.jackson.node.ObjectNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.mskcc.cbio.portal.dao.*;
 import org.mskcc.cbio.portal.model.*;
 import org.mskcc.cbio.portal.util.*;
+
+import org.codehaus.jackson.node.*;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import javax.servlet.http.*;
+import javax.servlet.ServletException;
+
+import java.io.*;
+import java.util.*;
+import java.lang.Float;
 
 /**
  * Author: yichao
@@ -54,6 +82,8 @@ public class GetAlterationDataJSON extends HttpServlet {
                           HttpServletResponse httpServletResponse) throws ServletException, IOException {
 
         String cancerStudyIdentifier = httpServletRequest.getParameter("cancer_study_id");
+        String patientSetId = httpServletRequest.getParameter("case_set_id");
+        String patientIdsKey = httpServletRequest.getParameter("case_ids_key");
         
         String rawGeneIdList;
         if (httpServletRequest instanceof XssRequestWrapper) {
@@ -63,15 +93,14 @@ public class GetAlterationDataJSON extends HttpServlet {
         }
         
         String[] geneIdList = rawGeneIdList.split("\\s+");
-        String caseSetId = httpServletRequest.getParameter("case_set_id");
-        String caseIdsKey = httpServletRequest.getParameter("case_ids_key");
         String profileId = httpServletRequest.getParameter("profile_id");
 
 
         try {
 
             GeneticProfile final_gp = DaoGeneticProfile.getGeneticProfileByStableId(profileId);
-            ArrayList<String> caseIds = CoExpUtil.getCaseIds(caseSetId, caseIdsKey);
+            List<String> stableSampleIds = CoExpUtil.getPatientIds(patientSetId, patientIdsKey);
+            List<Integer> sampleIds = InternalIdUtil.getInternalSampleIds(final_gp.getCancerStudyId(), stableSampleIds);
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNodeFactory factory = JsonNodeFactory.instance;
@@ -85,16 +114,17 @@ public class GetAlterationDataJSON extends HttpServlet {
                 ArrayList<String> tmpProfileDataArr = 
                             GeneticAlterationUtil.getGeneticAlterationDataRow(
                                 daoGeneOptimized.getGene(geneId), 
-                                caseIds, 
+                                sampleIds, 
                                 final_gp
                             );
-                for (int i = 0; i < caseIds.size(); i++) {
+                for (int i = 0; i < sampleIds.size(); i++) {
                     if (!tmpProfileDataArr.get(i).equals("NA") && 
                         tmpProfileDataArr.get(i) != null &&
                         !tmpProfileDataArr.get(i).equals("NaN")) {
                         //JSONObject _datum = new JSONObject();
                         ObjectNode _datum = mapper.createObjectNode();
-                        _datum.put("caseId", caseIds.get(i));
+                        Sample sample = DaoSample.getSampleById(sampleIds.get(i));
+                        _datum.put("caseId", sample.getStableId());
                         _datum.put("value", Float.parseFloat(tmpProfileDataArr.get(i)));
                         _geneArr.add(_datum);                        
                     }
