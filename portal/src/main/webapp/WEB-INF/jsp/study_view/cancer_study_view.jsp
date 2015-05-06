@@ -1,3 +1,35 @@
+<%--
+ - Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
+ -
+ - This library is distributed in the hope that it will be useful, but WITHOUT
+ - ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ - FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ - is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ - obligations to provide maintenance, support, updates, enhancements or
+ - modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ - liable to any party for direct, indirect, special, incidental or
+ - consequential damages, including lost profits, arising out of the use of this
+ - software and its documentation, even if Memorial Sloan-Kettering Cancer
+ - Center has been advised of the possibility of such damage.
+ --%>
+
+<%--
+ - This file is part of cBioPortal.
+ -
+ - cBioPortal is free software: you can redistribute it and/or modify
+ - it under the terms of the GNU Affero General Public License as
+ - published by the Free Software Foundation, either version 3 of the
+ - License.
+ -
+ - This program is distributed in the hope that it will be useful,
+ - but WITHOUT ANY WARRANTY; without even the implied warranty of
+ - MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ - GNU Affero General Public License for more details.
+ -
+ - You should have received a copy of the GNU Affero General Public License
+ - along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--%>
+
 <%@ page import="org.json.simple.JSONValue"%>
 <%@ page import="org.mskcc.cbio.portal.servlet.QueryBuilder" %>
 <%@ page import="org.mskcc.cbio.portal.servlet.CancerStudyView" %>
@@ -62,6 +94,7 @@ if (cancerStudyViewError!=null) {
             <form method="post" action="index.do">
                 <b><u><%=cancerStudy.getName()%></u></b>
                 <input type="hidden" name="cancer_study_id" value="<%=cancerStudy.getCancerStudyStableId()%>">
+                <input type="hidden" name="<%=QueryBuilder.CANCER_STUDY_LIST%>" value="<%=cancerStudy.getCancerStudyStableId()%>">
                 <input type="submit" value="Query this study">
             </form>
         </td>
@@ -174,7 +207,7 @@ var hasMutSig = <%=hasMutSig%>;
 var caseSetId = '<%=caseSetId%>';
 var caseIds = <%=jsonCaseIds%>;
 var cancer_study_id = cancerStudyId; //Some components using this as global ID
-var appVersion = <%=GlobalProperties.getAppVersion()%>;
+var appVersion = <%=GlobalProperties.getAppVersion()%>?<%=GlobalProperties.getAppVersion()%>:'0000001';
 
 $("#study-tabs").tabs({disabled: true});
 $("#study-tabs").tabs("enable", 0);

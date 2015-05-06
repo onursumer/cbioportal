@@ -1,18 +1,33 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.util;
@@ -21,6 +36,9 @@ import org.mskcc.cbio.portal.model.CanonicalGene;
 import org.mskcc.cbio.portal.model.ExtendedMutation;
 import org.mskcc.cbio.maf.MafRecord;
 import org.mskcc.cbio.maf.TabDelimitedFileUtil;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utility class related to ExtendedMutation.
@@ -71,12 +89,16 @@ public class ExtendedMutationUtil
 	 */
 	public static String getProteinChange(String[] parts, MafRecord record)
 	{
+		// TODO simplify? (exclude MA, etc.)
 		// Note: MA may sometimes use a different isoform than Oncotator.
 
 		// try oncotator value first
-		String aminoAcidChange = record.getOncotatorProteinChange();
+		//String aminoAcidChange = record.getOncotatorProteinChange();
 
-		// if no oncotator value, try mutation assessor value
+		// try annotator value first
+		String aminoAcidChange = record.getProteinChange();
+
+		// if no annotator value, try mutation assessor value
 		if (!isValidProteinChange(aminoAcidChange))
 		{
 			aminoAcidChange = record.getMaProteinChange();
@@ -118,6 +140,46 @@ public class ExtendedMutationUtil
 		}
 
 		return aminoAcidChange;
+	}
+
+	public static int getProteinPosStart(String proteinPosition, String proteinChange)
+	{
+		// parts[0] is the protein start-end positions, parts[1] is the length
+		String[] parts = proteinPosition.split("/");
+
+		int position = TabDelimitedFileUtil.getPartInt(0, parts[0].split("-"));
+
+		// there is a case where the protein change is "-"
+		if (position == TabDelimitedFileUtil.NA_INT)
+		{
+			// try to extract it from protein change value
+			Pattern p = Pattern.compile(".*[A-Z]([0-9]+)[^0-9]+");
+			Matcher m = p.matcher(proteinChange);
+
+			if (m.find())
+			{
+				position = Integer.parseInt(m.group(1));
+			}
+		}
+
+		return position;
+	}
+
+	public static int getProteinPosEnd(String proteinPosition, String proteinChange)
+	{
+		// parts[0] is the protein start-end positions, parts[1] is the length
+		String[] parts = proteinPosition.split("/");
+
+		int end = TabDelimitedFileUtil.getPartInt(1, parts[0].split("-"));
+
+		// if no end position is provided,
+		// then use start position as end position
+		if (end == -1)
+		{
+			end = getProteinPosStart(proteinPosition, proteinChange);
+		}
+
+		return end;
 	}
 
 	public static boolean isValidProteinChange(String proteinChange)

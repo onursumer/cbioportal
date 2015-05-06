@@ -1,18 +1,33 @@
-/** Copyright (c) 2012 Memorial Sloan-Kettering Cancer Center.
+/*
+ * Copyright (c) 2015 Memorial Sloan-Kettering Cancer Center.
  *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- * documentation provided hereunder is on an "as is" basis, and
- * Memorial Sloan-Kettering Cancer Center 
- * has no obligations to provide maintenance, support,
- * updates, enhancements or modifications.  In no event shall
- * Memorial Sloan-Kettering Cancer Center
- * be liable to any party for direct, indirect, special,
- * incidental or consequential damages, including lost profits, arising
- * out of the use of this software and its documentation, even if
- * Memorial Sloan-Kettering Cancer Center 
- * has been advised of the possibility of such damage.
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS
+ * FOR A PARTICULAR PURPOSE. The software and documentation provided hereunder
+ * is on an "as is" basis, and Memorial Sloan-Kettering Cancer Center has no
+ * obligations to provide maintenance, support, updates, enhancements or
+ * modifications. In no event shall Memorial Sloan-Kettering Cancer Center be
+ * liable to any party for direct, indirect, special, incidental or
+ * consequential damages, including lost profits, arising out of the use of this
+ * software and its documentation, even if Memorial Sloan-Kettering Cancer
+ * Center has been advised of the possibility of such damage.
+ */
+
+/*
+ * This file is part of cBioPortal.
+ *
+ * cBioPortal is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 package org.mskcc.cbio.portal.scripts;
@@ -203,33 +218,22 @@ public class ImportExtendedMutationData{
 					codonChange,
 					refseqMrnaId,
 					uniprotName,
-					uniprotAccession,
-                                        oncotatorGeneSymbol;
+					uniprotAccession;
 
 				int proteinPosStart,
 					proteinPosEnd;
 
-				boolean bestEffectTranscript;
-
 				// determine whether to use canonical or best effect transcript
 
 				// try canonical first
-				if (ExtendedMutationUtil.isAcceptableMutation(record.getOncotatorVariantClassification()))
+				if (ExtendedMutationUtil.isAcceptableMutation(record.getVariantClassification()))
 				{
-					mutationType = record.getOncotatorVariantClassification();
-					bestEffectTranscript = false;
+					mutationType = record.getVariantClassification();
 				}
-				// if canonical is not acceptable (silent, etc.), try best effect
-				else if (ExtendedMutationUtil.isAcceptableMutation(record.getOncotatorVariantClassificationBestEffect()))
-				{
-					mutationType = record.getOncotatorVariantClassificationBestEffect();
-					bestEffectTranscript = true;
-				}
-				// if best effect is not acceptable either, use the default value
+				// if not acceptable either, use the default value
 				else
 				{
 					mutationType = ExtendedMutationUtil.getMutationType(record);
-					bestEffectTranscript = false;
 				}
 
 				// skip RNA mutations
@@ -240,58 +244,34 @@ public class ImportExtendedMutationData{
 					continue;
 				}
 
-				// set values according to the selected transcript
-				if (bestEffectTranscript)
-				{
-
-					if (!ExtendedMutationUtil.isValidProteinChange(record.getOncotatorProteinChangeBestEffect()))
-					{
-						proteinChange = "MUTATED";
-					}
-					else
-					{
-						// remove starting "p." if any
-						proteinChange = ExtendedMutationUtil.normalizeProteinChange(
-							record.getOncotatorProteinChangeBestEffect());
-					}
-
-					codonChange = record.getOncotatorCodonChangeBestEffect();
-					refseqMrnaId = record.getOncotatorRefseqMrnaIdBestEffect();
-					uniprotName = record.getOncotatorUniprotNameBestEffect();
-					uniprotAccession = record.getOncotatorUniprotAccessionBestEffect();
-					proteinPosStart = record.getOncotatorProteinPosStartBestEffect();
-					proteinPosEnd = record.getOncotatorProteinPosEndBestEffect();
-                                        oncotatorGeneSymbol = record.getOncotatorGeneSymbolBestEffect();
-				}
-				else
-				{
-					proteinChange = ExtendedMutationUtil.getProteinChange(parts, record);
-					codonChange = record.getOncotatorCodonChange();
-					refseqMrnaId = record.getOncotatorRefseqMrnaId();
-					uniprotName = record.getOncotatorUniprotName();
-					uniprotAccession = record.getOncotatorUniprotAccession();
-					proteinPosStart = record.getOncotatorProteinPosStart();
-					proteinPosEnd = record.getOncotatorProteinPosEnd();
-                                        oncotatorGeneSymbol = record.getOncotatorGeneSymbol();
-				}
+				proteinChange = ExtendedMutationUtil.getProteinChange(parts, record);
+				codonChange = record.getCodons();
+				refseqMrnaId = record.getRefSeq();
+				uniprotName = record.getSwissprot();
+				uniprotAccession = DaoUniProtIdMapping.mapFromUniprotIdToAccession(record.getSwissprot());
+				proteinPosStart = ExtendedMutationUtil.getProteinPosStart(
+						record.getProteinPosition(), proteinChange);
+				proteinPosEnd = ExtendedMutationUtil.getProteinPosEnd(
+						record.getProteinPosition(), proteinChange);
 
 				//  Assume we are dealing with Entrez Gene Ids (this is the best / most stable option)
 				String geneSymbol = record.getHugoGeneSymbol();
 				long entrezGeneId = record.getEntrezGeneId();
                                 
 				CanonicalGene gene = null;
-                                if (entrezGeneId != TabDelimitedFileUtil.NA_LONG) {
-                                    gene = daoGene.getGene(entrezGeneId);
-                                }
+				if (entrezGeneId != TabDelimitedFileUtil.NA_LONG) {
+				    gene = daoGene.getGene(entrezGeneId);
+				}
 
 				if(gene == null) {
 					// If Entrez Gene ID Fails, try Symbol.
 					gene = daoGene.getNonAmbiguousGene(geneSymbol, chr);
 				}
                                 
-                                if (gene == null) { // should we use this first??
-                                    gene = daoGene.getNonAmbiguousGene(oncotatorGeneSymbol, chr);
-                                }
+				if (gene == null) { // should we use this first??
+					//gene = daoGene.getNonAmbiguousGene(oncotatorGeneSymbol, chr);
+					gene = daoGene.getNonAmbiguousGene(geneSymbol, chr);
+				}
 
 				if(gene == null) {
 					pMonitor.logWarning("Gene not found:  " + geneSymbol + " ["
@@ -340,14 +320,17 @@ public class ImportExtendedMutationData{
                     mutation.setTumorRefCount(ExtendedMutationUtil.getTumorRefCount(record));
 					mutation.setNormalAltCount(ExtendedMutationUtil.getNormalAltCount(record));
 					mutation.setNormalRefCount(ExtendedMutationUtil.getNormalRefCount(record));
-					mutation.setOncotatorDbSnpRs(record.getOncotatorDbSnpRs());
+
+					// TODO rename the oncotator column names (remove "oncotator")
 					mutation.setOncotatorCodonChange(codonChange);
 					mutation.setOncotatorRefseqMrnaId(refseqMrnaId);
 					mutation.setOncotatorUniprotName(uniprotName);
 					mutation.setOncotatorUniprotAccession(uniprotAccession);
 					mutation.setOncotatorProteinPosStart(proteinPosStart);
 					mutation.setOncotatorProteinPosEnd(proteinPosEnd);
-					mutation.setCanonicalTranscript(!bestEffectTranscript);
+
+					// TODO we don't use this info right now...
+					mutation.setCanonicalTranscript(true);
 
 					sequencedCaseSet.add(sample.getStableId());
 

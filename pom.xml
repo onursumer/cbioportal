@@ -33,6 +33,13 @@
       </properties>
     </profile>
     <profile>
+      <id>genie</id>
+      <properties>
+        <importer-main-class>org.mskcc.cbio.importer.Admin</importer-main-class>
+        <final-war-name>genie</final-war-name>
+      </properties>
+    </profile>
+    <profile>
       <id>private</id>
       <properties>
         <importer-main-class>org.mskcc.cbio.importer.Admin</importer-main-class>
@@ -67,7 +74,7 @@
       </activation>
 	  <properties>
         <importer-main-class>org.mskcc.cbio.importer.Admin</importer-main-class>
-		<final-war-name>public-portal</final-war-name>
+		<final-war-name>cbioportal</final-war-name>
 	  </properties>
 	</profile>
 	<profile>
@@ -145,11 +152,7 @@
   <!-- modules -->
   <modules>
     <module>portal</module>
-	<module>core</module>
-	<module>oncotator</module>
-	<module>liftover</module>
-	<module>mutation-assessor</module>
-    <module>importer</module>
+    <module>core</module>
     <module>business</module>
     <module>web</module>
   </modules>
