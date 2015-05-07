@@ -421,9 +421,6 @@ cbio.util = (function() {
         sortByAttribute: sortByAttribute,
         swapElement: swapElement,
         getTargetWindow: getTargetWindow,
-        // TODO remove download functions when done with PDF!
-        submitDownload: submitDownload,
-        requestDownload: requestDownload,
         getTargetDocument: getTargetDocument,
         getLinkToPatientView: getLinkToPatientView,
         getLinkToSampleView: getLinkToSampleView
