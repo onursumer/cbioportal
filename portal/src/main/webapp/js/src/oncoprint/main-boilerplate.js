@@ -46,7 +46,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
     var showalteredcaseflag = true;
     var showwhitespaceflag = true;
     var increasesortflag = true;
-    var showPatientIdflat = false;
+    var showPatientIdflat = true;
     // add in controls from template
     document.getElementById('oncoprint_controls').innerHTML
         = _.template(document.getElementById('main-controls-template').innerHTML)();
@@ -299,7 +299,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                             legend: document.getElementById('oncoprint_legend'),
                             sortStatus:sortStatus,
                             mutationColor:mutationColorControl
-                            },extraTracks);
+                            },extraTracks,showPatientIdflat);
 
                             outer_loader_img.hide();
                             $('#oncoprint #everything').show();
@@ -381,7 +381,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                     geneData: data.toJSON(),
                     genes: genes,
                     legend: document.getElementById('oncoprint_legend')
-                },extraTracks);
+                },extraTracks,showPatientIdflat);
 
                 outer_loader_img.hide();
                 $('#oncoprint #everything').show();
@@ -1694,7 +1694,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                 var totalPatientsNum = _.union(AlteredPatientsNum,UnalteredPatientsNum);
                 var percentOfAlteredPatients = Math.ceil((AlteredPatientsNum.length/totalPatientsNum.length * 100).toFixed(1));
                 
-                $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + "("+ percentOfAlteredPatients +"%) "+ totalPatientsNum.length +" of patients");
+                $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + "("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients");
                 
                 showPatientIdflat = true;
                 refreshOncoPrint(showPatientIdflat);
@@ -1743,7 +1743,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                 showPatientIdflat = false;
                 refreshOncoPrint();
                 
-                $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + "("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) "+ PortalGlobals.getNumOfTotalCases() + " of samples");
+                $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + "("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples");
 
                 var zoomvalue = $('#oncoprint_zoom_slider')[0].value;
                 zoom = reset_zoom();
