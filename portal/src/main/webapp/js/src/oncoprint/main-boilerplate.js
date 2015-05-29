@@ -137,7 +137,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
     var extraGenes=[]; // used to record genes add customized
     var extraAttributes=[]; // used to record attributes names add customized
     var sortStatus=[];
-//    var sortStatus={};
+
     var cases = window.PortalGlobals.getCases();
     var genes = window.PortalGlobals.getGeneListString().split(" ");
 
@@ -270,7 +270,6 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
 
                 var clinicalElementsArray = [];
                 
-//                for(var i = clinicallistArrayNow.length-1; i >= 0; i--)
                 for(var i=0; i < clinicallistArrayNow.length; i++)
                 {
                     var clinicalElementsValue;
@@ -322,6 +321,19 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
 
                             zoom = reset_zoom();
                             invokeDataManager(); 
+
+                            if(showPatientIdflat)
+                            {
+                                var AlteredPatientsNum= calculatePatientNum(PortalGlobals.getAlteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                                var UnalteredPatientsNum= calculatePatientNum(PortalGlobals.getUnalteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                                var totalPatientsNum = _.union(AlteredPatientsNum,UnalteredPatientsNum);
+                                var percentOfAlteredPatients = Math.ceil((AlteredPatientsNum.length/totalPatientsNum.length * 100).toFixed(1));
+                                $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + " ("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients/cases");
+                            }
+                            else
+                            {
+                                $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + " ("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples"); 
+                            }
                             
                         if($('#oncoprint_sortbyfirst_dropdonw span')[0].innerHTML === 'Sort by')
                         {
@@ -403,7 +415,19 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                 });  
 
                 zoom = reset_zoom();
-                invokeDataManager();   
+                invokeDataManager();                   
+                if(showPatientIdflat)
+                {
+                    var AlteredPatientsNum= calculatePatientNum(PortalGlobals.getAlteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                    var UnalteredPatientsNum= calculatePatientNum(PortalGlobals.getUnalteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                    var totalPatientsNum = _.union(AlteredPatientsNum,UnalteredPatientsNum);
+                    var percentOfAlteredPatients = Math.ceil((AlteredPatientsNum.length/totalPatientsNum.length * 100).toFixed(1));
+                    $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + " ("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients/cases");
+                }
+                else
+                {
+                    $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + " ("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples"); 
+                }                
             }
             
             //for add clinical attributes in url to data end
@@ -637,8 +661,8 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                 sortStatus:sortStatus,
                 mutationColor:mutationColorControl
             },extraTracks,showPatientIdflat);
-
-//            oncoprint.sortBy(sortBy.val(), cases.split(" "));
+            
+            //            oncoprint.sortBy(sortBy.val(), cases.split(" "));
             if($('#oncoprint_sortbyfirst_dropdonw span')[0].innerHTML === 'Sort by')
             {
                 oncoprint.sortBy("genes", cases.split(" "),mutationColorControl,mutationColorSort,sortStatus);
@@ -692,6 +716,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
             sortStatus:sortStatus,
             mutationColor:mutationColorControl
         },extraTracks,showPatientIdflat);
+               
         if(extraAttributes.length < 1)
         {
             $('#oncoprint-diagram-toolbar-buttons #clinical_first')[0].style.display = "none";
@@ -781,7 +806,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
         inner_loader_img.show();
         toggleControls(false); //disable toggleControls
 
-        inner_loader_img.hide();
+        inner_loader_img.hide()
         
         var topatientValue;
         if(topatient !== undefined)
@@ -938,6 +963,18 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                         $('#oncoprint-diagram-removeWhitespace-icon img')[0].attributes.src.value = 'images/removeWhitespace.svg';
                         utils.make_mouseover(d3.selectAll('.sample rect'),{linkage:true});        // hack =(
                         invokeDataManager();
+                        if(showPatientIdflat)
+                        {
+                            var AlteredPatientsNum= calculatePatientNum(PortalGlobals.getAlteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                            var UnalteredPatientsNum= calculatePatientNum(PortalGlobals.getUnalteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                            var totalPatientsNum = _.union(AlteredPatientsNum,UnalteredPatientsNum);
+                            var percentOfAlteredPatients = Math.ceil((AlteredPatientsNum.length/totalPatientsNum.length * 100).toFixed(1));
+                            $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + " ("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients/cases");
+                        }
+                        else
+                        {
+                            $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + " ("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples"); 
+                        }    
                     }
                 });
             }
@@ -970,7 +1007,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                             sortStatus:sortStatus,
                             mutationColor:mutationColorControl
                         },extraTracks,showPatientIdflat);
-                             
+                                                        
 //                        oncoprint.sortBy(sortBy.val(), cases.split(" "));
                         if($('#oncoprint_sortbyfirst_dropdonw span')[0].innerHTML === 'Sort by')
                         {
@@ -1036,6 +1073,18 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                         $('#oncoprint-diagram-removeWhitespace-icon img')[0].attributes.src.value = 'images/removeWhitespace.svg';
                         utils.make_mouseover(d3.selectAll('.sample rect'),{linkage:true});        // hack =(
                         invokeDataManager();
+                        if(showPatientIdflat)
+                        {
+                            var AlteredPatientsNum= calculatePatientNum(PortalGlobals.getAlteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                            var UnalteredPatientsNum= calculatePatientNum(PortalGlobals.getUnalteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                            var totalPatientsNum = _.union(AlteredPatientsNum,UnalteredPatientsNum);
+                            var percentOfAlteredPatients = Math.ceil((AlteredPatientsNum.length/totalPatientsNum.length * 100).toFixed(1));
+                            $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + " ("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients/cases");
+                        }
+                        else
+                        {
+                            $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + " ("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples"); 
+                        }
                     }
                 });
             }
@@ -1068,7 +1117,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                             sortStatus:sortStatus,
                             mutationColor:mutationColorControl
                         },extraTracks,showPatientIdflat);
-
+                        
                         if($('#oncoprint_sortbyfirst_dropdonw span')[0].innerHTML === 'Sort by')
                         {
                             oncoprint.sortBy("genes", cases.split(" "),mutationColorControl,mutationColorSort,sortStatus);
@@ -1133,7 +1182,21 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                         $('#oncoprint-diagram-removeUCases-icon img')[0].attributes.src.value = 'images/removeUCases.svg';
                         $('#oncoprint-diagram-removeWhitespace-icon img')[0].attributes.src.value = 'images/removeWhitespace.svg';
                         utils.make_mouseover(d3.selectAll('.sample rect'),{linkage:true});        // hack =(
+                        
                         invokeDataManager();
+                        
+                        if(showPatientIdflat)
+                        {
+                            var AlteredPatientsNum= calculatePatientNum(PortalGlobals.getAlteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                            var UnalteredPatientsNum= calculatePatientNum(PortalGlobals.getUnalteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                            var totalPatientsNum = _.union(AlteredPatientsNum,UnalteredPatientsNum);
+                            var percentOfAlteredPatients = Math.ceil((AlteredPatientsNum.length/totalPatientsNum.length * 100).toFixed(1));
+                            $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + " ("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients/cases");
+                        }
+                        else
+                        {
+                            $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + " ("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples"); 
+                        }
                     }
                 });
             }
@@ -1694,7 +1757,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                 var totalPatientsNum = _.union(AlteredPatientsNum,UnalteredPatientsNum);
                 var percentOfAlteredPatients = Math.ceil((AlteredPatientsNum.length/totalPatientsNum.length * 100).toFixed(1));
                 
-                $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + "("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients/cases");
+                $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + " ("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients/cases");
 
                 
                 showPatientIdflat = true;
@@ -1744,7 +1807,7 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
                 showPatientIdflat = false;
                 refreshOncoPrint();
 
-                $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + "("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples");
+                $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + " ("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples");
                 
                 var zoomvalue = $('#oncoprint_zoom_slider')[0].value;
                 zoom = reset_zoom();
