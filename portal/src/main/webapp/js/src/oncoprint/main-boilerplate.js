@@ -1733,6 +1733,135 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
             
             $('#oncoprint_diagram_topatientid_icon').click(function(){
               inner_loader_img.show();
+                if($('#switchPatientSample')[0].attributes.valuetype.value === "patients")
+                {
+                   $('#switchPatientSample').text("patients"); 
+                   $('#switchPatientSample')[0].attributes.valuetype.value = "samples"
+                }
+                else
+                {
+                    $('#switchPatientSample').text("samples")
+                    $('#switchPatientSample')[0].attributes.valuetype.value = "patients"
+                }
+              if($('#oncoprint_diagram_topatientid_icon img')[0].attributes.src.value === 'images/cool.svg')
+              {      
+                if($('#oncoprint_diagram_showmutationcolor_icon img')[0].attributes.src.value === 'images/mutationcolorsort.svg')
+                {
+                    mutationColorControl = 'singleColor';
+                    mutationColorSort = 'mutationcolorsort';
+                }
+                else if($('#oncoprint_diagram_showmutationcolor_icon img')[0].attributes.src.value === 'images/colormutations.svg')
+                {
+                    mutationColorControl = 'multiColor';
+                    mutationColorSort = 'mutationcolornonsort';
+                }
+                else if($('#oncoprint_diagram_showmutationcolor_icon img')[0].attributes.src.value === 'images/uncolormutations.svg')
+                {                
+                    mutationColorControl = 'multiColor';
+                    mutationColorSort = 'mutationcolorsort';  
+                }
+                
+                var AlteredPatientsNum= calculatePatientNum(PortalGlobals.getAlteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                var UnalteredPatientsNum= calculatePatientNum(PortalGlobals.getUnalteredSampleIdList(),PortalGlobals.getPatientSampleIdMap());
+                
+                var totalPatientsNum = _.union(AlteredPatientsNum,UnalteredPatientsNum);
+                var percentOfAlteredPatients = Math.ceil((AlteredPatientsNum.length/totalPatientsNum.length * 100).toFixed(1));
+                
+                $('#altered_value').text("Altered in "+ AlteredPatientsNum.length + " ("+ percentOfAlteredPatients +"%) of "+ totalPatientsNum.length +" patients/cases");
+
+                
+                showPatientIdflat = true;
+                refreshOncoPrint(showPatientIdflat);
+
+                var zoomvalue = $('#oncoprint_zoom_slider')[0].value;
+                zoom = reset_zoom();
+                $('#oncoprint_zoom_slider')[0].value = zoomvalue;
+                // sync
+                oncoprint.zoom(zoomvalue);
+                
+                oncoprint.showUnalteredCases(!$('#toggle_unaltered_cases').is(":checked"));
+                if($('#oncoprint-diagram-removeWhitespace-icon img')[0].attributes.src.value === 'images/removeWhitespace.svg')
+                {
+                    oncoprint.toggleWhiteSpace(true);
+                }
+                else
+                {
+                    oncoprint.toggleWhiteSpace(false);
+                }
+                
+                utils.make_mouseover(d3.selectAll('.sample rect'),{linkage:true});        // hack =(
+                $('#oncoprint_diagram_topatientid_icon img')[0].attributes.src.value = 'images/cool2.svg';
+                
+                $('#oncoprint-diagram-showlegend-icon img')[0].attributes.src.value = 'images/showlegend.svg';
+                $('#oncoprint-diagram-removeUCases-icon img')[0].attributes.src.value = 'images/removeUCases.svg';
+                
+                $('.legend_missense_name').text("Mutation") ;
+              }
+                else if($('#oncoprint_diagram_topatientid_icon img')[0].attributes.src.value === 'images/cool2.svg')
+              {
+                if($('#oncoprint_diagram_showmutationcolor_icon img')[0].attributes.src.value === 'images/mutationcolorsort.svg')
+                {
+                    mutationColorControl = 'singleColor';
+                    mutationColorSort = 'mutationcolorsort';
+                }
+                else if($('#oncoprint_diagram_showmutationcolor_icon img')[0].attributes.src.value === 'images/colormutations.svg')
+                {
+                    mutationColorControl = 'multiColor';
+                    mutationColorSort = 'mutationcolornonsort';
+                }
+                else if($('#oncoprint_diagram_showmutationcolor_icon img')[0].attributes.src.value === 'images/uncolormutations.svg')
+                {                
+                    mutationColorControl = 'multiColor';
+                    mutationColorSort = 'mutationcolorsort';  
+                }
+                showPatientIdflat = false;
+                refreshOncoPrint();
+
+                $('#altered_value').text("Altered in "+ PortalGlobals.getNumOfAlteredCases() + " ("+ Math.ceil(PortalGlobals.getPercentageOfAlteredCases()) +"%) of "+ PortalGlobals.getNumOfTotalCases() + " samples");
+                
+                var zoomvalue = $('#oncoprint_zoom_slider')[0].value;
+                zoom = reset_zoom();
+                $('#oncoprint_zoom_slider')[0].value = zoomvalue;
+                // sync
+                oncoprint.zoom(zoomvalue);
+ 
+                oncoprint.showUnalteredCases(!$('#toggle_unaltered_cases').is(":checked"));
+                if($('#oncoprint-diagram-removeWhitespace-icon img')[0].attributes.src.value === 'images/removeWhitespace.svg')
+                {
+                    oncoprint.toggleWhiteSpace(true);
+                }
+                else
+                {
+                    oncoprint.toggleWhiteSpace(false);
+                }
+                
+                utils.make_mouseover(d3.selectAll('.sample rect'),{linkage:true});        // hack =(
+                $('#oncoprint_diagram_topatientid_icon img')[0].attributes.src.value = 'images/cool.svg';
+                
+                $('#oncoprint-diagram-showlegend-icon img')[0].attributes.src.value = 'images/showlegend.svg';
+                $('#oncoprint-diagram-removeUCases-icon img')[0].attributes.src.value = 'images/removeUCases.svg';
+                
+                $('.legend_missense_name').text("Missense Mutation");
+                $('.legend_nonmissense').css("display","inline");
+              }
+              inner_loader_img.hide();
+            });
+            
+            
+            
+            $('#switchPatientSample').click(function(){
+                inner_loader_img.show();
+                if($('#switchPatientSample')[0].attributes.valuetype.value === "patients")
+                {
+                   $('#switchPatientSample').text("patients"); 
+                   $('#switchPatientSample')[0].attributes.valuetype.value = "samples"
+                }
+                else
+                {
+                    $('#switchPatientSample').text("samples")
+                    $('#switchPatientSample')[0].attributes.valuetype.value = "patients"
+                }
+              
               if($('#oncoprint_diagram_topatientid_icon img')[0].attributes.src.value === 'images/cool.svg')
               {      
                 if($('#oncoprint_diagram_showmutationcolor_icon img')[0].attributes.src.value === 'images/mutationcolorsort.svg')
@@ -1836,6 +1965,9 @@ requirejs(  [         'Oncoprint',    'OncoprintUtils'],
               }
               inner_loader_img.hide();
             });            
+            
+            
+            
             
             $('#oncoprint_diagram_topatientid_icon').hover(
             function () {
