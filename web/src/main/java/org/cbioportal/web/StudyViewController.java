@@ -13,14 +13,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
-import org.cbioportal.model.ClinicalDataCount;
-import org.cbioportal.model.CopyNumberCountByGene;
-import org.cbioportal.model.Gistic;
-import org.cbioportal.model.GisticToGene;
-import org.cbioportal.model.MolecularProfileSampleCount;
-import org.cbioportal.model.MutSig;
-import org.cbioportal.model.MutationCountByGene;
-import org.cbioportal.model.Sample;
+
+import org.cbioportal.model.*;
 import org.cbioportal.service.ClinicalDataService;
 import org.cbioportal.service.DiscreteCopyNumberService;
 import org.cbioportal.service.GenePanelService;
@@ -97,6 +91,38 @@ public class StudyViewController {
         extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
         return new ResponseEntity<>(clinicalDataService.fetchClinicalDataCounts(studyIds, sampleIds, 
             Arrays.asList(attributeId), clinicalDataType.name()).get(attributeId), HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/attributes/{attributeId}/clinical-data-bin-counts/fetch", method = RequestMethod.POST,
+        consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ApiOperation("Fetch clinical data counts by study view filter")
+    public ResponseEntity<List<ClinicalDataBinCount>> fetchClinicalDataBinCounts(
+        @ApiParam(required = true, value = "Attribute ID e.g. CANCER_TYPE")
+        @PathVariable String attributeId,
+        @ApiParam("Type of the clinical data")
+        @RequestParam(defaultValue = "SAMPLE") ClinicalDataType clinicalDataType,
+        @ApiParam(required = true, value = "Study view filter")
+        @Valid @RequestBody StudyViewFilter studyViewFilter) {
+
+        // TODO get all clinical data for this attribute, and calculate all bins
+        
+        if (studyViewFilter.getClinicalDataIntervalFilters() != null) {
+            studyViewFilter.getClinicalDataIntervalFilters().removeIf(f -> f.getAttributeId().equals(attributeId));
+        }
+        // TODO add interval support to StudyViewFilterApplier.apply
+        List<SampleIdentifier> filteredSampleIdentifiers = studyViewFilterApplier.apply(studyViewFilter);
+
+        if (filteredSampleIdentifiers.isEmpty()) {
+            return new ResponseEntity<>(null, HttpStatus.OK);
+        }
+        List<String> studyIds = new ArrayList<>();
+        List<String> sampleIds = new ArrayList<>();
+        extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
+        
+        // TODO fillBins for the filtered data
+//        return new ResponseEntity<>(clinicalDataService.fetchClinicalDataCounts(studyIds, sampleIds,
+//            Arrays.asList(attributeId), clinicalDataType.name()).get(attributeId), HttpStatus.OK);
+        return new ResponseEntity<>(null, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/mutated-genes/fetch", method = RequestMethod.POST, 

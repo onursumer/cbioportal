@@ -23,14 +23,7 @@ import org.cbioportal.service.MolecularProfileService;
 import org.cbioportal.service.MutationService;
 import org.cbioportal.service.PatientService;
 import org.cbioportal.service.SampleService;
-import org.cbioportal.web.parameter.ClinicalDataEqualityFilter;
-import org.cbioportal.web.parameter.ClinicalDataType;
-import org.cbioportal.web.parameter.CopyNumberGeneFilter;
-import org.cbioportal.web.parameter.CopyNumberGeneFilterElement;
-import org.cbioportal.web.parameter.MutationGeneFilter;
-import org.cbioportal.web.parameter.Projection;
-import org.cbioportal.web.parameter.SampleIdentifier;
-import org.cbioportal.web.parameter.StudyViewFilter;
+import org.cbioportal.web.parameter.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -82,6 +75,13 @@ public class StudyViewFilterApplier {
         if (clinicalDataEqualityFilters != null) {
             sampleIdentifiers = filterClinicalData(sampleIdentifiers, clinicalDataEqualityFilters, ClinicalDataType.SAMPLE);
             sampleIdentifiers = filterClinicalData(sampleIdentifiers, clinicalDataEqualityFilters, ClinicalDataType.PATIENT);
+        }
+
+        List<ClinicalDataIntervalFilter> clinicalDataIntervalFilters = studyViewFilter.getClinicalDataIntervalFilters();
+        if (clinicalDataEqualityFilters != null) {
+            // TODO add a filter method compatible with clinicalDataIntervalFilters
+            //sampleIdentifiers = filterClinicalData(sampleIdentifiers, clinicalDataIntervalFilters, ClinicalDataType.SAMPLE);
+            //sampleIdentifiers = filterClinicalData(sampleIdentifiers, clinicalDataIntervalFilters, ClinicalDataType.PATIENT);
         }
 
         List<MutationGeneFilter> mutatedGenes = studyViewFilter.getMutatedGenes();
