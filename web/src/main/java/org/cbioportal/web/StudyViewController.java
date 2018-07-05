@@ -4,11 +4,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,6 +25,7 @@ import org.cbioportal.web.parameter.ClinicalDataType;
 import org.cbioportal.web.parameter.Projection;
 import org.cbioportal.web.parameter.SampleIdentifier;
 import org.cbioportal.web.parameter.StudyViewFilter;
+import org.cbioportal.web.util.ClinicalDataBinner;
 import org.cbioportal.web.util.StudyViewFilterApplier;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -66,6 +63,8 @@ public class StudyViewController {
     private SignificantlyMutatedGeneService significantlyMutatedGeneService;
     @Autowired
     private SignificantCopyNumberRegionService significantCopyNumberRegionService;
+    @Autowired
+    private ClinicalDataBinner clinicalDataBinner;
 
     @RequestMapping(value = "/attributes/{attributeId}/clinical-data-counts/fetch", method = RequestMethod.POST, 
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -103,13 +102,10 @@ public class StudyViewController {
         @RequestParam(defaultValue = "SAMPLE") ClinicalDataType clinicalDataType,
         @ApiParam(required = true, value = "Study view filter")
         @Valid @RequestBody StudyViewFilter studyViewFilter) {
-
-        // TODO get all clinical data for this attribute, and calculate all bins
         
         if (studyViewFilter.getClinicalDataIntervalFilters() != null) {
             studyViewFilter.getClinicalDataIntervalFilters().removeIf(f -> f.getAttributeId().equals(attributeId));
         }
-        // TODO add interval support to StudyViewFilterApplier.apply
         List<SampleIdentifier> filteredSampleIdentifiers = studyViewFilterApplier.apply(studyViewFilter);
 
         if (filteredSampleIdentifiers.isEmpty()) {
@@ -118,11 +114,12 @@ public class StudyViewController {
         List<String> studyIds = new ArrayList<>();
         List<String> sampleIds = new ArrayList<>();
         extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
+
+        List<ClinicalDataBinCount> clinicalDataBinCounts = clinicalDataBinner.calculateDataBins(
+            clinicalDataService.fetchClinicalData(
+                studyIds, sampleIds, Collections.singletonList(attributeId), clinicalDataType.name(), Projection.SUMMARY.name()));
         
-        // TODO fillBins for the filtered data
-//        return new ResponseEntity<>(clinicalDataService.fetchClinicalDataCounts(studyIds, sampleIds,
-//            Arrays.asList(attributeId), clinicalDataType.name()).get(attributeId), HttpStatus.OK);
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        return new ResponseEntity<>(clinicalDataBinCounts, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/mutated-genes/fetch", method = RequestMethod.POST, 
