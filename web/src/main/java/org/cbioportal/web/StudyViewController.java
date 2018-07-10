@@ -115,7 +115,7 @@ public class StudyViewController {
         List<String> sampleIds = new ArrayList<>();
         extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
 
-        List<ClinicalDataBinCount> clinicalDataBinCounts = clinicalDataBinner.calculateDataBins(
+        List<ClinicalDataBinCount> clinicalDataBinCounts = clinicalDataBinner.calculateDataBins(attributeId,
             clinicalDataService.fetchClinicalData(
                 studyIds, sampleIds, Collections.singletonList(attributeId), clinicalDataType.name(), Projection.SUMMARY.name()));
         
