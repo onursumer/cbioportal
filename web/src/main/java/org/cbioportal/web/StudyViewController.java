@@ -94,7 +94,7 @@ public class StudyViewController {
 
     @RequestMapping(value = "/attributes/{attributeId}/clinical-data-bin-counts/fetch", method = RequestMethod.POST,
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @ApiOperation("Fetch clinical data counts by study view filter")
+    @ApiOperation("Fetch clinical data bin counts by study view filter")
     public ResponseEntity<List<ClinicalDataBinCount>> fetchClinicalDataBinCounts(
         @ApiParam(required = true, value = "Attribute ID e.g. CANCER_TYPE")
         @PathVariable String attributeId,
