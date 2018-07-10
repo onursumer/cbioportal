@@ -295,9 +295,9 @@ public class StudyViewFilterApplier {
                     .equals(s.getAttributeId())).findFirst();
                 if (clinicalData.isPresent()) {
                     
-                    Range<Integer> value = calculateRangeValueForAttr(clinicalData.get().getAttrValue());
+                    Range<Double> value = calculateRangeValueForAttr(clinicalData.get().getAttrValue());
                     
-                    List<Range<Integer>> ranges = s.getValues().stream().map(
+                    List<Range<Double>> ranges = s.getValues().stream().map(
                         this::calculateRangeValueForFilter).filter(
                             r -> r != null).collect(Collectors.toList());
                     
@@ -329,26 +329,35 @@ public class StudyViewFilterApplier {
         }
     }
     
-    private Range<Integer> calculateRangeValueForAttr(String attrValue) {
+    private Range<Double> calculateRangeValueForAttr(String attrValue) {
         // TODO attribute value is not always parsable! might be in the form of >80, <=18, etc.
-        Integer value = Integer.parseInt(attrValue);
+        Double value = Double.parseDouble(attrValue);
         
         return Range.is(value);
     }
 
-    private Range<Integer> calculateRangeValueForFilter(StringRange stringRange) {
+    private Range<Double> calculateRangeValueForFilter(StringRange stringRange) {
 
-        Integer start;
-        Integer end;
+        Double start;
+        Double end;
         
         try {
-            start = Integer.parseInt(stringRange.getStart());
-            end = Integer.parseInt(stringRange.getEnd());
-        } catch (NumberFormatException e) {
-            // invalid filter
-            return null;
+            start = Double.parseDouble(stringRange.getStart());
+        } catch (Exception e) {
+            start = -Double.MAX_VALUE;
         }
 
+        try {
+            end = Double.parseDouble(stringRange.getEnd());
+        } catch (Exception e) {
+            end = Double.MAX_VALUE;
+        }
+
+        // check for invalid filter (no start or end provided)
+        if (start == -Double.MAX_VALUE && end == Double.MAX_VALUE) {
+            return null;
+        }
+        
         return Range.between(start, end);
     }
 }
