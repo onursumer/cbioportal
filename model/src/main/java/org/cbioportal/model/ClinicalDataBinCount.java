@@ -1,13 +1,13 @@
 package org.cbioportal.model;
 
-import org.apache.commons.lang3.Range;
-
 import java.io.Serializable;
 
 public class ClinicalDataBinCount implements Serializable {
 
     private String attributeId;
-    Range<Integer> value;
+    private String value;
+    private String start;
+    private String end;
     private Integer count;
 
     public String getAttributeId() {
@@ -18,12 +18,28 @@ public class ClinicalDataBinCount implements Serializable {
 		this.attributeId = attributeId;
 	}
 
-    public Range<Integer> getValue() {
+    public String getValue() {
         return value;
     }
 
-    public void setValue(Range<Integer> value) {
+    public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getStart() {
+        return start;
+    }
+
+    public void setStart(String start) {
+        this.start = start;
+    }
+
+    public String getEnd() {
+        return end;
+    }
+
+    public void setEnd(String end) {
+        this.end = end;
     }
 
     public Integer getCount() {

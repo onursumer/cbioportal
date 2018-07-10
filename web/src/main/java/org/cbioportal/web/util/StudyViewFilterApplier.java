@@ -2,25 +2,16 @@ package org.cbioportal.web.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections.map.MultiKeyMap;
-import org.apache.commons.lang3.Range;
-import org.cbioportal.model.ClinicalData;
 import org.cbioportal.model.DiscreteCopyNumberData;
 import org.cbioportal.model.Mutation;
-import org.cbioportal.model.Patient;
 import org.cbioportal.model.Sample;
-import org.cbioportal.service.ClinicalDataService;
 import org.cbioportal.service.DiscreteCopyNumberService;
 import org.cbioportal.service.MolecularProfileService;
 import org.cbioportal.service.MutationService;
-import org.cbioportal.service.PatientService;
 import org.cbioportal.service.SampleService;
 import org.cbioportal.web.parameter.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,15 +23,15 @@ public class StudyViewFilterApplier {
     @Autowired
     private SampleService sampleService;
     @Autowired
-    private PatientService patientService;
-    @Autowired
-    private ClinicalDataService clinicalDataService;
-    @Autowired
     private MutationService mutationService;
     @Autowired
     private DiscreteCopyNumberService discreteCopyNumberService;
     @Autowired
     private MolecularProfileService molecularProfileService;
+    @Autowired
+    private ClinicalDataEqualityFilterApplier clinicalDataEqualityFilterApplier;
+    @Autowired
+    private ClinicalDataIntervalFilterApplier clinicalDataIntervalFilterApplier;
 
     Function<Sample, SampleIdentifier> sampleToSampleIdentifier = new Function<Sample, SampleIdentifier>() {
         
@@ -148,7 +139,7 @@ public class StudyViewFilterApplier {
         List<ClinicalDataIntervalFilter> attributes = clinicalDataIntervalFilters.stream()
             .filter(c-> c.getClinicalDataType().equals(filterClinicalDataType)).collect(Collectors.toList());
         
-        return filterClinicalData(sampleIdentifiers, attributes, filterClinicalDataType);
+        return clinicalDataIntervalFilterApplier.apply(sampleIdentifiers, attributes, filterClinicalDataType);
     }
 
     private List<SampleIdentifier> equalityFilterClinicalData(List<SampleIdentifier> sampleIdentifiers, 
@@ -158,167 +149,7 @@ public class StudyViewFilterApplier {
         List<ClinicalDataEqualityFilter> attributes = clinicalDataEqualityFilters.stream()
             .filter(c-> c.getClinicalDataType().equals(filterClinicalDataType)).collect(Collectors.toList());
 
-        return filterClinicalData(sampleIdentifiers, attributes, filterClinicalDataType);
-    }
-    
-    // TODO instead of a method with a generic parameter, it might be better to have ClinicalDataEqualityFilterApplier and ClinicalDataIntervalFilterApplier
-    // classes, each of which extending a base class ClinicalDataFilter containing this filterClinicalData method 
-    private <T extends ClinicalDataFilter> List<SampleIdentifier> filterClinicalData(List<SampleIdentifier> sampleIdentifiers,
-                                                                                     List<T> attributes, 
-                                                                                     ClinicalDataType filterClinicalDataType) {
-        List<ClinicalData> clinicalDataList = new ArrayList<>();
-        if (!attributes.isEmpty() && !sampleIdentifiers.isEmpty()) {
-            List<String> studyIds = new ArrayList<>();
-            List<String> sampleIds = new ArrayList<>();
-            extractStudyAndSampleIds(sampleIdentifiers, studyIds, sampleIds);
-            List<Patient> patients = patientService.getPatientsOfSamples(studyIds, sampleIds);
-            List<String> patientIds = patients.stream().map(Patient::getStableId).collect(Collectors.toList());
-            List<String> studyIdsOfPatients = patients.stream().map(Patient::getCancerStudyIdentifier).collect(Collectors.toList());
-            clinicalDataList = clinicalDataService.fetchClinicalData(filterClinicalDataType.equals(ClinicalDataType.PATIENT) ? 
-                studyIdsOfPatients : studyIds, filterClinicalDataType.equals(ClinicalDataType.PATIENT) ? patientIds : sampleIds, 
-                attributes.stream().map(ClinicalDataFilter::getAttributeId).collect(Collectors.toList()), 
-                filterClinicalDataType.name(), Projection.SUMMARY.name());
-
-            clinicalDataList.forEach(c -> {
-                if (c.getAttrValue().toUpperCase().equals("NAN") || c.getAttrValue().toUpperCase().equals("N/A")) {
-                    c.setAttrValue("NA");
-                }
-            });
-
-            MultiKeyMap clinicalDataMap = new MultiKeyMap();
-            for (ClinicalData clinicalData : clinicalDataList) {
-                if (filterClinicalDataType.equals(ClinicalDataType.PATIENT)) {
-                    if (clinicalDataMap.containsKey(clinicalData.getPatientId(), clinicalData.getStudyId())) {
-                        ((List<ClinicalData>)clinicalDataMap.get(clinicalData.getPatientId(), clinicalData.getStudyId())).add(clinicalData);
-                    } else {
-                        List<ClinicalData> clinicalDatas = new ArrayList<>();
-                        clinicalDatas.add(clinicalData);
-                        clinicalDataMap.put(clinicalData.getPatientId(), clinicalData.getStudyId(), clinicalDatas);
-                    }
-                } else {
-                    if (clinicalDataMap.containsKey(clinicalData.getSampleId(), clinicalData.getStudyId())) {
-                        ((List<ClinicalData>)clinicalDataMap.get(clinicalData.getSampleId(), clinicalData.getStudyId())).add(clinicalData);
-                    } else {
-                        List<ClinicalData> clinicalDatas = new ArrayList<>();
-                        clinicalDatas.add(clinicalData);
-                        clinicalDataMap.put(clinicalData.getSampleId(), clinicalData.getStudyId(), clinicalDatas);
-                    }
-                }
-            }
-
-            List<String> ids = new ArrayList<>();
-            List<String> studyIdsOfIds = new ArrayList<>();
-            int index = 0;
-            for (String entityId : filterClinicalDataType.equals(ClinicalDataType.PATIENT) ? patientIds : sampleIds) {
-                String studyId = filterClinicalDataType.equals(ClinicalDataType.PATIENT) ? studyIdsOfPatients.get(index) : studyIds.get(index);
-                
-                int count = 0;
-                
-                // TODO "instanceof" can be avoided by defining ClinicalDataEqualityFilterApplier and ClinicalDataIntervalFilterApplier classes
-                // and overriding a base method like `public Integer applyFilters(List<? extends ClinicalDataFilter> attributes, ...)`
-                if (!attributes.isEmpty()) {
-                     if (attributes.get(0) instanceof ClinicalDataEqualityFilter) {
-                         count = applyEqualityFilters((List<ClinicalDataEqualityFilter>)attributes, clinicalDataMap, entityId, studyId);
-                     }
-                     else {
-                         count = applyIntervalFilters((List<ClinicalDataIntervalFilter>)attributes, clinicalDataMap, entityId, studyId);
-                     }
-                }
-                
-                if (count == attributes.size()) {
-                    ids.add(entityId);
-                    studyIdsOfIds.add(studyId);
-                }
-                index++;
-            }
-
-            if (filterClinicalDataType.equals(ClinicalDataType.PATIENT)) {
-                if (!ids.isEmpty()) {
-                    List<Sample> samples = sampleService.getSamplesOfPatientsInMultipleStudies(studyIdsOfIds, ids, 
-                        Projection.ID.name());
-                    ids = samples.stream().map(Sample::getStableId).collect(Collectors.toList());
-                    studyIdsOfIds = samples.stream().map(Sample::getCancerStudyIdentifier).collect(Collectors.toList());
-                }
-            }
-            
-            Set<String> idsSet = new HashSet<>(ids);
-            idsSet.retainAll(new HashSet<>(sampleIds));
-            List<SampleIdentifier> newSampleIdentifiers = new ArrayList<>();
-            for (int i = 0; i < ids.size(); i++) {
-                SampleIdentifier sampleIdentifier = new SampleIdentifier();
-                sampleIdentifier.setSampleId(ids.get(i));
-                sampleIdentifier.setStudyId(studyIdsOfIds.get(i));
-                newSampleIdentifiers.add(sampleIdentifier);
-            }
-            return newSampleIdentifiers;
-        }
-
-        return sampleIdentifiers;
-    }
-
-    private int applyEqualityFilters(List<ClinicalDataEqualityFilter> attributes,
-                                     MultiKeyMap clinicalDataMap,
-                                     String entityId,
-                                     String studyId)
-    {
-        int count = 0;
-        
-        for (ClinicalDataEqualityFilter s : attributes) {
-            List<ClinicalData> entityClinicalData = (List<ClinicalData>)clinicalDataMap.get(entityId, studyId);
-            if (entityClinicalData != null) {
-                Optional<ClinicalData> clinicalData = entityClinicalData.stream().filter(c -> c.getAttrId()
-                    .equals(s.getAttributeId())).findFirst();
-                if (clinicalData.isPresent() && s.getValues().contains(clinicalData.get().getAttrValue())) {
-                    count++;
-                } else if (!clinicalData.isPresent() && s.getValues().contains("NA")) {
-                    count++;
-                }
-            } else if (s.getValues().contains("NA")) {
-                count++;
-            }
-        }
-        
-        return count;
-    }
-
-    private int applyIntervalFilters(List<ClinicalDataIntervalFilter> attributes,
-                                     MultiKeyMap clinicalDataMap,
-                                     String entityId,
-                                     String studyId)
-    {
-        int count = 0;
-
-        for (ClinicalDataIntervalFilter s : attributes) {
-            List<ClinicalData> entityClinicalData = (List<ClinicalData>)clinicalDataMap.get(entityId, studyId);
-            if (entityClinicalData != null) {
-                Optional<ClinicalData> clinicalData = entityClinicalData.stream().filter(c -> c.getAttrId()
-                    .equals(s.getAttributeId())).findFirst();
-                if (clinicalData.isPresent()) {
-                    
-                    Range<Double> value = calculateRangeValueForAttr(clinicalData.get().getAttrValue());
-                    
-                    List<Range<Double>> ranges = s.getValues().stream().map(
-                        this::calculateRangeValueForFilter).filter(
-                            r -> r != null).collect(Collectors.toList());
-                    
-                    if (ranges.stream().anyMatch(r -> r.containsRange(value))) {
-                        count++;
-                    }
-                } else if (containsNA(s)) {
-                    count++;
-                }
-            } else if (containsNA(s)) {
-                count++;
-            }
-        }
-
-        return count;
-    }
-    
-    private Boolean containsNA(ClinicalDataIntervalFilter filter)
-    {
-        return filter.getValues().stream().anyMatch(
-            r -> r.getStart().toUpperCase().equals("NA") || r.getEnd().toUpperCase().equals("NA"));
+        return clinicalDataEqualityFilterApplier.apply(sampleIdentifiers, attributes, filterClinicalDataType);
     }
     
     private void extractStudyAndSampleIds(List<SampleIdentifier> sampleIdentifiers, List<String> studyIds, List<String> sampleIds) {
@@ -327,37 +158,5 @@ public class StudyViewFilterApplier {
             studyIds.add(sampleIdentifier.getStudyId());
             sampleIds.add(sampleIdentifier.getSampleId());
         }
-    }
-    
-    private Range<Double> calculateRangeValueForAttr(String attrValue) {
-        // TODO attribute value is not always parsable! might be in the form of >80, <=18, etc.
-        Double value = Double.parseDouble(attrValue);
-        
-        return Range.is(value);
-    }
-
-    private Range<Double> calculateRangeValueForFilter(StringRange stringRange) {
-
-        Double start;
-        Double end;
-        
-        try {
-            start = Double.parseDouble(stringRange.getStart());
-        } catch (Exception e) {
-            start = -Double.MAX_VALUE;
-        }
-
-        try {
-            end = Double.parseDouble(stringRange.getEnd());
-        } catch (Exception e) {
-            end = Double.MAX_VALUE;
-        }
-
-        // check for invalid filter (no start or end provided)
-        if (start == -Double.MAX_VALUE && end == Double.MAX_VALUE) {
-            return null;
-        }
-        
-        return Range.between(start, end);
     }
 }
