@@ -2,10 +2,8 @@ package org.cbioportal.web.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -297,17 +295,30 @@ public class StudyViewFilterApplier {
                     .equals(s.getAttributeId())).findFirst();
                 if (clinicalData.isPresent()) {
                     
-                    Range<Integer> value = calculateRangeValue(clinicalData.get().getAttrValue());
-                    Optional<Range<Integer>> range = s.getValues().stream().filter(r -> r.containsRange(value)).findFirst();
+                    Range<Integer> value = calculateRangeValueForAttr(clinicalData.get().getAttrValue());
                     
-                    if (range.isPresent()) {
+                    List<Range<Integer>> ranges = s.getValues().stream().map(
+                        this::calculateRangeValueForFilter).filter(
+                            r -> r != null).collect(Collectors.toList());
+                    
+                    if (ranges.stream().anyMatch(r -> r.containsRange(value))) {
                         count++;
                     }
-                } // TODO else if (s.getValues().contains("NA"))?
-            } // TODO else if (s.getValues().contains("NA"))?
+                } else if (containsNA(s)) {
+                    count++;
+                }
+            } else if (containsNA(s)) {
+                count++;
+            }
         }
 
         return count;
+    }
+    
+    private Boolean containsNA(ClinicalDataIntervalFilter filter)
+    {
+        return filter.getValues().stream().anyMatch(
+            r -> r.getStart().toUpperCase().equals("NA") || r.getEnd().toUpperCase().equals("NA"));
     }
     
     private void extractStudyAndSampleIds(List<SampleIdentifier> sampleIdentifiers, List<String> studyIds, List<String> sampleIds) {
@@ -318,10 +329,26 @@ public class StudyViewFilterApplier {
         }
     }
     
-    private Range<Integer> calculateRangeValue(String attrValue) {
+    private Range<Integer> calculateRangeValueForAttr(String attrValue) {
         // TODO attribute value is not always parsable! might be in the form of >80, <=18, etc.
         Integer value = Integer.parseInt(attrValue);
         
         return Range.is(value);
+    }
+
+    private Range<Integer> calculateRangeValueForFilter(StringRange stringRange) {
+
+        Integer start;
+        Integer end;
+        
+        try {
+            start = Integer.parseInt(stringRange.getStart());
+            end = Integer.parseInt(stringRange.getEnd());
+        } catch (NumberFormatException e) {
+            // invalid filter
+            return null;
+        }
+
+        return Range.between(start, end);
     }
 }

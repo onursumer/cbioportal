@@ -1,17 +1,15 @@
 package org.cbioportal.web.parameter;
 
-import org.apache.commons.lang3.Range;
-
 import java.util.List;
 
 public class ClinicalDataIntervalFilter extends ClinicalDataFilter {
-    private List<Range<Integer>> values;
+    private List<StringRange> values;
 
-    public List<Range<Integer>> getValues() {
+    public List<StringRange> getValues() {
         return values;
     }
 
-    public void setValues(List<Range<Integer>> values) {
+    public void setValues(List<StringRange> values) {
         this.values = values;
     }
 }
