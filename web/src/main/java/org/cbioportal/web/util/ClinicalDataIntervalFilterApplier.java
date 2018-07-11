@@ -39,15 +39,18 @@ public class ClinicalDataIntervalFilterApplier extends ClinicalDataFilterApplier
             if (entityClinicalData != null) {
                 Optional<ClinicalData> clinicalData = entityClinicalData.stream().filter(c -> c.getAttrId()
                     .equals(s.getAttributeId())).findFirst();
-                if (clinicalData.isPresent()) {
-
-                    Range<Double> value = calculateRangeValueForAttr(clinicalData.get().getAttrValue());
+                if (clinicalData.isPresent()) 
+                {
+                    String attrValue = clinicalData.get().getAttrValue();
+                    Range<Double> value = calculateRangeValueForAttr(attrValue);
 
                     List<Range<Double>> ranges = s.getValues().stream().map(
                         this::calculateRangeValueForFilter).filter(
                         r -> r != null).collect(Collectors.toList());
 
-                    if (ranges.stream().anyMatch(r -> r.containsRange(value))) {
+                    if (ranges.stream().anyMatch(r -> r.containsRange(value)) ||
+                        isNA(attrValue) && containsNA(s)) 
+                    {
                         count++;
                     }
                 } else if (containsNA(s)) {
@@ -61,11 +64,50 @@ public class ClinicalDataIntervalFilterApplier extends ClinicalDataFilterApplier
         return count;
     }
 
-    private Range<Double> calculateRangeValueForAttr(String attrValue) {
-        // TODO attribute value is not always parsable! might be in the form of >80, <=18, etc.
-        Double value = Double.parseDouble(attrValue);
-
-        return Range.is(value);
+    private Range<Double> calculateRangeValueForAttr(String attrValue)
+    {
+        if (attrValue == null) {
+            return null;
+        }
+        
+        Double min;
+        Double max;
+        
+        String value = attrValue.trim();
+        
+        String lte = "<=";
+        String lt = "<";
+        String gte = ">=";
+        String gt = ">";
+        
+        try {
+            if (value.startsWith(lte)) {
+                min = -Double.MAX_VALUE;
+                max = Double.parseDouble(value.substring(lte.length()));
+            }
+            else if (value.startsWith(lt)) {
+                // subtract min value, to make it exclusive
+                min = -Double.MAX_VALUE;
+                max = Double.parseDouble(value.substring(lt.length())) - Double.MIN_VALUE;
+            }
+            else if (value.startsWith(gte)) {
+                min = Double.parseDouble(value.substring(gte.length()));
+                max = Double.MAX_VALUE;
+            }
+            else if (value.startsWith(gt)) {
+                // add min value, to make it exclusive
+                min = Double.parseDouble(value.substring(gt.length())) + Double.MIN_VALUE;
+                max = Double.MAX_VALUE;
+            }
+            else {
+                min = max = Double.parseDouble(attrValue);
+            }
+        } catch (Exception e) {
+            // invalid range -- TODO: also support ranges like 20-30?
+            return null;
+        }
+        
+        return Range.between(min, max);
     }
 
     private Range<Double> calculateRangeValueForFilter(StringRange stringRange) {
@@ -97,5 +139,12 @@ public class ClinicalDataIntervalFilterApplier extends ClinicalDataFilterApplier
     {
         return filter.getValues().stream().anyMatch(
             r -> r.getStart().toUpperCase().equals("NA") || r.getEnd().toUpperCase().equals("NA"));
+    }
+    
+    private Boolean isNA(String attrValue)
+    {
+        String value = attrValue.toUpperCase(); 
+        
+        return value.equals("NA") || value.equals("NAN") || value.equals("N/A"); 
     }
 }
