@@ -8,9 +8,9 @@ import java.util.Collections;
 import java.util.List;
 
 @Component
-public class ClinicalDataBinner
+public class DataBinner
 {
-    public List<ClinicalDataBinCount> calculateDataBins(String attributeId, List<ClinicalData> clinicalData)
+    public List<ClinicalDataBinCount> calculateClinicalDataBins(String attributeId, List<ClinicalData> clinicalData)
     {
         // TODO properly calculate data bins wrt clinical attribute
         
