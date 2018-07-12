@@ -18,9 +18,10 @@ public class ClinicalDataEqualityFilterApplier extends ClinicalDataFilterApplier
     @Autowired
     public ClinicalDataEqualityFilterApplier(PatientService patientService, 
                                              ClinicalDataService clinicalDataService, 
-                                             SampleService sampleService) 
+                                             SampleService sampleService,
+                                             StudyViewFilterUtil studyViewFilterUtil) 
     {
-        super(patientService, clinicalDataService, sampleService);
+        super(patientService, clinicalDataService, sampleService, studyViewFilterUtil);
     }
     
     @Override

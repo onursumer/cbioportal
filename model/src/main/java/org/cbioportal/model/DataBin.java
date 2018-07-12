@@ -2,12 +2,12 @@ package org.cbioportal.model;
 
 import java.io.Serializable;
 
-public class ClinicalDataBinCount implements Serializable {
+public class DataBin implements Serializable {
 
     private String attributeId;
     private String value;
-    private String start;
-    private String end;
+    private Double start;
+    private Double end;
     private Integer count;
 
     public String getAttributeId() {
@@ -26,19 +26,19 @@ public class ClinicalDataBinCount implements Serializable {
         this.value = value;
     }
 
-    public String getStart() {
+    public Double getStart() {
         return start;
     }
 
-    public void setStart(String start) {
+    public void setStart(Double start) {
         this.start = start;
     }
 
-    public String getEnd() {
+    public Double getEnd() {
         return end;
     }
 
-    public void setEnd(String end) {
+    public void setEnd(Double end) {
         this.end = end;
     }
 
