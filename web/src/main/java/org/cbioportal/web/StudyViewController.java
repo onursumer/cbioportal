@@ -25,7 +25,7 @@ import org.cbioportal.web.parameter.ClinicalDataType;
 import org.cbioportal.web.parameter.Projection;
 import org.cbioportal.web.parameter.SampleIdentifier;
 import org.cbioportal.web.parameter.StudyViewFilter;
-import org.cbioportal.web.util.ClinicalDataBinner;
+import org.cbioportal.web.util.DataBinner;
 import org.cbioportal.web.util.StudyViewFilterApplier;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,7 +64,7 @@ public class StudyViewController {
     @Autowired
     private SignificantCopyNumberRegionService significantCopyNumberRegionService;
     @Autowired
-    private ClinicalDataBinner clinicalDataBinner;
+    private DataBinner clinicalDataBinner;
 
     @RequestMapping(value = "/attributes/{attributeId}/clinical-data-counts/fetch", method = RequestMethod.POST, 
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -115,7 +115,7 @@ public class StudyViewController {
         List<String> sampleIds = new ArrayList<>();
         extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
 
-        List<ClinicalDataBinCount> clinicalDataBinCounts = clinicalDataBinner.calculateDataBins(attributeId,
+        List<ClinicalDataBinCount> clinicalDataBinCounts = clinicalDataBinner.calculateClinicalDataBins(attributeId,
             clinicalDataService.fetchClinicalData(
                 studyIds, sampleIds, Collections.singletonList(attributeId), clinicalDataType.name(), Projection.SUMMARY.name()));
         
