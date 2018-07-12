@@ -64,7 +64,7 @@ public class StudyViewController {
     @Autowired
     private SignificantCopyNumberRegionService significantCopyNumberRegionService;
     @Autowired
-    private DataBinner clinicalDataBinner;
+    private DataBinner dataBinner;
 
     @RequestMapping(value = "/attributes/{attributeId}/clinical-data-counts/fetch", method = RequestMethod.POST, 
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -115,7 +115,7 @@ public class StudyViewController {
         List<String> sampleIds = new ArrayList<>();
         extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
 
-        List<ClinicalDataBinCount> clinicalDataBinCounts = clinicalDataBinner.calculateClinicalDataBins(attributeId,
+        List<ClinicalDataBinCount> clinicalDataBinCounts = dataBinner.calculateClinicalDataBins(attributeId,
             clinicalDataService.fetchClinicalData(
                 studyIds, sampleIds, Collections.singletonList(attributeId), clinicalDataType.name(), Projection.SUMMARY.name()));
         
