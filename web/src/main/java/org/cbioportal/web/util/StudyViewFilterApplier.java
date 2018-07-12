@@ -32,6 +32,8 @@ public class StudyViewFilterApplier {
     private ClinicalDataEqualityFilterApplier clinicalDataEqualityFilterApplier;
     @Autowired
     private ClinicalDataIntervalFilterApplier clinicalDataIntervalFilterApplier;
+    @Autowired
+    private StudyViewFilterUtil studyViewFilterUtil;
 
     Function<Sample, SampleIdentifier> sampleToSampleIdentifier = new Function<Sample, SampleIdentifier>() {
         
@@ -53,7 +55,7 @@ public class StudyViewFilterApplier {
         if (studyViewFilter != null && studyViewFilter.getSampleIdentifiers() != null && !studyViewFilter.getSampleIdentifiers().isEmpty()) {
             List<String> studyIds = new ArrayList<>();
             List<String> sampleIds = new ArrayList<>();
-            extractStudyAndSampleIds(studyViewFilter.getSampleIdentifiers(), studyIds, sampleIds);
+            studyViewFilterUtil.extractStudyAndSampleIds(studyViewFilter.getSampleIdentifiers(), studyIds, sampleIds);
             sampleIdentifiers = sampleService.fetchSamples(studyIds, sampleIds, Projection.ID.name()).stream()
                 .map(sampleToSampleIdentifier).collect(Collectors.toList());;
         } else {
@@ -78,7 +80,7 @@ public class StudyViewFilterApplier {
             for (MutationGeneFilter molecularProfileGeneFilter : mutatedGenes) {
                 List<String> studyIds = new ArrayList<>();
                 List<String> sampleIds = new ArrayList<>();
-                extractStudyAndSampleIds(sampleIdentifiers, studyIds, sampleIds);
+                studyViewFilterUtil.extractStudyAndSampleIds(sampleIdentifiers, studyIds, sampleIds);
                 List<Mutation> mutations = mutationService.getMutationsInMultipleMolecularProfiles(molecularProfileService
                     .getFirstMutationProfileIds(studyIds, sampleIds), sampleIds, molecularProfileGeneFilter.getEntrezGeneIds(), 
                     Projection.ID.name(), null, null, null, null);
@@ -98,7 +100,7 @@ public class StudyViewFilterApplier {
                 
                 List<String> studyIds = new ArrayList<>();
                 List<String> sampleIds = new ArrayList<>();
-                extractStudyAndSampleIds(sampleIdentifiers, studyIds, sampleIds);
+                studyViewFilterUtil.extractStudyAndSampleIds(sampleIdentifiers, studyIds, sampleIds);
                 List<Integer> ampEntrezGeneIds = copyNumberGeneFilter.getAlterations().stream().filter(a -> 
                     a.getAlteration() == 2).map(CopyNumberGeneFilterElement::getEntrezGeneId).collect(Collectors.toList());
                 List<DiscreteCopyNumberData> ampCNAList = new ArrayList<>();
@@ -150,13 +152,5 @@ public class StudyViewFilterApplier {
             .filter(c-> c.getClinicalDataType().equals(filterClinicalDataType)).collect(Collectors.toList());
 
         return clinicalDataEqualityFilterApplier.apply(sampleIdentifiers, attributes, filterClinicalDataType);
-    }
-    
-    private void extractStudyAndSampleIds(List<SampleIdentifier> sampleIdentifiers, List<String> studyIds, List<String> sampleIds) {
-        
-        for (SampleIdentifier sampleIdentifier : sampleIdentifiers) {
-            studyIds.add(sampleIdentifier.getStudyId());
-            sampleIds.add(sampleIdentifier.getSampleId());
-        }
     }
 }

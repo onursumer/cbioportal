@@ -11,14 +11,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 
 import org.cbioportal.model.*;
-import org.cbioportal.service.ClinicalDataService;
-import org.cbioportal.service.DiscreteCopyNumberService;
-import org.cbioportal.service.GenePanelService;
-import org.cbioportal.service.MolecularProfileService;
-import org.cbioportal.service.MutationService;
-import org.cbioportal.service.SampleService;
-import org.cbioportal.service.SignificantCopyNumberRegionService;
-import org.cbioportal.service.SignificantlyMutatedGeneService;
+import org.cbioportal.service.*;
 import org.cbioportal.service.exception.StudyNotFoundException;
 import org.cbioportal.web.config.annotation.InternalApi;
 import org.cbioportal.web.parameter.ClinicalDataType;
@@ -27,6 +20,7 @@ import org.cbioportal.web.parameter.SampleIdentifier;
 import org.cbioportal.web.parameter.StudyViewFilter;
 import org.cbioportal.web.util.DataBinner;
 import org.cbioportal.web.util.StudyViewFilterApplier;
+import org.cbioportal.web.util.StudyViewFilterUtil;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,6 +52,8 @@ public class StudyViewController {
     @Autowired
     private SampleService sampleService;
     @Autowired
+    private PatientService patientService;
+    @Autowired
     private GenePanelService genePanelService;
     @Autowired
     private SignificantlyMutatedGeneService significantlyMutatedGeneService;
@@ -65,6 +61,8 @@ public class StudyViewController {
     private SignificantCopyNumberRegionService significantCopyNumberRegionService;
     @Autowired
     private DataBinner dataBinner;
+    @Autowired
+    StudyViewFilterUtil studyViewFilterUtil;
 
     @RequestMapping(value = "/attributes/{attributeId}/clinical-data-counts/fetch", method = RequestMethod.POST, 
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -87,7 +85,7 @@ public class StudyViewController {
         }
         List<String> studyIds = new ArrayList<>();
         List<String> sampleIds = new ArrayList<>();
-        extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
+        studyViewFilterUtil.extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
         return new ResponseEntity<>(clinicalDataService.fetchClinicalDataCounts(studyIds, sampleIds, 
             Arrays.asList(attributeId), clinicalDataType.name()).get(attributeId), HttpStatus.OK);
     }
@@ -95,8 +93,8 @@ public class StudyViewController {
     @RequestMapping(value = "/attributes/{attributeId}/clinical-data-bin-counts/fetch", method = RequestMethod.POST,
         consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ApiOperation("Fetch clinical data bin counts by study view filter")
-    public ResponseEntity<List<ClinicalDataBinCount>> fetchClinicalDataBinCounts(
-        @ApiParam(required = true, value = "Attribute ID e.g. CANCER_TYPE")
+    public ResponseEntity<List<DataBin>> fetchClinicalDataBinCounts(
+        @ApiParam(required = true, value = "Attribute ID e.g. AGE")
         @PathVariable String attributeId,
         @ApiParam("Type of the clinical data")
         @RequestParam(defaultValue = "SAMPLE") ClinicalDataType clinicalDataType,
@@ -113,11 +111,16 @@ public class StudyViewController {
         }
         List<String> studyIds = new ArrayList<>();
         List<String> sampleIds = new ArrayList<>();
-        extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
+        studyViewFilterUtil.extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
 
-        List<ClinicalDataBinCount> clinicalDataBinCounts = dataBinner.calculateClinicalDataBins(attributeId,
-            clinicalDataService.fetchClinicalData(
-                studyIds, sampleIds, Collections.singletonList(attributeId), clinicalDataType.name(), Projection.SUMMARY.name()));
+        List<String> ids = clinicalDataType == ClinicalDataType.SAMPLE ? sampleIds : 
+            patientService.getPatientsOfSamples(studyIds, sampleIds).stream().map(
+                Patient::getStableId).collect(Collectors.toList());
+        
+        List<ClinicalData> clinicalData = clinicalDataService.fetchClinicalData(
+            studyIds, ids, Collections.singletonList(attributeId), clinicalDataType.name(), Projection.SUMMARY.name());
+        
+        List<DataBin> clinicalDataBinCounts = dataBinner.calculateClinicalDataBins(attributeId, clinicalData);
         
         return new ResponseEntity<>(clinicalDataBinCounts, HttpStatus.OK);
     }
@@ -134,7 +137,7 @@ public class StudyViewController {
         if (!filteredSampleIdentifiers.isEmpty()) {
             List<String> studyIds = new ArrayList<>();
             List<String> sampleIds = new ArrayList<>();
-            extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
+            studyViewFilterUtil.extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
             result = mutationService.getSampleCountInMultipleMolecularProfiles(molecularProfileService
                 .getFirstMutationProfileIds(studyIds, sampleIds), sampleIds, null, true);
             result.sort((a, b) -> b.getCountByEntity() - a.getCountByEntity());
@@ -166,7 +169,7 @@ public class StudyViewController {
         if (!filteredSampleIdentifiers.isEmpty()) {
             List<String> studyIds = new ArrayList<>();
             List<String> sampleIds = new ArrayList<>();
-            extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
+            studyViewFilterUtil.extractStudyAndSampleIds(filteredSampleIdentifiers, studyIds, sampleIds);
             result = discreteCopyNumberService.getSampleCountInMultipleMolecularProfiles(molecularProfileService
                 .getFirstDiscreteCNAProfileIds(studyIds, sampleIds), sampleIds, null, Arrays.asList(-2, 2), true);
             result.sort((a, b) -> b.getCountByEntity() - a.getCountByEntity());
@@ -201,7 +204,7 @@ public class StudyViewController {
         
         List<String> studyIds = new ArrayList<>();
         List<String> sampleIds = new ArrayList<>();
-        extractStudyAndSampleIds(studyViewFilterApplier.apply(studyViewFilter), studyIds, sampleIds);
+        studyViewFilterUtil.extractStudyAndSampleIds(studyViewFilterApplier.apply(studyViewFilter), studyIds, sampleIds);
         List<Sample> result = new ArrayList<>();
         if (!sampleIds.isEmpty()) {
             result = sampleService.fetchSamples(studyIds, sampleIds, Projection.ID.name());
@@ -218,7 +221,7 @@ public class StudyViewController {
         
         List<String> studyIds = new ArrayList<>();
         List<String> sampleIds = new ArrayList<>();
-        extractStudyAndSampleIds(studyViewFilterApplier.apply(studyViewFilter), studyIds, sampleIds);
+        studyViewFilterUtil.extractStudyAndSampleIds(studyViewFilterApplier.apply(studyViewFilter), studyIds, sampleIds);
         MolecularProfileSampleCount molecularProfileSampleCount = new MolecularProfileSampleCount();
         if (sampleIds.isEmpty()) {
             molecularProfileSampleCount.setNumberOfMutationProfiledSamples(0);
@@ -239,13 +242,5 @@ public class StudyViewController {
                 molecularProfileSampleCount.getNumberOfCNAProfiledSamples());
         }
         return new ResponseEntity<>(molecularProfileSampleCount, HttpStatus.OK);
-    }
-
-    private void extractStudyAndSampleIds(List<SampleIdentifier> sampleIdentifiers, List<String> studyIds, List<String> sampleIds) {
-        
-        for (SampleIdentifier sampleIdentifier : sampleIdentifiers) {
-            studyIds.add(sampleIdentifier.getStudyId());
-            sampleIds.add(sampleIdentifier.getSampleId());
-        }
     }
 }

@@ -20,14 +20,17 @@ public abstract class ClinicalDataFilterApplier<T extends ClinicalDataFilter>
     private PatientService patientService;
     private ClinicalDataService clinicalDataService;
     private SampleService sampleService;
+    protected StudyViewFilterUtil studyViewFilterUtil;
 
     public ClinicalDataFilterApplier(PatientService patientService, 
                                      ClinicalDataService clinicalDataService, 
-                                     SampleService sampleService) 
+                                     SampleService sampleService,
+                                     StudyViewFilterUtil studyViewFilterUtil) 
     {
         this.patientService = patientService;
         this.clinicalDataService = clinicalDataService;
         this.sampleService = sampleService;
+        this.studyViewFilterUtil = studyViewFilterUtil;
     }
 
     public List<SampleIdentifier> apply(List<SampleIdentifier> sampleIdentifiers,
@@ -37,7 +40,7 @@ public abstract class ClinicalDataFilterApplier<T extends ClinicalDataFilter>
         if (!attributes.isEmpty() && !sampleIdentifiers.isEmpty()) {
             List<String> studyIds = new ArrayList<>();
             List<String> sampleIds = new ArrayList<>();
-            extractStudyAndSampleIds(sampleIdentifiers, studyIds, sampleIds);
+            studyViewFilterUtil.extractStudyAndSampleIds(sampleIdentifiers, studyIds, sampleIds);
             List<Patient> patients = patientService.getPatientsOfSamples(studyIds, sampleIds);
             List<String> patientIds = patients.stream().map(Patient::getStableId).collect(Collectors.toList());
             List<String> studyIdsOfPatients = patients.stream().map(Patient::getCancerStudyIdentifier).collect(Collectors.toList());
@@ -114,15 +117,6 @@ public abstract class ClinicalDataFilterApplier<T extends ClinicalDataFilter>
         }
 
         return sampleIdentifiers;
-    }
-
-    // TODO duplicate of StudyViewFilterApplier.extractStudyAndSampleIds
-    private void extractStudyAndSampleIds(List<SampleIdentifier> sampleIdentifiers, List<String> studyIds, List<String> sampleIds) {
-
-        for (SampleIdentifier sampleIdentifier : sampleIdentifiers) {
-            studyIds.add(sampleIdentifier.getStudyId());
-            sampleIds.add(sampleIdentifier.getSampleId());
-        }
     }
     
     // Must be overridden by child classes

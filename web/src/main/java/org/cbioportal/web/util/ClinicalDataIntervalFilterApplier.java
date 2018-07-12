@@ -21,9 +21,10 @@ public class ClinicalDataIntervalFilterApplier extends ClinicalDataFilterApplier
     @Autowired
     public ClinicalDataIntervalFilterApplier(PatientService patientService, 
                                              ClinicalDataService clinicalDataService, 
-                                             SampleService sampleService) 
+                                             SampleService sampleService,
+                                             StudyViewFilterUtil studyViewFilterUtil) 
     {
-        super(patientService, clinicalDataService, sampleService);
+        super(patientService, clinicalDataService, sampleService, studyViewFilterUtil);
     }
 
     @Override
@@ -70,8 +71,8 @@ public class ClinicalDataIntervalFilterApplier extends ClinicalDataFilterApplier
             return null;
         }
         
-        Double min;
-        Double max;
+        Double min = null;
+        Double max = null;
         
         String value = attrValue.trim();
         
@@ -82,25 +83,29 @@ public class ClinicalDataIntervalFilterApplier extends ClinicalDataFilterApplier
         
         try {
             if (value.startsWith(lte)) {
-                min = -Double.MAX_VALUE;
                 max = Double.parseDouble(value.substring(lte.length()));
             }
             else if (value.startsWith(lt)) {
                 // subtract min value, to make it exclusive
-                min = -Double.MAX_VALUE;
                 max = Double.parseDouble(value.substring(lt.length())) - Double.MIN_VALUE;
             }
             else if (value.startsWith(gte)) {
                 min = Double.parseDouble(value.substring(gte.length()));
-                max = Double.MAX_VALUE;
             }
             else if (value.startsWith(gt)) {
                 // add min value, to make it exclusive
                 min = Double.parseDouble(value.substring(gt.length())) + Double.MIN_VALUE;
-                max = Double.MAX_VALUE;
             }
             else {
                 min = max = Double.parseDouble(attrValue);
+            }
+            
+            if (min == null) {
+                min = -Double.MAX_VALUE;
+            }
+            
+            if (max == null) {
+                max = Double.MAX_VALUE;
             }
         } catch (Exception e) {
             // invalid range -- TODO: also support ranges like 20-30?
