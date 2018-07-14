@@ -5,7 +5,7 @@ import java.io.Serializable;
 public class DataBin implements Serializable {
 
     private String attributeId;
-    private String value;
+    private String specialValue;
     private Double start;
     private Double end;
     private Integer count;
@@ -18,12 +18,12 @@ public class DataBin implements Serializable {
 		this.attributeId = attributeId;
 	}
 
-    public String getValue() {
-        return value;
+    public String getSpecialValue() {
+        return specialValue;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setSpecialValue(String specialValue) {
+        this.specialValue = specialValue;
     }
 
     public Double getStart() {
