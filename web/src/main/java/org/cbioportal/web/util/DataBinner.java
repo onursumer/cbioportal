@@ -7,10 +7,7 @@ import org.cbioportal.model.DataBin;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -27,7 +24,8 @@ public class DataBinner
     {
         DataBin upperOutlierBin = calcUpperOutlierBin(attributeId, clinicalData);
         DataBin lowerOutlierBin = calcLowerOutlierBin(attributeId, clinicalData);
-        List<DataBin> numericalBins = calculateNumericalClinicalDataBins(attributeId, clinicalData, lowerOutlierBin, upperOutlierBin);
+        Collection<DataBin> numericalBins = calcNumericalClinicalDataBins(
+            attributeId, clinicalData, lowerOutlierBin, upperOutlierBin);
         
         List<DataBin> dataBins = new ArrayList<>();
         
@@ -40,16 +38,44 @@ public class DataBinner
         if (!upperOutlierBin.getCount().equals(0)) {
             dataBins.add(upperOutlierBin);
         }
-
-        // TODO non-numerical data bins ("NA", "REDACTED", etc.)
+        
+        dataBins.addAll(calcNonNumericalClinicalDataBins(attributeId, clinicalData));
         
         return dataBins;
     }
+
+    public Collection<DataBin> calcNonNumericalClinicalDataBins(String attributeId, 
+                                                                List<ClinicalData> clinicalData)
+    {
+        // filter out numerical values
+        List<String> nonNumericalValues = clinicalData.stream()
+            .map(ClinicalData::getAttrValue)
+            .filter(s -> !NumberUtils.isCreatable(stripOperator(s)))
+            .collect(Collectors.toList());
+        
+        Map<String, DataBin> map = new LinkedHashMap<>();
+        
+        for (String value : nonNumericalValues) {
+            DataBin dataBin = map.computeIfAbsent(value.trim().toUpperCase(), key -> {
+                DataBin bin = new DataBin();
+                bin.setAttributeId(attributeId);
+                bin.setSpecialValue(key);
+                bin.setCount(0);
+                return bin;
+            });
+            
+            dataBin.setCount(dataBin.getCount() + 1);
+        }
+        
+        // TODO also calculate 'NA's: see ClinicalDataServiceImpl.fetchClinicalDataCounts
+        
+        return map.values();
+    }
     
-    public List<DataBin> calculateNumericalClinicalDataBins(String attributeId,
-                                                            List<ClinicalData> clinicalData, 
-                                                            DataBin lowerOutlierBin, 
-                                                            DataBin upperOutlierBin)
+    public Collection<DataBin> calcNumericalClinicalDataBins(String attributeId, 
+                                                             List<ClinicalData> clinicalData, 
+                                                             DataBin lowerOutlierBin, 
+                                                             DataBin upperOutlierBin)
     {
         Predicate<Double> isLowerOutlier = new Predicate<Double>() {
             @Override
@@ -110,9 +136,10 @@ public class DataBinner
         
         // adjust the outlier limits
 
-        if (lowerOutlierBin.getEnd() == null ||
-            boxRange.getMinimum() > lowerOutlierBin.getEnd() || 
-            (dataBins != null && dataBins.size() > 0 && dataBins.get(0).getStart() > lowerOutlierBin.getEnd()))
+        if (boxRange != null && 
+            (lowerOutlierBin.getEnd() == null ||
+                boxRange.getMinimum() > lowerOutlierBin.getEnd() || 
+                (dataBins != null && dataBins.size() > 0 && dataBins.get(0).getStart() > lowerOutlierBin.getEnd())))
         {
             Double end = dataBins != null && dataBins.size() > 0 ? 
                 Math.max(boxRange.getMinimum(), dataBins.get(0).getStart()) : boxRange.getMinimum();
@@ -120,9 +147,10 @@ public class DataBinner
             lowerOutlierBin.setEnd(end);
         }
 
-        if (upperOutlierBin.getStart() == null ||
-            boxRange.getMaximum() < upperOutlierBin.getStart() ||
-            (dataBins != null && dataBins.size() > 0 && dataBins.get(dataBins.size()-1).getEnd() < upperOutlierBin.getStart()))
+        if (boxRange != null && 
+            (upperOutlierBin.getStart() == null ||
+                boxRange.getMaximum() < upperOutlierBin.getStart() ||
+                (dataBins != null && dataBins.size() > 0 && dataBins.get(dataBins.size()-1).getEnd() < upperOutlierBin.getStart())))
         {
             Double start = dataBins != null && dataBins.size() > 0 ?
                 Math.min(boxRange.getMaximum(), dataBins.get(dataBins.size()-1).getEnd()) : boxRange.getMaximum();
@@ -163,30 +191,81 @@ public class DataBinner
 
         // * For scientific small data, we need to find decimal exponents, and then calculate min and max
         
-        // * No data binning when the number of different values less than or equal to 5. 
-        // In this case, number of bins = number of data values
-        
         Double min = lowerOutlier == null ? Collections.min(values) : Math.max(Collections.min(values), lowerOutlier);
         Double max = upperOutlier == null ? Collections.max(values) : Math.min(Collections.max(values), upperOutlier);
         
-        Integer interval = calcBinInterval(Arrays.asList(POSSIBLE_INTERVALS), 
-            max - min, 
-            DEFAULT_INTERVAL_COUNT);
+        List<DataBin> dataBins;
+        Set<Double> uniqueValues = new HashSet<>(values);
         
+        if (uniqueValues.size() <= 5) {
+            // No data binning when the number of different values less than or equal to 5.
+            // In this case, number of bins = number of data values
+            dataBins = initDataBins(attributeId, uniqueValues);
+        }
+        // TODO Log Scale
+//        else if (max - min > 1000 && min > 1) {
+//            
+//        }
+        else {
+            dataBins = initDataBins(attributeId, min, max, lowerOutlier, upperOutlier);
+        }
+        
+        calcCounts(dataBins, values);
+        
+        // TODO if any leading or trailing bin ends up being empty, consider adjusting/shifting bins and outlier values?
+        return dataBins;
+    }
+    
+    public void calcCounts(List<DataBin> dataBins, List<Double> values)
+    {
+        // TODO complexity here is O(n x m), find a better way to do this
+        for (DataBin dataBin : dataBins) {
+            for (Double value: values) {
+                // check if the value falls within the [start, end) range
+                // if start and end are the same, check for equality
+                if ((dataBin.getStart().equals(dataBin.getEnd()) && dataBin.getStart().equals(value)) ||
+                    (value >= dataBin.getStart() && value < dataBin.getEnd()))
+                {
+                    dataBin.setCount(dataBin.getCount() + 1);
+                }
+            }
+        }
+    }
+    
+    public List<DataBin> initDataBins(String attributeId, Set<Double> uniqueValues)
+    {
+        return uniqueValues.stream().map(d -> {
+            DataBin dataBin = new DataBin();
+
+            dataBin.setAttributeId(attributeId);
+            dataBin.setCount(0);
+            
+            // set both start and end to the same value
+            dataBin.setStart(d);
+            dataBin.setEnd(d);
+
+            return dataBin;
+        }).collect(Collectors.toList());
+    }
+    
+    public List<DataBin> initDataBins(String attributeId, Double min, Double max, Double lowerOutlier, Double upperOutlier)
+    {
         List<DataBin> dataBins = new ArrayList<>();
         
+        Integer interval = calcBinInterval(Arrays.asList(POSSIBLE_INTERVALS),
+            max - min,
+            DEFAULT_INTERVAL_COUNT);
+
         Double start = min + interval - (min % interval);
 
         // check lowerOutlier too for better tuning of start
         if (lowerOutlier == null || start - interval > lowerOutlier) {
             start -= interval;
         }
-        
+
         // check upperOutlier too for better tuning of end
         Double end = upperOutlier == null || max + interval < upperOutlier ? max: max - interval;
-        
-        // TODO these bins will not cover all the data if start is not <= min or end is not >= max
-        // adjust the outliers w.r.t start and end
+
         for (Double d = start; d <= end; d += interval) {
             DataBin dataBin = new DataBin();
 
@@ -194,25 +273,19 @@ public class DataBinner
             dataBin.setStart(d);
             dataBin.setEnd(d + interval);
             dataBin.setCount(0);
-            
+
             dataBins.add(dataBin);
         }
         
-        // TODO complexity here is O(n x m), find a better way to do this 
-        for (DataBin dataBin : dataBins) {
-            for (Double value: values) {
-                if (value >= dataBin.getStart() && value < dataBin.getEnd()) {
-                    dataBin.setCount(dataBin.getCount() + 1);
-                }
-            }
-        }
-        
-        // TODO if any leading or trailing bin ends up being empty, consider adjusting/shifting bins and outlier values?
         return dataBins;
     }
-
+    
     public Range<Double> calcBoxRange(List<Double> values) 
     {
+        if (values == null || values.size() == 0) {
+            return null;
+        }
+        
         Collections.sort(values);
         
         // Find a generous IQR. This is generous because if (values.length / 4) 
@@ -269,6 +342,19 @@ public class DataBinner
             // collect as list
             .collect(Collectors.toList())
         );
+    }
+    
+    public String stripOperator(String value) {
+        int length = 0;
+        
+        if (value.trim().startsWith(">") || value.trim().startsWith("<")) {
+            length = 1;
+        }
+        else if (value.trim().startsWith(">=") || value.trim().startsWith("<=")) {
+            length = 2;
+        }
+        
+        return value.trim().substring(length);
     }
     
     public DataBin calcUpperOutlierBin(String attributeId, List<ClinicalData> clinicalData)
