@@ -87,12 +87,12 @@ public class DataBinner
             .filter(c -> NumberUtils.isCreatable(c.getAttrValue()))
             .map(c -> Double.parseDouble(c.getAttrValue()))
             .collect(Collectors.toList());
+
+        // get the box range for the numerical values
+        Range<Double> boxRange = calcBoxRange(numericalValues);
         
         // remove initial outliers
         List<Double> withoutOutliers = numericalValues.stream().filter(isNotOutlier).collect(Collectors.toList());
-
-        // get the box range for the numerical values and 
-        Range<Double> boxRange = calcBoxRange(withoutOutliers);
         
         // calculate data bins for the rest of the values
         List<DataBin> dataBins = null;
@@ -207,6 +207,7 @@ public class DataBinner
             }
         }
         
+        // TODO if any leading or trailing bin ends up being empty, consider adjusting/shifting bins and outlier values?
         return dataBins;
     }
 
