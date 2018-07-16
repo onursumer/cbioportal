@@ -75,9 +75,7 @@ public class StudyViewController {
         @ApiParam(required = true, value = "Clinical data count filter")
         @Valid @RequestBody StudyViewFilter studyViewFilter) {
 
-        if (studyViewFilter.getClinicalDataEqualityFilters() != null) {
-            studyViewFilter.getClinicalDataEqualityFilters().removeIf(f -> f.getAttributeId().equals(attributeId));
-        }
+        studyViewFilterUtil.removeSelfFromFilter(attributeId, studyViewFilter);
         List<SampleIdentifier> filteredSampleIdentifiers = studyViewFilterApplier.apply(studyViewFilter);
 
         if (filteredSampleIdentifiers.isEmpty()) {
@@ -100,10 +98,8 @@ public class StudyViewController {
         @RequestParam(defaultValue = "SAMPLE") ClinicalDataType clinicalDataType,
         @ApiParam(required = true, value = "Study view filter")
         @Valid @RequestBody StudyViewFilter studyViewFilter) {
-        
-        if (studyViewFilter.getClinicalDataIntervalFilters() != null) {
-            studyViewFilter.getClinicalDataIntervalFilters().removeIf(f -> f.getAttributeId().equals(attributeId));
-        }
+
+        studyViewFilterUtil.removeSelfFromFilter(attributeId, studyViewFilter);
         List<SampleIdentifier> filteredSampleIdentifiers = studyViewFilterApplier.apply(studyViewFilter);
 
         if (filteredSampleIdentifiers.isEmpty()) {
