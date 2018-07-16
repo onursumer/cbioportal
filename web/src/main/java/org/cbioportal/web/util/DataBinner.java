@@ -53,8 +53,14 @@ public class DataBinner
             .filter(s -> !NumberUtils.isCreatable(stripOperator(s)))
             .collect(Collectors.toList());
         
+        return calcNonNumericalDataBins(attributeId, nonNumericalValues);
+    }
+    
+    public Collection<DataBin> calcNonNumericalDataBins(String attributeId,
+                                                        List<String> nonNumericalValues)
+    {
         Map<String, DataBin> map = new LinkedHashMap<>();
-        
+
         for (String value : nonNumericalValues) {
             DataBin dataBin = map.computeIfAbsent(value.trim().toUpperCase(), key -> {
                 DataBin bin = new DataBin();
@@ -63,19 +69,33 @@ public class DataBinner
                 bin.setCount(0);
                 return bin;
             });
-            
+
             dataBin.setCount(dataBin.getCount() + 1);
         }
-        
+
         // TODO also calculate 'NA's: see ClinicalDataServiceImpl.fetchClinicalDataCounts
-        
+
         return map.values();
     }
-    
+
     public Collection<DataBin> calcNumericalClinicalDataBins(String attributeId, 
                                                              List<ClinicalData> clinicalData, 
                                                              DataBin lowerOutlierBin, 
                                                              DataBin upperOutlierBin)
+    {
+        // filter out invalid values
+        List<Double> numericalValues = clinicalData.stream()
+            .filter(c -> NumberUtils.isCreatable(c.getAttrValue()))
+            .map(c -> Double.parseDouble(c.getAttrValue()))
+            .collect(Collectors.toList());
+        
+        return calcNumericalDataBins(attributeId, numericalValues, lowerOutlierBin, upperOutlierBin);
+    }
+    
+    public Collection<DataBin> calcNumericalDataBins(String attributeId,
+                                                     List<Double> numericalValues, 
+                                                     DataBin lowerOutlierBin, 
+                                                     DataBin upperOutlierBin)
     {
         Predicate<Double> isLowerOutlier = new Predicate<Double>() {
             @Override
@@ -107,12 +127,6 @@ public class DataBinner
                 return !isUpperOutlier.test(d) && !isLowerOutlier.test(d);
             }
         };
-        
-        // filter out invalid values
-        List<Double> numericalValues = clinicalData.stream()
-            .filter(c -> NumberUtils.isCreatable(c.getAttrValue()))
-            .map(c -> Double.parseDouble(c.getAttrValue()))
-            .collect(Collectors.toList());
 
         // get the box range for the numerical values
         Range<Double> boxRange = calcBoxRange(numericalValues);
