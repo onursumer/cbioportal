@@ -14,8 +14,12 @@ import java.util.stream.Collectors;
 @Component
 public class DataBinner
 {
-    public static Integer[] POSSIBLE_INTERVALS = {
-        1, 2, 4, 5, 8, 10, 20, 30, 40, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000
+    public static Double[] POSSIBLE_INTERVALS = {
+        1.0, 2.0, 4.0, 5.0, 8.0, 10.0, 
+        20.0, 30.0, 40.0, 50.0, 100.0, 
+        200.0, 400.0, 500.0, 1000.0, 
+        2000.0, 4000.0, 5000.0, 10000.0, 
+        20000.0, 4000.0, 50000.0, 100000.0
     };
     
     public static Integer DEFAULT_INTERVAL_COUNT = 10;
@@ -136,7 +140,15 @@ public class DataBinner
         
         // calculate data bins for the rest of the values
         List<DataBin> dataBins = null;
-        if (withoutOutliers.size() > 0) {
+        
+        Set<Double> uniqueValues = new LinkedHashSet<>(withoutOutliers);
+
+        if (0 < uniqueValues.size() && uniqueValues.size() <= 5) {
+            // No data intervals when the number of distinct values less than or equal to 5.
+            // In this case, number of bins = number of distinct data values
+            dataBins = calculateDataBins(attributeId, withoutOutliers, uniqueValues);
+        }
+        else if (withoutOutliers.size() > 0) {
             Double lowerOutlier = lowerOutlierBin.getEnd() == null ? 
                 boxRange.getMinimum() : Math.max(boxRange.getMinimum(), lowerOutlierBin.getEnd());
             Double upperOutlier = upperOutlierBin.getStart() == null ?
@@ -146,30 +158,28 @@ public class DataBinner
                 withoutOutliers,
                 lowerOutlier,
                 upperOutlier);
-        }
-        
-        // adjust the outlier limits
 
-        if (boxRange != null && 
-            (lowerOutlierBin.getEnd() == null ||
-                boxRange.getMinimum() > lowerOutlierBin.getEnd() || 
-                (dataBins != null && dataBins.size() > 0 && dataBins.get(0).getStart() > lowerOutlierBin.getEnd())))
-        {
-            Double end = dataBins != null && dataBins.size() > 0 ? 
-                Math.max(boxRange.getMinimum(), dataBins.get(0).getStart()) : boxRange.getMinimum();
-            
-            lowerOutlierBin.setEnd(end);
-        }
+            // adjust the outlier limits
 
-        if (boxRange != null && 
-            (upperOutlierBin.getStart() == null ||
-                boxRange.getMaximum() < upperOutlierBin.getStart() ||
-                (dataBins != null && dataBins.size() > 0 && dataBins.get(dataBins.size()-1).getEnd() < upperOutlierBin.getStart())))
-        {
-            Double start = dataBins != null && dataBins.size() > 0 ?
-                Math.min(boxRange.getMaximum(), dataBins.get(dataBins.size()-1).getEnd()) : boxRange.getMaximum();
-            
-            upperOutlierBin.setStart(start);
+            if (lowerOutlierBin.getEnd() == null ||
+                    boxRange.getMinimum() > lowerOutlierBin.getEnd() ||
+                    (dataBins != null && dataBins.size() > 0 && dataBins.get(0).getStart() > lowerOutlierBin.getEnd()))
+            {
+                Double end = dataBins != null && dataBins.size() > 0 ?
+                    Math.max(boxRange.getMinimum(), dataBins.get(0).getStart()) : boxRange.getMinimum();
+
+                lowerOutlierBin.setEnd(end);
+            }
+
+            if (upperOutlierBin.getStart() == null ||
+                    boxRange.getMaximum() < upperOutlierBin.getStart() ||
+                    (dataBins != null && dataBins.size() > 0 && dataBins.get(dataBins.size()-1).getEnd() < upperOutlierBin.getStart()))
+            {
+                Double start = dataBins != null && dataBins.size() > 0 ?
+                    Math.min(boxRange.getMaximum(), dataBins.get(dataBins.size()-1).getEnd()) : boxRange.getMaximum();
+
+                upperOutlierBin.setStart(start);
+            }
         }
         
         // update upper and lower outlier counts
@@ -190,39 +200,38 @@ public class DataBinner
         
         return dataBins;
     }
+
+    public List<DataBin> calculateDataBins(String attributeId,
+                                           List<Double> values,
+                                           Set<Double> uniqueValues)
+    {
+        List<DataBin> dataBins = initDataBins(attributeId, uniqueValues);
+
+        calcCounts(dataBins, values);
+        
+        return dataBins;
+    }
     
     public List<DataBin> calculateDataBins(String attributeId, 
                                            List<Double> values, 
                                            Double lowerOutlier, 
                                            Double upperOutlier)
     {
-        // * For AGE clinical attributes, default min (but can be overridden by min outlier):
+        // TODO For AGE clinical attributes, default min (but can be overridden by min outlier):
 //        if (iViz.util.isAgeClinicalAttr(this.attributes.attr_id) && _.min(this.data.meta) < 18 && (findExtremeResult[1] - findExtremeResult[0]) / 2 > 18) {
 //            this.data.min = 18;
 //        } else {
 //            this.data.min = findExtremeResult[0];
 //        }
 
-        // * For scientific small data, we need to find decimal exponents, and then calculate min and max
+        // TODO For scientific small data, we need to find decimal exponents, and then calculate min and max
+        
+        // TODO Log Scale (max - min > 1000 && min > 1)
         
         Double min = lowerOutlier == null ? Collections.min(values) : Math.max(Collections.min(values), lowerOutlier);
         Double max = upperOutlier == null ? Collections.max(values) : Math.min(Collections.max(values), upperOutlier);
         
-        List<DataBin> dataBins;
-        Set<Double> uniqueValues = new HashSet<>(values);
-        
-        if (uniqueValues.size() <= 5) {
-            // No data binning when the number of different values less than or equal to 5.
-            // In this case, number of bins = number of data values
-            dataBins = initDataBins(attributeId, uniqueValues);
-        }
-        // TODO Log Scale
-//        else if (max - min > 1000 && min > 1) {
-//            
-//        }
-        else {
-            dataBins = initDataBins(attributeId, min, max, lowerOutlier, upperOutlier);
-        }
+        List<DataBin> dataBins = initDataBins(attributeId, min, max, lowerOutlier, upperOutlier);
         
         calcCounts(dataBins, values);
         
@@ -246,27 +255,34 @@ public class DataBinner
         }
     }
     
-    public List<DataBin> initDataBins(String attributeId, Set<Double> uniqueValues)
+    public List<DataBin> initDataBins(String attributeId, 
+                                      Set<Double> uniqueValues)
     {
-        return uniqueValues.stream().map(d -> {
-            DataBin dataBin = new DataBin();
-
-            dataBin.setAttributeId(attributeId);
-            dataBin.setCount(0);
-            
-            // set both start and end to the same value
-            dataBin.setStart(d);
-            dataBin.setEnd(d);
-
-            return dataBin;
-        }).collect(Collectors.toList());
+        return uniqueValues.stream()
+            .map(d -> {
+                DataBin dataBin = new DataBin();
+    
+                dataBin.setAttributeId(attributeId);
+                dataBin.setCount(0);
+                
+                // set both start and end to the same value
+                dataBin.setStart(d);
+                dataBin.setEnd(d);
+    
+                return dataBin;
+            })
+            .collect(Collectors.toList());
     }
     
-    public List<DataBin> initDataBins(String attributeId, Double min, Double max, Double lowerOutlier, Double upperOutlier)
+    public List<DataBin> initDataBins(String attributeId, 
+                                      Double min, 
+                                      Double max, 
+                                      Double lowerOutlier, 
+                                      Double upperOutlier)
     {
         List<DataBin> dataBins = new ArrayList<>();
         
-        Integer interval = calcBinInterval(Arrays.asList(POSSIBLE_INTERVALS),
+        Double interval = calcBinInterval(Arrays.asList(POSSIBLE_INTERVALS),
             max - min,
             DEFAULT_INTERVAL_COUNT);
 
@@ -446,9 +462,9 @@ public class DataBinner
         return dataBin;
     }
     
-    public Integer calcBinInterval(List<Integer> possibleIntervals, Double totalRange, Integer maxIntervalCount)
+    public Double calcBinInterval(List<Double> possibleIntervals, Double totalRange, Integer maxIntervalCount)
     {
-        Integer interval = -1;
+        Double interval = -1.0;
 
         for (int i = 0; i < possibleIntervals.size(); i++)
         {
