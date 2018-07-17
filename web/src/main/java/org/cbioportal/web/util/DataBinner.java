@@ -14,18 +14,17 @@ import java.util.stream.Collectors;
 @Component
 public class DataBinner
 {
-    public static Double[] POSSIBLE_INTERVALS = {
-        0.001, 0.002, 0.004, 0.005, 0.008, 0.01,
-        0.02, 0.04, 0.05, 0.08, 0.1, 
-        0.2, 0.4, 0.5, 0.8, 1.0, 
-        2.0, 4.0, 5.0, 8.0, 10.0, 
-        20.0, 30.0, 40.0, 50.0, 100.0, 
-        200.0, 400.0, 500.0, 1000.0, 
-        2000.0, 4000.0, 5000.0, 10000.0, 
-        20000.0, 4000.0, 50000.0, 100000.0
+    public static final Double[] POSSIBLE_INTERVALS = {
+        0.001, 0.002, 0.0025, 0.005, 0.01, 
+        0.02, 0.025, 0.05, 0.1,
+        0.2, 0.25, 0.5, 1.0,
+        2.0, 5.0, 10.0, 
+        20.0, 25.0, 50.0, 100.0, 
+        200.0, 250.0, 500.0, 1000.0, 
+        2000.0, 2500.0, 5000.0, 10000.0
     };
     
-    public static Integer DEFAULT_INTERVAL_COUNT = 10;
+    public static final Integer DEFAULT_INTERVAL_COUNT = 10;
     
     public List<DataBin> calculateClinicalDataBins(String attributeId, List<ClinicalData> clinicalData)
     {
