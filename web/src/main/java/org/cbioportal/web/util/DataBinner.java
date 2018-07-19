@@ -39,7 +39,6 @@ public class DataBinner
     {
         DataBin upperOutlierBin = calcUpperOutlierBin(attributeId, clinicalData);
         DataBin lowerOutlierBin = calcLowerOutlierBin(attributeId, clinicalData);
-        DataBin naDataBin = calcNaDataBin(attributeId, clinicalData, ids);
         Collection<DataBin> numericalBins = calcNumericalClinicalDataBins(
             attributeId, clinicalData, lowerOutlierBin, upperOutlierBin);
         
@@ -55,9 +54,14 @@ public class DataBinner
             dataBins.add(upperOutlierBin);
         }
 
-        // TODO consider removing leading and trailing empty bins before adding non numerical ones
+        // remove leading and trailing empty bins before adding non numerical ones
+        dataBins = dataBinHelper.trim(dataBins);
+        
+        // add non numerical and NA data bins
         
         dataBins.addAll(calcNonNumericalClinicalDataBins(attributeId, clinicalData));
+
+        DataBin naDataBin = calcNaDataBin(attributeId, clinicalData, ids);
         
         if (!naDataBin.getCount().equals(0)) {
             dataBins.add(naDataBin);
