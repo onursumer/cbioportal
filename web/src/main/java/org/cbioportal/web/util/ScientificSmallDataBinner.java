@@ -33,7 +33,7 @@ public class ScientificSmallDataBinner
 
         Range<Double> exponentBoxRange = dataBinHelper.calcBoxRange(exponents);
         
-        List<Double> intervalValues = new ArrayList<>();
+        List<Double> intervals = new ArrayList<>();
 
         Double exponentRange = exponentBoxRange.getMaximum() - exponentBoxRange.getMinimum();
 
@@ -45,19 +45,19 @@ public class ScientificSmallDataBinner
                  i <= exponentBoxRange.getMaximum();
                  i += interval)
             {
-                intervalValues.add(Math.pow(10, i));
+                intervals.add(Math.pow(10, i));
             }
         }
         else if (exponentRange == 1)
         {
-            intervalValues.add(Math.pow(10, exponentBoxRange.getMinimum()) / 3);
+            intervals.add(Math.pow(10, exponentBoxRange.getMinimum()) / 3);
 
             for (int i = exponentBoxRange.getMinimum().intValue();
                  i <= exponentBoxRange.getMaximum().intValue() + 1;
                  i++)
             {
-                intervalValues.add(Math.pow(10, i));
-                intervalValues.add(3 * Math.pow(10, i));
+                intervals.add(Math.pow(10, i));
+                intervals.add(3 * Math.pow(10, i));
             }
         }
         else // exponentRange == 0 
@@ -68,19 +68,11 @@ public class ScientificSmallDataBinner
                  d <= Math.pow(10, exponentBoxRange.getMaximum() + 1);
                  d += interval)
             {
-                intervalValues.add(d);
+                intervals.add(d);
             }
         }
 
-        // remove values that fall outside the lower and upper outlier limits
-        intervalValues = intervalValues.stream()
-            .filter(d -> (lowerOutlier == null || d > lowerOutlier) && (upperOutlier == null || d < upperOutlier))
-            .collect(Collectors.toList());
-
-        List<DataBin> dataBins = dataBinHelper.initDataBins(attributeId, intervalValues);
-
-        dataBinHelper.calcCounts(dataBins, valuesWithoutOutliers);
-
-        return dataBins;
+        return dataBinHelper.initDataBins(
+            attributeId, valuesWithoutOutliers, intervals, lowerOutlier, upperOutlier);
     }
 }
