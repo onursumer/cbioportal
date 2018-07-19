@@ -25,30 +25,21 @@ public class LogScaleDataBinner
                                            Double lowerOutlier,
                                            Double upperOutlier)
     {
-        List<Double> intervalValues = new ArrayList<>();
+        List<Double> intervals = new ArrayList<>();
 
         for (double d = 0; ; d += 0.5)
         {
             Double value = Math.floor(Math.pow(10, d));
-            intervalValues.add(value);
+            intervals.add(value);
 
             if (value > boxRange.getMaximum())
             {
-                intervalValues.add(Math.pow(10, d + 0.5));
+                intervals.add(Math.pow(10, d + 0.5));
                 break;
             }
         }
 
-        // TODO duplicate: see ScientificSmallDataBinner.calculateDataBins
-        // remove values that fall outside the lower and upper outlier limits
-        intervalValues = intervalValues.stream()
-            .filter(d -> (lowerOutlier == null || d > lowerOutlier) && (upperOutlier == null || d < upperOutlier))
-            .collect(Collectors.toList());
-
-        List<DataBin> dataBins = dataBinHelper.initDataBins(attributeId, intervalValues);
-
-        dataBinHelper.calcCounts(dataBins, values);
-
-        return dataBins;
+        return dataBinHelper.initDataBins(
+            attributeId, values, intervals, lowerOutlier, upperOutlier);
     }
 }

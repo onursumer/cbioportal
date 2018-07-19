@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class DataBinHelper
@@ -112,6 +113,26 @@ public class DataBinHelper
         }
 
         return Range.between(minValue, maxValue);
+    }
+    
+    
+    
+    public List<DataBin> initDataBins(String attributeId,
+                                      List<Double> values,
+                                      List<Double> intervals,
+                                      Double lowerOutlier,
+                                      Double upperOutlier)
+    {
+        // remove values that fall outside the lower and upper outlier limits
+        intervals = intervals.stream()
+            .filter(d -> (lowerOutlier == null || d > lowerOutlier) && (upperOutlier == null || d < upperOutlier))
+            .collect(Collectors.toList());
+
+        List<DataBin> dataBins = initDataBins(attributeId, intervals);
+
+        calcCounts(dataBins, values);
+        
+        return dataBins;
     }
     
     public List<DataBin> initDataBins(String attributeId, List<Double> intervalValues)
