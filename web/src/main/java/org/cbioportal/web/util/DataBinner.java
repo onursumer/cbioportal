@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class DataBinner
@@ -34,10 +35,11 @@ public class DataBinner
         this.logScaleDataBinner = logScaleDataBinner;
     }
 
-    public List<DataBin> calculateClinicalDataBins(String attributeId, List<ClinicalData> clinicalData)
+    public List<DataBin> calculateClinicalDataBins(String attributeId, List<ClinicalData> clinicalData, List<String> ids)
     {
         DataBin upperOutlierBin = calcUpperOutlierBin(attributeId, clinicalData);
         DataBin lowerOutlierBin = calcLowerOutlierBin(attributeId, clinicalData);
+        DataBin naDataBin = calcNaDataBin(attributeId, clinicalData, ids);
         Collection<DataBin> numericalBins = calcNumericalClinicalDataBins(
             attributeId, clinicalData, lowerOutlierBin, upperOutlierBin);
         
@@ -53,9 +55,13 @@ public class DataBinner
             dataBins.add(upperOutlierBin);
         }
 
-        // TODO consider removing leading and trailing empty bins?
+        // TODO consider removing leading and trailing empty bins before adding non numerical ones
         
         dataBins.addAll(calcNonNumericalClinicalDataBins(attributeId, clinicalData));
+        
+        if (!naDataBin.getCount().equals(0)) {
+            dataBins.add(naDataBin);
+        }
         
         return dataBins;
     }
@@ -88,8 +94,6 @@ public class DataBinner
 
             dataBin.setCount(dataBin.getCount() + 1);
         }
-
-        // TODO also calculate 'NA's: see ClinicalDataServiceImpl.fetchClinicalDataCounts
 
         return map.values();
     }
@@ -269,5 +273,50 @@ public class DataBinner
         return dataBinHelper.calcLowerOutlierBin(attributeId,
             doubleValuesForSpecialOutliers(clinicalData, "<="),
             doubleValuesForSpecialOutliers(clinicalData, "<"));
+    }
+
+
+    /**
+     * NA count is: Number of clinical data marked actually as "NA" + Number of patients/samples without clinical data.
+     * Assuming that clinical data is for a single attribute.
+     * 
+     * @param attributeId   clinical data attribute id
+     * @param clinicalData  clinical data list for a single attribute
+     * @param ids           sample/patient ids
+     * 
+     * @return 'NA' clinical data count as a DataBin instance
+     */
+    public DataBin calcNaDataBin(String attributeId, List<ClinicalData> clinicalData, List<String> ids)
+    {
+        DataBin bin = new DataBin();
+        
+        bin.setAttributeId(attributeId);
+        bin.setSpecialValue("NA");
+        
+        // Calculate number of clinical data marked actually as "NA"
+        
+        Long count = clinicalData.stream()
+            .filter(c -> c.getAttrValue().toUpperCase().equals("NA") || 
+                c.getAttrValue().toUpperCase().equals("NAN") || 
+                c.getAttrValue().toUpperCase().equals("N/A"))
+            .count();
+
+        // Calculate number of patients/samples without clinical data
+        
+        Stream<String> sampleStream = clinicalData.stream().map(ClinicalData::getSampleId);
+        Stream<String> patientStream = clinicalData.stream().map(ClinicalData::getPatientId);
+        
+        Set<String> uniqueClinicalDataIds = 
+            Stream.concat(sampleStream, patientStream).filter(s -> s != null).collect(Collectors.toSet());
+        Set<String> uniqueInputIds = new HashSet<>(ids);
+
+        // remove the ids with existing clinical data,
+        // size of the difference (of two sets) is the count we need
+        uniqueInputIds.removeAll(uniqueClinicalDataIds);
+        count += uniqueInputIds.size();
+        
+        bin.setCount(count.intValue());
+        
+        return bin;
     }
 }
