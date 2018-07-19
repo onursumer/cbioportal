@@ -116,7 +116,7 @@ public class StudyViewController {
         List<ClinicalData> clinicalData = clinicalDataService.fetchClinicalData(
             studyIds, ids, Collections.singletonList(attributeId), clinicalDataType.name(), Projection.SUMMARY.name());
         
-        List<DataBin> clinicalDataBinCounts = dataBinner.calculateClinicalDataBins(attributeId, clinicalData);
+        List<DataBin> clinicalDataBinCounts = dataBinner.calculateClinicalDataBins(attributeId, clinicalData, ids);
         
         return new ResponseEntity<>(clinicalDataBinCounts, HttpStatus.OK);
     }
