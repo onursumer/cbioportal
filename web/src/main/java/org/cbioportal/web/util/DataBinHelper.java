@@ -194,4 +194,9 @@ public class DataBinHelper
 
         return value.trim().substring(length);
     }
+    
+    public boolean isAgeAttribute(String attributeId)
+    {
+        return attributeId != null && attributeId.matches("(^AGE$)|(^AGE_.*)|(.*_AGE_.*)|(.*_AGE&)");
+    }
 }
