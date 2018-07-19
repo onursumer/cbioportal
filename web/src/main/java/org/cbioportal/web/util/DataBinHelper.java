@@ -169,7 +169,14 @@ public class DataBinHelper
         }
     }
 
-    public Boolean isSmallData(List<Double> sortedValues)
+    public boolean isNA(String value)
+    {
+        return value.toUpperCase().equals("NA") || 
+            value.toUpperCase().equals("NAN") || 
+            value.toUpperCase().equals("N/A");
+    }
+    
+    public boolean isSmallData(List<Double> sortedValues)
     {
         return sortedValues.get((int) Math.ceil((sortedValues.size() * (1.0 / 2.0)))) < 0.001;
     }
