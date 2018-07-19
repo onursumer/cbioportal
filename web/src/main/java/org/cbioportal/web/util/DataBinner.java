@@ -44,6 +44,8 @@ public class DataBinner
         if (!upperOutlierBin.getCount().equals(0)) {
             dataBins.add(upperOutlierBin);
         }
+
+        // TODO consider removing leading and trailing empty bins?
         
         dataBins.addAll(calcNonNumericalClinicalDataBins(attributeId, clinicalData));
         
@@ -137,6 +139,8 @@ public class DataBinner
         
         List<Double> sortedNumericalValues = new ArrayList<>(numericalValues);
         Collections.sort(sortedNumericalValues);
+
+        Range<Double> boxRange = calcBoxRange(sortedNumericalValues);
         
         // remove initial outliers
         List<Double> withoutOutliers = sortedNumericalValues.stream().filter(isNotOutlier).collect(Collectors.toList());
@@ -145,7 +149,6 @@ public class DataBinner
         List<DataBin> dataBins = null;
         
         Set<Double> uniqueValues = new LinkedHashSet<>(withoutOutliers);
-        Range<Double> boxRange;
 
         if (0 < uniqueValues.size() && uniqueValues.size() <= 5)
         {
@@ -155,7 +158,22 @@ public class DataBinner
         }
         else if (withoutOutliers.size() > 0)
         {
-            if (isSmallData(sortedNumericalValues)) {
+            Double lowerOutlier = lowerOutlierBin.getEnd() == null ?
+                boxRange.getMinimum() : Math.max(boxRange.getMinimum(), lowerOutlierBin.getEnd());
+            Double upperOutlier = upperOutlierBin.getStart() == null ?
+                boxRange.getMaximum() : Math.min(boxRange.getMaximum(), upperOutlierBin.getStart());
+            
+            // TODO refactor by adding 4 new classes: SimpleDataBinner, LinearDataBinner, ScientificDataBinner, LogDataBinner 
+            if (boxRange.getMaximum() - boxRange.getMinimum() > 1000)
+            {
+                dataBins = calculateLogScaleDataBins(attributeId,
+                    boxRange,
+                    withoutOutliers,
+                    lowerOutlier,
+                    upperOutlier);
+            }
+            else if (isSmallData(sortedNumericalValues)) 
+            {
                 List<Double> exponents = sortedNumericalValues
                     .stream()
                     .map(d -> calcExponent(d).doubleValue())
@@ -168,17 +186,11 @@ public class DataBinner
                     lowerOutlierBin.getEnd(), 
                     upperOutlierBin.getStart());
                 
+                // override box range with data bin min & max values (ignoring actual box range for now) 
                 boxRange = Range.between(dataBins.get(0).getStart(), dataBins.get(dataBins.size() - 1).getEnd());
             }
-            else {
-                // get the box range for the sorted numerical values
-                boxRange = calcBoxRange(sortedNumericalValues);
-
-                Double lowerOutlier = lowerOutlierBin.getEnd() == null ?
-                    boxRange.getMinimum() : Math.max(boxRange.getMinimum(), lowerOutlierBin.getEnd());
-                Double upperOutlier = upperOutlierBin.getStart() == null ?
-                    boxRange.getMaximum() : Math.min(boxRange.getMaximum(), upperOutlierBin.getStart());
-
+            else 
+            {
                 dataBins = calculateDataBins(attributeId,
                     withoutOutliers,
                     lowerOutlier,
@@ -223,8 +235,6 @@ public class DataBinner
         if (dataBins == null) {
             dataBins = Collections.emptyList();
         }
-
-        // TODO consider removing leading and trailing empty bins?
         
         return dataBins;
     }
@@ -279,8 +289,17 @@ public class DataBinner
             .filter(d -> (lowerOutlier == null || d > lowerOutlier) && (upperOutlier == null || d < upperOutlier))
             .collect(Collectors.toList());
 
+        List<DataBin> dataBins = initDataBins(attributeId, intervalValues);
+
+        calcCounts(dataBins, values);
+        
+        return dataBins;
+    }
+
+    public List<DataBin> initDataBins(String attributeId, List<Double> intervalValues)
+    {
         List<DataBin> dataBins = new ArrayList<>();
-            
+
         for (int i = 0; i < intervalValues.size() - 1; i++) {
             DataBin dataBin = new DataBin();
 
@@ -291,12 +310,10 @@ public class DataBinner
             
             dataBins.add(dataBin);
         }
-
-        calcCounts(dataBins, values);
         
         return dataBins;
     }
-    
+
     public List<DataBin> calculateDataBins(String attributeId,
                                            List<Double> values,
                                            Set<Double> uniqueValues)
@@ -307,6 +324,40 @@ public class DataBinner
         
         return dataBins;
     }
+
+    public List<DataBin> calculateLogScaleDataBins(String attributeId,
+                                                   Range<Double> boxRange,
+                                                   List<Double> values, 
+                                                   Double lowerOutlier, 
+                                                   Double upperOutlier)
+    {
+        List<Double> intervalValues = new ArrayList<>();
+
+        for (double d = 0; ; d += 0.5) 
+        {
+            Double value = Math.floor(Math.pow(10, d));
+            intervalValues.add(value);
+            
+            if (value > boxRange.getMaximum()) 
+            {
+                intervalValues.add(Math.pow(10, d + 0.5));
+                break;
+            }
+        }
+
+        // TODO duplicate
+        // remove values that fall outside the lower and upper outlier limits
+        intervalValues = intervalValues.stream()
+            .filter(d -> (lowerOutlier == null || d > lowerOutlier) && (upperOutlier == null || d < upperOutlier))
+            .collect(Collectors.toList());
+        
+        List<DataBin> dataBins = initDataBins(attributeId, intervalValues);
+        
+        calcCounts(dataBins, values);
+
+        return dataBins;
+    }
+    
     
     public List<DataBin> calculateDataBins(String attributeId, 
                                            List<Double> values, 
@@ -319,10 +370,6 @@ public class DataBinner
 //        } else {
 //            this.data.min = findExtremeResult[0];
 //        }
-
-        // TODO For scientific small data, we need to find decimal exponents, and then calculate min and max
-        
-        // TODO Log Scale (max - min > 1000 && min > 1)
         
         Double min = lowerOutlier == null ? Collections.min(values) : Math.max(Collections.min(values), lowerOutlier);
         Double max = upperOutlier == null ? Collections.max(values) : Math.min(Collections.max(values), upperOutlier);
