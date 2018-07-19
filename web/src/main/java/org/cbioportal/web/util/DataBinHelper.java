@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.stream.Collectors;
 
 @Component
@@ -151,6 +152,41 @@ public class DataBinHelper
         }
 
         return dataBins;
+    }
+
+    public List<DataBin> trim(List<DataBin> dataBins)
+    {
+        List<DataBin> toRemove = new ArrayList<>();
+        
+        // find out leading empty bins
+        for (DataBin dataBin : dataBins)
+        {
+            if (dataBin.getCount() == null || dataBin.getCount() <= 0) {
+                toRemove.add(dataBin);
+            }
+            else {
+                break;
+            }
+        }
+        
+        // find out trailing empty bins
+        ListIterator<DataBin> iterator = dataBins.listIterator(dataBins.size());
+        
+        while (iterator.hasPrevious()) {
+            DataBin dataBin = iterator.previous();
+
+            if (dataBin.getCount() == null || dataBin.getCount() <= 0) {
+                toRemove.add(dataBin);
+            }
+            else {
+                break;
+            }
+        }
+        
+        List<DataBin> trimmed = new ArrayList<>(dataBins);
+        trimmed.removeAll(toRemove);
+        
+        return trimmed;
     }
     
     public void calcCounts(List<DataBin> dataBins, List<Double> values)
