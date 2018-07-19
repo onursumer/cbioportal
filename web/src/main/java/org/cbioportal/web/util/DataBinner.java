@@ -69,10 +69,10 @@ public class DataBinner
     public Collection<DataBin> calcNonNumericalClinicalDataBins(String attributeId, 
                                                                 List<ClinicalData> clinicalData)
     {
-        // filter out numerical values
+        // filter out numerical values and 'NA's
         List<String> nonNumericalValues = clinicalData.stream()
             .map(ClinicalData::getAttrValue)
-            .filter(s -> !NumberUtils.isCreatable(dataBinHelper.stripOperator(s)))
+            .filter(s -> !NumberUtils.isCreatable(dataBinHelper.stripOperator(s)) && !dataBinHelper.isNA(s))
             .collect(Collectors.toList());
         
         return calcNonNumericalDataBins(attributeId, nonNumericalValues);
@@ -293,12 +293,10 @@ public class DataBinner
         bin.setAttributeId(attributeId);
         bin.setSpecialValue("NA");
         
-        // Calculate number of clinical data marked actually as "NA"
+        // Calculate number of clinical data marked actually as "NA", "NAN", or "N/A"
         
         Long count = clinicalData.stream()
-            .filter(c -> c.getAttrValue().toUpperCase().equals("NA") || 
-                c.getAttrValue().toUpperCase().equals("NAN") || 
-                c.getAttrValue().toUpperCase().equals("N/A"))
+            .filter(c -> dataBinHelper.isNA(c.getAttrValue()))
             .count();
 
         // Calculate number of patients/samples without clinical data
