@@ -1,5 +1,6 @@
 package org.cbioportal.web.util;
 
+import org.apache.commons.lang3.Range;
 import org.cbioportal.model.DataBin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -32,24 +33,29 @@ public class LinearDataBinner
     }
 
     public List<DataBin> calculateDataBins(String attributeId,
+                                           Range<Double> boxRange,
                                            List<Double> values,
                                            Double lowerOutlier,
                                            Double upperOutlier)
     {
-        // TODO For AGE clinical attributes, default min (but can be overridden by min outlier):
-//        if (iViz.util.isAgeClinicalAttr(this.attributes.attr_id) && _.min(this.data.meta) < 18 && (findExtremeResult[1] - findExtremeResult[0]) / 2 > 18) {
-//            this.data.min = 18;
-//        } else {
-//            this.data.min = findExtremeResult[0];
-//        }
-
         Double min = lowerOutlier == null ? Collections.min(values) : Math.max(Collections.min(values), lowerOutlier);
         Double max = upperOutlier == null ? Collections.max(values) : Math.min(Collections.max(values), upperOutlier);
-
+        
+                
         List<DataBin> dataBins = initDataBins(attributeId, min, max, lowerOutlier, upperOutlier);
 
+        // special case for "AGE" attributes
+        if (dataBinHelper.isAgeAttribute(attributeId) &&
+            min < 18 &&
+            (boxRange.getMaximum() - boxRange.getMinimum()) / 2 > 18 &&
+            dataBins.get(0).getEnd() > 18)
+        {
+            // force first bin to start from 18
+            dataBins.get(0).setStart(18.0);
+        }
+        
         dataBinHelper.calcCounts(dataBins, values);
-
+        
         return dataBins;
     }
 
@@ -98,7 +104,7 @@ public class LinearDataBinner
             interval = possibleIntervals.get(i);
             Double count = totalRange / interval;
 
-            if (count < maxIntervalCount - 1) {
+            if (count < maxIntervalCount) {
                 break;
             }
         }

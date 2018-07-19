@@ -193,6 +193,7 @@ public class DataBinner
             else 
             {
                 dataBins = linearDataBinner.calculateDataBins(attributeId,
+                    boxRange,
                     withoutOutliers,
                     lowerOutlier,
                     upperOutlier);
