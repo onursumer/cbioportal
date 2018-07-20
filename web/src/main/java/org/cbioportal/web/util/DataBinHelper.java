@@ -197,7 +197,7 @@ public class DataBinHelper
                 // check if the value falls within the [start, end) range
                 // if start and end are the same, check for equality
                 if ((dataBin.getStart().equals(dataBin.getEnd()) && dataBin.getStart().equals(value)) ||
-                    (value >= dataBin.getStart() && value < dataBin.getEnd()))
+                    (value > dataBin.getStart() && value <= dataBin.getEnd()))
                 {
                     dataBin.setCount(dataBin.getCount() + 1);
                 }
