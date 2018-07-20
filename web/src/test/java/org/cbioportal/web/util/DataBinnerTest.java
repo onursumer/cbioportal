@@ -298,8 +298,55 @@ public class DataBinnerTest
         Assert.assertEquals(1, dataBins.get(3).getCount().intValue());
     }
     
-    // TODO logScaleDataBinner tests
-    
+    @Test
+    public void testLogScaleDataBinner()
+    {
+        String studyId = "ampca_bcm_2016";
+        String attributeId = "DAYS_TO_LAST_FOLLOWUP";
+        String[] values = {
+            "3411","2798","822","523","1293","836","2695","1796","1734","979","1813","141","341","1021","55","832","579",
+            "726","665","2746","1830","481","2380","1210","1921","765","1870","2159","1746","2164","537","1520","250",
+            "1860","363","733","251","290","453","230","2074","762","192","1498","172","1100","1259","5768","18","842",
+            "4810","3239","3634","2703","2191","305","253","1528","742","1260","1331","1148","307","1217","1155","994",
+            "736","1056","952","531","636","901","557","898","240","377","802","919","821","835","556","526","261","562",
+            "598","243","383","257","341","886","364","2441","1756","1058","215","2134","283","2978","3154","2992","494",
+            "2968","2297","398","2211","2208","2065","2484","484","13","471","125","2296","477","838","460","457","18",
+            "34","937","2267","755","3270","1267","179","1438","1899","59","1581","1323","1067","178","482","824","853",
+            "876","663","708","711","556","638","1330","557","180","524","158","380","272","64","2555","10","374","699",
+            "1446","578","97","233","879","448","651"
+        };
+
+        List<ClinicalData> clinicalData = mockClinicalData(attributeId, studyId, values);
+        List<String> patientIds = clinicalData.stream().map(ClinicalData::getPatientId).collect(Collectors.toList());
+
+        List<DataBin> dataBins = dataBinner.calculateClinicalDataBins(attributeId, clinicalData, patientIds);
+
+        Assert.assertEquals(6, dataBins.size());
+
+        Assert.assertEquals("<=", dataBins.get(0).getSpecialValue());
+        Assert.assertEquals(new Double(31.0), dataBins.get(0).getEnd());
+        Assert.assertEquals(4, dataBins.get(0).getCount().intValue());
+
+        Assert.assertEquals(new Double(31.0), dataBins.get(1).getStart());
+        Assert.assertEquals(new Double(100.0), dataBins.get(1).getEnd());
+        Assert.assertEquals(5, dataBins.get(1).getCount().intValue());
+
+        Assert.assertEquals(new Double(100.0), dataBins.get(2).getStart());
+        Assert.assertEquals(new Double(316.0), dataBins.get(2).getEnd());
+        Assert.assertEquals(23, dataBins.get(2).getCount().intValue());
+
+        Assert.assertEquals(new Double(316.0), dataBins.get(3).getStart());
+        Assert.assertEquals(new Double(1000.0), dataBins.get(3).getEnd());
+        Assert.assertEquals(67, dataBins.get(3).getCount().intValue());
+
+        Assert.assertEquals(new Double(1000.0), dataBins.get(4).getStart());
+        Assert.assertEquals(new Double(3162.0), dataBins.get(4).getEnd());
+        Assert.assertEquals(55, dataBins.get(4).getCount().intValue());
+
+        Assert.assertEquals(new Double(3162.0), dataBins.get(5).getStart());
+        Assert.assertEquals(">", dataBins.get(5).getSpecialValue());
+        Assert.assertEquals(6, dataBins.get(5).getCount().intValue());
+    }
     
     List<ClinicalData> mockClinicalData(String attributeId, String studyId, String[] values)
     {
