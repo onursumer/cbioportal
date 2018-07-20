@@ -20,20 +20,38 @@ import org.springframework.stereotype.Component;
 @Component
 public class StudyViewFilterApplier {
 
-    @Autowired
+    
     private SampleService sampleService;
-    @Autowired
+    
     private MutationService mutationService;
-    @Autowired
+    
     private DiscreteCopyNumberService discreteCopyNumberService;
-    @Autowired
+    
     private MolecularProfileService molecularProfileService;
-    @Autowired
+    
     private ClinicalDataEqualityFilterApplier clinicalDataEqualityFilterApplier;
-    @Autowired
+    
     private ClinicalDataIntervalFilterApplier clinicalDataIntervalFilterApplier;
-    @Autowired
+    
     private StudyViewFilterUtil studyViewFilterUtil;
+
+    @Autowired
+    public StudyViewFilterApplier(SampleService sampleService, 
+                                  MutationService mutationService, 
+                                  DiscreteCopyNumberService discreteCopyNumberService, 
+                                  MolecularProfileService molecularProfileService, 
+                                  ClinicalDataEqualityFilterApplier clinicalDataEqualityFilterApplier, 
+                                  ClinicalDataIntervalFilterApplier clinicalDataIntervalFilterApplier, 
+                                  StudyViewFilterUtil studyViewFilterUtil) 
+    {
+        this.sampleService = sampleService;
+        this.mutationService = mutationService;
+        this.discreteCopyNumberService = discreteCopyNumberService;
+        this.molecularProfileService = molecularProfileService;
+        this.clinicalDataEqualityFilterApplier = clinicalDataEqualityFilterApplier;
+        this.clinicalDataIntervalFilterApplier = clinicalDataIntervalFilterApplier;
+        this.studyViewFilterUtil = studyViewFilterUtil;
+    }
 
     Function<Sample, SampleIdentifier> sampleToSampleIdentifier = new Function<Sample, SampleIdentifier>() {
         

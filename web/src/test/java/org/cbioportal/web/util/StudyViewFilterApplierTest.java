@@ -23,11 +23,10 @@ import org.cbioportal.web.parameter.MutationGeneFilter;
 import org.cbioportal.web.parameter.SampleIdentifier;
 import org.cbioportal.web.parameter.StudyViewFilter;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -50,7 +49,7 @@ public class StudyViewFilterApplierTest {
     public static final String MOLECULAR_PROFILE_ID_1 = "molecular_profile_id1";
     public static final String MOLECULAR_PROFILE_ID_2 = "molecular_profile_id2";
 
-    @InjectMocks
+    //@InjectMocks -- TODO enable this after refactoring the tests
     private StudyViewFilterApplier studyViewFilterApplier;
     
     @Mock
@@ -66,6 +65,28 @@ public class StudyViewFilterApplierTest {
     @Mock
     private MolecularProfileService molecularProfileService;
 
+    // Do not mock utility classes, we also want to test their functionality
+    @InjectMocks
+    private ClinicalDataEqualityFilterApplier clinicalDataEqualityFilterApplier;
+    @InjectMocks
+    private ClinicalDataIntervalFilterApplier clinicalDataIntervalFilterApplier;
+    @Spy
+    private StudyViewFilterUtil studyViewFilterUtil;
+
+    // TODO test clinicalDataEqualityFilterApplier, clinicalDataIntervalFilterApplier and studyViewFilterUtil separately
+    // to avoid spies and manual instantiation of studyViewFilterApplier
+    // (This means that most of the tests should also move to those new test classes)
+    @Before
+    public void setup() {
+        // manually setup studyViewFilterApplier, since we need combination of mocks and spies
+        MockitoAnnotations.initMocks(this);
+        
+        studyViewFilterApplier = new StudyViewFilterApplier(
+            sampleService, mutationService, discreteCopyNumberService, 
+            molecularProfileService, clinicalDataEqualityFilterApplier, 
+            clinicalDataIntervalFilterApplier, studyViewFilterUtil);
+    }
+    
     @Test
     public void apply() throws Exception {
 
