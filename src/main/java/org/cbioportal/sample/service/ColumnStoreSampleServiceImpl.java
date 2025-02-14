@@ -1,20 +1,18 @@
-package org.cbioportal.legacy.service.impl;
+package org.cbioportal.sample.service;
 
 import org.cbioportal.legacy.model.Sample;
 import org.cbioportal.legacy.model.meta.BaseMeta;
-import org.cbioportal.legacy.persistence.SampleDerivedRepository;
+import org.cbioportal.sample.repository.SampleRepository;
 import org.cbioportal.legacy.service.PatientService;
-import org.cbioportal.legacy.service.SampleColumnarService;
 import org.cbioportal.legacy.service.StudyService;
 import org.cbioportal.legacy.service.exception.PatientNotFoundException;
 import org.cbioportal.legacy.service.exception.SampleNotFoundException;
 import org.cbioportal.legacy.service.exception.StudyNotFoundException;
-import org.cbioportal.legacy.utils.config.annotation.ConditionalOnProperty;
 import org.cbioportal.legacy.web.parameter.HeaderKeyConstants;
 import org.cbioportal.legacy.web.parameter.SampleFilter;
 import org.cbioportal.legacy.web.parameter.SampleIdentifier;
 import org.cbioportal.legacy.web.util.UniqueKeyExtractor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -23,17 +21,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@ConditionalOnProperty(name = "clickhouse_mode", havingValue = "true")
-public class SampleColumnarServiceImpl implements SampleColumnarService {
+@Profile("clickhouse")
+public class ColumnStoreSampleServiceImpl implements SampleService {
+    
+    private final StudyService studyService;
+    
+    private final PatientService patientService;
+    
+    private final SampleRepository sampleRepository;
 
-    @Autowired
-    StudyService studyService;
-    
-    @Autowired
-    PatientService patientService;
-    
-    @Autowired
-    private SampleDerivedRepository sampleRepository;
+    public ColumnStoreSampleServiceImpl(
+        StudyService studyService,
+        PatientService patientService,
+        SampleRepository sampleRepository
+    ) {
+        this.studyService = studyService;
+        this.patientService = patientService;
+        this.sampleRepository = sampleRepository;
+    }
 
     @Override
     public BaseMeta fetchMetaSamples(

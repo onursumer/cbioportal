@@ -1,11 +1,11 @@
-package org.cbioportal.legacy.persistence;
+package org.cbioportal.sample.repository;
 
 import org.cbioportal.legacy.model.Sample;
 import org.cbioportal.legacy.model.meta.BaseMeta;
 
 import java.util.List;
 
-public interface SampleDerivedRepository {
+public interface SampleRepository {
     List<Sample> fetchSamples(List<String> studyIds, List<String> sampleIds, String projection);
 
     List<Sample> fetchSamplesBySampleListIds(List<String> sampleListIds, String projection);

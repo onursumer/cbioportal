@@ -1,4 +1,4 @@
-package org.cbioportal.legacy.service;
+package org.cbioportal.sample.service;
 
 import org.cbioportal.legacy.model.Sample;
 import org.cbioportal.legacy.model.meta.BaseMeta;
@@ -10,7 +10,7 @@ import org.springframework.http.HttpHeaders;
 
 import java.util.List;
 
-public interface SampleColumnarService {
+public interface SampleService {
     BaseMeta fetchMetaSamples(SampleFilter sampleFilter);
     HttpHeaders fetchMetaSamplesHeaders(SampleFilter sampleFilter);
     

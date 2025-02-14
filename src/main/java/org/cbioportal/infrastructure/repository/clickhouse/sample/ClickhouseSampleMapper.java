@@ -1,11 +1,11 @@
-package org.cbioportal.legacy.persistence.mybatisclickhouse;
+package org.cbioportal.infrastructure.repository.clickhouse.sample;
 
 import org.cbioportal.legacy.model.Sample;
 import org.cbioportal.legacy.model.meta.BaseMeta;
 
 import java.util.List;
 
-public interface SampleDerivedMapper {
+public interface ClickhouseSampleMapper {
     BaseMeta getMetaSamples(
         List<String> studyIds,
         String patientId,

@@ -1,23 +1,25 @@
-package org.cbioportal.legacy.persistence.mybatisclickhouse;
+package org.cbioportal.infrastructure.repository.clickhouse.sample;
 
 import org.cbioportal.legacy.model.Sample;
 import org.cbioportal.legacy.model.meta.BaseMeta;
 import org.cbioportal.legacy.persistence.PersistenceConstants;
-import org.cbioportal.legacy.persistence.SampleDerivedRepository;
+import org.cbioportal.sample.repository.SampleRepository;
 import org.cbioportal.legacy.persistence.mybatis.util.PaginationCalculator;
-import org.cbioportal.legacy.utils.config.annotation.ConditionalOnProperty;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collections;
 import java.util.List;
 
 @Repository
-@ConditionalOnProperty(name = "clickhouse_mode", havingValue = "true")
-public class SampleDerivedMyBatisRepository implements SampleDerivedRepository {
-    @Autowired
-    private SampleDerivedMapper sampleMapper;
-    
+@Profile("clickhouse")
+public class ClickhouseSampleRepository implements SampleRepository {
+    private final ClickhouseSampleMapper sampleMapper;
+
+    public ClickhouseSampleRepository(ClickhouseSampleMapper sampleMapper) {
+        this.sampleMapper = sampleMapper;
+    }
+
     @Override
     public List<Sample> fetchSamples(
         List<String> studyIds,
