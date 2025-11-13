@@ -213,7 +213,23 @@
 
     <sql id="getClinicalDataCountsQuery">
         (
-        WITH clinical_data_query AS (
+        WITH (
+            SELECT 
+                groupArray(sample_unique_id) 
+            FROM (
+                <include refid="org.cbioportal.infrastructure.repository.clickhouse.studyview.ClickhouseStudyViewFilterMapper.sampleUniqueIdsFromStudyViewFilter"/>
+            )
+        ) AS filteredSamplesArray, (
+            SELECT 
+                groupArray(patient_unique_id)
+            FROM 
+                sample_derived
+            WHERE
+                has(filteredSamplesArray, sample_unique_id)
+        ) AS filteredPatientsArray,
+        length(arrayDistinct(filteredSamplesArray)) AS filteredSampleCount,
+        length(arrayDistinct(filteredPatientsArray)) AS filteredPatientCount,
+        clinical_data_query AS (
         SELECT
             attribute_name AS attributeId,
             attribute_value AS value,
@@ -238,10 +254,10 @@
             AND
             <choose>
                 <when test="'${type}' == 'sample'">
-                    <include refid="org.cbioportal.infrastructure.repository.clickhouse.studyview.ClickhouseStudyViewFilterMapper.applyStudyViewFilterUsingSampleId"/>
+                    has(filteredSamplesArray, sample_unique_id)
                 </when>
                 <otherwise>
-                    <include refid="org.cbioportal.infrastructure.repository.clickhouse.studyview.ClickhouseStudyViewFilterMapper.applyStudyViewFilterUsingPatientId"/>
+                    has(filteredPatientsArray, patient_unique_id)
                 </otherwise>
             </choose>
             AND attribute_name IN
@@ -256,19 +272,19 @@
         UNION ALL
         SELECT attributeId,
         'NA' AS value,
-        ((
+        (
         <choose>
             <when test="'${type}' == 'sample' or '${isConflicting}' == 'true'">
                 <!-- Use sample count for:
                     1. Pure sample attributes (type='sample')
                     2. Conflicting attributes (already mapped to sample-level via JOIN) -->
-                <include refid="org.cbioportal.infrastructure.repository.clickhouse.sample.ClickhouseSampleMapper.getFilteredSampleCount"/>
+                filteredSampleCount
             </when>
             <otherwise>
-                <include refid="org.cbioportal.infrastructure.repository.clickhouse.patient.ClickhousePatientMapper.getFilteredPatientCount"/>
+                filteredPatientCount
             </otherwise>
         </choose>
-        ) - clinical_data_sum.sum) AS count
+        - clinical_data_sum.sum) AS count
         FROM clinical_data_sum
         <where>
             count > 0
